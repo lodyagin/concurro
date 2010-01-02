@@ -85,7 +85,7 @@ private:
 
   // It is ThreadProc, it simple calls _run ()
   // (Access inside the thread)
-  static DWORD WINAPI _helper( void * );
+  static unsigned int __stdcall _helper( void * );
 
   HANDLE handle;
   int _id;

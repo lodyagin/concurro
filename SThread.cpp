@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "SThread.h"
-#include "SEvent.h"
-#include "SShutdown.h"
 #include <objbase.h>
 
 
@@ -107,21 +105,32 @@ inline void SThread::move_to
 
 SThread::~SThread()
 {
-  move_to (destroyedState);
+  static SMutex cs;
+
+  { SMutex::Lock lock (cs);
+
+    move_to (destroyedState);
+  }
+
   if ( _id <= 0 ) _current.set(0);
   CloseHandle (handle);
 }
 
 void SThread::wait()
 {
-  if (!stateMap->there_is_transition 
-      (currentState, waitingState)
-      )
-    return; // Shouldn't wait, it is ready
-
+  static SMutex cs;
   try
   {
+    { SMutex::Lock lock(cs);
+
+     if (!stateMap->there_is_transition 
+        (currentState, waitingState)
+        )
+      return; // Shouldn't wait, it is ready
+
      move_to (waitingState);
+    }
+
       //LOG4CXX_DEBUG(AutoLogger.GetLogger(),sFormat("Waiting for thread [%02u]", id()));
      isTerminatedEvent.wait ();
       //LOG4CXX_DEBUG(AutoLogger.GetLogger(),sFormat("Waiting for thread [%02u] - done", id()));
@@ -136,15 +145,20 @@ void SThread::wait()
 
 void SThread::start()
 {
+  static SMutex cs;
+  SMutex::Lock lock(cs);
   check_moving_to (workingState);
 
-  handle = CreateThread( 
-            NULL,              // no security attribute 
-            0,                 // default stack size 
-            _helper,           // ThreadProc
-            this,              // thread parameter 
-            0,                 // not suspended 
-            0 /*&dwThreadId*/);      // returns thread ID     
+  handle = (HANDLE) _beginthreadex
+    ( 
+      NULL,              // no security attribute 
+      0,                 // default stack size 
+      _helper,           // ThreadProc
+      this,              // thread parameter 
+      0,                 // not suspended 
+      0 /*&dwThreadId*/ // returns thread ID     
+     );
+
   sWinCheck(handle != 0, "creating thread");
 
   move_to (workingState);
@@ -152,6 +166,8 @@ void SThread::start()
 
 void SThread::stop ()
 {
+  static SMutex cs;
+  SMutex::Lock lock(cs);
   move_to (exitRState);
 }
 
@@ -195,7 +211,7 @@ void SThread::_run()
   isTerminatedEvent.set ();
 }
 
-DWORD WINAPI SThread::_helper( void * p )
+unsigned int __stdcall SThread::_helper( void * p )
 {
   SThread * _this = reinterpret_cast<SThread *>(p);
   _this->_run();
@@ -211,6 +227,8 @@ SThread & SThread::current()
 
 bool SThread::is_stop_requested ()
 {
+  static SMutex cs;
+  SMutex::Lock lock(cs);
   return currentState == exitRState
     || currentState == waitingState;
 }
