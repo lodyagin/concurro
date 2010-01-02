@@ -5,7 +5,6 @@
 //FIXME! close sockets on errors
 RListeningSocket::RListeningSocket
   (const RServerSocketAddress& addr)
-    : socket (0)
 {
   socket = ::socket 
     (AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -51,6 +50,10 @@ void RListeningSocket::listen
     SOCKET s = 0;
     while (1) // loop for waiting connection
     {
+      if (SThread::current ().is_stop_requested ())
+        ::xShuttingDown 
+          ("Stop request from the owner thread.");
+
       s = ::accept (socket, &sa, &sa_len); 
       //immediate returns
 
@@ -60,8 +63,16 @@ void RListeningSocket::listen
       if (s == WSAEWOULDBLOCK)
         ::Sleep (1000); // TODO
       else {
-        sSocketCheck (s != INVALID_SOCKET);
-        break;
+        if (s == INVALID_SOCKET) {
+          if (int err = WSAGetLastError())
+            throw SException
+              ("Error : " 
+               + sWinErrMsg(err)
+               );
+          else
+            ::Sleep (1000); // TODO
+        }
+        else break;
       }
     }
 

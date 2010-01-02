@@ -9,7 +9,7 @@ StateMap::StateMap
     )
 {
   if (new_states == NULL || transitions == NULL)
-    throw BadParameters ();
+    throw BadParameters ("1");
 
   StateIdx maxIdx = 0;
   {
@@ -21,16 +21,18 @@ StateMap::StateMap
       name2idx[new_states[i].state] = new_states[i].idx;
 
       if (new_states[i].idx < 1)
-        throw BadParameters (); 
+        throw BadParameters ("2"); 
+
+      idx2name[new_states[i].idx] = new_states[i].state;
 
       if (new_states[i].idx > maxIdx)
         maxIdx = new_states[i].idx;
     }
     if (maxIdx != name2idx.size ())
-      throw BadParameters (); 
+      throw BadParameters ("3"); 
     
     if (maxIdx != i)
-      throw BadParameters (); 
+      throw BadParameters ("4"); 
   }
   const StateIdx nStates = maxIdx;
 
@@ -38,12 +40,6 @@ StateMap::StateMap
     (log.GetLogger (), 
      oss_ << "Total " << nStates << " states in the map."
      );
-
-  idx2name.resize (nStates + 1); // state idx = 0 is not used
-  for (StateIdx i = 0; new_states[i].idx != 0; i++)
-  {
-      idx2name[new_states[i].idx] = new_states[i].state;
-  }
 
   int nTransitions = 0;
   {
@@ -59,7 +55,7 @@ StateMap::StateMap
          if (transitions[i].from == NULL
              && transitions[i].to == NULL)
            break;
-         else throw BadParameters ();
+         else throw BadParameters ("5");
        }
      }
     nTransitions = i;
@@ -72,9 +68,9 @@ StateMap::StateMap
       trans2number[i].resize (nStates, 0);
   }
 
-  number2trans.resize (nTransitions);
+  number2trans.resize (nTransitions + 1);
 
-  assert (nStates + 1 == idx2name.size ());
+  assert (nStates == idx2name.size ());
   assert (nStates == name2idx.size ());
 
   add_transitions (transitions, nTransitions);
@@ -114,9 +110,9 @@ void StateMap::add_transitions
 
     // Fill the transition code by two states lookup
     // table.
-    if (trans2number.at (fromIdx).at (toIdx) == 0)
+    if (trans2number.at (fromIdx-1).at (toIdx-1) == 0)
     {
-      trans2number.at (fromIdx).at (toIdx) = transId;
+      trans2number.at (fromIdx-1).at (toIdx-1) = transId;
       number2trans.at (transId).from = fromIdx;
       number2trans.at (transId).to = toIdx;
       transId++;
@@ -165,10 +161,12 @@ inline int StateMap::get_transition_id
   (const UniversalState& from,
    const UniversalState& to) const
 {
-  assert (from.state_idx < size ());
-  assert (to.state_idx < size ());
+  assert (from.state_idx > 0);
+  assert (from.state_idx <= size ());
+  assert (to.state_idx > 0);
+  assert (to.state_idx <= size ());
 
-  return trans2number.at (from.state_idx).at (to.state_idx);
+  return trans2number.at (from.state_idx-1).at (to.state_idx-1);
 }
 
 void StateMap::check_transition
@@ -186,7 +184,8 @@ bool StateMap::is_compatible
   (const UniversalState& state) const
 {
   assert (state.state_map);
-  assert (state.state_idx < size ());
+  assert (state.state_idx > 0);
+  assert (state.state_idx <= size ());
 
   return state.state_map == this;
   //for inherited carts some code should be added
@@ -199,14 +198,16 @@ std::string StateMap::get_state_name
     throw IncompatibleMap ();
 
   assert (state.state_idx >= 1);
-  return idx2name.at (state.state_idx);
+  Idx2Name::const_iterator it = idx2name.find 
+    (state.state_idx);
+  return it->second;
 }
 
 void StateMap::outString (std::ostream& out) const
 {
   // print states
   bool first = true;
-  for (Idx2Name::const_iterator it = idx2name.begin () + 1;
+  for (Idx2Name::const_iterator it = idx2name.begin ();
        it != idx2name.end ();
        it++
        )
@@ -216,7 +217,7 @@ void StateMap::outString (std::ostream& out) const
       else
         first = false;
   
-      out << (*it);
+      out << it->second;
   }
   out << '|';
 
@@ -229,9 +230,9 @@ void StateMap::outString (std::ostream& out) const
       else
         first = false;
   
-      out << idx2name.at (number2trans[i].from)
+      out << idx2name.find (number2trans[i].from) -> second
           << "->"
-          << idx2name.at (number2trans[i].to);
+          << idx2name.find (number2trans[i].to) -> second;
   }
 }
 

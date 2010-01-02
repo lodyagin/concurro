@@ -85,8 +85,8 @@ public:
 /* StateMap class */
 
 class StateMap : 
-   public HasStringView, 
-   public SSingleton<StateMap> // for pointer comparison
+   public HasStringView 
+   //FIXME pointer comparison
 {
 public:
   class BadParameters : public SException
@@ -141,7 +141,7 @@ protected:
 
   typedef std::map<std::string, StateIdx> 
     Name2Idx;
-  typedef std::vector<std::string> Idx2Name;
+  typedef std::map<StateIdx, std::string> Idx2Name;
 
   typedef std::vector<std::vector <int>> Trans2Number;
   typedef std::vector<IdxTransRec> Number2Trans;

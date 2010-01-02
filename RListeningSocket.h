@@ -18,7 +18,6 @@ public:
      ConnectionFactory& cf);
 
 protected:
-  SOCKET socket;
 
   // Called by constructor
   void bind (const RServerSocketAddress& addr);

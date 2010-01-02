@@ -5,6 +5,7 @@
 #include "logging.h"
 #include "SCommon.h"
 #include "SWinCheck.h"
+#include "SShutdown.h"
 #include <string>
 #include <assert.h>
 

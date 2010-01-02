@@ -37,8 +37,9 @@ const StateTransition SThread::allTrans[] =
 
   {"selfTerminated", "destroyed"},
   {"terminatedByRequest", "destroyed"},
-  {"ready", "destroyed"}
+  {"ready", "destroyed"},
   // can't be destroyed in other states
+  {0, 0}
 
 };
 
@@ -48,6 +49,7 @@ Logging SThread::m_Logging("SThread");
 
 SThread::SThread() :
   handle(0),
+  isTerminatedEvent (false),
   _id(++counter),
   stateMap (0)
 {
@@ -56,6 +58,7 @@ SThread::SThread() :
 
 SThread::SThread( Main ) :
   handle(0),
+  isTerminatedEvent (false),
   _id(0),
   stateMap (0)
 {
@@ -65,6 +68,7 @@ SThread::SThread( Main ) :
 
 SThread::SThread( External ) :
   handle(0),
+  isTerminatedEvent (false),
   _id(-1),
   stateMap (0)
 {
@@ -119,9 +123,7 @@ void SThread::wait()
   {
      move_to (waitingState);
       //LOG4CXX_DEBUG(AutoLogger.GetLogger(),sFormat("Waiting for thread [%02u]", id()));
-     sWinCheck(
-        WaitForSingleObject(handle, INFINITE) == WAIT_OBJECT_0, 
-        "waiting on thread termination");
+     isTerminatedEvent.wait ();
       //LOG4CXX_DEBUG(AutoLogger.GetLogger(),sFormat("Waiting for thread [%02u] - done", id()));
    }
   catch (...)
@@ -170,17 +172,17 @@ void SThread::_run()
   }
   catch ( XShuttingDown & )
   {
-    //FIXME
+    // Do nothing - execution is finished
   }
   catch ( exception & x )
   {
       LOG4CXX_ERROR(AutoLogger.GetLogger(),sFormat("Internal server error: thread failed: %s", x.what()));
-     SShutdown::instance().shutdown();
+     SShutdown::instance().shutdown(); //FIXME
   }
   catch ( ... )
   {
       LOG4CXX_ERROR(AutoLogger.GetLogger(),"Internal server error: thread failed");
-     SShutdown::instance().shutdown();
+     SShutdown::instance().shutdown(); //FIXME
   }
    LOG4CXX_DEBUG(AutoLogger.GetLogger(),"Thread finished");
   _current.set(0);
@@ -189,6 +191,8 @@ void SThread::_run()
     move_to (selfTerminatedState);
   else
     move_to (terminatedByRState);
+
+  isTerminatedEvent.set ();
 }
 
 DWORD WINAPI SThread::_helper( void * p )
@@ -207,7 +211,8 @@ SThread & SThread::current()
 
 bool SThread::is_stop_requested ()
 {
-  return currentState == exitRState;
+  return currentState == exitRState
+    || currentState == waitingState;
 }
 
 

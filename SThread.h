@@ -2,6 +2,7 @@
 #define __STHREAD_H
 
 #include "SMutex.h"
+#include "SEvent.h"
 #include "SNotCopyable.h"
 #include "Logging.h"
 #include "StateMap.h"
@@ -65,6 +66,8 @@ private:
   UniversalState destroyedState;
 
   UniversalState currentState;
+
+  SEvent isTerminatedEvent;
 
   void check_moving_to (const UniversalState& to);
 

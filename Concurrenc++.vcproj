@@ -276,6 +276,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\StdAfx.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SThread.cpp"
 				>
 			</File>
