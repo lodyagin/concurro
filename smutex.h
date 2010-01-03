@@ -137,28 +137,13 @@ inline SMutex::~SMutex()
 
 inline void SMutex::acquare()
 {
-	LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex")
 	EnterCriticalSection(&cs);
-	LOG4CXX_DEBUG(Logging::Concurrency(), "Success")
 }
 
 inline void SMutex::release()
 {
-	LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex")
 	LeaveCriticalSection(&cs);
-	LOG4CXX_DEBUG(Logging::Concurrency(), "Success")
 }
-
-/*inline void SMutex::wait ()
-{
-	LOG4CXX_DEBUG(Logging::Concurrency(), "Waiting for mutex")
-  while (1)
-  {
-	  if (TryEnterCriticalSection(&cs)) break;
-    ::Sleep (1000);
-  }
-	LOG4CXX_DEBUG(Logging::Concurrency(), "Success acquare the mutex")
-}*/
 
 // SMutex::Lock  =====================================================
 
