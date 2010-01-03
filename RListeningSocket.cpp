@@ -57,23 +57,15 @@ void RListeningSocket::listen
       s = ::accept (socket, &sa, &sa_len); 
       //immediate returns
 
-      if (SThread::current ().is_stop_requested ()) 
-        return; // thread stop is requested
-
-      if (s == WSAEWOULDBLOCK)
-        ::Sleep (1000); // TODO
-      else {
-        if (s == INVALID_SOCKET) {
-          if (int err = WSAGetLastError())
-            throw SException
-              ("Error : " 
-               + sWinErrMsg(err)
-               );
-          else
-            ::Sleep (1000); // TODO
-        }
-        else break;
+      if (s == INVALID_SOCKET) {
+        int err = WSAGetLastError();
+        if (err == WSAEWOULDBLOCK || err == 0)
+          ::Sleep (1000); // TODO
+        else
+          throw SException
+            ("Error : " + sWinErrMsg(err));
       }
+      else break;
     }
 
     LOG4STRM_DEBUG 
