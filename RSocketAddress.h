@@ -4,14 +4,8 @@
 
 class RSocketAddress : public HasStringView
 {
-  friend class RListeningSocket;  
-  // for access to sockaddr components
-  // of an internal ai_list
-
 public:
-  RSocketAddress () : ai_list (NULL) {}
   virtual ~RSocketAddress (void);
-  void outString (std::ostream& out) const;
 
   // addrinfo pretty print
   static void outString (std::ostream& out, const struct addrinfo* ai);
@@ -22,16 +16,37 @@ public:
   // in_addr pretty print
   static void outString (std::ostream& out, const struct in_addr* ia);
 
-protected:
   // return the first IPv4 socket address
-  // It is protected because live of sockaddr is 
-  // bound to this object live, only friends can access
-  // directly.
-  void get_IPv4_sockaddr 
-    (const struct sockaddr** out, 
-     int* sockaddr_len) const;
+  virtual void get_IPv4_sockaddr 
+    (struct sockaddr* out, 
+     int out_max_size,
+     int* copied_size
+     ) const = 0;
 
-  struct addrinfo *ai_list;
+  // return any, socket address
+  // any protocol
+  virtual void get_sockaddr 
+    (struct sockaddr* out, 
+     int out_max_size,
+     int* copied_size
+     ) const = 0;
+
+  // Copy socket address
+  // The size of information copied is defined by 
+  // the 'in' structure type.
+  // It throws an exception if sockaddr_out_size is
+  // less than copied size (and do not copy in this case).
+  // If sockaddr_in_size != NULL set it the the
+  // size of the structure copied.
+  static void copy_sockaddr 
+    (struct sockaddr* out,
+     int sockaddr_out_size,
+     const struct sockaddr* in,
+     int* sockaddr_in_size = 0
+     );
+
+  // Get the sockaddr length by its type.
+  static int get_sockaddr_len (const struct sockaddr* sa);
 };
 
 

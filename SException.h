@@ -23,8 +23,17 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-extern const SException ProgramError;
-extern const SException NotImplemented;
+//extern const SException ProgramError;
+//extern const SException NotImplemented;
+
+#define THROW_EXCEPTION(exception_class, stream_expr) { \
+  std::ostringstream oss_; \
+  { stream_expr ; } \
+  oss_ << " at " << __FILE__ << ':' << __LINE__ \
+       << ", " << __FUNCTION__; \
+       throw exception_class(oss_.str()); \
+}
+
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException

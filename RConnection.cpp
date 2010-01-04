@@ -16,6 +16,11 @@ RConnection::~RConnection ()
 {
 }
 
+void RConnection::identify_peer ()
+{
+  
+}
+
 void RConnection::run ()
 {
   socket->send 

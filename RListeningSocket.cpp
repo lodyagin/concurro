@@ -16,7 +16,7 @@ RListeningSocket::RListeningSocket
 void RListeningSocket::bind 
   (const RServerSocketAddress& addr)
 {
-  const sockaddr* saddr = NULL;
+  struct sockaddr_in saddr;
   int saddr_len = 0;
 
   // Set reuse address
@@ -30,8 +30,17 @@ void RListeningSocket::bind
        sizeof (on)
        ) == 0
      );
-  addr.get_IPv4_sockaddr (&saddr, &saddr_len);
-  ::bind (socket, saddr, saddr_len);
+
+  addr.get_IPv4_sockaddr 
+    ((struct sockaddr*) &saddr, 
+     sizeof (saddr),
+     &saddr_len
+     );
+
+  ::bind
+    (socket, 
+    (struct sockaddr*) &saddr, 
+     saddr_len);
 }
 
 void RListeningSocket::listen

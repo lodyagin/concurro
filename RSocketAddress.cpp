@@ -5,41 +5,6 @@
 
 RSocketAddress::~RSocketAddress (void)
 {
-  if (ai_list != NULL)
-    ::freeaddrinfo (ai_list);
-}
-
-void RSocketAddress::get_IPv4_sockaddr 
-  (const struct sockaddr** out, 
-   int* sockaddr_len
-   ) const
-{
-  const struct addrinfo *ai = ai_list;
-
-  while (ai != NULL && ai->ai_family != AF_INET)
-    ai = ai->ai_next;
-
-  if (ai == NULL)
-    throw SException ("No IPv4 socket available");
-
-  *out = ai->ai_addr;
-  assert (out != NULL);
-  *sockaddr_len = (int) sizeof (sockaddr_in);
-}
-
-void RSocketAddress::outString (std::ostream& out) const
-{
-  const struct addrinfo *ai = ai_list;
-
-  out << "RSocketAddress:\n";
-  while (ai != NULL)
-  {
-    outString (out, ai);
-    out << '\n';
-
-    ai = ai->ai_next;
-  }
-  out << '\n';
 }
 
 void RSocketAddress::outString 
