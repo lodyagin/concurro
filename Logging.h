@@ -72,5 +72,55 @@ static int zqw = (Logging::Init(), 1); // as teaches Stroustrup :>
            { stream_expr ; } \
            (logger)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), LOG4CXX_LOCATION); }}
 #else
-#define LOG4CXX_DEBUG(logger, message)
+#define LOG4STRM_DEBUG(logger, message)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
+#define LOG4STRM_TRACE(logger, stream_expr) { \
+        if (LOG4CXX_UNLIKELY((logger)->isTraceEnabled())) {\
+           ::log4cxx::helpers::MessageBuffer oss_; \
+           { stream_expr ; } \
+           (logger)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), LOG4CXX_LOCATION); }}
+#else
+#define LOG4STRM_TRACE(logger, message)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
+#define LOG4STRM_INFO(logger, stream_expr) { \
+        if (LOG4CXX_UNLIKELY((logger)->isInfoEnabled())) {\
+           ::log4cxx::helpers::MessageBuffer oss_; \
+           { stream_expr ; } \
+           (logger)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), LOG4CXX_LOCATION); }}
+#else
+#define LOG4STRM_INFO(logger, message)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
+#define LOG4STRM_WARN(logger, stream_expr) { \
+        if (LOG4CXX_UNLIKELY((logger)->isWarnEnabled())) {\
+           ::log4cxx::helpers::MessageBuffer oss_; \
+           { stream_expr ; } \
+           (logger)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), LOG4CXX_LOCATION); }}
+#else
+#define LOG4STRM_WARN(logger, message)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
+#define LOG4STRM_ERROR(logger, stream_expr) { \
+        if (LOG4CXX_UNLIKELY((logger)->isErrorEnabled())) {\
+           ::log4cxx::helpers::MessageBuffer oss_; \
+           { stream_expr ; } \
+           (logger)->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), LOG4CXX_LOCATION); }}
+#else
+#define LOG4STRM_ERROR(logger, message)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
+#define LOG4STRM_FATAL(logger, stream_expr) { \
+        if (LOG4CXX_UNLIKELY((logger)->isFatalEnabled())) {\
+           ::log4cxx::helpers::MessageBuffer oss_; \
+           { stream_expr ; } \
+           (logger)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), LOG4CXX_LOCATION); }}
+#else
+#define LOG4STRM_FATAL(logger, message)
 #endif

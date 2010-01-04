@@ -8,14 +8,6 @@ template<class Object, class Parameter>
 class Repository : public SNotCopyable
 {
 public:
-  /*class NoMoreObjectsPossible : public SException
-  {
-  public:
-    NoMoreObjectsPossible ()
-      : SException ("No more objects possible")
-    {}
-  };*/
-
   class UnregisteredObject : public SException
   {
   public:
@@ -28,7 +20,6 @@ public:
   ~Repository ();
 
   virtual Object* create_object (Parameter param);
-  //virtual void register_object (Object* obj);
   virtual void delete_object (Object* obj, bool freeMemory);
 
 protected:
@@ -36,14 +27,14 @@ protected:
 
   ObjectSet* objects;
   SMutex objectsM;
-
-  const unsigned int nObjects;
+  SSemaphore semaphore;
 };
 
 template<class Object, class Parameter>
 Repository<Object, Parameter>::Repository 
   (int maxNumberOfObjects)
-: objects (NULL), nObjects (maxNumberOfObjects)
+: objects (NULL), 
+  semaphore (maxNumberOfObjects, maxNumberOfObjects)
 {
   objects = new ObjectSet ();
   //FIXME check obj creation
@@ -60,34 +51,22 @@ template<class Object, class Parameter>
 Object* Repository<Object, Parameter>::create_object 
   (Parameter param)
 {
-  //FIXME wait for object
-  while (1)
-  {
-    {
-      SMutex::Lock lock (objectsM, true, true);
-      if (objects->size () < nObjects)
-        break;
-    }
-    ::Sleep (1000);
-  }
+  semaphore.wait ();
 
-  Object* obj = new Object (this, param);
+  if (SThread::current ().is_stop_requested ())
+       ::xShuttingDown 
+        ("Stop request from the owner thread.");
+
+
+  Object* obj = Object::create (this, param);
   //FIXME check creation
-  objects->insert (obj);
+
+  { 
+    SMutex::Lock lock (objectsM, true, true);
+    objects->insert (obj);
+  }
   return obj;
 }
-
-/*template<class Object, class Parameter>
-void Repository<Object, Parameter>::register_object 
-  (Object* obj)
-{
-  SMutex::Lock lock (objectsM, true, true);
-
-  if (objects->size () == nObjects)
-    throw NoMoreObjectsPossible ();
-
-  objects->insert (obj);
-}*/
 
 template<class Object, class Parameter>
 void Repository<Object, Parameter>::delete_object 
@@ -102,8 +81,11 @@ void Repository<Object, Parameter>::delete_object
       throw UnregisteredObject ();
   }
 
+  semaphore.release ();
+
   if (freeMemory)
-    delete obj;
+    THROW_EXCEPTION
+      (SException, oss_ << "Not implemented");
 }
 
 

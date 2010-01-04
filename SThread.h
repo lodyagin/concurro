@@ -4,16 +4,16 @@
 #include "SMutex.h"
 #include "SEvent.h"
 #include "SNotCopyable.h"
-#include "Logging.h"
 #include "StateMap.h"
 
 /*
   It can be started and stoped only once, like Java thread.
   SException will be raised if we try to start several times.
 */
-class SThread : public SNotCopyable
+class SThread 
+  : public SNotCopyable,
+    public HasStringView
 {
-    static Logging m_Logging;
 public:
 
   class Tls; // storage for data separated by threads
@@ -21,14 +21,20 @@ public:
   enum Main { main };
   enum External { external };
 
+  // Create new thread.
+  // It will be destroyed when the thread
+  // function will exit if selfDestroing = true.
+  // Use it instead of constructor.
+  static SThread* create ();
+  static SThread* create (Main);
+  static SThread* create (External);
+
+  const bool selfDestroing;
+
   /* 
   It is a group of functions 
   for access from a calling thread 
   */
-  SThread();
-  explicit SThread( Main );  // must be one main thread
-  explicit SThread( External );  // must be one main thread
-  virtual ~SThread();
   void start();
   void wait();  // wait while thread finished
   void stop (); // try to stop implicitly
@@ -40,31 +46,44 @@ public:
   // TODO UT on thread not created by SThread.
   static SThread & current();
   int id() const { return _id; }
+  // Overrides
+  void outString (std::ostream& out) const;
 
   /* For access inside the thread */
   // return 'true' if stop is requested
   bool is_stop_requested ();
 
 protected:
+  // Thread must be always allocated dinamically
+  SThread();
+  explicit SThread( Main );  // must be one main thread
+  explicit SThread( External );  // must be one main thread
+
+  /* Access inside the thread */
   // Override it for a real thread job
   // but leave protected. It should not be called
   // directly!
-  // Access inside the thread
   virtual void run() {}
+  virtual ~SThread();
 
 private:
 
   /* A state machine */
-  StateMap* stateMap;
+  static StateMap* stateMap;
 
-  UniversalState readyState;
-  UniversalState workingState;
-  UniversalState exitRState;
-  UniversalState waitingState;
-  UniversalState selfTerminatedState;
-  UniversalState terminatedByRState;
-  UniversalState destroyedState;
+  static UniversalState readyState;
+  static UniversalState workingState;
+  static UniversalState exitRState;
+  static UniversalState waitingState;
+  static UniversalState selfTerminatedState;
+  static UniversalState terminatedByRState;
+  static UniversalState destroyedState;
 
+  static const State2Idx allStates[];
+  static const StateTransition allTrans[];
+public:
+  static void initializeStates ();
+private:
   UniversalState currentState;
 
   SEvent isTerminatedEvent;
@@ -73,10 +92,6 @@ private:
 
   void move_to (const UniversalState& to);
 
-  static const State2Idx allStates[];
-  static const StateTransition allTrans[];
-
-  void initializeStates ();
   /* end of the state machine */
 
   // called from Windows

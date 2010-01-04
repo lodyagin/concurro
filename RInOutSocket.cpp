@@ -10,3 +10,13 @@ void RInOutSocket::send (const std::string& str)
   if (nBytesSent < strLen)
     throw SException ("send sent less bytes than requested");
 }
+
+void RInOutSocket::receive 
+  (std::string& out)
+{
+  const int msgLen = ::recv 
+    (socket, buf, sizeof (buf), 0);
+  sSocketCheck (msgLen != SOCKET_ERROR);
+  out.assign (buf, msgLen);
+}
+

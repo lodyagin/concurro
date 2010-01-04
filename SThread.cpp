@@ -41,37 +41,75 @@ const StateTransition SThread::allTrans[] =
 
 };
 
-Logging SThread::m_Logging("SThread");
-
 // SThread  ==========================================================
+
+StateMap* SThread::stateMap = 0;
+
+UniversalState SThread::readyState;
+UniversalState SThread::workingState;
+UniversalState SThread::exitRState;
+UniversalState SThread::waitingState;
+UniversalState SThread::selfTerminatedState;
+UniversalState SThread::terminatedByRState;
+UniversalState SThread::destroyedState;
+
+static int initStateMap = 
+  (SThread::initializeStates(), 1);
+
+SThread* SThread::create ()
+{
+  return new SThread ();
+}
+
+SThread* SThread::create (Main p)
+{
+  return new SThread (p);
+}
+
+SThread* SThread::create (External p)
+{
+  return new SThread (p);
+}
 
 SThread::SThread() :
   handle(0),
   isTerminatedEvent (false),
   _id(++counter),
-  stateMap (0)
+  selfDestroing (true)
 {
-  initializeStates ();
+  currentState = readyState;
+  LOG4STRM_DEBUG
+    (Logging::Thread (),
+     oss_ << "New "; outString (oss_)
+     );
 }
 
 SThread::SThread( Main ) :
   handle(0),
   isTerminatedEvent (false),
   _id(0),
-  stateMap (0)
+  selfDestroing (false)
 {
+  currentState = readyState;
   _current.set(this);
-  initializeStates ();
+  LOG4STRM_DEBUG
+    (Logging::Thread (),
+     oss_ << "New "; outString (oss_)
+     );
 }
 
 SThread::SThread( External ) :
   handle(0),
   isTerminatedEvent (false),
   _id(-1),
-  stateMap (0)
+  selfDestroing (true)
 {
+  currentState = readyState;
   _current.set(this);
-  initializeStates ();
+  LOG4STRM_DEBUG
+    (Logging::Thread (),
+     oss_ << "New "; outString (oss_)
+     );
 }
 
 void SThread::initializeStates ()
@@ -86,8 +124,6 @@ void SThread::initializeStates ()
   selfTerminatedState = stateMap->create_state 
     ("selfTerminated");
   destroyedState = stateMap->create_state ("destroyed");
-
-  currentState = readyState;
 }
 
 inline void SThread::check_moving_to 
@@ -101,6 +137,7 @@ inline void SThread::move_to
 {
   stateMap->check_transition (currentState, to);
   currentState = to;
+  LOG4STRM_TRACE (Logging::Thread (), outString (oss_));
 }
 
 SThread::~SThread()
@@ -113,8 +150,25 @@ SThread::~SThread()
   }
 
   if ( _id <= 0 ) _current.set(0);
+
+  LOG4STRM_DEBUG
+    (Logging::Thread (),
+     oss_ << "Destroy "; outString (oss_)
+     );
   CloseHandle (handle);
 }
+
+void SThread::outString (std::ostream& out) const
+{
+  out << "SThread(id = "  
+      << _id
+      << ", this = " 
+      << std::hex << (void *) this << std::dec
+      << ", currentState = " 
+      << stateMap->get_state_name (currentState)
+      << ')';
+}
+
 
 void SThread::wait()
 {
@@ -174,11 +228,13 @@ void SThread::stop ()
 
 void SThread::_run()
 {
-    static Logging AutoLogger("_run()",m_Logging);
+   //static Logging AutoLogger("_run()",m_Logging);
 
   _current.set(this);
 
-   LOG4CXX_DEBUG(AutoLogger.GetLogger(),"Thread started");
+   LOG4STRM_DEBUG
+     (Logging::Thread (),
+     outString (oss_); oss_ << " started");
 
   try
   {
@@ -192,15 +248,20 @@ void SThread::_run()
   }
   catch ( exception & x )
   {
-      LOG4CXX_ERROR(AutoLogger.GetLogger(),sFormat("Internal server error: thread failed: %s", x.what()));
-     SShutdown::instance().shutdown(); //FIXME
+      LOG4STRM_DEBUG
+        (Logging::Thread (),
+        oss_ << "Exception in thread: " << x.what ());
   }
   catch ( ... )
   {
-      LOG4CXX_ERROR(AutoLogger.GetLogger(),"Internal server error: thread failed");
-     SShutdown::instance().shutdown(); //FIXME
+    LOG4CXX_WARN
+      (Logging::Thread (),
+       "Unknown type of exception in thread.");
   }
-   LOG4CXX_DEBUG(AutoLogger.GetLogger(),"Thread finished");
+   LOG4STRM_DEBUG
+     (Logging::Thread (), 
+      outString (oss_); oss_ << " finished"
+      );
   _current.set(0);
 
   if (currentState == workingState)
@@ -215,13 +276,14 @@ unsigned int __stdcall SThread::_helper( void * p )
 {
   SThread * _this = reinterpret_cast<SThread *>(p);
   _this->_run();
+  delete _this;
   return 0;
 }
 
 SThread & SThread::current()
 {
   SThread * thread = static_cast<SThread *>(_current.get());
-  assert (thread);
+  assert (thread); //FIXME check
   return *thread;
 }
 
@@ -264,7 +326,28 @@ void * SThread::Tls::get()
  
 void SThread::Tls::set( void * data )
 {
+  if (data)
+    LOG4STRM_DEBUG
+      (Logging::Thread (),
+         oss_ << "Unassociate ";
+         SThread* thrd = (SThread*) get ();
+         if (thrd) thrd->outString (oss_);
+         else oss_ << "SThread(<null>)";
+         oss_ << " with the system thread id = "
+              << ::GetCurrentThreadId ();
+       );
+
   sWinCheck(TlsSetValue(idx, data) != 0, "setting TLS");
+
+  if (data)
+    LOG4STRM_DEBUG
+      (Logging::Thread (),
+       oss_ << "Associate ";
+       if (data) ((SThread*) data) -> outString (oss_);
+       else oss_ << "<null>";
+       oss_ << " with the system thread id = "
+            << ::GetCurrentThreadId ();
+       );
 }
 
 

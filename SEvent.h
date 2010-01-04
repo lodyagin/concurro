@@ -5,7 +5,7 @@ class SEvtBase
 {
 public:
 
-  ~SEvtBase();
+  virtual ~SEvtBase();
 
   void wait();
   bool wait( int time );  // false on timeout; time in millisecs
