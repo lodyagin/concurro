@@ -45,6 +45,16 @@ RServerSocketAddress::~RServerSocketAddress ()
     ::freeaddrinfo (ai_list);
 }
 
+int RServerSocketAddress::get_port () const 
+{
+  THROW_EXCEPTION(SException, oss_ << "Unimplemented");
+}
+
+const std::string& RServerSocketAddress::get_ip () const
+{
+  THROW_EXCEPTION(SException, oss_ << "Unimplemented");
+}
+
 void RServerSocketAddress::get_IPv4_sockaddr 
   (struct sockaddr* out, 
    int out_max_size,

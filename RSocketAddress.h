@@ -7,6 +7,10 @@ class RSocketAddress : public HasStringView
 public:
   virtual ~RSocketAddress (void);
 
+  virtual int get_port () const = 0;
+  
+  virtual const std::string& get_ip () const = 0;
+
   // addrinfo pretty print
   static void outString (std::ostream& out, const struct addrinfo* ai);
 
@@ -16,15 +20,14 @@ public:
   // in_addr pretty print
   static void outString (std::ostream& out, const struct in_addr* ia);
 
-  // return the first IPv4 socket address
+  /*// return the first IPv4 socket address
   virtual void get_IPv4_sockaddr 
     (struct sockaddr* out, 
      int out_max_size,
      int* copied_size
-     ) const = 0;
+     ) const = 0;*/
 
-  // return any, socket address
-  // any protocol
+  // fills the sockaddr* family of structures
   virtual void get_sockaddr 
     (struct sockaddr* out, 
      int out_max_size,

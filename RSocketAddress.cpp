@@ -52,7 +52,7 @@ void RSocketAddress::outString
       break;
     default:
       out << "sockaddr_xxx, sa_family = "
-          << sa->sa_family;
+          << sa->sa_family << ')';
   }
 }
 

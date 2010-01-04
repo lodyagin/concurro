@@ -7,6 +7,11 @@
 typedef Repository<RConnection, RConnectedSocket*> 
   ConnectionRepository;
 
+/*
+All decisions about connection creation
+are made by this class.
+*/
+
 class ConnectionFactory :
   public SSingleton<ConnectionFactory>,
   protected ConnectionRepository

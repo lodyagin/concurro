@@ -1,6 +1,10 @@
 #pragma once
 #include "rsocketaddress.h"
 
+  //FIXME RServerSocketAddress type
+  // is incorrect. Should be replaced
+  // with a set of RSocketAddress
+
 // It is a "passive" socket address used by server
 // to listen for connection.
 class RServerSocketAddress : public RSocketAddress
@@ -9,6 +13,12 @@ public:
   RServerSocketAddress (unsigned int port);
   ~RServerSocketAddress ();
   void outString (std::ostream& out) const;
+
+  // Overrides
+  int get_port () const;
+
+  // Overrides
+  const std::string& get_ip () const;
 
   // Overrides
   void get_IPv4_sockaddr 
