@@ -20,8 +20,8 @@ const char * SException::what() const
   return _what.c_str();
 }
 
-const SException ProgramError ("Program Error");
-extern const SException NotImplemented ("Not Implemented");
+//const SException ProgramError ("Program Error");
+//extern const SException NotImplemented ("Not Implemented");
 
 SMAKE_THROW_FN_IMPL(throwSException, SException)
 SMAKE_THROW_FN_IMPL(sUserError, SUserError)
