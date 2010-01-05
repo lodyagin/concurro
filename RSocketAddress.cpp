@@ -48,11 +48,12 @@ void RSocketAddress::outString
           << "sin_port = " << ::htons (sain->sin_port)
             << ", sin_addr = ";
         outString (out, &sain->sin_addr);
+        out << ')';
       }
       break;
     default:
       out << "sockaddr_xxx, sa_family = "
-          << sa->sa_family << ')';
+          << sa->sa_family;
   }
 }
 

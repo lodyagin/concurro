@@ -96,12 +96,26 @@ void RConnection::run ()
       ::Sleep (1000); 
     }
 
+    //FIXME wrong place!
+    LOG4STRM_INFO
+      (Logging::Root (),
+       oss_ << "Connection timed out with "
+       << socket->get_peer_address().get_ip () << ':'
+       << socket->get_peer_address().get_port()
+       );
+
     delete socket;
     socket = NULL; //TODO add UT checking working
     // with socket-null objects
   }
   catch (...)
   {
+    LOG4STRM_INFO
+      (Logging::Root (),
+       oss_ << "Terminate connection with "
+       << socket->get_peer_address().get_ip () << ':'
+       << socket->get_peer_address().get_port()
+       );
     ((ConnectionRepository*)repository)->delete_object 
       (this, false); // false means not to delete this
     throw;

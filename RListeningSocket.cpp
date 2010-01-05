@@ -41,6 +41,14 @@ void RListeningSocket::bind
     (socket, 
     (struct sockaddr*) &saddr, 
      saddr_len);
+
+  //FIXME wrang place, move before listen
+  LOG4STRM_INFO
+  (Logging::Root (),
+   oss_ << "Start listen for connections at "
+   << ::inet_ntoa (saddr.sin_addr)
+   << ':' << ::htons (saddr.sin_port)
+   );
 }
 
 void RListeningSocket::listen
@@ -54,6 +62,7 @@ void RListeningSocket::listen
   struct sockaddr sa;
   int sa_len = sizeof (sa);
   set_blocking (false);
+
   while (1) // loop for producing new connections
   {
     SOCKET s = 0;

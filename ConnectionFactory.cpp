@@ -12,9 +12,9 @@ RConnection* ConnectionFactory::create_new_connection
 {
   assert (cs);
   const RSocketAddress& rsa = cs->get_peer_address ();
-  LOG4STRM_DEBUG
+  LOG4STRM_INFO
     (Logging::Root (),
-    oss_ << "Connection from: "
+    oss_ << "New connection from: "
          << rsa.get_ip () << ':'
          << rsa.get_port ()
      );

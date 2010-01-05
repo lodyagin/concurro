@@ -48,7 +48,6 @@ public:
 
    static inline log4cxx::LoggerPtr Root() { return m_RootLogger ; };
    static inline log4cxx::LoggerPtr Thread() { return m_ThreadLogger ; };
-   static inline log4cxx::LoggerPtr Track() { return m_TrackLogger ; };
    static inline log4cxx::LoggerPtr Concurrency() { return m_ConcurrencyLogger ; };
 };
 
