@@ -60,7 +60,7 @@ void Logging::Init()
          a << szFilename << std::endl;
       }
 #endif
-      int idx = sFilename.rfind('\\');
+	  const std::string::size_type idx = sFilename.rfind('\\');
       std::string sModuleDir = sFilename.substr(0,idx);
 
 	  SetCurrentDirectory(sModuleDir.c_str());

@@ -20,7 +20,7 @@ typedef unsigned short ushort;
 typedef unsigned long ulong;
 typedef unsigned int uint;
 typedef unsigned char uchar;
-typedef uint size_t;
+
 
 // cut out not more than maxCount chars that equal to passed one. If maxCount == -1 then cut out all
 string trimLeft ( const string &, char = ' ', int maxCount = -1 );
@@ -62,7 +62,7 @@ BSTR toBSTR( const string & );
 string fromBSTR( const WCHAR * );
 
 wstring str2wstr( const string & );
-string wstr2str( const wstring & );
+//string wstr2str( const wstring & );
 
 
 inline const char * ptr2ptr( const string & s )

@@ -99,11 +99,11 @@ string sFormatVa( const string & format, va_list list )
 SMAKE_THROW_FN_IMPL(sThrow, SException)
 
 
-void stripEndChar( char * buf, char ch )
+/*void stripEndChar( char * buf, char ch )
 {
   int len = strlen(buf);
   if ( buf[len - 1] == ch ) buf[len - 1] = '\0';
-}
+}*/
 
 std::string sWinErrMsg (DWORD errorCode)
 {
@@ -195,7 +195,7 @@ void checkHR( HRESULT r )
 }
 
 
-BSTR toBSTR( const string & str )
+/*BSTR toBSTR( const string & str )
 {
   int slen = strlen(str.c_str());
   int len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, NULL, 0);
@@ -203,15 +203,15 @@ BSTR toBSTR( const string & str )
   MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, result, len);
 //  result[len - 1] = 0;
   return result;
-}
+}*/
 
-string fromBSTR( const WCHAR * wsz )
+/*string fromBSTR( const WCHAR * wsz )
 {
   return wsz ? wstr2str(wstring(wsz)) : string();
-}
+}*/
 
 
-wstring str2wstr( const string & str )
+/*wstring str2wstr( const string & str )
 {
   int slen = strlen(str.c_str());
   int wlen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, 0, 0);
@@ -220,9 +220,9 @@ wstring str2wstr( const string & str )
   wstring wstr(bstr, wlen);
   SysFreeString(bstr);
   return wstr;
-}
+}*/
 
-string wstr2str( const wstring & wstr )
+/*string wstr2str( const wstring & wstr )
 {
   int slen = ::WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), 0, 0, 0, 0);
   char * buf = new char [slen + 1];
@@ -231,7 +231,7 @@ string wstr2str( const wstring & wstr )
   string str(buf);
   delete [] buf;
   return str;
-}
+}*/
 
 std::ostream& operator << (std::ostream& out, const _com_error &e)
 {

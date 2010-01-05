@@ -3,7 +3,7 @@
 
 void RInOutSocket::send (const std::string& str)
 {
-  const int strLen = str.length ();
+  const std::string::size_type strLen = str.length ();
   const int nBytesSent = ::send 
     (socket, str.c_str (), strLen, 0);
   sSocketCheck (nBytesSent != SOCKET_ERROR);
