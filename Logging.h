@@ -61,8 +61,6 @@ inline log4cxx::LoggerPtr GetLogger(const char * subname, const log4cxx::LoggerP
 	return log4cxx::Logger::getLogger(s + "." + subname);
 }
 
-static int zqw = (Logging::Init(), 1); // as teaches Stroustrup :>
-
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOG4STRM_DEBUG(logger, stream_expr) { \

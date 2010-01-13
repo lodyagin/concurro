@@ -17,7 +17,6 @@ public:
  
   SSingleton();
   virtual ~SSingleton();
-// ?attention: destructor is not virtual! Never do "delete singleton"
 
   static T & instance();
 

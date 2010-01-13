@@ -77,6 +77,7 @@ SThread::SThread() :
   _id(++counter),
   selfDestroing (true)
 {
+
   currentState = readyState;
   LOG4STRM_DEBUG
     (Logging::Thread (),

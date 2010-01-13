@@ -30,6 +30,39 @@ string trimBoth ( const string &, char = ' ', int maxCount = -1 );
 const char * strnchr( const char * str, int chr, size_t maxLen );
 //int strnlen( const char * str, size_t maxLen );  // returns -1 if len > maxLen
 
+ /* Copy string src to buffer dest (of buffer size dest_size).  At most
+ * dest_size-1 characters will be copied.  Always NUL terminates
+ * (unless dest_size == 0).  This function does NOT allocate memory.
+ * Unlike strncpy, this function doesn't pad dest (so it's often faster).
+ * Returns size of attempted result, strlen(src),
+ * so if retval >= dest_size, truncation occurred.
+ */
+size_t strlcpy (char       *dest,
+                const char *src,
+                size_t      dest_size);
+
+/**
+ * It is got from glib 2.0.
+ *
+ * @string: the return location for the newly-allocated string.
+ * @format: a standard printf() format string, but notice
+ *          <link linkend="string-precision">string precision pitfalls</link>.
+ * @args: the list of arguments to insert in the output.
+ *
+ * This function allocates a 
+ * string to hold the output, instead of putting the output in a buffer 
+ * you allocate in advance.
+ *
+ * Returns: the number of bytes printed.
+ **/
+int 
+vasprintf (char      **string,
+           char const *format,
+           va_list      args);
+
+char *
+strsep (char **stringp, const char *delim);
+
 // convert windows error code to string
 string sWinErrMsg (DWORD errorCode);
 

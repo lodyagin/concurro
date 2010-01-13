@@ -79,6 +79,139 @@ const char * strnchr( const char * str, int chr, size_t maxLen )
   return -1;
 }*/
 
+/* It is got from glib 2.0.
+ *
+ * Copy string src to buffer dest (of buffer size dest_size).  At most
+ * dest_size-1 characters will be copied.  Always NUL terminates
+ * (unless dest_size == 0).  This function does NOT allocate memory.
+ * Unlike strncpy, this function doesn't pad dest (so it's often faster).
+ * Returns size of attempted result, strlen(src),
+ * so if retval >= dest_size, truncation occurred.
+ */
+size_t
+strlcpy (char       *dest,
+         const char *src,
+         size_t      dest_size)
+{
+  register char *d = dest;
+  register const char *s = src;
+  register size_t n = dest_size;
+  
+  if (dest == NULL || src == NULL)
+    return 0;
+  
+  /* Copy as many bytes as will fit */
+  if (n != 0 && --n != 0)
+    do
+      {
+        register char c = *s++;
+        
+        *d++ = c;
+        if (c == 0)
+          break;
+      }
+    while (--n != 0);
+  
+  /* If not enough room in dest, add NUL and traverse rest of src */
+  if (n == 0)
+    {
+      if (dest_size != 0)
+        *d = 0;
+      while (*s++)
+        ;
+    }
+  
+  return s - src - 1;  /* count does not include NUL */
+}
+
+#define G_VA_COPY(ap1, ap2)   (*(ap1) = *(ap2))
+
+/**
+ * It is got from glib 2.0.
+ *
+ * @string: the return location for the newly-allocated string.
+ * @format: a standard printf() format string, but notice
+ *          <link linkend="string-precision">string precision pitfalls</link>.
+ * @args: the list of arguments to insert in the output.
+ *
+ * This function allocates a 
+ * string to hold the output, instead of putting the output in a buffer 
+ * you allocate in advance.
+ *
+ * Returns: the number of bytes printed.
+ **/
+int 
+vasprintf (char      **string,
+           char const *format,
+           va_list      args)
+{
+  if (string == 0) return -1;
+
+  va_list args2;
+  int len;
+
+  G_VA_COPY (args2, args);
+
+  const size_t bufSize = ::_vscprintf (format, args) + 1;
+  *string = reinterpret_cast <char*>
+    (::malloc (bufSize));
+
+  if (*string != 0)
+    len = ::vsprintf_s (*string, bufSize, format, args2);
+  else 
+    len = -1;
+
+  va_end (args2);
+
+  return len;
+}
+
+// From gnu libc 2.7
+char *
+strsep (char **stringp, const char *delim)
+{
+  char *begin, *end;
+
+  begin = *stringp;
+  if (begin == NULL)
+    return NULL;
+
+  /* A frequent case is when the delimiter string contains only one
+     character.  Here we don't need to call the expensive `strpbrk'
+     function and instead work using `strchr'.  */
+  if (delim[0] == '\0' || delim[1] == '\0')
+    {
+      char ch = delim[0];
+
+      if (ch == '\0')
+        end = NULL;
+      else
+        {
+          if (*begin == ch)
+            end = begin;
+          else if (*begin == '\0')
+            end = NULL;
+          else
+            end = strchr (begin + 1, ch);
+        }
+    }
+  else
+    /* Find the end of the token.  */
+    end = strpbrk (begin, delim);
+
+  if (end)
+    {
+      /* Terminate the token and set *STRINGP past NUL character.  */
+      *end++ = '\0';
+      *stringp = end;
+    }
+  else
+    /* No more delimiters; this is the last token.  */
+    *stringp = NULL;
+
+  return begin;
+}
+
 
 string sFormat( string format, ... )
 {

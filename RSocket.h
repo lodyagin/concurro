@@ -7,6 +7,11 @@ class RSocket : public SNotCopyable
 public:
   virtual ~RSocket ();
 
+  SOCKET get_socket () const
+  {
+    return socket;
+  }
+
 protected:
   SOCKET socket;
   

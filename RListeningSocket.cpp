@@ -42,7 +42,7 @@ void RListeningSocket::bind
     (struct sockaddr*) &saddr, 
      saddr_len);
 
-  //FIXME wrang place, move before listen
+  //FIXME wrong place, move before listen
   LOG4STRM_INFO
   (Logging::Root (),
    oss_ << "Start listen for connections at "

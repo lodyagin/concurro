@@ -5,12 +5,6 @@
 
 Logging RConnection::log ("RConnection");
 
-RConnection* RConnection::create
-    (void* repo, RConnectedSocket* cs)
-{
-  return new RConnection (repo, cs);
-}
-
 RConnection::RConnection 
   (void* repo, 
    RConnectedSocket* cs
@@ -25,6 +19,7 @@ RConnection::~RConnection ()
   delete socket;
 }
 
+#if 0
 void RConnection::run ()
 {
   try
@@ -34,7 +29,6 @@ void RConnection::run ()
       (Options::instance ()
         .get_protocol_version_exchange_string ()
         );
-#if 0
     /* Read other sides version identification. */
     std::string clientVersionId;
     socket->receive (clientVersionId);
@@ -82,7 +76,8 @@ void RConnection::run ()
       THROW_EXCEPTION 
         (SException,
          oss_ << "Unsupported protocol version");
-#endif
+
+
     for (int i = 0; i < 25; i++) //FIXME to options
     {
       if (SThread::current ().is_stop_requested ())         
@@ -123,3 +118,4 @@ void RConnection::run ()
   ((ConnectionRepository*)repository)->delete_object 
     (this, false); // false means not to delete this
 }
+#endif

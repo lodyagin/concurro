@@ -2,9 +2,10 @@
 #include "RConnection.h"
 #include "SSingleton.h"
 #include "Repository.h"
+#include "ConnectionPars.h"
 #include "RConnectedSocket.h"
 
-typedef Repository<RConnection, RConnectedSocket*> 
+typedef Repository<RConnection, ConnectionPars> 
   ConnectionRepository;
 
 /*
@@ -18,7 +19,12 @@ class ConnectionFactory :
 {
 public:
   ConnectionFactory ();
-  //~ConnectionFactory ();
+
   RConnection* create_new_connection
     (RConnectedSocket* cs);
+
+protected:
+
+  virtual ConnectionPars* create_connection_pars 
+    (RConnectedSocket* cs) const;
 };

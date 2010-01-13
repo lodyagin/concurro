@@ -97,3 +97,6 @@ void Logging::Init()
 	   log4cxx::PropertyConfigurator::configure(p);
    }
 }
+
+static int zqw = (Logging::Init(), 1); // as teaches Stroustrup :>
+

@@ -2,6 +2,7 @@
 #include "smutex.h"
 #include "snotcopyable.h"
 #include "sexception.h"
+#include "SShutdown.h"
 #include <set>
 
 template<class Object, class Parameter>
@@ -19,7 +20,7 @@ public:
   Repository (int maxNumberOfObjects);
   ~Repository ();
 
-  virtual Object* create_object (Parameter param);
+  virtual Object* create_object (const Parameter& param);
   virtual void delete_object (Object* obj, bool freeMemory);
 
 protected:
@@ -49,7 +50,7 @@ Repository<Object, Parameter>::~Repository ()
 
 template<class Object, class Parameter>
 Object* Repository<Object, Parameter>::create_object 
-  (Parameter param)
+  (const Parameter& param)
 {
   semaphore.wait ();
 
@@ -58,7 +59,7 @@ Object* Repository<Object, Parameter>::create_object
         ("Stop request from the owner thread.");
 
 
-  Object* obj = Object::create (this, param);
+  Object* obj = param.create_derivation (this);
   //FIXME check creation
 
   { 
