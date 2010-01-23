@@ -124,6 +124,54 @@ strlcpy (char       *dest,
   return s - src - 1;  /* count does not include NUL */
 }
 
+/* It is got from glib 2.0.
+ *
+ * Appends string src to buffer dest (of buffer size dest_size).
+ * At most dest_size-1 characters will be copied.
+ * Unlike strncat, dest_size is the full size of dest, not the space left over.
+ * This function does NOT allocate memory.
+ * This always NUL terminates (unless siz == 0 or there were no NUL characters
+ * in the dest_size characters of dest to start with).
+ * Returns size of attempted result, which is
+ * MIN (dest_size, strlen (original dest)) + strlen (src),
+ * so if retval >= dest_size, truncation occurred.
+ */
+size_t
+strlcat (char       *dest,
+         const char *src,
+         size_t      dest_size)
+{
+  register char *d = dest;
+  register const char *s = src;
+  register size_t bytes_left = dest_size;
+  size_t dlength;  /* Logically, MIN (strlen (d), dest_size) */
+  
+  if (dest == NULL || src == NULL)
+    return 0;
+  
+  /* Find the end of dst and adjust bytes left but don't go past end */
+  while (*d != 0 && bytes_left-- != 0)
+    d++;
+  dlength = d - dest;
+  bytes_left = dest_size - dlength;
+  
+  if (bytes_left == 0)
+    return dlength + strlen (s);
+  
+  while (*s != 0)
+    {
+      if (bytes_left != 1)
+        {
+          *d++ = *s;
+          bytes_left--;
+        }
+      s++;
+    }
+  *d = 0;
+  
+  return dlength + (s - src);  /* count does not include NUL */
+}
+
 #define G_VA_COPY(ap1, ap2)   (*(ap1) = *(ap2))
 
 /**

@@ -41,6 +41,23 @@ size_t strlcpy (char       *dest,
                 const char *src,
                 size_t      dest_size);
 
+/* It is got from glib 2.0.
+ *
+ * Appends string src to buffer dest (of buffer size dest_size).
+ * At most dest_size-1 characters will be copied.
+ * Unlike strncat, dest_size is the full size of dest, not the space left over.
+ * This function does NOT allocate memory.
+ * This always NUL terminates (unless siz == 0 or there were no NUL characters
+ * in the dest_size characters of dest to start with).
+ * Returns size of attempted result, which is
+ * MIN (dest_size, strlen (original dest)) + strlen (src),
+ * so if retval >= dest_size, truncation occurred.
+ */
+size_t
+strlcat (char       *dest,
+         const char *src,
+         size_t      dest_size);
+
 /**
  * It is got from glib 2.0.
  *
