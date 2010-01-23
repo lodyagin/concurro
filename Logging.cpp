@@ -79,15 +79,14 @@ void Logging::Init()
    catch (...) 
    {	// here let's do default configuration
 	   log4cxx::helpers::Properties p;
-	   p.setProperty(L"log4j.rootLogger", L"DEBUG, A1"); //TODO
-	   //p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.RollingFileAppender");
-	   p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.ConsoleAppender");
-	   //p.setProperty(L"log4j.appender.A1.Append", L"True");
-	   //p.setProperty(L"log4j.appender.A1.File", L"coressh.log");
-	   //p.setProperty(L"log4j.appender.A1.MaxFileSize", L"1048576");
-	   //p.setProperty(L"log4j.appender.A1.MaxBackupIndex", L"12");
+	   p.setProperty(L"log4j.rootLogger", L"INFO, A1");
+	   p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.RollingFileAppender");
+	   p.setProperty(L"log4j.appender.A1.Append", L"True");
+	   p.setProperty(L"log4j.appender.A1.File", L"coressh.log");
+	   p.setProperty(L"log4j.appender.A1.MaxFileSize", L"1048576");
+	   p.setProperty(L"log4j.appender.A1.MaxBackupIndex", L"12");
 	   p.setProperty(L"log4j.appender.A1.layout", L"org.apache.log4j.PatternLayout");
-	   p.setProperty(L"log4j.appender.A1.layout.ConversionPattern", L"%p %d{%Y-%m-%d %H:%M:%S}%n----%n%m%n%n");
+	   p.setProperty(L"log4j.appender.A1.layout.ConversionPattern", L"%p %d{%Y-%m-%d %H:%M:%S} %m%n");
 	   /* this is BasicConfigurator properties. 
 	   We change DEBUG to WARN, and ConsoleAppender to NTEventLog
 	   log4j.rootLogger=DEBUG, A1
