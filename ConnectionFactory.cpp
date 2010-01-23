@@ -2,7 +2,7 @@
 #include "ConnectionFactory.h"
 
 ConnectionFactory::ConnectionFactory ()
-  :  Repository (2)
+  :  Repository (1)
 {
 }
 

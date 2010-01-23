@@ -86,7 +86,7 @@ void Logging::Init()
 	   p.setProperty(L"log4j.appender.A1.MaxFileSize", L"1048576");
 	   p.setProperty(L"log4j.appender.A1.MaxBackupIndex", L"12");
 	   p.setProperty(L"log4j.appender.A1.layout", L"org.apache.log4j.PatternLayout");
-	   p.setProperty(L"log4j.appender.A1.layout.ConversionPattern", L"%p %d{%Y-%m-%d %H:%M:%S} %m%n");
+	   p.setProperty(L"log4j.appender.A1.layout.ConversionPattern", L"%p %d{%Y-%m-%d %H:%M:%S} %t %m%n");
 	   /* this is BasicConfigurator properties. 
 	   We change DEBUG to WARN, and ConsoleAppender to NTEventLog
 	   log4j.rootLogger=DEBUG, A1
