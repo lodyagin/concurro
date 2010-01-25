@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "RConnection.h"
-#include "..\Server\Options.h" //FIXME
 #include "ConnectionFactory.h"
 
 Logging RConnection::log ("RConnection");

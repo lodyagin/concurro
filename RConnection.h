@@ -1,3 +1,7 @@
+/*
+It is a connection created by the socket.
+*/
+
 #pragma once
 
 #include "sthread.h"
