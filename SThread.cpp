@@ -214,7 +214,7 @@ void SThread::start()
       0 /*&dwThreadId*/ // returns thread ID     
      );
 
-  sWinCheck(handle != 0, "creating thread");
+  sWinCheck(handle != 0, L"creating thread");
 
   move_to (workingState);
 }
@@ -306,7 +306,7 @@ SThread::Tls SThread::_current;
 SThread::Tls::Tls() :
   idx(TlsAlloc())
 {
-  sWinCheck(idx != TLS_OUT_OF_INDEXES, "creating TLS");
+  sWinCheck(idx != TLS_OUT_OF_INDEXES, L"creating TLS");
 }
 
 SThread::Tls::~Tls()
@@ -320,7 +320,7 @@ void * SThread::Tls::get()
   if ( data == 0 )
   {
     DWORD code = GetLastError();
-    if ( code != NO_ERROR ) sWinErrorCode(code, "getting TLS");
+    if ( code != NO_ERROR ) sWinErrorCode(code, L"getting TLS");
   }
   return data;
 }
@@ -338,7 +338,7 @@ void SThread::Tls::set( void * data )
               << ::GetCurrentThreadId ();
        );
 
-  sWinCheck(TlsSetValue(idx, data) != 0, "setting TLS");
+  sWinCheck(TlsSetValue(idx, data) != 0, L"setting TLS");
 
   if (data)
     LOG4STRM_DEBUG

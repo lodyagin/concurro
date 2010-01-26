@@ -28,7 +28,7 @@ public:
    Logging(const char* szName);
    // Constructor for function logger
    Logging(const char* szName, const Logging& ParentLogger);
-   ~Logging();
+   virtual ~Logging();
 
    inline log4cxx::LoggerPtr GetLogger()
    {

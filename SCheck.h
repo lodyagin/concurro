@@ -17,8 +17,8 @@
 #endif
 
 
-void sWarn( bool cond, const char * fmt, ... );
-void sTrace( const char * fmt, ... );
+void sWarn( bool cond, const wchar_t * fmt, ... );
+void sTrace( const wchar_t * fmt, ... );
 
 inline void sNullTrace(...) {}
 

@@ -261,18 +261,25 @@ strsep (char **stringp, const char *delim)
 }
 
 
-string sFormat( string format, ... )
+wstring sFormat( wstring format, ... )
 {
   va_list list;
   va_start(list, format);
-  string s(sFormatVa(format, list));
+  wstring s(sFormatVa(format, list));
   va_end(list);
   return s;
 }
 
-string sFormatVa( const string & format, va_list list )
+wstring sFormatVa( const wstring & format, va_list list )
 {
 	CString buf;
+	buf.FormatV(format.c_str(), list);
+	return buf.GetString();
+}
+
+string sFormatVaA( const string & format, va_list list )
+{
+	CStringA buf;
 	buf.FormatV(format.c_str(), list);
 	return buf.GetString();
 }
@@ -286,15 +293,15 @@ SMAKE_THROW_FN_IMPL(sThrow, SException)
   if ( buf[len - 1] == ch ) buf[len - 1] = '\0';
 }*/
 
-std::string sWinErrMsg (DWORD errorCode)
+std::wstring sWinErrMsg (DWORD errorCode)
 {
-   std::string res;
+   std::wstring res;
    
    LPVOID lpMsgBuf = 0;;
    bool messageFound = false;
    DWORD err2;
 
-   messageFound = FormatMessageA 
+   messageFound = FormatMessage 
          (FORMAT_MESSAGE_ALLOCATE_BUFFER 
           | FORMAT_MESSAGE_IGNORE_INSERTS 
           | FORMAT_MESSAGE_FROM_SYSTEM,
@@ -310,11 +317,11 @@ std::string sWinErrMsg (DWORD errorCode)
      // with message
       err2 = GetLastError (); //FIXME for socket!
       if (err2 == ERROR_MR_MID_NOT_FOUND) {
-         messageFound = FormatMessageA 
+         messageFound = FormatMessage 
                (FORMAT_MESSAGE_ALLOCATE_BUFFER 
                | FORMAT_MESSAGE_IGNORE_INSERTS 
                | FORMAT_MESSAGE_FROM_HMODULE,
-               GetModuleHandle("wininet.dll"),
+               GetModuleHandle(L"wininet.dll"),
                errorCode,
                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                (LPTSTR) &lpMsgBuf,
@@ -334,9 +341,8 @@ std::string sWinErrMsg (DWORD errorCode)
       }
    }
    else {
-     LOG4CXX_WARN (Logging::Root (), 
-        SFORMAT ("Unable to format error message " << errorCode
-        << ", error " << err2));
+     return SFORMAT ("Unable to format error message " << errorCode
+        << ", error " << err2);
    }
 
 	return res;
@@ -376,34 +382,18 @@ void checkHR( HRESULT r )
 }
 
 
-/*BSTR toBSTR( const string & str )
-{
-  int slen = strlen(str.c_str());
-  int len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, NULL, 0);
-  BSTR result = SysAllocStringLen(NULL,len);
-  MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, result, len);
-//  result[len - 1] = 0;
-  return result;
-}*/
-
-/*string fromBSTR( const WCHAR * wsz )
-{
-  return wsz ? wstr2str(wstring(wsz)) : string();
-}*/
-
-
-/*wstring str2wstr( const string & str )
+wstring str2wstr( const string & str )
 {
   int slen = strlen(str.c_str());
   int wlen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, 0, 0);
-  BSTR bstr = SysAllocStringLen(0, wlen);
-  MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, bstr, wlen);
-  wstring wstr(bstr, wlen);
-  SysFreeString(bstr);
+  wchar_t* buf = new wchar_t [wlen + 1];
+  MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, buf, wlen);
+  wstring wstr(buf, wlen);
+  delete [] buf;
   return wstr;
-}*/
+}
 
-/*string wstr2str( const wstring & wstr )
+string wstr2str( const wstring & wstr )
 {
   int slen = ::WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), 0, 0, 0, 0);
   char * buf = new char [slen + 1];
@@ -412,30 +402,43 @@ void checkHR( HRESULT r )
   string str(buf);
   delete [] buf;
   return str;
+}
+
+/*string uni2ascii (const wstring & str)
+{
+  string res (str.length (), ' ');
+
+  for (
+    wstring::const_iterator cit = str.begin (),
+    string::iterator it = res.begin ()
+    cit != str.end ();
+    cit++, it++
+      )
+    {
+      wchar_t wch = *cit;
+      if (wch <= 127)
+        *it = (char) wch;
+      else
+        *it = '?';
+    }
+}
+
+wstring ascii2uni (const string & str)
+{
+  wstring res (str.length (), L' ');
+
+  for (
+    string::const_iterator cit = str.begin (),
+    wstring::iterator it = res.begin ()
+    cit != str.end ();
+    cit++, it++
+      )
+    {
+      char ch = *cit;
+      if (ch <= 127)
+        *it = (wchar_t) wch;
+      else
+        *it = '?';
+    }
 }*/
-
-std::ostream& operator << (std::ostream& out, const _com_error &e)
-{
-   out << "_com_error (Code => " << e.Error ()
-      << ", Code meaning => " << e.ErrorMessage ()
-      << ", Source => " << e.Source ()
-      << ", Description => " << e.Description () << ")";
-   return out;
-}
-
-bool operator == (const _com_error& a, const _com_error& b)
-{
-   return a.Error () == b.Error ()
-      && strcmp (a.ErrorMessage (), b.ErrorMessage ()) == 0
-      && a.Source () == b.Source ()
-      && a.Description () == b.Description ();
-}
-
-bool operator != (const _com_error& a, const _com_error& b)
-{
-   return a.Error () != b.Error ()
-      || a.Description () != b.Description ()
-      || a.Source () != b.Source ()
-      || strcmp (a.ErrorMessage (), b.ErrorMessage ()) != 0;
-}
 

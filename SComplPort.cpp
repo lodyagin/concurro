@@ -7,7 +7,7 @@ SComplPort::SComplPort( size_t _threadCount ) :
   h(CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, DWORD(_threadCount))),
   threadCount(_threadCount)
 {
-  sWinCheck(h != 0, "creating I/O completion port");
+  sWinCheck(h != 0, L"creating I/O completion port");
 }
 
 SComplPort::~SComplPort()
@@ -18,7 +18,7 @@ SComplPort::~SComplPort()
 void SComplPort::assoc( HANDLE file, size_t key )
 {
   sWinCheck(CreateIoCompletionPort(file, h, key, DWORD(threadCount)) != 0,
-    "associating I/O completion port with a file");
+    L"associating I/O completion port with a file");
 }
 
 bool SComplPort::getStatus( size_t & transferred, size_t & key, OVERLAPPED *& ov )
@@ -36,12 +36,12 @@ bool SComplPort::getStatus( size_t & transferred, size_t & key, OVERLAPPED *& ov
     key = _key;
     return true;
   }
-  sWinCheck(ov != 0, "getting queued completion status");
+  sWinCheck(ov != 0, L"getting queued completion status");
   return false;
 }
 
 void SComplPort::postEmptyEvt()
 {
   sWinCheck(PostQueuedCompletionStatus(h, 0, 0, 0), 
-    "posting empty queued completion status");
+    L"posting empty queued completion status");
 }

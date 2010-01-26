@@ -51,24 +51,24 @@ void Logging::Init()
    try 
    {
       HMODULE hModule = GetModuleHandle(NULL);
-      char szFilename[MAX_PATH] = "";
-      GetModuleFileName(hModule,szFilename,MAX_PATH);
-      std::string sFilename = szFilename;
+      WCHAR szFilename[MAX_PATH] = L"";
+      GetModuleFileName(hModule,szFilename,MAX_PATH); //FIXME path overflow
+      std::wstring sFilename = szFilename;
 #if 0
       {
-         std::ofstream a ("c:\\log.log");
+         std::ofstream a ("log.log");
          a << szFilename << std::endl;
       }
 #endif
-	  const std::string::size_type idx = sFilename.rfind('\\');
-      std::string sModuleDir = sFilename.substr(0,idx);
+      const std::wstring::size_type idx = sFilename.rfind(L'\\');
+      std::wstring sModuleDir = sFilename.substr(0,idx);
 
 	  SetCurrentDirectory(sModuleDir.c_str());
 
-      std::string fileName;
-      fileName = sModuleDir + "\\log4cxx.properties";
+    std::wstring fileName;
+    fileName = sModuleDir + L"\\log4cxx.properties";
 
-	  _putenv (SFORMAT("LOGPID="<<GetCurrentProcessId()).c_str()); // put our PID into env
+    ::_wputenv (SFORMAT(L"LOGPID="<<GetCurrentProcessId()).c_str()); // put our PID into env
 
     { 
       std::ifstream f(fileName.c_str()); 
@@ -79,6 +79,7 @@ void Logging::Init()
    catch (...) 
    {	// here let's do default configuration
 	   log4cxx::helpers::Properties p;
+#ifndef _DEBUG
 	   p.setProperty(L"log4j.rootLogger", L"INFO, A1");
 	   p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.RollingFileAppender");
 	   p.setProperty(L"log4j.appender.A1.Append", L"True");
@@ -87,6 +88,14 @@ void Logging::Init()
 	   p.setProperty(L"log4j.appender.A1.MaxBackupIndex", L"12");
 	   p.setProperty(L"log4j.appender.A1.layout", L"org.apache.log4j.PatternLayout");
 	   p.setProperty(L"log4j.appender.A1.layout.ConversionPattern", L"%p %d{%Y-%m-%d %H:%M:%S} %t %m%n");
+#else
+	   p.setProperty(L"log4j.rootLogger", L"DEBUG, A1");
+	   p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.ConsoleAppender");
+	   p.setProperty(L"log4j.appender.A1.layout", L"org.apache.log4j.PatternLayout");
+	   p.setProperty
+       (L"log4j.appender.A1.layout.ConversionPattern", 
+        L"%p %d{%Y-%m-%d %H:%M:%S} %t %C.%M%n----%n%m%n%n");
+#endif
 	   /* this is BasicConfigurator properties. 
 	   We change DEBUG to WARN, and ConsoleAppender to NTEventLog
 	   log4j.rootLogger=DEBUG, A1

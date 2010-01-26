@@ -7,7 +7,7 @@
 SShutdown::SShutdown() :
   evt(CreateEvent(0, true, false, 0))
 {             // SA manual  init name
-  sWinCheck(evt != 0, "creating event");
+  sWinCheck(evt != 0, L"creating event");
 }
 
 SShutdown::~SShutdown()
@@ -17,7 +17,7 @@ SShutdown::~SShutdown()
 
 void SShutdown::shutdown()
 {
-  sWinCheck(SetEvent(evt), "Setting event");
+  sWinCheck(SetEvent(evt), L"Setting event");
 
   for ( size_t i = 0; i < ports.size(); ++i )
     ports[i]->postEmptyEvt();
@@ -47,8 +47,8 @@ void SShutdown::unregisterComplPort( SComplPort & port )
 
 // XShuttingDown  ====================================================
 
-XShuttingDown::XShuttingDown( const string & act ) :
-  Parent(sFormat("%s action interrupted by shutdown signal", act.c_str())),
+XShuttingDown::XShuttingDown( const wstring & act ) :
+  Parent(sFormat(L"%s action interrupted by shutdown signal", act.c_str())),
   _action(act)
 {
 }
@@ -56,7 +56,7 @@ XShuttingDown::XShuttingDown( const string & act ) :
 
 //====================================================================
 
-void xShuttingDown( const string & act )
+void xShuttingDown( const wstring & act )
 {
   throw XShuttingDown(act);
 }

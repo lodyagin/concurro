@@ -3,39 +3,39 @@
 
 void sWinCheck (BOOL ok)
 {
-  sWinCheck (ok, "");
+  sWinCheck (ok, L"");
 }
 
-void sWinCheck( BOOL ok, const char * fmt, ... )
+void sWinCheck( BOOL ok, const wchar_t * fmt, ... )
 {
   if ( ok ) return;
 
   va_list list;
   va_start(list, fmt);
-  string str(sFormatVa(fmt, list));
+  wstring str(sFormatVa(fmt, list));
   va_end(list);
 
-  throw SException("Error "+str+": "+sWinErrMsg(GetLastError()));
+  throw SException(L"Error "+str+L": "+sWinErrMsg(GetLastError()));
 }
 
-void sWinError( const char * fmt, ... )
+void sWinError( const wchar_t * fmt, ... )
 {
   va_list list;
   va_start(list, fmt);
-  string str(sFormatVa(fmt, list));
+  wstring str(sFormatVa(fmt, list));
   va_end(list);
 
-  throw SException("Error "+str+": "+sWinErrMsg(GetLastError()));
+  throw SException(L"Error "+str+L": "+sWinErrMsg(GetLastError()));
 }
 
-void sWinErrorCode( DWORD code, const char * fmt, ... )
+void sWinErrorCode( DWORD code, const wchar_t * fmt, ... )
 {
   va_list list;
   va_start(list, fmt);
-  string str(sFormatVa(fmt, list));
+  wstring str(sFormatVa(fmt, list));
   va_end(list);
 
-  throw SException("Error "+str+": "+sWinErrMsg(code));
+  throw SException(L"Error "+str+L": "+sWinErrMsg(code));
 }
 
 

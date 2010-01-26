@@ -1,5 +1,4 @@
-#ifndef __SEXCEPTION_H
-#define __SEXCEPTION_H
+#pragma once
 
 #include "SCommon.h"
 #include <exception>
@@ -12,6 +11,7 @@ class SException : public std::exception
 public:
 
   explicit SException (const string & what, bool alreadyLogged = false);
+  explicit SException (const wstring & what, bool alreadyLogged = false);
   virtual ~SException();
 
   bool isAlreadyLogged () const  { return alreadyLoggedFlag; }
@@ -19,6 +19,7 @@ public:
   virtual const char * what() const;
 
 protected:
+  wstring whatU;
   string _what;
   bool alreadyLoggedFlag;
 };
@@ -27,10 +28,10 @@ protected:
 //extern const SException NotImplemented;
 
 #define THROW_EXCEPTION(exception_class, stream_expr) { \
-  std::ostringstream oss_; \
+  std::wostringstream oss_; \
   { stream_expr ; } \
-  oss_ << " at " << __FILE__ << ':' << __LINE__ \
-       << ", " << __FUNCTION__; \
+  oss_ << L" at " << _T(__FILE__) << L':' << __LINE__ \
+       << L", " << _T(__FUNCTION__); \
        throw exception_class(oss_.str()); \
 }
 
@@ -43,6 +44,7 @@ public:
   typedef SException Parent;
 
   SUserError( const string & what ) : Parent(what) {}
+  SUserError( const wstring & what ) : Parent(what) {}
 
 };
 
@@ -50,4 +52,3 @@ public:
 SMAKE_THROW_FN_DECL(sUserError, SUserError)
 
 
-#endif  // __SEXCEPTION_H

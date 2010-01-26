@@ -1,12 +1,22 @@
 #include "stdafx.h"
 #include "SException.h"
+#include "scommon.h"
 
 
 // SException  ==================================================================
 
+SException::SException (const wstring & w, bool alreadyLogged) :
+  whatU(w), alreadyLoggedFlag (alreadyLogged)
+{
+  _what = wstr2str (whatU);
+   if (!alreadyLogged)
+     LOG4CXX_DEBUG (Logging::Root (), std::wstring (L"SException: ") + w);
+}
+
 SException::SException (const string & w, bool alreadyLogged) :
   _what(w), alreadyLoggedFlag (alreadyLogged)
 {
+  whatU = str2wstr (_what);
    if (!alreadyLogged)
      LOG4CXX_DEBUG (Logging::Root (), std::string ("SException: ") + w);
 }

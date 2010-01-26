@@ -42,17 +42,17 @@ public:
 
   typedef SException Parent;
 
-  explicit XShuttingDown( const string & interruptedAction = "unknown" );
+  explicit XShuttingDown( const wstring & interruptedAction = L"unknown" );
 
 private:
 
-  string _action;
+  wstring _action;
 
 };
 
 
 // throw XShuttindDown
-void xShuttingDown( const string & interruptedAction = "unknown" );
+void xShuttingDown( const wstring & interruptedAction = L"unknown" );
 void sCheckShuttingDown();  // throws ZSD if is shuttind down
 
 

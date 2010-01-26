@@ -8,7 +8,7 @@
 SEvtBase::SEvtBase( HANDLE _h ) :
   h(_h)
 {
-  sWinCheck(h != 0, "creating an event");
+  sWinCheck(h != 0, L"creating an event");
 }
 
 SEvtBase::~SEvtBase()
@@ -22,9 +22,9 @@ void SEvtBase::wait()
 
   DWORD code = WaitForMultipleObjects(2, evts, false, INFINITE);
   
-  if ( code == WAIT_OBJECT_0 ) xShuttingDown("SEvent.wait");
+  if ( code == WAIT_OBJECT_0 ) xShuttingDown(L"SEvent.wait");
   if ( code != WAIT_OBJECT_0 + 1 ) 
-    sWinErrorCode(code, "waiting for an event");
+    sWinErrorCode(code, L"waiting for an event");
 }
 
 bool SEvtBase::wait( int time )
@@ -33,10 +33,10 @@ bool SEvtBase::wait( int time )
 
   DWORD code = WaitForMultipleObjects(2, evts, false, time);
   
-  if ( code == WAIT_OBJECT_0 ) xShuttingDown("SEvent.wait");
+  if ( code == WAIT_OBJECT_0 ) xShuttingDown(L"SEvent.wait");
   if ( code == WAIT_TIMEOUT ) return false;
   if ( code != WAIT_OBJECT_0 + 1 ) 
-    sWinErrorCode(code, "waiting for an event");
+    sWinErrorCode(code, L"waiting for an event");
   return true;
 }
 
@@ -50,12 +50,12 @@ SEvent::SEvent( bool manual, bool init ) :
 
 void SEvent::set()
 {
-  sWinCheck(SetEvent(h) != 0, "setting event");
+  sWinCheck(SetEvent(h) != 0, L"setting event");
 }
 
 void SEvent::reset()
 {
-  sWinCheck(ResetEvent(h) != 0, "resetting event");
+  sWinCheck(ResetEvent(h) != 0, L"resetting event");
 }
 
 
@@ -68,7 +68,7 @@ SSemaphore::SSemaphore( int maxCount, int initCount ) :
 
 void SSemaphore::release( int count )
 {
-  sWinCheck(ReleaseSemaphore(h, count, 0) != 0, "releasing semaphore");
+  sWinCheck(ReleaseSemaphore(h, count, 0) != 0, L"releasing semaphore");
 }
 
 
@@ -81,7 +81,7 @@ size_t waitMultiple( HANDLE * evts, size_t count )
   DWORD code = WaitForMultipleObjects(count, evts, false, INFINITE);
   
   if ( code < WAIT_OBJECT_0 || code >= WAIT_OBJECT_0 + count )
-    sWinErrorCode(code, "waiting for multiple objects");
+    sWinErrorCode(code, L"waiting for multiple objects");
   
   return code - WAIT_OBJECT_0;
 }
@@ -96,6 +96,6 @@ size_t waitMultipleSD( HANDLE * _evts, size_t count )
 
   size_t idx = waitMultiple(evts, count + 1);
 
-  if ( idx == 0 ) xShuttingDown("waitMultipleSD");
+  if ( idx == 0 ) xShuttingDown(L"waitMultipleSD");
   return idx - 1;
 }

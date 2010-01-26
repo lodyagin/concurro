@@ -70,7 +70,7 @@ void RListeningSocket::listen
     {
       if (SThread::current ().is_stop_requested ())
         ::xShuttingDown 
-          ("Stop request from the owner thread.");
+          (L"Stop request from the owner thread.");
 
       s = ::accept (socket, &sa, &sa_len); 
       //immediate returns
@@ -81,7 +81,7 @@ void RListeningSocket::listen
           ::Sleep (1000); // TODO
         else
           throw SException
-            ("Error : " + sWinErrMsg(err));
+            (L"Error : " + sWinErrMsg(err));
       }
       else break;
     }

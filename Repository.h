@@ -56,7 +56,7 @@ Object* Repository<Object, Parameter>::create_object
 
   if (SThread::current ().is_stop_requested ())
        ::xShuttingDown 
-        ("Stop request from the owner thread.");
+        (L"Stop request from the owner thread.");
 
 
   Object* obj = param.create_derivation (this);

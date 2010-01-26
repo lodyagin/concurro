@@ -46,7 +46,7 @@ SSingleton<T>::SSingleton()
 template<class T>
 SSingleton<T>::~SSingleton()
 {
-  SWARN(!_instance, "singleton dtr without ctr?!");
+  SWARN(!_instance, L"singleton dtr without ctr?!");
   _instance = 0;
   destroyed = true;
 }
