@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "ConnectionFactory.h"
+#include "ConnectionPars.h"
 
 ConnectionFactory::ConnectionFactory ()
   :  Repository (1)

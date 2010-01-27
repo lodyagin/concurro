@@ -5,9 +5,6 @@
 #include "ConnectionPars.h"
 #include "RConnectedSocket.h"
 
-typedef Repository<RConnection, ConnectionPars> 
-  ConnectionRepository;
-
 /*
 All decisions about connection creation
 are made by this class.

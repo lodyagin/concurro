@@ -1,13 +1,12 @@
 #include "StdAfx.h"
 #include "ConnectionPars.h"
 
-ConnectionPars::~ConnectionPars(void)
-{
-}
-
 RConnection* ConnectionPars::create_derivation
-  (void* repo) const
+    (const ConnectionRepository::ObjectCreationInfo& info) const
 {
   assert (socket);
-  return new RConnection (repo, socket);
+  return new RConnection 
+    (info.repository, 
+     socket,
+     info.objectId);
 }

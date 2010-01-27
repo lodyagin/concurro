@@ -2,12 +2,17 @@
 
 #include "RConnectedSocket.h"
 #include "RConnection.h"
+#include "Repository.h"
+
+struct ConnectionPars;
+
+typedef Repository<RConnection, ConnectionPars> 
+  ConnectionRepository;
 
 struct ConnectionPars
 {
   RConnectedSocket* socket;
-  virtual ~ConnectionPars(void);
 
   virtual RConnection* create_derivation
-    (void* repo) const;
+    (const ConnectionRepository::ObjectCreationInfo&) const;
 };

@@ -6,8 +6,12 @@ Logging RConnection::log ("RConnection");
 
 RConnection::RConnection 
   (void* repo, 
-   RConnectedSocket* cs
-   ) : socket (cs), repository (repo)
+   RConnectedSocket* cs,
+   const std::string& objId
+   ) 
+   : socket (cs), 
+     repository (repo), 
+     universal_object_id (objId)
 {
   assert (repo);
   assert (socket);

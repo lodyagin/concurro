@@ -163,6 +163,14 @@ void toString (const T& object, std::string & s)
   s += os.str();
 }
 
+template <class T>
+T fromString (const std::string& s)
+{
+  T object;
+  std::istringstream is (s);
+  is >> object;
+  return object;
+}
 
 #define SMAKE_THROW_FN_DECL(name, XClass)  \
 void name( const wchar_t * fmt, ... ); void name(const wstring& msg); 

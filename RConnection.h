@@ -6,7 +6,6 @@ It is a connection created by the socket.
 
 #include "sthread.h"
 #include "RConnectedSocket.h"
-#include "Repository.h"
 #include "Logging.h"
 
 struct ConnectionPars;
@@ -16,6 +15,8 @@ class RConnection : public SThread
   friend ConnectionPars;
 
 public:
+
+  const std::string universal_object_id;
   
   RConnectedSocket* get_socket ()
   {
@@ -28,7 +29,9 @@ protected:
   // RConnection takes the socket ownership
   // and will destroy it.
   RConnection 
-    (void* repo, RConnectedSocket* cs);
+    (void* repo, 
+     RConnectedSocket* cs,
+     const std::string& objId);
   ~RConnection ();
 
   //void run ();
