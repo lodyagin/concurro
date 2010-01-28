@@ -21,6 +21,7 @@ public:
 
   virtual Object* create_object (const Parameter& param);
   virtual void delete_object (Object* obj, bool freeMemory);
+  virtual Object* get_object_by_id (ObjectId id);
 
   // It is used for object creation
   struct ObjectCreationInfo
@@ -115,6 +116,22 @@ void Repository<Object, Parameter>::delete_object
     THROW_EXCEPTION
       (SException, oss_ << "Not implemented");
 }
+
+
+template<class Object, class Parameter>
+Object* Repository<Object, Parameter>::get_object_by_id 
+  (typename Repository<Object, Parameter>::ObjectId id)
+{
+  { 
+    SMutex::Lock lock (objectsM, true, true);
+
+    if (id < 1 || id >= objects->size ())
+      return 0;
+    else
+      return objects->at (id);
+  }
+}
+
 
 template<class Object, class Parameter>
 typename Repository<Object, Parameter>::ObjectId 

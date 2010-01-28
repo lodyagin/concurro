@@ -72,6 +72,8 @@ void RListeningSocket::listen
         ::xShuttingDown 
           (L"Stop request from the owner thread.");
 
+      //LOG4CXX_DEBUG (Logging::Root (), "Call accept");
+
       s = ::accept (socket, &sa, &sa_len); 
       //immediate returns
 

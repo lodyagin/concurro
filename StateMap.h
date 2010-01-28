@@ -120,6 +120,10 @@ public:
   void check_transition
     (const UniversalState& from,
      const UniversalState& to) const;
+
+  bool is_equal
+    (const UniversalState& a,
+     const UniversalState& b) const;
   
   bool is_compatible 
     (const UniversalState& state) const;

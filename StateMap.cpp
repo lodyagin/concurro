@@ -180,6 +180,19 @@ void StateMap::check_transition
        );
 }
 
+bool StateMap::is_equal
+  (const UniversalState& a,
+   const UniversalState& b) const
+{
+  if (!is_compatible (a) || !is_compatible (b))
+    throw IncompatibleMap ();
+
+  assert (a.state_idx >= 1);
+  assert (b.state_idx >= 1);
+
+  return a.state_idx == b.state_idx;
+} 
+
 bool StateMap::is_compatible 
   (const UniversalState& state) const
 {
