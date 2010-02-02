@@ -8,6 +8,10 @@
 #include <ostream>
 #include <iomanip>
 
+//#define WIN32_LEAN_AND_MEAN 
+//#include <windows.h>
+
+
 using std::string;
 using std::wstring;
 using std::istream;
@@ -119,6 +123,8 @@ void checkHR( HRESULT );
 wstring str2wstr( const string & );
 string wstr2str( const wstring & );
 
+string toUTF8 (const wstring&);
+wstring fromUTF8 (const string&);
 
 inline const char * ptr2ptr( const string & s )
 {
@@ -197,5 +203,6 @@ void name( const wchar_t * fmt, ... )  \
 //template<class X>
 //SMAKE_THROW_FN_IMPL(sThrowX, X)
 
-
+FILETIME TimetToFileTime (time_t t);
+time_t FileTimeToTimet (FILETIME ft);
 

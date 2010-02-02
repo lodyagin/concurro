@@ -32,7 +32,7 @@ public:
   };
 
 protected:
-  static ObjectId get_first_unused_object_id (ObjectMap&);
+  ObjectId get_first_unused_object_id (ObjectMap&);
 
   enum {startMapSize = 10, mapSizeStep = 10};
 
@@ -71,7 +71,7 @@ Object* Repository<Object, Parameter>::create_object
         (L"Stop request from the owner thread.");
 
   { 
-    SMutex::Lock lock (objectsM, true, true);
+    SMutex::Lock lock (objectsM);
 
     const ObjectId objId = get_first_unused_object_id 
       (*objects);
@@ -98,7 +98,7 @@ void Repository<Object, Parameter>::delete_object
   const ObjectId objId = fromString<ObjectId> (obj->universal_object_id);
 
   {
-    SMutex::Lock lock (objectsM, true, true);
+    SMutex::Lock lock (objectsM);
 
     ObjectMap::reference r = objects->at (objId);
     if (r == 0)
@@ -123,7 +123,7 @@ Object* Repository<Object, Parameter>::get_object_by_id
   (typename Repository<Object, Parameter>::ObjectId id)
 {
   { 
-    SMutex::Lock lock (objectsM, true, true);
+    SMutex::Lock lock (objectsM);
 
     if (id < 1 || id >= objects->size ())
       return 0;
@@ -138,7 +138,9 @@ typename Repository<Object, Parameter>::ObjectId
 Repository<Object, Parameter>::get_first_unused_object_id
   (ObjectMap& m)
 { //TODO UT
+  SMutex::Lock lock (objectsM);
 
+  // TODO change to stack
   for (ObjectId id = 1; id < m.size (); id++)
   {
     if (!m[id]) return id;

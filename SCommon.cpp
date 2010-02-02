@@ -404,6 +404,28 @@ string wstr2str( const wstring & wstr )
   return str;
 }
 
+string toUTF8 (const wstring& wstr)
+{
+  int slen = ::WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.length(), 0, 0, 0, 0);
+  char * buf = new char [slen + 1];
+  WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.length(), buf, slen, 0, 0);
+  buf[slen] = 0;
+  string str(buf);
+  delete [] buf;
+  return str;
+}
+
+wstring fromUTF8 (const string& str)
+{
+  int slen = strlen(str.c_str());
+  int wlen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), slen, 0, 0);
+  wchar_t* buf = new wchar_t [wlen + 1];
+  MultiByteToWideChar(CP_UTF8, 0, str.c_str(), slen, buf, wlen);
+  wstring wstr(buf, wlen);
+  delete [] buf;
+  return wstr;
+}
+
 /*string uni2ascii (const wstring & str)
 {
   string res (str.length (), ' ');
@@ -441,4 +463,29 @@ wstring ascii2uni (const string & str)
         *it = '?';
     }
 }*/
+
+#define TIME_ADJUST_32_64 116444736000000000I64
+
+// Got from MSDN
+FILETIME TimetToFileTime (time_t t)
+{
+    FILETIME ft;
+
+    LONGLONG ll = Int32x32To64(t, 10000000) 
+      + TIME_ADJUST_32_64;
+    ft.dwLowDateTime = (DWORD) ll;
+    ft.dwHighDateTime = ll >>32;
+
+    return ft;
+}
+
+time_t FileTimeToTimet (FILETIME ft)
+{
+    LARGE_INTEGER li;
+    li.LowPart = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+
+    return (li.QuadPart - TIME_ADJUST_32_64) 
+      / 10000000;
+}
 
