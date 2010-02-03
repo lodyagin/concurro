@@ -32,7 +32,7 @@ protected:
 template<class Buffer>
 BusyThreadReadBuffer<Buffer>::BusyThreadReadBuffer(void)
 : readBuf (0), writeBuf (0), nWriteBufMsgs (0), nReadBufMsgs (0),
-  dataReady (false, false) // automatic reset, initial state = false 
+  dataReady (true, false) // manual reset, initial state =  non signalled
 {
   readBuf = new Buffer;
   writeBuf = new Buffer; //FIXME check alloc
@@ -72,10 +72,10 @@ bool BusyThreadReadBuffer<Buffer>::get (Buffer* out)
 
   if (nReadBufMsgs) 
   {
-    size_t lenp;
+    u_int lenp;
     nReadBufMsgs--;
-    void* data = buffer_get_string (readBuf, lenp);
-    buffer_append (out, data, lenp);
+    void* data = buffer_get_string (readBuf, &lenp);
+    buffer_put_string (out, data, lenp);
     return true;
   }
   else

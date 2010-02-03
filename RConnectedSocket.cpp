@@ -3,9 +3,10 @@
 #include "SocketAddressFactory.h"
 #include "RConnection.h"
 
-RConnectedSocket::RConnectedSocket (SOCKET con_socket)
-   : RInOutSocket (con_socket), peer (0)
+RConnectedSocket::RConnectedSocket (SOCKET con_socket, bool withEvent)
+   : RInOutSocket (con_socket, withEvent), peer (0)
 {
+  waitFdWrite = true;
 }
 
 RConnectedSocket::~RConnectedSocket ()

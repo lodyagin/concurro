@@ -94,6 +94,6 @@ void RListeningSocket::listen
        RSocketAddress::outString (oss_, &sa)
        );
     cf.create_new_connection 
-      (new RConnectedSocket (s));
+      (new RConnectedSocket (s, true));
   }
 }

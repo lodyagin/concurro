@@ -20,7 +20,7 @@ void sWinErrorCode( DWORD code, const wchar_t * fmt, ... );
 { \
   if (!(cond)) \
   THROW_EXCEPTION (SException, \
-     oss_ << "Socket error : " << sWinErrMsg(WSAGetLastError()) \
+     oss_ << L"Socket error : " << sWinErrMsg(WSAGetLastError()) \
           << msg) \
 }
 

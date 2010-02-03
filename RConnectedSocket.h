@@ -6,7 +6,7 @@ class RConnectedSocket : public RInOutSocket
 {
 public:
   // It is usually called only from RListeningSocket
-  RConnectedSocket (SOCKET con_socket);
+  RConnectedSocket (SOCKET con_socket, bool withEvent);
   ~RConnectedSocket ();
 
   // Return the address of the peer's socket.

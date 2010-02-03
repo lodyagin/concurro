@@ -5,11 +5,15 @@
 class RInOutSocket : public RSocket
 {
 public:
-  // Send a string message
-  void send (const std::string& str);//TODO
-  void receive (std::string& out);
+  int send (void* data, int len, int* error);
+
+  // ensure all of data on socket comes through
+  size_t atomicio_send (void* data, size_t n);
+
 protected:
-  RInOutSocket (SOCKET s) : RSocket (s) {}
+  RInOutSocket (SOCKET s, bool withEvent) 
+    : RSocket (s, withEvent) 
+  {}
 private:
-  char buf[16384];
+  //char buf[16384];
 };
