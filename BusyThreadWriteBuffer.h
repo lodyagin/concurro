@@ -23,8 +23,8 @@ protected:
 
   Buffer* readBuf;
   Buffer* writeBuf;
-  int nWriteBufMsgs; // atomic
-  int nReadBufMsgs; // atomic
+  volatile int nWriteBufMsgs; // atomic
+  volatile int nReadBufMsgs; // atomic
 
   int nWriteConsumed; //atomic, flow control: 
     // consumed by reader (2 sides)
@@ -110,6 +110,7 @@ void* BusyThreadWriteBuffer<Buffer>::get (size_t* lenp)
     logit("worker: swap and wait for messages on writer side");
     swap (); // push consumed
     dataArrived.wait ();
+    if (!nWriteBufMsgs) swap (); // miss each other
     logit("worker: got it, now %d", (int) nWriteBufMsgs);
   }
   logit("worker: make swap");

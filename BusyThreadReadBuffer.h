@@ -24,8 +24,8 @@ protected:
 
   Buffer* readBuf;
   Buffer* writeBuf;
-  int nWriteBufMsgs; // atomic
-  int nReadBufMsgs; // atomic
+  volatile int nWriteBufMsgs; // atomic
+  volatile int nReadBufMsgs; // atomic
   SMutex swapM; // a swap guard
 };
 
