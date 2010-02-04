@@ -57,22 +57,41 @@ void BusyThreadWriteBuffer<Buffer>::put (void* data, size_t len)
 
   const bool wasEmpty = nWriteBufMsgs == 0;
 
+  logit ("busy: write string");
   buffer_put_string (writeBuf, data, len);
   // put data with a length marker
 
   nWriteBufMsgs++;
-  if (wasEmpty) dataArrived.set ();
+  logit ("busy: increment writes, now %d", (int) nWriteBufMsgs);
+  if (wasEmpty) 
+  {
+    logit ("busy: signal arriving");
+    dataArrived.set ();
+  }
 }
 
 template<class Buffer>
 void* BusyThreadWriteBuffer<Buffer>::get (size_t* lenp)
 { // can work free with the read buffer
+  logit("worker: %d messages for me", (int) nReadBufMsgs);
   if (nReadBufMsgs) 
+  {
+    nReadBufMsgs--;
+    logit("worker: get one, now %d", (int) nReadBufMsgs);
     return buffer_get_string (readBuf, lenp);
+  }
 
-  dataArrived.reset ();
-  if (!nWriteBufMsgs) dataArrived.wait ();
+  dataArrived.reset (); //FIXME remove it
+  logit("worker: %d messages on writer side", (int) nWriteBufMsgs);
+  if (!nWriteBufMsgs) 
+  {
+    logit("worker: wait for messages on writer side");
+    dataArrived.wait ();
+    logit("worker: got it, now %d", (int) nWriteBufMsgs);
+  }
+  logit("worker: make swap");
   swap ();
+  logit("worker: %d messages for me (after swap)", (int) nReadBufMsgs);
   nReadBufMsgs--;
   return buffer_get_string (readBuf, lenp);
 }
