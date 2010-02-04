@@ -11,8 +11,9 @@ public:
   BusyThreadWriteBuffer(void);
   virtual ~BusyThreadWriteBuffer(void);
 
-  // For call from a busy thread
-  void put (void* data, size_t len);
+  // For call from a busy thread;
+  // *consumed is increased by the size of data which gone
+  void put (void* data, size_t len, u_int* consumed);
 
   // another thread (a worker)
   // It can wait until data is arrived.
@@ -24,6 +25,12 @@ protected:
   Buffer* writeBuf;
   int nWriteBufMsgs; // atomic
   int nReadBufMsgs; // atomic
+
+  int nWriteConsumed; //atomic, flow control: 
+    // consumed by reader (2 sides)
+  //FIXME check int overflow
+  int nReadConsumed; //atimic 
+
   SMutex swapM; // a swap guard
   SEvent dataArrived; // nWriteBufMsgs 0->1
 };
@@ -31,6 +38,7 @@ protected:
 template<class Buffer>
 BusyThreadWriteBuffer<Buffer>::BusyThreadWriteBuffer(void)
 : readBuf (0), writeBuf (0), nWriteBufMsgs (0), nReadBufMsgs (0),
+  nWriteConsumed (0), nReadConsumed (0),
   dataArrived (false, false) // automatic reset, initial state = false 
 {
   readBuf = new Buffer;
@@ -48,12 +56,21 @@ BusyThreadWriteBuffer<Buffer>::~BusyThreadWriteBuffer(void)
 
   delete readBuf;
   delete writeBuf;
+  //TODO if consumed != 0 here ?
 }
 
 template<class Buffer>
-void BusyThreadWriteBuffer<Buffer>::put (void* data, size_t len)
+void BusyThreadWriteBuffer<Buffer>::put 
+  (void* data, size_t len, u_int* consumed)
 {
   SMutex::Lock lock (swapM); // disable buffer swapping
+
+  *consumed -= nWriteConsumed; // nWriteConsumed < 0
+   // nReadConsumed will be nWriteConsumed after the swap
+  if (*consumed) logit ("busy: %u consumed", (unsigned) *consumed);
+  nWriteConsumed = 0;
+
+  if (len == 0) return; // busy getting consume only
 
   const bool wasEmpty = nWriteBufMsgs == 0;
 
@@ -73,19 +90,25 @@ void BusyThreadWriteBuffer<Buffer>::put (void* data, size_t len)
 template<class Buffer>
 void* BusyThreadWriteBuffer<Buffer>::get (size_t* lenp)
 { // can work free with the read buffer
+  void* data = 0;
+
   logit("worker: %d messages for me", (int) nReadBufMsgs);
   if (nReadBufMsgs) 
   {
     nReadBufMsgs--;
     logit("worker: get one, now %d", (int) nReadBufMsgs);
-    return buffer_get_string (readBuf, lenp);
+    data = buffer_get_string (readBuf, lenp);
+    nReadConsumed -= * lenp; // only data part 
+    logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+    return data;
   }
 
   dataArrived.reset (); //FIXME remove it
   logit("worker: %d messages on writer side", (int) nWriteBufMsgs);
   if (!nWriteBufMsgs) 
   {
-    logit("worker: wait for messages on writer side");
+    logit("worker: swap and wait for messages on writer side");
+    swap (); // push consumed
     dataArrived.wait ();
     logit("worker: got it, now %d", (int) nWriteBufMsgs);
   }
@@ -93,7 +116,10 @@ void* BusyThreadWriteBuffer<Buffer>::get (size_t* lenp)
   swap ();
   logit("worker: %d messages for me (after swap)", (int) nReadBufMsgs);
   nReadBufMsgs--;
-  return buffer_get_string (readBuf, lenp);
+  data = buffer_get_string (readBuf, lenp);
+  nReadConsumed -= * lenp ; 
+  logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+  return data;  // TODO two identical parts
 }
 
 template<class Buffer>
@@ -104,4 +130,5 @@ void BusyThreadWriteBuffer<Buffer>::swap ()
   // swap read and write buffers
   std::swap (readBuf, writeBuf);
   std::swap (nReadBufMsgs, nWriteBufMsgs);
+  std::swap (nReadConsumed, nWriteConsumed);
 }
