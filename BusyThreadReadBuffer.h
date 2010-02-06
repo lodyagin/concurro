@@ -21,6 +21,7 @@ public:
   SEvent dataReady;
 protected:
   void swap ();
+  void swap2 ();
 
   Buffer* readBuf;
   Buffer* writeBuf;
@@ -54,29 +55,26 @@ BusyThreadReadBuffer<Buffer>::~BusyThreadReadBuffer(void)
 template<class Buffer>
 void BusyThreadReadBuffer<Buffer>::put (void* data, size_t len)
 { // can work free with the write buffer
-  logit("worker2: put message");
+  SMutex::Lock lock (swapM);
+
+  //logit("worker2: put message");
   buffer_put_string (writeBuf, data, len);
   // put data with a length marker
   nWriteBufMsgs++;
-  logit("worker2: now %d messages on my side"
-    " and %d on a reader side", (int) nWriteBufMsgs, (int) nReadBufMsgs);
+  //logit("worker2: now %d messages on my side"
+  //  " and %d on a reader side", (int) nWriteBufMsgs, (int) nReadBufMsgs);
 
-  if (!nReadBufMsgs) 
-  {
-    logit("worker2: make swap");
-    swap ();
-    logit("worker2: %d messages for me (after swap)", (int) nWriteBufMsgs);
-    logit("worker2: set data ready");
-    dataReady.set ();
-  }
+  //logit("worker2: set data ready");
+  dataReady.set ();
 }
 
 template<class Buffer>
 bool BusyThreadReadBuffer<Buffer>::get (Buffer* out)
 {
-  SMutex::Lock lock (swapM);
-
-  logit("busy2: %d messages for me", (int) nReadBufMsgs);
+  /*logit("busy2: now %d messages on my side"
+    " and %d on a worker2 side", 
+    (int) nReadBufMsgs,
+    (int) nWriteBufMsgs);*/
 
   if (nReadBufMsgs) 
   {
@@ -84,19 +82,38 @@ bool BusyThreadReadBuffer<Buffer>::get (Buffer* out)
     nReadBufMsgs--;
     void* data = buffer_get_string (readBuf, &lenp);
     buffer_put_string (out, data, lenp);
-    logit("busy2: get one, now %d", (int) nReadBufMsgs);
+    //logit("busy2: get one, now %d", (int) nReadBufMsgs);
     
     if (!nReadBufMsgs)
     {
-      logit("busy2: reset data ready");
+      //logit("busy2: reset data ready");
       dataReady.reset ();
     }
     
     return true;
   }
+  else if (nWriteBufMsgs)
+  { // need get from worker, the last chance
+    //logit ("busy2: make swap");
+    swap ();
+    //logit("busy2: %d messages for me (after swap)", 
+    //  (int) nReadBufMsgs);
+
+    u_int lenp;
+    nReadBufMsgs--;
+    void* data = buffer_get_string (readBuf, &lenp);
+    buffer_put_string (out, data, lenp);
+    //logit("busy2: get one, now %d", (int) nReadBufMsgs);
+    if (!nReadBufMsgs)
+    {
+      //logit("busy2: reset data ready");
+      dataReady.reset ();
+    }
+    return true;
+  }
   else
-  {
-    logit("busy2: reset data ready");
+  { // no messages in both queues
+    //logit("busy2: reset data ready");
     dataReady.reset ();
     return false;
   }
@@ -107,6 +124,12 @@ void BusyThreadReadBuffer<Buffer>::swap ()
 {
   SMutex::Lock lock (swapM);
 
+  swap2 ();
+}
+
+template<class Buffer>
+void BusyThreadReadBuffer<Buffer>::swap2 ()
+{
   // swap read and write buffers
   std::swap (readBuf, writeBuf);
   std::swap (nReadBufMsgs, nWriteBufMsgs);

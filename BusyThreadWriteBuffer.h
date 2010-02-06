@@ -67,22 +67,22 @@ void BusyThreadWriteBuffer<Buffer>::put
 
   *consumed -= nWriteConsumed; // nWriteConsumed < 0
    // nReadConsumed will be nWriteConsumed after the swap
-  if (*consumed) logit ("busy: %u consumed", (unsigned) *consumed);
+  //if (*consumed) logit ("busy: %u consumed", (unsigned) *consumed);
   nWriteConsumed = 0;
 
   if (len == 0) return; // busy getting consume only
 
   const bool wasEmpty = nWriteBufMsgs == 0;
 
-  logit ("busy: write string");
+  //logit ("busy: write string");
   buffer_put_string (writeBuf, data, len);
   // put data with a length marker
 
   nWriteBufMsgs++;
-  logit ("busy: increment writes, now %d", (int) nWriteBufMsgs);
+  //logit ("busy: increment writes, now %d", (int) nWriteBufMsgs);
   if (wasEmpty) 
   {
-    logit ("busy: signal arriving");
+    //logit ("busy: signal arriving");
     dataArrived.set ();
   }
 }
@@ -92,34 +92,34 @@ void* BusyThreadWriteBuffer<Buffer>::get (size_t* lenp)
 { // can work free with the read buffer
   void* data = 0;
 
-  logit("worker: %d messages for me", (int) nReadBufMsgs);
+  //logit("worker: %d messages for me", (int) nReadBufMsgs);
   if (nReadBufMsgs) 
   {
     nReadBufMsgs--;
-    logit("worker: get one, now %d", (int) nReadBufMsgs);
+    //logit("worker: get one, now %d", (int) nReadBufMsgs);
     data = buffer_get_string (readBuf, lenp);
     nReadConsumed -= * lenp; // only data part 
-    logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+    //logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
     return data;
   }
 
   dataArrived.reset (); //FIXME remove it
-  logit("worker: %d messages on writer side", (int) nWriteBufMsgs);
+  //logit("worker: %d messages on writer side", (int) nWriteBufMsgs);
   if (!nWriteBufMsgs) 
   {
-    logit("worker: swap and wait for messages on writer side");
+    //logit("worker: swap and wait for messages on writer side");
     swap (); // push consumed
     dataArrived.wait ();
     if (!nWriteBufMsgs) swap (); // miss each other
-    logit("worker: got it, now %d", (int) nWriteBufMsgs);
+    //logit("worker: got it, now %d", (int) nWriteBufMsgs);
   }
-  logit("worker: make swap");
+  //logit("worker: make swap");
   swap ();
-  logit("worker: %d messages for me (after swap)", (int) nReadBufMsgs);
+  //logit("worker: %d messages for me (after swap)", (int) nReadBufMsgs);
   nReadBufMsgs--;
   data = buffer_get_string (readBuf, lenp);
   nReadConsumed -= * lenp ; 
-  logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+  //logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
   return data;  // TODO two identical parts
 }
 
