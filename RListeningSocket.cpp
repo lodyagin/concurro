@@ -133,7 +133,7 @@ void RListeningSocket::listen (ConnectionFactory& cf)
 {
   //TODO keepalive option
 
-  struct sockaddr sa;
+  sockaddr_in6 sa;
   int sa_len = sizeof (sa);
 
   while (1) // loop for producing new connections
@@ -156,7 +156,7 @@ void RListeningSocket::listen (ConnectionFactory& cf)
     sSocketCheckWithMsg 
       ((s = ::accept 
          (sockets.at (waitResult), 
-          &sa, 
+          (sockaddr*) &sa, 
           &sa_len)) != INVALID_SOCKET,
           "when accept"
        );
@@ -164,7 +164,7 @@ void RListeningSocket::listen (ConnectionFactory& cf)
     LOG4STRM_DEBUG 
       (log.GetLogger (), 
        oss_ << "accept returns the new connection: ";
-       RSocketAddress::outString (oss_, &sa)
+       RSocketAddress::outString (oss_, (sockaddr*) &sa)
        );
 
     cf.create_new_connection 
