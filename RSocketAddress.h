@@ -1,6 +1,7 @@
 #pragma once
 #include "HasStringView.h"
 #include <string>
+#include <list>
 
 class RSocketAddress : public HasStringView
 {
@@ -28,11 +29,16 @@ public:
      ) const = 0;*/
 
   // fills the sockaddr* family of structures
-  virtual void get_sockaddr 
+  /*virtual void get_sockaddr 
     (struct sockaddr* out, 
      int out_max_size,
      int* copied_size
-     ) const = 0;
+     ) const = 0;*/
+
+  //typedef std::list<sockaddr*> SockAddrList;
+  typedef std::list<const addrinfo*> SockAddrList;
+
+  //virtual SockAddrList get_all_addresses () const = 0;
 
   // Copy socket address
   // The size of information copied is defined by 
@@ -49,6 +55,7 @@ public:
      );
 
   // Get the sockaddr length by its type.
+  // Return 0 if the address family is unsupported
   static int get_sockaddr_len (const struct sockaddr* sa);
 };
 

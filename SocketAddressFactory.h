@@ -3,7 +3,7 @@
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 
-// 1. Get pointer to buffer by get_buffer call
+// 1. Get pointer to buffer by buffer () call
 // 2. Fill buffer
 // 3. Get the address by create_socket_address call
 
@@ -30,6 +30,6 @@ public: // TODO add states
   RSocketAddress* create_socket_address ();
 
 protected:
-  sockaddr_in6 buf; //now it is longest
+  sockaddr_in6 buf; //now it is longest //FIXME
   int len;
 };

@@ -292,6 +292,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\IPv6SocketAddress.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Logging.cpp"
 				>
 			</File>
@@ -316,11 +320,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RSingleSocket.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\RSocket.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\RSocketAddress.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RSocketGroup.cpp"
 				>
 			</File>
 			<File
@@ -418,6 +430,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\IPv6SocketAddress.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Logging.h"
 				>
 			</File>
@@ -446,11 +462,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RSingleSocket.h"
+				>
+			</File>
+			<File
 				RelativePath=".\RSocket.h"
 				>
 			</File>
 			<File
 				RelativePath=".\RSocketAddress.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RSocketGroup.h"
 				>
 			</File>
 			<File

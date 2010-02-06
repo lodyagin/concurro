@@ -2,6 +2,7 @@
 #include "RServerSocketAddress.h"
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#include <Ws2bth.h>
 
 RServerSocketAddress::RServerSocketAddress 
   (unsigned int port)
@@ -9,7 +10,7 @@ RServerSocketAddress::RServerSocketAddress
 {
   struct addrinfo hints = {0};
 
-  hints.ai_family = AF_INET; //TODO set AF_UNSPEC
+  hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
   //hints.ai_protocol = IPPROTO_TCP;
@@ -55,6 +56,7 @@ const std::string& RServerSocketAddress::get_ip () const
   THROW_EXCEPTION(SException, oss_ << "Unimplemented");
 }
 
+#if 0
 void RServerSocketAddress::get_IPv4_sockaddr 
   (struct sockaddr* out, 
    int out_max_size,
@@ -84,6 +86,32 @@ void RServerSocketAddress::get_sockaddr
   get_IPv4_sockaddr 
     (out, out_max_size, copied_size);
 }
+#endif
+
+RServerSocketAddress::SockAddrList 
+RServerSocketAddress::get_all_addresses () const
+{
+  SockAddrList res;
+  for (const addrinfo* ai = ai_list;
+       ai != 0;
+       ai = ai->ai_next)
+  {
+    size_t sa_len = get_sockaddr_len (ai->ai_addr);
+    if (sa_len)
+    {
+#if 0
+      void* sa = malloc (sa_len);
+      // FIXME check alloc
+      copy_sockaddr 
+        ((sockaddr*) sa, sa_len, ai->ai_addr, 0);
+      res.push_back ((sockaddr*) sa);
+#else
+      res.push_back (ai);
+#endif
+    }
+  }
+  return res;
+}
 
 void RServerSocketAddress::outString (std::ostream& out) const
 {
@@ -100,46 +128,3 @@ void RServerSocketAddress::outString (std::ostream& out) const
   out << '\n';
 }
 
-void RSocketAddress::copy_sockaddr 
-  (struct sockaddr* out,
-   int sockaddr_out_size,
-   const struct sockaddr* in,
-   int* sockaddr_in_size)
-{
-  //assert (out);
-  const int in_size = get_sockaddr_len (in);
-  if (sockaddr_out_size < in_size)
-    THROW_EXCEPTION
-      (SException,
-      oss_ << "Too little space for copy sockaddr: "
-           << "there is " << sockaddr_out_size
-           << " bytes but " << in_size
-           << " bytes required.");
-
-  //FIXME allow invalid parameter handle
-  ::memcpy_s (out, sockaddr_out_size, in, in_size);
-
-  if (sockaddr_in_size)
-    *sockaddr_in_size = in_size;
-}
-
-
-int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
-{
-  assert (sa);
-  switch (sa->sa_family)
-  {
-  case AF_INET:
-    return sizeof (/*struct */ sockaddr_in);
-
-  case AF_INET6:
-    return sizeof (struct sockaddr_in6);
-
-  default:
-    THROW_EXCEPTION
-      (SException, 
-       oss_ << "Unknown socket type: "
-        << sa->sa_family
-        );
-  }
-}

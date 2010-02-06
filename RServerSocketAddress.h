@@ -21,18 +21,21 @@ public:
   const std::string& get_ip () const;
 
   // Overrides
-  void get_IPv4_sockaddr 
+  /*void get_IPv4_sockaddr 
     (struct sockaddr* out, 
      int sockaddr_len_in,
      int* sockaddr_len_out
-     ) const;
+     ) const;*/
 
   // Overrides
-  void get_sockaddr 
+  /*void get_sockaddr 
     (struct sockaddr* out, 
      int sockaddr_len_in,
      int* sockaddr_len_out
-     ) const;
+     ) const;*/
+
+  // Overrides
+  SockAddrList get_all_addresses () const;
 
 protected:
   struct addrinfo *ai_list;

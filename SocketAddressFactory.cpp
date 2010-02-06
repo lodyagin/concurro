@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "SocketAddressFactory.h"
 #include "IPv4SocketAddress.h"
+#include "IPv6SocketAddress.h"
 
 RSocketAddress* SocketAddressFactory::create_socket_address
   ()
@@ -15,6 +16,16 @@ RSocketAddress* SocketAddressFactory::create_socket_address
         (SException,
          oss_ << "Invalid sockaddr length");
     return new IPv4SocketAddress 
+      ((const sockaddr*) &buf, len);
+
+  case AF_INET6:
+    if (len != RSocketAddress::get_sockaddr_len 
+      ((sockaddr*) &buf)
+      )
+      THROW_EXCEPTION
+        (SException,
+         oss_ << "Invalid sockaddr length");
+    return new IPv6SocketAddress 
       ((const sockaddr*) &buf, len);
 
   default:

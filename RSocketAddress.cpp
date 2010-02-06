@@ -66,3 +66,46 @@ void RSocketAddress::outString
       << (int) ia->s_lh << '.'
       << (int) ia->s_impno;
 }
+
+void RSocketAddress::copy_sockaddr 
+  (struct sockaddr* out,
+   int sockaddr_out_size,
+   const struct sockaddr* in,
+   int* sockaddr_in_size)
+{
+  assert (out);
+  const int in_size = get_sockaddr_len (in);
+  if (sockaddr_out_size < in_size)
+    THROW_EXCEPTION
+      (SException,
+      oss_ << "Too little space for copy sockaddr: "
+           << "there is " << sockaddr_out_size
+           << " bytes but " << in_size
+           << " bytes required.");
+
+  //FIXME allow invalid parameter handle
+  ::memcpy_s (out, sockaddr_out_size, in, in_size);
+
+  if (sockaddr_in_size)
+    *sockaddr_in_size = in_size;
+}
+
+
+int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
+{
+  assert (sa);
+  switch (sa->sa_family)
+  {
+  case AF_INET:
+    return sizeof (/*struct */ sockaddr_in);
+
+  case AF_INET6:
+    return sizeof (struct sockaddr_in6);
+
+  /*case AF_BTH:
+    return sizeof (SOCKADDR_BTH);*/
+
+  default:
+    return 0;
+  }
+}

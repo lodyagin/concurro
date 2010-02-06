@@ -1,8 +1,8 @@
 #pragma once
-#include "rsocket.h"
+#include "rsinglesocket.h"
 #include <string>
 
-class RInOutSocket : public RSocket
+class RInOutSocket : public RSingleSocket
 {
 public:
   int send (void* data, int len, int* error);
@@ -12,8 +12,6 @@ public:
 
 protected:
   RInOutSocket (SOCKET s, bool withEvent) 
-    : RSocket (s, withEvent) 
+    : RSingleSocket (s, withEvent) 
   {}
-private:
-  //char buf[16384];
 };

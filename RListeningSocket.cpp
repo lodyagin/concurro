@@ -1,98 +1,172 @@
 #include "stdafx.h"
 #include "RListeningSocket.h"
 #include "RConnectedSocket.h"
+#include <Ws2tcpip.h>
+
+Logging RListeningSocket::log ("RListeningSocket");
+
 
 //FIXME! close sockets on errors
 RListeningSocket::RListeningSocket
-  (const RServerSocketAddress& addr)
+  (const RServerSocketAddress& addr,
+   unsigned int backlog)
+   : events (0)
 {
-  socket = ::socket 
-    (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  sSocketCheck (socket != INVALID_SOCKET);
+  // create server sockets for each address and bind them
+  bind (addr, backlog);
 
-  bind (addr);
+  //Create event objects
+  events = new WSAEVENT [sockets.size () + 1];
+  // TODO check <= 64
+
+  // Start event recording
+  int i = 0;
+  for (Group::iterator it = sockets.begin ();
+       it != sockets.end ();
+       it++
+       )
+  {
+     events[i] = ::WSACreateEvent ();
+     if (events[i] == WSA_INVALID_EVENT)
+      THROW_EXCEPTION 
+        (SException, L"WSACreateEvent call failed");
+
+    // Start recording of socket events
+    sSocketCheckWithMsg 
+     (::WSAEventSelect 
+        (*it, events[i], FD_ACCEPT)
+      != SOCKET_ERROR, L" on WSAEventSelect (FD_ACCEPT)");
+    i++;
+  }
+  // the last for shutdown
+  events[i] = SShutdown::instance().event();
 }
+
+RListeningSocket::~RListeningSocket ()
+{
+  for (Group::size_type k = 0; k < sockets.size (); k++)
+    ::WSACloseEvent (events[k]); //TODO check ret
+  ::CloseHandle (events[sockets.size ()]);
+
+  delete [] events;
+}
+
 
 void RListeningSocket::bind 
-  (const RServerSocketAddress& addr)
+  (const RServerSocketAddress& addr,
+   unsigned int backlog)
 {
-  struct sockaddr_in saddr;
-  int saddr_len = 0;
+  RSocketAddress::SockAddrList srv_addr_list =
+    addr.get_all_addresses ();
 
-  // Set reuse address
-  const int on = 1;
-  sSocketCheck 
-    (::setsockopt
-      (socket,
-       SOL_SOCKET,
-       SO_REUSEADDR,
-       (const char*) &on,
-       sizeof (on)
-       ) == 0
-     );
+  // bind for each discovered server address
+  for (RSocketAddress::SockAddrList::const_iterator cit =
+         srv_addr_list.begin ();
+       cit != srv_addr_list.end ();
+       cit++)
+  {
+    const addrinfo* ai = *cit;
+    SOCKET s = ::socket 
+      (ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (s == INVALID_SOCKET)
+    {
+      LOG4STRM_WARN 
+        (log.GetLogger (),
+         oss_ << "Create socket failed for ";
+         RSocketAddress::outString (oss_, ai)
+         );
+      continue;
+    }
 
-  addr.get_IPv4_sockaddr 
-    ((struct sockaddr*) &saddr, 
-     sizeof (saddr),
-     &saddr_len
-     );
+    // set non blocking
+    u_long mode = 0;  
+    if (SOCKET_ERROR == ioctlsocket(s, FIONBIO, &mode))
+    {
+      ::shutdown (s, SD_BOTH); 
+      ::closesocket (s);
+      continue;
+    }
 
-  ::bind
-    (socket, 
-    (struct sockaddr*) &saddr, 
-     saddr_len);
+    // Set reuse address
+    const int on = 1;
+    sSocketCheck 
+      (::setsockopt
+        (s,
+         SOL_SOCKET,
+         SO_REUSEADDR,
+         (const char*) &on,
+         sizeof (on)
+         ) == 0
+       );
 
-  //FIXME wrong place, move before listen
-  LOG4STRM_INFO
-  (Logging::Root (),
-   oss_ << "Start listen for connections at "
-   << ::inet_ntoa (saddr.sin_addr)
-   << ':' << ::htons (saddr.sin_port)
-   );
+    if (SOCKET_ERROR == ::bind
+         (s, 
+          ai->ai_addr, 
+          ai->ai_addrlen)
+          )
+    {
+      LOG4STRM_WARN 
+        (log.GetLogger (),
+         oss_ << "Bind socket failed for ";
+         RSocketAddress::outString (oss_, ai)
+         );
+      ::shutdown (s, SD_BOTH); 
+      ::closesocket (s);
+      continue;
+    }
+
+    sockets.push_back (s);
+
+    sSocketCheck (::listen (s, (int) backlog) == 0);
+
+    LOG4STRM_INFO
+      (log.GetLogger (),
+       oss_ << "Start listen for connections at ";
+       //<< ::inet_ntoa (saddr.sin_addr)
+       //<< ':' << ::htons (saddr.sin_port)
+       RSocketAddress::outString (oss_, ai)
+       );
+  }
 }
 
-void RListeningSocket::listen
-    (unsigned int backlog,
-     ConnectionFactory& cf)
+void RListeningSocket::listen (ConnectionFactory& cf)
 {
   //TODO keepalive option
 
-  sSocketCheck (::listen (socket, (int) backlog) == 0);
-
   struct sockaddr sa;
   int sa_len = sizeof (sa);
-  set_blocking (false);
 
   while (1) // loop for producing new connections
   {
+    DWORD waitResult = ::WSAWaitForMultipleEvents 
+      (sockets.size (),
+       events,
+       FALSE, // "OR" wait
+       WSA_INFINITE,
+       FALSE );
+
+    int evNum = waitResult - WSA_WAIT_EVENT_0;
+    if (evNum == sockets.size ()) // shutdown
+      xShuttingDown (L"the shutdown is requested");
+
+    ::WSAResetEvent (events[evNum]);
+
     SOCKET s = 0;
-    while (1) // loop for waiting connection
-    {
-      if (SThread::current ().is_stop_requested ())
-        ::xShuttingDown 
-          (L"Stop request from the owner thread.");
 
-      //LOG4CXX_DEBUG (Logging::Root (), "Call accept");
-
-      s = ::accept (socket, &sa, &sa_len); 
-      //immediate returns
-
-      if (s == INVALID_SOCKET) {
-        int err = WSAGetLastError();
-        if (err == WSAEWOULDBLOCK || err == 0)
-          ::Sleep (1000); // TODO
-        else
-          throw SException
-            (L"Error : " + sWinErrMsg(err));
-      }
-      else break;
-    }
+    sSocketCheckWithMsg 
+      ((s = ::accept 
+         (sockets.at (waitResult), 
+          &sa, 
+          &sa_len)) != INVALID_SOCKET,
+          "when accept"
+       );
 
     LOG4STRM_DEBUG 
-      (Logging::Root (), 
+      (log.GetLogger (), 
        oss_ << "accept returns the new connection: ";
        RSocketAddress::outString (oss_, &sa)
        );
+
     cf.create_new_connection 
       (new RConnectedSocket (s, true));
   }
