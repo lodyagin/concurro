@@ -13,11 +13,11 @@ public:
 
   // For call from a busy thread;
   // *consumed is increased by the size of data which gone
-  void put (void* data, size_t len, u_int* consumed);
+  void put (void* data, u_int32_t len, u_int* consumed);
 
   // another thread (a worker)
   // It can wait until data is arrived.
-  void* get (size_t* lenp);
+  void* get (u_int32_t* lenp);
 protected:
   void swap ();
 
@@ -61,7 +61,7 @@ BusyThreadWriteBuffer<Buffer>::~BusyThreadWriteBuffer(void)
 
 template<class Buffer>
 void BusyThreadWriteBuffer<Buffer>::put 
-  (void* data, size_t len, u_int* consumed)
+  (void* data, u_int32_t len, u_int* consumed)
 {
   SMutex::Lock lock (swapM); // disable buffer swapping
 
@@ -88,7 +88,7 @@ void BusyThreadWriteBuffer<Buffer>::put
 }
 
 template<class Buffer>
-void* BusyThreadWriteBuffer<Buffer>::get (size_t* lenp)
+void* BusyThreadWriteBuffer<Buffer>::get (u_int32_t* lenp)
 { // can work free with the read buffer
   void* data = 0;
 

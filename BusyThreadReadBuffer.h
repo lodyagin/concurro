@@ -12,7 +12,7 @@ public:
   virtual ~BusyThreadReadBuffer(void);
   
   // For call from a worker
-  void put (void* data, size_t len);
+  void put (void* data, u_int32_t len);
 
   // For call from a busy thread
   // Return 0 if no data
@@ -53,7 +53,7 @@ BusyThreadReadBuffer<Buffer>::~BusyThreadReadBuffer(void)
 }
 
 template<class Buffer>
-void BusyThreadReadBuffer<Buffer>::put (void* data, size_t len)
+void BusyThreadReadBuffer<Buffer>::put (void* data, u_int32_t len)
 { // can work free with the write buffer
   SMutex::Lock lock (swapM);
 
