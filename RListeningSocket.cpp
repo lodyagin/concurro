@@ -39,7 +39,8 @@ RListeningSocket::RListeningSocket
     i++;
   }
   // the last for shutdown
-  events[i] = SShutdown::instance().event();
+  events[i] = SThread::current().get_stop_event ()
+    .evt ();
 }
 
 RListeningSocket::~RListeningSocket ()
@@ -139,15 +140,16 @@ void RListeningSocket::listen (ConnectionFactory& cf)
   while (1) // loop for producing new connections
   {
     DWORD waitResult = ::WSAWaitForMultipleEvents 
-      (sockets.size (),
+      (sockets.size () + 1,
        events,
        FALSE, // "OR" wait
        WSA_INFINITE,
        FALSE );
 
     int evNum = waitResult - WSA_WAIT_EVENT_0;
-    if (evNum == sockets.size ()) // shutdown
-      xShuttingDown (L"the shutdown is requested");
+    if (evNum == sockets.size ()) // stop the thread
+      return;
+      //xShuttingDown (L"the shutdown is requested");
 
     ::WSAResetEvent (events[evNum]);
 

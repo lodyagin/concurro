@@ -75,7 +75,8 @@ SThread::SThread() :
   handle(0),
   isTerminatedEvent (false),
   _id(++counter),
-  selfDestroing (true)
+  selfDestroing (true),
+  stopEvent (true, false)
 {
 
   currentState = readyState;
@@ -89,7 +90,8 @@ SThread::SThread( Main ) :
   handle(0),
   isTerminatedEvent (false),
   _id(0),
-  selfDestroing (false)
+  selfDestroing (false),
+  stopEvent (true, false)
 {
   currentState = readyState;
   _current.set(this);
@@ -103,7 +105,8 @@ SThread::SThread( External ) :
   handle(0),
   isTerminatedEvent (false),
   _id(-1),
-  selfDestroing (true)
+  selfDestroing (true),
+  stopEvent (true, false)
 {
   currentState = readyState;
   _current.set(this);
@@ -223,6 +226,7 @@ void SThread::stop ()
 {
   static SMutex cs;
   SMutex::Lock lock(cs);
+  stopEvent.set ();
   move_to (exitRState);
 }
 

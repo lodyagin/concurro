@@ -53,6 +53,11 @@ public:
   // return 'true' if stop is requested
   bool is_stop_requested ();
 
+  SEvent& get_stop_event ()
+  {
+    return stopEvent;
+  }
+
 protected:
   // Thread must be always allocated dinamically
   SThread();
@@ -65,6 +70,8 @@ protected:
   // directly!
   virtual void run() {}
   virtual ~SThread();
+
+  SEvent stopEvent; //stop is requested
 
 private:
 
@@ -86,7 +93,8 @@ public:
 private:
   UniversalState currentState;
 
-  SEvent isTerminatedEvent;
+  //thread terminate its processing
+  SEvent isTerminatedEvent; 
 
   void check_moving_to (const UniversalState& to);
 
