@@ -13,7 +13,8 @@ SEvtBase::SEvtBase( HANDLE _h ) :
 
 SEvtBase::~SEvtBase()
 {
-  CloseHandle(h);
+  if (!h) CloseHandle(h);
+  h = 0; 
 }
 
 void SEvtBase::wait()
