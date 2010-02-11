@@ -8,35 +8,29 @@ using namespace std;
 const State2Idx SThread::allStates[] =
 {
   {1, "ready"},         // after creation
-  {2, "working"},       
-  {3, "exitRequested"}, 
-  {4, "waiting"},       
-  {5, "selfTerminated"},    
-  {6, "terminatedByRequest"},    
-  {7, "destroyed"},    // to check a state in the destructor
+  {2, "working"},       // it works
+  {3, "exitRequested"}, // it works by stop already requested
+  {4, "selfTerminated"},    
+  {5, "terminatedByRequest"},    
+  {6, "destroyed"},    // to check a state in the destructor
   {0, 0}
 };
 
 const StateTransition SThread::allTrans[] =
 {
   {"ready", "working"},      // start ()
-  {"working", "exitRequested"}, // stop  ()
 
-  {"working", "selfTerminated"}, // natural terminating
+  {"working", "selfTerminated"},      // natural terminating
 
-  {"exitRequested", "waiting"}, // wait ()
-  
-  {"exitRequested", "terminatedByRequest"}, 
   // when asked to terminate and it 
   // quickly completes its work
-  {"waiting", "terminatedByRequest"},
-  // the same, but another thread already waits
-  // our termination
+  {"working", "terminatedByRequest"},
 
   {"selfTerminated", "destroyed"},
   {"terminatedByRequest", "destroyed"},
   {"ready", "destroyed"},
   // can't be destroyed in other states
+
   {0, 0}
 
 };
@@ -47,8 +41,6 @@ StateMap* SThread::stateMap = 0;
 
 UniversalState SThread::readyState;
 UniversalState SThread::workingState;
-UniversalState SThread::exitRState;
-UniversalState SThread::waitingState;
 UniversalState SThread::selfTerminatedState;
 UniversalState SThread::terminatedByRState;
 UniversalState SThread::destroyedState;
@@ -76,7 +68,8 @@ SThread::SThread() :
   isTerminatedEvent (false),
   _id(++counter),
   selfDestroing (true),
-  stopEvent (true, false)
+  stopEvent (true, false),
+  waitCnt (0), exitRequested (false)
 {
 
   currentState = readyState;
@@ -91,7 +84,8 @@ SThread::SThread( Main ) :
   isTerminatedEvent (false),
   _id(0),
   selfDestroing (false),
-  stopEvent (true, false)
+  stopEvent (true, false),
+  waitCnt (0), exitRequested (false)
 {
   currentState = readyState;
   _current.set(this);
@@ -106,7 +100,8 @@ SThread::SThread( External ) :
   isTerminatedEvent (false),
   _id(-1),
   selfDestroing (true),
-  stopEvent (true, false)
+  stopEvent (true, false),
+  waitCnt (0), exitRequested (false)
 {
   currentState = readyState;
   _current.set(this);
@@ -121,8 +116,6 @@ void SThread::initializeStates ()
   stateMap = new StateMap(allStates, allTrans);
   readyState = stateMap->create_state ("ready");
   workingState = stateMap->create_state ("working");
-  exitRState = stateMap->create_state ("exitRequested");
-  waitingState = stateMap->create_state ("waiting");
   terminatedByRState = stateMap->create_state 
     ("terminatedByRequest");
   selfTerminatedState = stateMap->create_state 
@@ -146,7 +139,7 @@ inline void SThread::move_to
 
 SThread::~SThread()
 {
-  static SMutex cs;
+  wait ();
 
   { SMutex::Lock lock (cs);
 
@@ -176,25 +169,37 @@ void SThread::outString (std::ostream& out) const
 
 void SThread::wait()
 {
-  static SMutex cs;
+  bool cntIncremented = false;
   try
   {
     { SMutex::Lock lock(cs);
 
-     if (!stateMap->there_is_transition 
-        (currentState, waitingState)
-        )
-      return; // Shouldn't wait, it is ready
+      if (
+          state_is (terminatedByRState)
+          || state_is (selfTerminatedState)
+          )
+        // Shouldn't wait, it is already terminated
+        return; 
 
-     move_to (waitingState);
+      waitCnt++;
+      cntIncremented = true;
     }
 
-      //LOG4CXX_DEBUG(AutoLogger.GetLogger(),sFormat("Waiting for thread [%02u]", id()));
-     isTerminatedEvent.wait ();
-      //LOG4CXX_DEBUG(AutoLogger.GetLogger(),sFormat("Waiting for thread [%02u] - done", id()));
-   }
+    LOG4STRM_DEBUG
+      (Logging::Thread (),
+       oss_ << "Wait a termination of ";
+       outString (oss_);
+       oss_ << " requested by ";
+       SThread::current ().outString (oss_)
+       );
+
+    isTerminatedEvent.wait ();
+    waitCnt--;
+  }
   catch (...)
   {
+     if (cntIncremented) waitCnt--;
+
      LOG4CXX_ERROR 
        (Logging::Root (), 
         "Unknown exception in SThread::wait");
@@ -203,7 +208,6 @@ void SThread::wait()
 
 void SThread::start()
 {
-  static SMutex cs;
   SMutex::Lock lock(cs);
   check_moving_to (workingState);
 
@@ -224,16 +228,15 @@ void SThread::start()
 
 void SThread::stop ()
 {
-  static SMutex cs;
   SMutex::Lock lock(cs);
   stopEvent.set ();
-  move_to (exitRState);
+  exitRequested = true;
 }
 
 
 void SThread::_run()
 {
-   //static Logging AutoLogger("_run()",m_Logging);
+   //TODO check run from current thread
 
   _current.set(this);
 
@@ -263,16 +266,20 @@ void SThread::_run()
       (Logging::Thread (),
        "Unknown type of exception in thread.");
   }
+  {
+    SMutex::Lock lock(cs);
+    
+    if (exitRequested)
+      move_to (terminatedByRState);
+    else
+      move_to (selfTerminatedState);
+  }
+
    LOG4STRM_DEBUG
      (Logging::Thread (), 
       outString (oss_); oss_ << " finished"
       );
   _current.set(0);
-
-  if (currentState == workingState)
-    move_to (selfTerminatedState);
-  else
-    move_to (terminatedByRState);
 
   isTerminatedEvent.set ();
 }
@@ -281,7 +288,7 @@ unsigned int __stdcall SThread::_helper( void * p )
 {
   SThread * _this = reinterpret_cast<SThread *>(p);
   _this->_run();
-  delete _this;
+  //delete _this;
   return 0;
 }
 
@@ -291,15 +298,6 @@ SThread & SThread::current()
   assert (thread); //FIXME check
   return *thread;
 }
-
-bool SThread::is_stop_requested ()
-{
-  static SMutex cs;
-  SMutex::Lock lock(cs);
-  return currentState == exitRState
-    || currentState == waitingState;
-}
-
 
 SMTCounter SThread::counter(0);
 SThread::Tls SThread::_current;

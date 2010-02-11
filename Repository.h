@@ -6,6 +6,16 @@
 #include "SEvent.h"
 #include "SThread.h"
 #include <vector>
+#include <algorithm>
+
+class InvalidObjectParameters : public SException
+{
+public:
+  InvalidObjectParameters ()
+    : SException 
+      ("Invalid parameters for repository object creation")
+  {}
+};
 
 template<class Object, class Parameter>
 class Repository : public SNotCopyable
@@ -17,9 +27,10 @@ public:
   typedef typename ObjectMap::size_type ObjectId;
 
   Repository (int maxNumberOfObjects);
-  ~Repository ();
+  virtual ~Repository ();
 
   virtual Object* create_object (const Parameter& param);
+
   virtual void delete_object (Object* obj, bool freeMemory);
   virtual Object* get_object_by_id (ObjectId id);
 
@@ -54,9 +65,29 @@ Repository<Object, Parameter>::Repository
 }
 
 template<class Object, class Parameter>
+class Destructor : 
+  public std::unary_function<Object*, void>
+{
+public:
+  Destructor (Repository<Object, Parameter>* _repo)
+    : repo (_repo)
+  {}
+
+  void operator () (Object* obj)
+  { repo->delete_object (obj, true); }
+
+protected:
+  Repository<Object, Parameter>* repo;
+};
+
+template<class Object, class Parameter>
 Repository<Object, Parameter>::~Repository ()
 {
-  //FIXME add some code...
+  std::for_each
+    (objects->begin (), 
+     objects->end (),
+     Destructor<Object, Parameter> (this)
+     );
   delete objects;
 }
 
@@ -66,9 +97,9 @@ Object* Repository<Object, Parameter>::create_object
 {
   semaphore.wait ();
 
-  if (SThread::current ().is_stop_requested ())
+  /*if (SThread::current ().is_stop_requested ())
        ::xShuttingDown 
-        (L"Stop request from the owner thread.");
+        (L"Stop request from the owner thread.");*/
 
   { 
     SMutex::Lock lock (objectsM);
@@ -84,6 +115,7 @@ Object* Repository<Object, Parameter>::create_object
     Object* obj = param.create_derivation (cinfo);
     //FIXME check creation
 
+    assert (obj);
     objects->at (objId) = obj;
     return obj;
   }
@@ -113,8 +145,7 @@ void Repository<Object, Parameter>::delete_object
   semaphore.release ();
 
   if (freeMemory)
-    THROW_EXCEPTION
-      (SException, oss_ << "Not implemented");
+    delete obj;
 }
 
 

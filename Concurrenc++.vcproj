@@ -81,11 +81,12 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -101,16 +102,15 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="&quot;..\apache-log4cxx\src\main\include&quot;"
-				PreprocessorDefinitions="_DEBUG,WIN32,_LIB;UNICODE;_UNICODE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				PreprocessorDefinitions="NDEBUG,WIN32,_LIB,LOG4CXX_STATIC"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -144,12 +144,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="Debug|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2"
-			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -165,15 +164,16 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				EnableIntrinsicFunctions="true"
+				Optimization="0"
 				AdditionalIncludeDirectories="&quot;..\apache-log4cxx\src\main\include&quot;"
-				PreprocessorDefinitions="NDEBUG,WIN32,_LIB,LOG4CXX_STATIC"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
+				PreprocessorDefinitions="_DEBUG,WIN32,_LIB;UNICODE;_UNICODE"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -280,14 +280,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ConnectionFactory.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ConnectionPars.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\IPv4SocketAddress.cpp"
 				>
 			</File>
@@ -304,15 +296,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\RConnection.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\RInOutSocket.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\RListeningSocket.cpp"
 				>
 			</File>
 			<File
@@ -379,7 +363,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -387,7 +371,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -431,10 +415,6 @@
 			</File>
 			<File
 				RelativePath=".\ConnectionFactory.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ConnectionPars.h"
 				>
 			</File>
 			<File
@@ -547,6 +527,14 @@
 			</File>
 			<File
 				RelativePath=".\SWinCheck.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ThreadRepository.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ThreadWithSubthreads.h"
 				>
 			</File>
 			<File

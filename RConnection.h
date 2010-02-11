@@ -8,11 +8,13 @@ It is a connection created by the socket.
 #include "RConnectedSocket.h"
 #include "Logging.h"
 
-struct ConnectionPars;
+//template<class Thread>
+//struct ConnectionPars;
 
-class RConnection : public SThread
+template<class Thread>
+class RConnection : public Thread
 { //TODO add states
-  friend ConnectionPars;
+  //friend ConnectionPars<Thread>;
 
 public:
 
@@ -24,6 +26,11 @@ public:
     return socket;
   }
 
+  ~RConnection ()
+  {
+    delete socket;
+  }
+
 protected:
   // Usually it is called by ConnectionFactory
   // RConnection takes the socket ownership
@@ -31,10 +38,17 @@ protected:
   RConnection 
     (void* repo, 
      RConnectedSocket* cs,
-     const std::string& objId);
-  ~RConnection ();
-
-  //void run ();
+     const std::string& objId,
+     const typename Thread::ConstrPar& par
+     )
+   : Thread (par),
+     socket (cs), 
+     repository (repo), 
+     universal_object_id (objId)
+  {
+    assert (repo);
+    assert (socket);
+  }
 
   RConnectedSocket* socket;
   void* repository;

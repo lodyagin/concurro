@@ -35,10 +35,16 @@ public:
   It is a group of functions 
   for access from a calling thread 
   */
-  void start();
-  void wait();  // wait while thread finished
-  void stop (); // try to stop implicitly
+  virtual void start();
+  virtual void wait();  // wait while thread finished
+  virtual void stop (); // try to stop implicitly
   //bool isTerminated () const { return exit; }
+
+  bool is_running () const
+  {
+    SMutex::Lock lock (cs);
+    return currentState == workingState;
+  }
 
   /* For access from both. */
   // Return the pointer to the SThread object
@@ -48,10 +54,6 @@ public:
   int id() const { return _id; }
   // Overrides
   void outString (std::ostream& out) const;
-
-  /* For access inside the thread */
-  // return 'true' if stop is requested
-  bool is_stop_requested ();
 
   SEvent& get_stop_event ()
   {
@@ -73,6 +75,20 @@ protected:
 
   SEvent stopEvent; //stop is requested
 
+  SMutex cs;
+
+  // number of threads waiting termination
+  // of this thread
+  volatile int waitCnt; 
+
+  // somebody has requested a termination
+  volatile bool exitRequested; 
+
+  bool state_is (const UniversalState& state) const
+  {
+    return stateMap->is_equal (currentState, state);
+  }
+
 private:
 
   /* A state machine */
@@ -80,8 +96,6 @@ private:
 
   static UniversalState readyState;
   static UniversalState workingState;
-  static UniversalState exitRState;
-  static UniversalState waitingState;
   static UniversalState selfTerminatedState;
   static UniversalState terminatedByRState;
   static UniversalState destroyedState;
@@ -91,6 +105,8 @@ private:
 public:
   static void initializeStates ();
 private:
+  // this class has a complex state:
+  // (currentState, isWaited, exitRequested)
   UniversalState currentState;
 
   //thread terminate its processing
