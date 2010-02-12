@@ -6,20 +6,55 @@
 #include "SNotCopyable.h"
 #include "StateMap.h"
 
-/*
-  It can be started and stoped only once, like Java thread.
-  SException will be raised if we try to start several times.
-*/
-class SThread 
+class SThreadBase
   : public SNotCopyable,
     public HasStringView
 {
 public:
+  enum Main { main };
+  enum External { external };
 
   class Tls; // storage for data separated by threads
 
-  enum Main { main };
-  enum External { external };
+  SThreadBase ();
+  explicit SThreadBase (Main);
+  explicit SThreadBase (External);
+  ~SThreadBase ();
+  int id() const { return _id; }
+
+  // Overrides
+  void outString (std::ostream& out) const;
+
+protected:
+  
+  static SThreadBase* get_current ();
+
+  // It is ThreadProc, it simple calls _run ()
+  // (Access inside the thread)
+  static unsigned int __stdcall _helper( void * );
+
+  // the thread procedure (called from _helper)
+  virtual void _run () = 0;
+
+private:
+  //static void set_current () {  }
+  //static void reset_current () {  }
+
+  int _id;
+  static Tls _current;
+
+  static bool mainThreadCreated;
+
+  static SMTCounter counter;
+};
+
+/*
+  It can be started and stoped only once, like Java thread.
+  SException will be raised if we try to start several times.
+*/
+class SThread : public SThreadBase
+{
+public:
 
   // Create new thread.
   // It will be destroyed when the thread
@@ -46,12 +81,10 @@ public:
     return currentState == workingState;
   }
 
-  /* For access from both. */
   // Return the pointer to the SThread object
   // for the current thread.
   // TODO UT on thread not created by SThread.
   static SThread & current();
-  int id() const { return _id; }
   // Overrides
   void outString (std::ostream& out) const;
 
@@ -122,22 +155,13 @@ private:
   // (Access inside the thread)
   void _run();
 
-  // It is ThreadProc, it simple calls _run ()
-  // (Access inside the thread)
-  static unsigned int __stdcall _helper( void * );
-
   HANDLE handle;
-  int _id;
-
-  static SMTCounter counter;
-  static Tls _current;
-
 };
 
 
 
 // thread local storage
-class SThread::Tls
+class SThreadBase::Tls
 {
 public:
 

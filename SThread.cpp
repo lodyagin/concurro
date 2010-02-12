@@ -35,6 +35,62 @@ const StateTransition SThread::allTrans[] =
 
 };
 
+// SThreadBase  ==========================================================
+
+SThreadBase::SThreadBase ()
+: _id ( counter++ )
+{
+}
+
+SThreadBase::SThreadBase (External)
+: _id ( - (counter++) )
+{
+  _current.set (this);
+}
+
+SThreadBase::SThreadBase (Main)
+: _id (0)
+{
+  if (mainThreadCreated)
+    throw SException 
+      (L"Only one thread with id = 0 can exist");
+  mainThreadCreated = true; //FIXME concurrency
+  _current.set (this);
+}
+
+SThreadBase::~SThreadBase ()
+{
+  if ( id () <= 0 ) 
+    _current.set (0);
+}
+
+SThreadBase* SThreadBase::get_current ()
+{
+  return reinterpret_cast<SThreadBase*> (_current.get ());
+}
+
+unsigned int __stdcall SThreadBase::_helper( void * p )
+{
+  SThreadBase * _this = reinterpret_cast<SThreadBase *>(p);
+  _current.set (_this);
+  _this->_run();
+  return 0;
+}
+
+void SThreadBase::outString (std::ostream& out) const
+{
+  out << "SThreadBase(id = "  
+      << id ()
+      << ", this = " 
+      << std::hex << (void *) this << std::dec
+      << ')';
+}
+
+SMTCounter SThreadBase::counter(0);
+SThreadBase::Tls SThreadBase::_current;
+bool SThreadBase::mainThreadCreated = false;
+ 
+
 // SThread  ==========================================================
 
 StateMap* SThread::stateMap = 0;
@@ -64,9 +120,9 @@ SThread* SThread::create (External p)
 }
 
 SThread::SThread() :
+  SThreadBase(),
   handle(0),
   isTerminatedEvent (false),
-  _id(++counter),
   selfDestroing (true),
   stopEvent (true, false),
   waitCnt (0), exitRequested (false)
@@ -80,15 +136,14 @@ SThread::SThread() :
 }
 
 SThread::SThread( Main ) :
+  SThreadBase ( main ),
   handle(0),
   isTerminatedEvent (false),
-  _id(0),
   selfDestroing (false),
   stopEvent (true, false),
   waitCnt (0), exitRequested (false)
 {
   currentState = readyState;
-  _current.set(this);
   LOG4STRM_DEBUG
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
@@ -96,15 +151,14 @@ SThread::SThread( Main ) :
 }
 
 SThread::SThread( External ) :
+  SThreadBase (external),
   handle(0),
   isTerminatedEvent (false),
-  _id(-1),
   selfDestroing (true),
   stopEvent (true, false),
   waitCnt (0), exitRequested (false)
 {
   currentState = readyState;
-  _current.set(this);
   LOG4STRM_DEBUG
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
@@ -146,9 +200,7 @@ SThread::~SThread()
     move_to (destroyedState);
   }
 
-  if ( _id <= 0 ) _current.set(0);
-
-  LOG4STRM_DEBUG
+ LOG4STRM_DEBUG
     (Logging::Thread (),
      oss_ << "Destroy "; outString (oss_)
      );
@@ -158,7 +210,7 @@ SThread::~SThread()
 void SThread::outString (std::ostream& out) const
 {
   out << "SThread(id = "  
-      << _id
+      << id ()
       << ", this = " 
       << std::hex << (void *) this << std::dec
       << ", currentState = " 
@@ -221,6 +273,8 @@ void SThread::start()
       0 /*&dwThreadId*/ // returns thread ID     
      );
 
+  // FIXME _current.set (0) on thread exit??
+
   sWinCheck(handle != 0, L"creating thread");
 
   move_to (workingState);
@@ -237,8 +291,6 @@ void SThread::stop ()
 void SThread::_run()
 {
    //TODO check run from current thread
-
-  _current.set(this);
 
    LOG4STRM_DEBUG
      (Logging::Thread (),
@@ -279,28 +331,18 @@ void SThread::_run()
      (Logging::Thread (), 
       outString (oss_); oss_ << " finished"
       );
-  _current.set(0);
 
   isTerminatedEvent.set ();
 }
 
-unsigned int __stdcall SThread::_helper( void * p )
-{
-  SThread * _this = reinterpret_cast<SThread *>(p);
-  _this->_run();
-  //delete _this;
-  return 0;
-}
-
 SThread & SThread::current()
 {
-  SThread * thread = static_cast<SThread *>(_current.get());
+  SThread * thread = reinterpret_cast<SThread*> 
+    (SThreadBase::get_current ());
+
   assert (thread); //FIXME check
   return *thread;
 }
-
-SMTCounter SThread::counter(0);
-SThread::Tls SThread::_current;
 
 
 // SThread::Tls  =====================================================
