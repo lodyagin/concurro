@@ -1,24 +1,39 @@
 #include "stdafx.h"
 #include "SEvent.h"
 #include "SShutdown.h"
-
+#include "Logging.h"
 
 // SEvtBase  =========================================================
 
 SEvtBase::SEvtBase( HANDLE _h ) :
   h(_h)
 {
+  LOG4STRM_DEBUG 
+    (Logging::Thread (),
+    oss_ << "Thread " << SThread::current ().id()
+     << " creates the event handle " << h
+     );
   sWinCheck(h != 0, L"creating an event");
 }
 
 SEvtBase::~SEvtBase()
 {
+  LOG4STRM_DEBUG 
+    (Logging::Thread (),
+    oss_ << "Thread " << SThread::current ().id()
+     << " closes the event handle " << h
+     );
   if (!h) CloseHandle(h);
   h = 0; 
 }
 
 void SEvtBase::wait()
 {
+  LOG4STRM_DEBUG 
+    (Logging::Thread (),
+    oss_ << "Thread " << SThread::current ().id()
+     << " waits on handle " << h
+     );
   HANDLE evts[] = { SShutdown::instance().event(), h };
 
   DWORD code = WaitForMultipleObjects(2, evts, false, INFINITE);
@@ -30,6 +45,12 @@ void SEvtBase::wait()
 
 bool SEvtBase::wait( int time )
 {
+  LOG4STRM_DEBUG 
+    (Logging::Thread (),
+    oss_ << "Thread " << SThread::current ().id()
+     << " waits of handle " << h
+     << " for " << time << "msecs"
+     );
   HANDLE evts[] = { SShutdown::instance().event(), h };
 
   DWORD code = WaitForMultipleObjects(2, evts, false, time);
@@ -51,12 +72,28 @@ SEvent::SEvent( bool manual, bool init ) :
 
 void SEvent::set()
 {
-  sWinCheck(SetEvent(h) != 0, L"setting event");
+  LOG4STRM_DEBUG 
+    (Logging::Thread (),
+    oss_ << "Thread " << SThread::current ().id()
+     << " set event on handle " << h
+     );
+  sWinCheck
+    (SetEvent(h) != 0, 
+     SFORMAT (L"setting event, handle = " << h).c_str ()
+     );
 }
 
 void SEvent::reset()
 {
-  sWinCheck(ResetEvent(h) != 0, L"resetting event");
+  LOG4STRM_DEBUG 
+    (Logging::Thread (),
+    oss_ << "Thread " << SThread::current ().id()
+     << " reset event on handle " << h
+     );
+  sWinCheck
+    (ResetEvent(h) != 0, 
+     SFORMAT (L"resetting event, handle = " << h).c_str ()
+     );
 }
 
 
