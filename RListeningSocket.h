@@ -85,7 +85,6 @@ RListeningSocket<ConnectionFactory>::~RListeningSocket ()
 {
   for (Group::size_type k = 0; k < sockets.size (); k++)
     ::WSACloseEvent (events[k]); //TODO check ret
-  ::CloseHandle (events[sockets.size ()]);
 
   delete [] events;
 }
