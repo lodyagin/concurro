@@ -14,10 +14,19 @@ public:
   // For call from a busy thread;
   // *consumed is increased by the size of data which gone
   void put (void* data, u_int32_t len, u_int* consumed);
+  // put eof - the termination signal
+  void put_eof ();
 
   // another thread (a worker)
   // It can wait until data is arrived.
   void* get (u_int32_t* lenp);
+
+  int n_msgs_in_the_buffer () const
+  {
+    SMutex::Lock lock (swapM);
+    return nWriteBufMsgs + nReadBufMsgs;
+  }
+
 protected:
   void swap ();
 
@@ -34,8 +43,12 @@ protected:
   SMutex swapM; // a swap guard
   SEvent dataArrived; // nWriteBufMsgs 0->1
 
-  HANDLE events[2];
+private:
+  static wchar_t eof_dummy_address;
 };
+
+template<class Buffer>
+wchar_t BusyThreadWriteBuffer<Buffer>::eof_dummy_address;
 
 template<class Buffer>
 BusyThreadWriteBuffer<Buffer>::BusyThreadWriteBuffer(void)
@@ -48,9 +61,6 @@ BusyThreadWriteBuffer<Buffer>::BusyThreadWriteBuffer(void)
 
   buffer_init (readBuf);
   buffer_init (writeBuf);
-
-  events[0] = 0;
-  events[1] = dataArrived.evt ();
 }
 
 template<class Buffer>
@@ -93,12 +103,22 @@ void BusyThreadWriteBuffer<Buffer>::put
 }
 
 template<class Buffer>
+void BusyThreadWriteBuffer<Buffer>::put_eof ()
+{
+  SMutex::Lock lock (swapM); // disable buffer swapping
+
+  //logit ("busy: write eof");
+  buffer_put_string (writeBuf, &eof_dummy_address, 0);
+
+  nWriteBufMsgs++;
+  dataArrived.set ();
+}
+
+
+template<class Buffer>
 void* BusyThreadWriteBuffer<Buffer>::get (u_int32_t* lenp)
 { // can work free with the read buffer
   void* data = 0;
-
-  if (events[0] == 0) // register this thread to cancel wait on stop
-    events[0] = SThread::current ().get_stop_event ().evt ();
 
   //logit("worker: %d messages for me", (int) nReadBufMsgs);
   if (nReadBufMsgs) 
@@ -119,11 +139,7 @@ void* BusyThreadWriteBuffer<Buffer>::get (u_int32_t* lenp)
     swap (); // push consumed
 
     // wait for events
-    if (waitMultiple (events, 2) == 0) // thread stop
-    {
-      *lenp = 0;
-      return 0;
-    }
+    dataArrived.wait ();
 
     if (!nWriteBufMsgs) swap (); // miss each other
     //logit("worker: got it, now %d", (int) nWriteBufMsgs);

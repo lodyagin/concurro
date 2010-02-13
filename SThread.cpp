@@ -10,9 +10,8 @@ const State2Idx SThread::allStates[] =
   {1, "ready"},         // after creation
   {2, "working"},       // it works
   {3, "exitRequested"}, // it works by stop already requested
-  {4, "selfTerminated"},    
-  {5, "terminatedByRequest"},    
-  {6, "destroyed"},    // to check a state in the destructor
+  {4, "terminated"},    
+  {5, "destroyed"},    // to check a state in the destructor
   {0, 0}
 };
 
@@ -20,14 +19,12 @@ const StateTransition SThread::allTrans[] =
 {
   {"ready", "working"},      // start ()
 
-  {"working", "selfTerminated"},      // natural terminating
+  // a) natural termination
+  // b) termination by request
+  {"working", "terminated"},      
 
-  // when asked to terminate and it 
-  // quickly completes its work
-  {"working", "terminatedByRequest"},
+  {"terminated", "destroyed"},
 
-  {"selfTerminated", "destroyed"},
-  {"terminatedByRequest", "destroyed"},
   {"ready", "destroyed"},
   // can't be destroyed in other states
 
@@ -93,16 +90,23 @@ bool SThreadBase::mainThreadCreated = false;
 
 // SThread  ==========================================================
 
-StateMap* SThread::stateMap = 0;
+StateMap* SThread::ThreadState::stateMap = 0;
 
-UniversalState SThread::readyState;
-UniversalState SThread::workingState;
-UniversalState SThread::selfTerminatedState;
-UniversalState SThread::terminatedByRState;
-UniversalState SThread::destroyedState;
+SThread::ThreadState::ThreadState (const char* name)
+{
+  assert (name);
 
-static int initStateMap = 
-  (SThread::initializeStates(), 1);
+  if (!stateMap)
+    stateMap = new StateMap(allStates, allTrans);
+
+  *((UniversalState*) this) = stateMap->create_state (name);
+}
+
+
+SThread::ThreadState SThread::readyState("ready");
+SThread::ThreadState SThread::workingState("working");
+SThread::ThreadState SThread::terminatedState("terminated");
+SThread::ThreadState SThread::destroyedState("destroyed");
 
 SThread* SThread::create ()
 {
@@ -119,16 +123,17 @@ SThread* SThread::create (External p)
   return new SThread (p);
 }
 
-SThread::SThread() :
+SThread::SThread(SEvent* extTerminated) :
   SThreadBase(),
   handle(0),
   isTerminatedEvent (false),
   selfDestroing (true),
   stopEvent (true, false),
-  waitCnt (0), exitRequested (false)
+  waitCnt (0), exitRequested (false),
+  currentState ("ready"),
+  externalTerminated (extTerminated)
 {
 
-  currentState = readyState;
   LOG4STRM_DEBUG
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
@@ -141,9 +146,9 @@ SThread::SThread( Main ) :
   isTerminatedEvent (false),
   selfDestroing (false),
   stopEvent (true, false),
-  waitCnt (0), exitRequested (false)
+  waitCnt (0), exitRequested (false),
+  currentState ("ready")
 {
-  currentState = readyState;
   LOG4STRM_DEBUG
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
@@ -156,48 +161,27 @@ SThread::SThread( External ) :
   isTerminatedEvent (false),
   selfDestroing (true),
   stopEvent (true, false),
-  waitCnt (0), exitRequested (false)
+  waitCnt (0), exitRequested (false),
+  currentState ("ready")
 {
-  currentState = readyState;
   LOG4STRM_DEBUG
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
      );
 }
 
-void SThread::initializeStates ()
+void SThread::state (ThreadState& state) const
 {
-  stateMap = new StateMap(allStates, allTrans);
-  readyState = stateMap->create_state ("ready");
-  workingState = stateMap->create_state ("working");
-  terminatedByRState = stateMap->create_state 
-    ("terminatedByRequest");
-  selfTerminatedState = stateMap->create_state 
-    ("selfTerminated");
-  destroyedState = stateMap->create_state ("destroyed");
-}
-
-inline void SThread::check_moving_to 
-  (const UniversalState& to)
-{
-  stateMap->check_transition (currentState, to);
-}
-
-inline void SThread::move_to
-  (const UniversalState& to)
-{
-  stateMap->check_transition (currentState, to);
-  currentState = to;
-  LOG4STRM_TRACE (Logging::Thread (), outString (oss_));
+  state = currentState;
 }
 
 SThread::~SThread()
 {
   wait ();
 
-  { SMutex::Lock lock (cs);
-
-    move_to (destroyedState);
+  { 
+    SMutex::Lock lock (cs);
+    ThreadState::move_to (*this, destroyedState);
   }
 
  LOG4STRM_DEBUG
@@ -214,7 +198,7 @@ void SThread::outString (std::ostream& out) const
       << ", this = " 
       << std::hex << (void *) this << std::dec
       << ", currentState = " 
-      << stateMap->get_state_name (currentState)
+      << currentState.name ()
       << ')';
 }
 
@@ -226,10 +210,7 @@ void SThread::wait()
   {
     { SMutex::Lock lock(cs);
 
-      if (
-          state_is (terminatedByRState)
-          || state_is (selfTerminatedState)
-          )
+    if (ThreadState::state_is (*this, terminatedState))
         // Shouldn't wait, it is already terminated
         return; 
 
@@ -261,7 +242,8 @@ void SThread::wait()
 void SThread::start()
 {
   SMutex::Lock lock(cs);
-  check_moving_to (workingState);
+  ThreadState::check_moving_to 
+    (*this, workingState);
 
   handle = (HANDLE) _beginthreadex
     ( 
@@ -277,7 +259,7 @@ void SThread::start()
 
   sWinCheck(handle != 0, L"creating thread");
 
-  move_to (workingState);
+  ThreadState::move_to (*this, workingState);
 }
 
 void SThread::stop ()
@@ -321,10 +303,7 @@ void SThread::_run()
   {
     SMutex::Lock lock(cs);
     
-    if (exitRequested)
-      move_to (terminatedByRState);
-    else
-      move_to (selfTerminatedState);
+    ThreadState::move_to (*this, terminatedState);
   }
 
    LOG4STRM_DEBUG
@@ -333,6 +312,8 @@ void SThread::_run()
       );
 
   isTerminatedEvent.set ();
+  if (externalTerminated) 
+    externalTerminated->set ();
 }
 
 SThread & SThread::current()

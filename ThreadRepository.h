@@ -12,8 +12,6 @@ public:
     : Repository (n)
   {}
 
-  //~ThreadRepository ();
-
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
 };
@@ -36,15 +34,6 @@ struct ThreadWaiter : std::unary_function<Thread*, void>
   }
 };
 
-/*template<class Thread>
-struct ThreadDestructor : std::unary_function<Thread*, void>
-{
-  void operator () (Thread* th)
-  {
-    delete th;
-  }
-};*/
-
 template<class Thread, class Parameter>
 void ThreadRepository<Thread,Parameter>::stop_subthreads ()
 {
@@ -65,12 +54,3 @@ void ThreadRepository<Thread,Parameter>::wait_subthreads ()
     );
 }
 
-/*template<class Thread, class Parameter>
-ThreadRepository<Thread,Parameter>::~ThreadRepository ()
-{
-  std::for_each (
-    objects->begin (),
-    objects->end (),
-    ThreadDestructor<Thread> ()
-    );
-}*/

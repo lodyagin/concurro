@@ -206,3 +206,16 @@ void name( const wchar_t * fmt, ... )  \
 FILETIME TimetToFileTime (time_t t);
 time_t FileTimeToTimet (FILETIME ft);
 
+// copy if (see Stroustrup 3rd ed, 18.6.1)
+
+template<class In, class Out, class Pred>
+Out copy_if (In first, In last, Out res, Pred p)
+{
+  while (first != last)
+  {
+    if (p (*first))
+      *res++ = *first;
+    ++first;
+  }
+  return res;
+}

@@ -52,9 +52,69 @@ private:
   It can be started and stoped only once, like Java thread.
   SException will be raised if we try to start several times.
 */
+
+class ThreadStateSpace {};
+
 class SThread : public SThreadBase
 {
 public:
+
+  // TODO move all mechanics somewhere 
+  // (base class or templ parameter)
+  class ThreadState 
+    : public UniversalState, // TODO protected
+      public ThreadStateSpace
+  {
+    friend SThread;
+  public:
+    ThreadState (const char* name);
+
+    // TODO base mechanics
+    template<class Object>
+    static void check_moving_to
+      (const Object& obj, const ThreadState& to)
+    {
+      ThreadState from = to;
+      obj.state (from);
+      obj.get_state_map (from) -> check_transition
+        (from, to);
+    }
+
+    // TODO base mechanics
+    template<class Object>
+    static void move_to
+      (Object& obj, const ThreadState& to)
+    {
+      check_moving_to (obj, to);
+      obj.set_state_internal (to);
+      // FIXME add logging
+    }
+
+    // TODO base mechanics
+    template<class Object>
+    static bool state_is
+      (const Object& obj, const ThreadState& st)
+    {
+      ThreadState current = st;
+      obj.state (current);
+      return current.state_idx == st.state_idx;
+    }
+
+    // TODO base mechanics
+    std::string name () const
+    {
+      return stateMap->get_state_name (*this);
+    }
+
+  protected:
+    static StateMap* stateMap;
+  };
+
+  // States
+  static ThreadState readyState;
+  static ThreadState workingState;
+  static ThreadState terminatedState;
+  static ThreadState destroyedState;
 
   // Create new thread.
   // It will be destroyed when the thread
@@ -93,9 +153,17 @@ public:
     return stopEvent;
   }
 
+  void state (ThreadState& state) const;
+
 protected:
+
+  void set_state_internal (const ThreadState& state)
+  {
+    currentState = state;
+  }
+
   // Thread must be always allocated dinamically
-  SThread();
+  SThread(SEvent* extTerminated = 0);
   explicit SThread( Main );  // must be one main thread
   explicit SThread( External );  // must be one main thread
 
@@ -117,39 +185,21 @@ protected:
   // somebody has requested a termination
   volatile bool exitRequested; 
 
-  bool state_is (const UniversalState& state) const
-  {
-    return stateMap->is_equal (currentState, state);
-  }
+  StateMap* get_state_map (ThreadState&) const
+  { return ThreadState::stateMap; }
 
 private:
-
-  /* A state machine */
-  static StateMap* stateMap;
-
-  static UniversalState readyState;
-  static UniversalState workingState;
-  static UniversalState selfTerminatedState;
-  static UniversalState terminatedByRState;
-  static UniversalState destroyedState;
 
   static const State2Idx allStates[];
   static const StateTransition allTrans[];
-public:
-  static void initializeStates ();
-private:
+
   // this class has a complex state:
-  // (currentState, isWaited, exitRequested)
-  UniversalState currentState;
+  // (currentState, waitCnt, exitRequested)
+  ThreadState currentState;
 
   //thread terminate its processing
   SEvent isTerminatedEvent; 
-
-  void check_moving_to (const UniversalState& to);
-
-  void move_to (const UniversalState& to);
-
-  /* end of the state machine */
+  SEvent* externalTerminated;
 
   // called from Windows
   // (Access inside the thread)

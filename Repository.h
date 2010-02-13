@@ -5,6 +5,7 @@
 #include "SShutdown.h"
 #include "SEvent.h"
 #include "SThread.h"
+#include "StateMap.h"
 #include <vector>
 #include <algorithm>
 
@@ -33,6 +34,19 @@ public:
 
   virtual void delete_object (Object* obj, bool freeMemory);
   virtual Object* get_object_by_id (ObjectId id);
+
+  // return ids of objects selected by a predicate
+  template<class Out, class Pred>
+  Out get_object_ids_by_pred (Out res, Pred p);
+
+  // return ids of objects selected by 
+  // an UniversalState
+  template<class Out, class State>
+  Out get_object_ids_by_state
+    (Out res, const State& state);
+
+  template<class Op>
+  void for_each (Op f);
 
   // It is used for object creation
   struct ObjectCreationInfo
@@ -185,6 +199,51 @@ Repository<Object, Parameter>::get_first_unused_object_id
   return m.size () - 1;
 }
 
+template<class Object, class Parameter> 
+  template<class Out, class Pred>
+Out Repository<Object, Parameter>::
+  get_object_ids_by_pred (Out res, Pred p)
+{
+  SMutex::Lock lock (objectsM);
+
+  for (int i = 0; i < objects->size (); i++)
+    if ((*objects)[i] && p (*(*objects)[i]))
+      *res++ = i;
+  return res;
+}
+
+template<class Object, class State>
+class StateMatch 
+  : public std::unary_function<const Object&, bool>
+{
+public:
+  StateMatch (const State& _state) : state (_state) {}
+  bool operator () (const Object& obj) const
+  { 
+    return State::state_is (obj, state);
+  }
+protected:
+  State state;
+};
+
+template<class Object, class Parameter>
+  template<class Out, class State>
+Out Repository<Object, Parameter>::
+  get_object_ids_by_state (Out res, const State& state)
+{
+  return get_object_ids_by_pred<Out, StateMatch<Object, State>> (res, StateMatch<Object, State> (state));
+}
+
+template<class Object, class Parameter>
+  template<class Op>
+void Repository<Object, Parameter>::for_each (Op f)
+{
+  SMutex::Lock lock (objectsM);
+
+  for (int i = 0; i < objects->size (); i++)
+    if ((*objects)[i])
+      f (*(*objects)[i]);
+}
 
 
 
