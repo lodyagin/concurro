@@ -46,7 +46,7 @@ public:
     (Out res, const State& state);
 
   template<class Op>
-  void for_each (Op f);
+  void for_each (Op& f);
 
   // It is used for object creation
   struct ObjectCreationInfo
@@ -206,7 +206,7 @@ Out Repository<Object, Parameter>::
 {
   SMutex::Lock lock (objectsM);
 
-  for (int i = 0; i < objects->size (); i++)
+  for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i] && p (*(*objects)[i]))
       *res++ = i;
   return res;
@@ -236,11 +236,11 @@ Out Repository<Object, Parameter>::
 
 template<class Object, class Parameter>
   template<class Op>
-void Repository<Object, Parameter>::for_each (Op f)
+void Repository<Object, Parameter>::for_each (Op& f)
 {
   SMutex::Lock lock (objectsM);
 
-  for (int i = 0; i < objects->size (); i++)
+  for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i])
       f (*(*objects)[i]);
 }
