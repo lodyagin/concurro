@@ -174,7 +174,6 @@ void RListeningSocket<ConnectionFactory>::listen (ConnectionFactory& cf)
   //TODO keepalive option
 
   sockaddr_in6 sa;
-  int sa_len = sizeof (sa);
 
   while (1) // loop for producing new connections
   {
@@ -193,6 +192,12 @@ void RListeningSocket<ConnectionFactory>::listen (ConnectionFactory& cf)
     ::WSAResetEvent (events[evNum]);
 
     SOCKET s = 0;
+    int sa_len = sizeof (sa);
+
+    LOG4STRM_INFO
+      (log.GetLogger (),
+       oss_ << "Ready for accept on the server socket " 
+       << waitResult);
 
     sSocketCheckWithMsg 
       ((s = ::accept 
