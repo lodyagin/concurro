@@ -379,8 +379,8 @@ void SThread::Tls::set( void * data )
 
 //====================================================================
 
-void sSleep( int time )
+/*void sSleep( int time )
 {
   static SEvent evt(true);
   evt.wait(time);
-}
+}*/

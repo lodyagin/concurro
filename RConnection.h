@@ -8,14 +8,9 @@ It is a connection created by the socket.
 #include "RConnectedSocket.h"
 #include "Logging.h"
 
-//template<class Thread>
-//struct ConnectionPars;
-
 template<class Thread>
 class RConnection : public Thread
 { //TODO add states
-  //friend ConnectionPars<Thread>;
-
 public:
 
   const std::string universal_object_id;
