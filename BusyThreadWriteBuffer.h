@@ -19,7 +19,16 @@ public:
 
   // another thread (a worker)
   // It can wait until data is arrived.
-  void* get (u_int32_t* lenp);
+  // *lenp == 0 and result == "" means EOF 
+  // (evts, nEvts) specifies addition events to wait
+  // (in this case it returns NULL)
+  // The result must be always xfree-ed even when 
+  // *lenp == 0 && result != NULL
+  void* get 
+    (u_int32_t* lenp,
+     HANDLE* evts,
+     unsigned nEvts
+     );
 
   int n_msgs_in_the_buffer () const
   {
@@ -116,9 +125,21 @@ void BusyThreadWriteBuffer<Buffer>::put_eof ()
 
 
 template<class Buffer>
-void* BusyThreadWriteBuffer<Buffer>::get (u_int32_t* lenp)
+void* BusyThreadWriteBuffer<Buffer>::get
+  (u_int32_t* lenp,
+   HANDLE* evts,
+   unsigned nEvts
+   )
 { // can work free with the read buffer
   void* data = 0;
+  HANDLE waitEvts[WSA_MAXIMUM_WAIT_EVENTS];
+  unsigned waitEvtCnt = 0;
+
+  assert (nEvts == 0 || evts);
+  // prepare the wait events array
+  waitEvts[waitEvtCnt++] = dataArrived.evt ();
+  for (unsigned i = 0; i < nEvts; i++)
+    waitEvts[waitEvtCnt++] = evts[i];
 
   //logit("worker: %d messages for me", (int) nReadBufMsgs);
   if (nReadBufMsgs) 
@@ -139,7 +160,18 @@ void* BusyThreadWriteBuffer<Buffer>::get (u_int32_t* lenp)
     swap (); // push consumed
 
     // wait for events
-    dataArrived.wait ();
+    DWORD result = ::WaitForMultipleObjects
+      (waitEvtCnt, waitEvts, FALSE, INFINITE);
+    sWinCheck 
+      (result >= WAIT_OBJECT_0 
+       && result < WAIT_OBJECT_0 + waitEvtCnt
+       );
+    const int evtNum = result - WAIT_OBJECT_0;
+    if (evtNum != 0)
+    {
+      *lenp = 0;
+      return NULL;
+    }
 
     if (!nWriteBufMsgs) swap (); // miss each other
     //logit("worker: got it, now %d", (int) nWriteBufMsgs);

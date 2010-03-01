@@ -30,9 +30,6 @@ public:
   void acquare();
   void release();
 
-  // wait and acquare
-  //void wait ();
-
 protected:
   
   CRITICAL_SECTION cs;

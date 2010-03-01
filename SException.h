@@ -24,9 +24,6 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-//extern const SException ProgramError;
-//extern const SException NotImplemented;
-
 #define THROW_EXCEPTION(exception_class, stream_expr) { \
   std::wostringstream oss_; \
   { stream_expr ; } \

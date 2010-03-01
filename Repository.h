@@ -88,7 +88,10 @@ public:
   {}
 
   void operator () (Object* obj)
-  { repo->delete_object (obj, true); }
+  { 
+    if (obj) 
+      repo->delete_object (obj, true); 
+  }
 
 protected:
   Repository<Object, Parameter>* repo;
