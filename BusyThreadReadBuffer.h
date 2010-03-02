@@ -12,11 +12,11 @@ public:
   virtual ~BusyThreadReadBuffer(void);
   
   // For call from a worker
-  void put (void* data, u_int32_t len);
+  void put (const void* data, u_int32_t len);
 
   // For call from a busy thread
   // Return 0 if no data
-  bool get (Buffer* out);
+  bool get (Buffer* out, bool asString = true);
 
   int n_msgs_in_the_buffer () const
   {
@@ -59,7 +59,7 @@ BusyThreadReadBuffer<Buffer>::~BusyThreadReadBuffer(void)
 }
 
 template<class Buffer>
-void BusyThreadReadBuffer<Buffer>::put (void* data, u_int32_t len)
+void BusyThreadReadBuffer<Buffer>::put (const void* data, u_int32_t len)
 { // can work free with the write buffer
   SMutex::Lock lock (swapM);
 
@@ -75,7 +75,7 @@ void BusyThreadReadBuffer<Buffer>::put (void* data, u_int32_t len)
 }
 
 template<class Buffer>
-bool BusyThreadReadBuffer<Buffer>::get (Buffer* out)
+bool BusyThreadReadBuffer<Buffer>::get (Buffer* out, bool asString = true)
 {
   /*logit("busy2: now %d messages on my side"
     " and %d on a worker2 side", 
@@ -87,7 +87,12 @@ bool BusyThreadReadBuffer<Buffer>::get (Buffer* out)
     u_int lenp;
     nReadBufMsgs--;
     void* data = buffer_get_string (readBuf, &lenp);
-    buffer_put_string (out, data, lenp);
+
+    if (asString)
+      buffer_put_string (out, data, lenp);
+    else
+      buffer_append (out, data, lenp);
+
     //logit("busy2: get one, now %d", (int) nReadBufMsgs);
     
     if (!nReadBufMsgs)
@@ -108,7 +113,11 @@ bool BusyThreadReadBuffer<Buffer>::get (Buffer* out)
     u_int lenp;
     nReadBufMsgs--;
     void* data = buffer_get_string (readBuf, &lenp);
-    buffer_put_string (out, data, lenp);
+    if (asString)
+      buffer_put_string (out, data, lenp);
+    else
+      buffer_append (out, data, lenp);
+
     //logit("busy2: get one, now %d", (int) nReadBufMsgs);
     if (!nReadBufMsgs)
     {
