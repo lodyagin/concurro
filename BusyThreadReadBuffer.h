@@ -18,6 +18,9 @@ public:
   // Return 0 if no data
   bool get (Buffer* out, bool asString = true);
 
+  void suspend () {} // FIXME suspend the subsystem
+  // UT on exec with too much data
+
   int n_msgs_in_the_buffer () const
   {
     SMutex::Lock lock (swapM);

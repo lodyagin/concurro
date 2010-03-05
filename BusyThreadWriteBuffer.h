@@ -87,6 +87,9 @@ template<class Buffer>
 void BusyThreadWriteBuffer<Buffer>::put 
   (void* data, u_int32_t len, u_int* consumed)
 {
+  debug ("%d> [%d]", 
+    (int) SThread::current ().id (), len);
+
   SMutex::Lock lock (swapM); // disable buffer swapping
 
   *consumed -= nWriteConsumed; // nWriteConsumed < 0
@@ -149,6 +152,8 @@ void* BusyThreadWriteBuffer<Buffer>::get
     data = buffer_get_string (readBuf, lenp);
     nReadConsumed -= * lenp; // only data part 
     //logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+    debug ("%d< [%d]", 
+      (int) SThread::current ().id (), *lenp);
     return data;
   }
 
@@ -183,6 +188,8 @@ void* BusyThreadWriteBuffer<Buffer>::get
   data = buffer_get_string (readBuf, lenp);
   nReadConsumed -= * lenp ; 
   //logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+  debug ("%d< [%d]", 
+    (int) SThread::current ().id (), *lenp);
   return data;  // TODO two identical parts
 }
 

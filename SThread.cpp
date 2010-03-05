@@ -177,7 +177,16 @@ void SThread::state (ThreadState& state) const
 
 SThread::~SThread()
 {
-  wait ();
+  bool needWait = true;
+  { 
+    SMutex::Lock lock (cs);
+    needWait = !(ThreadState::state_is (*this, readyState)
+      || ThreadState::state_is (*this, terminatedState));
+    assert (!ThreadState::state_is (*this, destroyedState));
+  }
+
+  if (needWait) 
+    wait ();
 
   { 
     SMutex::Lock lock (cs);
