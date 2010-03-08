@@ -76,7 +76,10 @@ NamedPipe::NamedPipe
 
 NamedPipe::~NamedPipe(void)
 {
-  // FIXME !
+  if (clientPart != INVALID_HANDLE_VALUE)
+    ::CloseHandle (clientPart);
+  if (serverPart != INVALID_HANDLE_VALUE)
+    ::CloseHandle (serverPart);
 }
 
 void NamedPipe::StartRead 
