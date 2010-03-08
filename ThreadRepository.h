@@ -14,6 +14,10 @@ public:
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
+
+  // Overrides
+  void delete_object_by_id 
+    (ObjectId id, bool freeMemory);
 };
 
 template<class Thread>
@@ -52,5 +56,18 @@ void ThreadRepository<Thread,Parameter>::wait_subthreads ()
     objects->end (),
     ThreadWaiter<Thread> ()
     );
+}
+
+template<class Thread, class Parameter>
+void ThreadRepository<Thread,Parameter>::
+  delete_object_by_id (typename Repository<Thread,Parameter>::ObjectId id, bool freeMemory)
+{
+  Thread* th = get_object_by_id (id);
+  if (th) 
+  {
+    th->stop ();
+    th->wait ();
+    Repository::delete_object_by_id (id, freeMemory);
+  }
 }
 
