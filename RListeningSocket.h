@@ -5,11 +5,11 @@
 #include "SThread.h"
 #include <winsock2.h>
 #include "Logging.h"
-
 #include "RListeningSocket.h"
 #include "RConnectedSocket.h"
 #include <Ws2tcpip.h>
 #include "SWinCheck.h"
+#include <algorithm>
 
 
 template<class ConnectionFactory>
@@ -53,7 +53,7 @@ RListeningSocket<ConnectionFactory>::RListeningSocket
   bind (addr, backlog);
 
   //Create event objects
-  events = new WSAEVENT [sockets.size () + 1];
+  events = new WSAEVENT [sockets.size () + 2];
   // TODO check <= 64
 
   // Start event recording
@@ -76,8 +76,9 @@ RListeningSocket<ConnectionFactory>::RListeningSocket
     i++;
   }
   // the last for shutdown
-  events[i] = SThread::current().get_stop_event ()
+  events[i++] = SThread::current().get_stop_event ()
     .evt ();
+  events[i] = 0;
 }
 
 template<class ConnectionFactory>
@@ -173,47 +174,56 @@ void RListeningSocket<ConnectionFactory>::listen (ConnectionFactory& cf)
 {
   //TODO keepalive option
 
+  events[sockets.size () + 1] = cf.connectionTerminated.evt ();
+
   sockaddr_in6 sa;
 
   while (1) // loop for producing new connections
   {
     DWORD waitResult = ::WSAWaitForMultipleEvents 
-      (sockets.size () + 1,
+      (sockets.size () + 2,
        events,
        FALSE, // "OR" wait
        WSA_INFINITE,
        FALSE );
 
     int evNum = waitResult - WSA_WAIT_EVENT_0;
+
     if (evNum == sockets.size ()) // stop the thread
       return;
-      //xShuttingDown (L"the shutdown is requested");
 
-    ::WSAResetEvent (events[evNum]);
+    if (evNum == sockets.size () + 1)
+    {
+      cf.destroy_terminated_connections ();
+    }
+    else
+    {
+      ::WSAResetEvent (events[evNum]);
 
-    SOCKET s = 0;
-    int sa_len = sizeof (sa);
+      SOCKET s = 0;
+      int sa_len = sizeof (sa);
 
-    LOG4STRM_INFO
-      (log.GetLogger (),
-       oss_ << "Ready for accept on the server socket " 
-       << waitResult);
+      LOG4STRM_INFO
+        (log.GetLogger (),
+         oss_ << "Ready for accept on the server socket " 
+         << waitResult);
 
-    sSocketCheckWithMsg 
-      ((s = ::accept 
-         (sockets.at (waitResult), 
-          (sockaddr*) &sa, 
-          &sa_len)) != INVALID_SOCKET,
-          "when accept"
-       );
+      sSocketCheckWithMsg 
+        ((s = ::accept 
+           (sockets.at (waitResult), 
+            (sockaddr*) &sa, 
+            &sa_len)) != INVALID_SOCKET,
+            "when accept"
+         );
 
-    LOG4STRM_DEBUG 
-      (log.GetLogger (), 
-       oss_ << "accept returns the new connection: ";
-       RSocketAddress::outString (oss_, (sockaddr*) &sa)
-       );
+      LOG4STRM_DEBUG 
+        (log.GetLogger (), 
+         oss_ << "accept returns the new connection: ";
+         RSocketAddress::outString (oss_, (sockaddr*) &sa)
+         );
 
-    cf.create_new_connection 
-      (new RConnectedSocket (s, true));
+      cf.create_new_connection 
+        (new RConnectedSocket (s, true));
+    }
   }
 }

@@ -123,7 +123,8 @@ SThread* SThread::create (External p)
   return new SThread (p);
 }
 
-SThread::SThread(SEvent* extTerminated) :
+SThread::SThread (SEvent* extTerminated) 
+:
   SThreadBase(),
   handle(0),
   isTerminatedEvent (false),
@@ -133,11 +134,7 @@ SThread::SThread(SEvent* extTerminated) :
   currentState ("ready"),
   externalTerminated (extTerminated)
 {
-
-  LOG4STRM_DEBUG
-    (Logging::Thread (),
-     oss_ << "New "; outString (oss_)
-     );
+  log_from_constructor ();
 }
 
 SThread::SThread( Main ) :
@@ -149,7 +146,7 @@ SThread::SThread( Main ) :
   waitCnt (0), exitRequested (false),
   currentState ("ready")
 {
-  LOG4STRM_DEBUG
+  LOG4STRM_INFO
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
      );
@@ -164,7 +161,7 @@ SThread::SThread( External ) :
   waitCnt (0), exitRequested (false),
   currentState ("ready")
 {
-  LOG4STRM_DEBUG
+  LOG4STRM_INFO
     (Logging::Thread (),
      oss_ << "New "; outString (oss_)
      );
@@ -172,8 +169,13 @@ SThread::SThread( External ) :
 
 void SThread::state (ThreadState& state) const
 {
+  SMutex::Lock lock (cs);
   state = currentState;
 }
+
+// For proper destroying in concurrent environment
+// 1) nobody may hold SThread* and descendants (even temporary!), // only access through Repository is allowed
+// FIXME !!!
 
 SThread::~SThread()
 {
@@ -193,7 +195,7 @@ SThread::~SThread()
     ThreadState::move_to (*this, destroyedState);
   }
 
- LOG4STRM_DEBUG
+ LOG4STRM_INFO
     (Logging::Thread (),
      oss_ << "Destroy "; outString (oss_)
      );
@@ -202,6 +204,7 @@ SThread::~SThread()
 
 void SThread::outString (std::ostream& out) const
 {
+  SMutex::Lock lock (cs);
   out << "SThread(id = "  
       << id ()
       << ", this = " 
@@ -334,6 +337,13 @@ SThread & SThread::current()
   return *thread;
 }
 
+void SThread::log_from_constructor ()
+{
+  LOG4STRM_INFO
+    (Logging::Thread (),
+     oss_ << "New "; outString (oss_) 
+       );
+}
 
 // SThread::Tls  =====================================================
 
@@ -384,12 +394,3 @@ void SThread::Tls::set( void * data )
             << ::GetCurrentThreadId ();
        );
 }
-
-
-//====================================================================
-
-/*void sSleep( int time )
-{
-  static SEvent evt(true);
-  evt.wait(time);
-}*/

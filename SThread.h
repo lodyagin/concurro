@@ -37,8 +37,6 @@ protected:
   virtual void _run () = 0;
 
 private:
-  //static void set_current () {  }
-  //static void reset_current () {  }
 
   int _id;
   static Tls _current;
@@ -163,9 +161,12 @@ protected:
   }
 
   // Thread must be always allocated dinamically
-  SThread(SEvent* extTerminated = 0);
+  SThread (SEvent* extTerminated = 0);
+
   explicit SThread( Main );  // must be one main thread
   explicit SThread( External );  // must be one main thread
+
+  void log_from_constructor ();
 
   /* Access inside the thread */
   // Override it for a real thread job

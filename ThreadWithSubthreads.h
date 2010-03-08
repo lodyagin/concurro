@@ -1,6 +1,8 @@
 #pragma once
 #include "sthread.h"
 #include "ThreadRepository.h"
+#include "Logging.h"
+#include <algorithm>
 
 // SubthreadParameter is a parameter
 // for subthread creation
@@ -45,11 +47,44 @@ public:
     SThread::stop (); 
   }
 
+  // Overrides
+  void outString (std::ostream& out) const;
+
 protected:
-  ThreadWithSubthreads (unsigned nSubthreadsMax) 
-    : SThread (),
+  ThreadWithSubthreads 
+    (SEvent* connectionTerminated,
+     unsigned nSubthreadsMax
+     ) 
+    : SThread (connectionTerminated),
       ThreadRepository
         <Subthread, SubthreadParameter> 
           (nSubthreadsMax)
-  {}
+  {
+    log_from_constructor ();
+  }
 };
+
+template<class Subthread>
+class OutThread 
+  : public std::unary_function<const Subthread&, void>
+{
+public:
+  OutThread (std::ostream& _out) : out (_out) {}
+  void operator () (const Subthread& thread)
+  {
+    out << '\t';
+    thread.outString (out);
+    out << '\n';
+  }
+protected:
+  std::ostream& out;
+};
+
+template<class Subthread, class SubthreadParameter>
+void ThreadWithSubthreads<Subthread, SubthreadParameter>::
+  outString (std::ostream& out) const
+{
+  out << "ThreadWithSubthreads (";
+  for_each (OutThread<Subthread> (out));
+  out << ")\n";
+}

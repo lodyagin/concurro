@@ -34,9 +34,10 @@ protected:
     (void* repo, 
      RConnectedSocket* cs,
      const std::string& objId,
-     const typename Thread::ConstrPar& par
+     const typename Thread::ConstrPar& par,
+     SEvent* connectionTerminated
      )
-   : Thread (par),
+   : Thread (connectionTerminated, par),
      socket (cs), 
      repository (repo), 
      universal_object_id (objId)

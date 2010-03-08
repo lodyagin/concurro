@@ -18,6 +18,8 @@ public:
   {}
 };
 
+// TODO separate read and write lock
+
 template<class Object, class Parameter>
 class Repository : public SNotCopyable
 {
@@ -32,7 +34,12 @@ public:
 
   virtual Object* create_object (const Parameter& param);
 
-  virtual void delete_object (Object* obj, bool freeMemory);
+  virtual void delete_object 
+    (Object* obj, bool freeMemory);
+
+  virtual void delete_object_by_id 
+    (ObjectId id, bool freeMemory);
+
   virtual Object* get_object_by_id (ObjectId id);
 
   // return ids of objects selected by a predicate
@@ -48,12 +55,28 @@ public:
   template<class Op>
   void for_each (Op& f);
 
+  template<class Op>
+  void for_each (Op& f) const;
+
   // It is used for object creation
   struct ObjectCreationInfo
   {
     //const Parameter* info;
     Repository* repository;
     std::string objectId;
+  };
+
+  class Destroy 
+    : public std::unary_function<int, void>
+  {
+  public:
+    Destroy (Repository& _repo) : repo (_repo) {}
+    void operator () (int objId)
+    {
+      repo.delete_object_by_id (objId, true);
+    }
+  protected:
+    Repository& repo;
   };
 
 protected:
@@ -144,12 +167,22 @@ void Repository<Object, Parameter>::delete_object
    bool freeMemory
    )
 {
+  assert (obj);
   const ObjectId objId = fromString<ObjectId> (obj->universal_object_id);
 
+  delete_object_by_id (objId, freeMemory);
+}
+
+template<class Object, class Parameter>
+void Repository<Object, Parameter>::delete_object_by_id 
+    (ObjectId id, bool freeMemory)
+{
+  Object* ptr = 0;
   {
     SMutex::Lock lock (objectsM);
 
-    ObjectMap::reference r = objects->at (objId);
+    ObjectMap::reference r = objects->at (id);
+    ptr = r;
     if (r == 0)
     {
       THROW_EXCEPTION
@@ -162,9 +195,8 @@ void Repository<Object, Parameter>::delete_object
   semaphore.release ();
 
   if (freeMemory)
-    delete obj;
+    delete ptr;
 }
-
 
 template<class Object, class Parameter>
 Object* Repository<Object, Parameter>::get_object_by_id 
@@ -240,6 +272,17 @@ Out Repository<Object, Parameter>::
 template<class Object, class Parameter>
   template<class Op>
 void Repository<Object, Parameter>::for_each (Op& f)
+{
+  SMutex::Lock lock (objectsM);
+
+  for (ObjectId i = 0; i < objects->size (); i++)
+    if ((*objects)[i])
+      f (*(*objects)[i]);
+}
+
+template<class Object, class Parameter>
+  template<class Op>
+void Repository<Object, Parameter>::for_each (Op& f) const
 {
   SMutex::Lock lock (objectsM);
 
