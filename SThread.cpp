@@ -9,9 +9,8 @@ const State2Idx SThread::allStates[] =
 {
   {1, "ready"},         // after creation
   {2, "working"},       // it works
-  {3, "exitRequested"}, // it works by stop already requested
-  {4, "terminated"},    
-  {5, "destroyed"},    // to check a state in the destructor
+  {3, "terminated"},    
+  {4, "destroyed"},    // to check a state in the destructor
   {0, 0}
 };
 
@@ -180,12 +179,17 @@ void SThread::state (ThreadState& state) const
 SThread::~SThread()
 {
   bool needWait = true;
+  bool needStop = true;
   { 
     SMutex::Lock lock (cs);
-    needWait = !(ThreadState::state_is (*this, readyState)
-      || ThreadState::state_is (*this, terminatedState));
     assert (!ThreadState::state_is (*this, destroyedState));
+    needStop = ThreadState::state_is (*this, workingState)
+      && !exitRequested;
+    needWait = needStop || exitRequested;
   }
+
+  if (needStop)
+    stop ();
 
   if (needWait) 
     wait ();
@@ -292,8 +296,6 @@ void SThread::_run()
 
   try
   {
-    checkHR(CoInitialize(0));
-
     run();
   }
   catch ( XShuttingDown & )
