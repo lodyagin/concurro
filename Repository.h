@@ -94,14 +94,14 @@ protected:
 
   ObjectMap* objects;
   SMutex objectsM;
-  SSemaphore semaphore;
+  //SSemaphore semaphore;
 };
 
 template<class Object, class Parameter>
 Repository<Object, Parameter>::Repository 
   (int maxNumberOfObjects)
-: objects (NULL), 
-  semaphore (maxNumberOfObjects, maxNumberOfObjects)
+: objects (NULL)/*, 
+  semaphore (maxNumberOfObjects, maxNumberOfObjects)*/
 {
   objects = new ObjectMap ();
   objects->reserve (startMapSize);
@@ -143,7 +143,7 @@ template<class Object, class Parameter>
 Object* Repository<Object, Parameter>::create_object 
   (const Parameter& param)
 {
-  semaphore.wait ();
+  //semaphore.wait ();
 
   /*if (SThread::current ().is_stop_requested ())
        ::xShuttingDown 
@@ -226,7 +226,7 @@ void Repository<Object, Parameter>::delete_object_by_id
     r = 0;
   }
 
-  semaphore.release ();
+  //semaphore.release ();
 
   if (freeMemory)
     delete ptr;
