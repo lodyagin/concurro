@@ -40,7 +40,15 @@ public:
   virtual void delete_object_by_id 
     (ObjectId id, bool freeMemory);
 
-  virtual Object* get_object_by_id (ObjectId id);
+  virtual Object* get_object_by_id (ObjectId id) const;
+
+  // Replace the old object by new one
+  // The old object is deleted
+  virtual Object* replace_object 
+    (ObjectId id, 
+     const Parameter& param,
+     bool freeMemory
+     );
 
   // return ids of objects selected by a predicate
   template<class Out, class Pred>
@@ -162,6 +170,32 @@ Object* Repository<Object, Parameter>::create_object
 }
 
 template<class Object, class Parameter>
+Object* Repository<Object, Parameter>::replace_object 
+  (ObjectId id, 
+   const Parameter& param,
+   bool freeMemory
+   )
+{
+  SMutex::Lock lock (objectsM);
+
+  Object* obj = objects->at (id);
+  if (!obj)
+    THROW_EXCEPTION
+      (SException, oss_ << L"Program error");
+
+  (*objects)[id] = param.transform_object (obj);
+  assert ((*objects)[id]);
+
+  if ((*objects)[id] == obj)
+    return obj; // no transformation
+
+  if (freeMemory)
+    delete obj;
+
+  return (*objects)[id];
+}
+
+template<class Object, class Parameter>
 void Repository<Object, Parameter>::delete_object 
   (Object* obj, 
    bool freeMemory
@@ -200,7 +234,7 @@ void Repository<Object, Parameter>::delete_object_by_id
 
 template<class Object, class Parameter>
 Object* Repository<Object, Parameter>::get_object_by_id 
-  (typename Repository<Object, Parameter>::ObjectId id)
+  (typename Repository<Object, Parameter>::ObjectId id) const
 {
   { 
     SMutex::Lock lock (objectsM);
@@ -211,7 +245,6 @@ Object* Repository<Object, Parameter>::get_object_by_id
       return objects->at (id);
   }
 }
-
 
 template<class Object, class Parameter>
 typename Repository<Object, Parameter>::ObjectId 

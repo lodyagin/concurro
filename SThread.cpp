@@ -226,7 +226,9 @@ void SThread::wait()
   {
     { SMutex::Lock lock(cs);
 
-    if (ThreadState::state_is (*this, terminatedState))
+    if (ThreadState::state_is (*this, terminatedState)
+      || ThreadState::state_is (*this, readyState) // <NB>
+      )
         // Shouldn't wait, it is already terminated
         return; 
 

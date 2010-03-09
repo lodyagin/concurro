@@ -117,6 +117,9 @@ void BusyThreadWriteBuffer<Buffer>::put
 template<class Buffer>
 void BusyThreadWriteBuffer<Buffer>::put_eof ()
 {
+  debug ("%d> [EOF]", 
+    (int) SThread::current ().id ());
+
   SMutex::Lock lock (swapM); // disable buffer swapping
 
   //logit ("busy: write eof");

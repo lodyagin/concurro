@@ -18,6 +18,19 @@ public:
   // Overrides
   void delete_object_by_id 
     (ObjectId id, bool freeMemory);
+
+  // Overrides
+  Thread* replace_object 
+    (ObjectId id, 
+     const Parameter& param,
+     bool freeMemory
+     )
+  {
+    THROW_EXCEPTION
+      (SException, 
+       L"replace_object is not realised for threads."
+       );
+  }
 };
 
 template<class Thread>
