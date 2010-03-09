@@ -5,7 +5,6 @@
 #include "logging.h"
 #include "SCommon.h"
 #include "SWinCheck.h"
-#include "SThread.h"
 #include "SEvent.h"
 #include "SMutex.h"
 #include "SShutdown.h"

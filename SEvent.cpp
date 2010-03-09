@@ -2,6 +2,7 @@
 #include "SEvent.h"
 #include "SShutdown.h"
 #include "Logging.h"
+#include "SThread.h"
 
 // SEvtBase  =========================================================
 
