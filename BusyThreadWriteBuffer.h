@@ -4,6 +4,8 @@
 #include "SEvent.h"
 #include <algorithm> // for swap
 
+#undef DEBUG_TRANSFER
+
 template <class Buffer>
 class BusyThreadWriteBuffer
 {
@@ -87,8 +89,16 @@ template<class Buffer>
 void BusyThreadWriteBuffer<Buffer>::put 
   (void* data, u_int32_t len, u_int* consumed)
 {
-  debug ("%d> [%d]", 
-    (int) SThread::current ().id (), len);
+#ifdef DEBUG_TRANSFER
+  if (len)
+    debug ("%d> [%d]", 
+      (int) SThread::current ().id (), len);
+  else
+    debug ("%d> %d", 
+      (int) SThread::current ().id (), 
+      (int) nWriteConsumed
+      );
+#endif
 
   SMutex::Lock lock (swapM); // disable buffer swapping
 
@@ -117,8 +127,10 @@ void BusyThreadWriteBuffer<Buffer>::put
 template<class Buffer>
 void BusyThreadWriteBuffer<Buffer>::put_eof ()
 {
+#ifdef DEBUG_TRANSFER
   debug ("%d> [EOF]", 
     (int) SThread::current ().id ());
+#endif
 
   SMutex::Lock lock (swapM); // disable buffer swapping
 
@@ -155,8 +167,10 @@ void* BusyThreadWriteBuffer<Buffer>::get
     data = buffer_get_string (readBuf, lenp);
     nReadConsumed -= * lenp; // only data part 
     //logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+#ifdef DEBUG_TRANSFER
     debug ("%d< [%d]", 
       (int) SThread::current ().id (), *lenp);
+#endif
     return data;
   }
 
@@ -191,8 +205,10 @@ void* BusyThreadWriteBuffer<Buffer>::get
   data = buffer_get_string (readBuf, lenp);
   nReadConsumed -= * lenp ; 
   //logit ("worker: %d consumed, now %d", (int) *lenp, (int) nReadConsumed);
+#ifdef DEBUG_TRANSFER
   debug ("%d< [%d]", 
     (int) SThread::current ().id (), *lenp);
+#endif
   return data;  // TODO two identical parts
 }
 
