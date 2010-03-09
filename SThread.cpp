@@ -127,7 +127,6 @@ SThread::SThread (SEvent* extTerminated)
   SThreadBase(),
   handle(0),
   isTerminatedEvent (false),
-  selfDestroing (true),
   stopEvent (true, false),
   waitCnt (0), exitRequested (false),
   currentState ("ready"),
@@ -140,7 +139,6 @@ SThread::SThread( Main ) :
   SThreadBase ( main ),
   handle(0),
   isTerminatedEvent (false),
-  selfDestroing (false),
   stopEvent (true, false),
   waitCnt (0), exitRequested (false),
   currentState ("ready")
@@ -155,7 +153,6 @@ SThread::SThread( External ) :
   SThreadBase (external),
   handle(0),
   isTerminatedEvent (false),
-  selfDestroing (true),
   stopEvent (true, false),
   waitCnt (0), exitRequested (false),
   currentState ("ready")
@@ -327,9 +324,9 @@ void SThread::_run()
       outString (oss_); oss_ << " finished"
       );
 
-  isTerminatedEvent.set ();
   if (externalTerminated) 
     externalTerminated->set ();
+  isTerminatedEvent.set ();
 }
 
 SThread & SThread::current()
