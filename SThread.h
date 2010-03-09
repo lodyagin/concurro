@@ -115,14 +115,9 @@ public:
   static ThreadState destroyedState;
 
   // Create new thread.
-  // It will be destroyed when the thread
-  // function will exit if selfDestroing = true.
-  // Use it instead of constructor.
   static SThread* create ();
   static SThread* create (Main);
   static SThread* create (External);
-
-  const bool selfDestroing;
 
   /* 
   It is a group of functions 
