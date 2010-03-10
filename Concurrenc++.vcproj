@@ -681,6 +681,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ThreadRepository.h"
 				>
 			</File>
