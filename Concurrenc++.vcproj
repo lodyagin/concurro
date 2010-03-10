@@ -431,6 +431,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RMultiprotoSocketAddress.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\RServerSocketAddress.cpp"
 				>
 			</File>
@@ -546,6 +550,10 @@
 				RelativePath=".\time_wce.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\UnknownprotoSocketAddress.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -605,7 +613,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RMultiprotoSocketAddress.h"
+				>
+			</File>
+			<File
 				RelativePath=".\RServerSocketAddress.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RSingleprotoSocketAddress.h"
 				>
 			</File>
 			<File
@@ -694,6 +710,10 @@
 			</File>
 			<File
 				RelativePath=".\time_wce.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UnknownprotoSocketAddress.h"
 				>
 			</File>
 		</Filter>
