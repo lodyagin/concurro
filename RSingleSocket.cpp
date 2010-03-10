@@ -12,7 +12,7 @@ RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent)
 {
   if (eventUsed)
   {
-    const long networkEvents = FD_READ | FD_WRITE;
+    const long networkEvents = FD_READ | FD_WRITE | FD_CLOSE;
 
     socketEvent = ::WSACreateEvent ();
     if (socketEvent == WSA_INVALID_EVENT)
@@ -75,6 +75,12 @@ DWORD RSingleSocket::get_events ()
     const int err = socketEvents.iErrorCode[FD_WRITE_BIT];
     if (err != 0) sWinErrorCode (err, L"On socket write");
     waitFdWrite = false;
+  }
+
+  if (socketEvents.lNetworkEvents & FD_CLOSE)
+  {
+    const int err = socketEvents.iErrorCode[FD_CLOSE_BIT];
+    if (err != 0) sWinErrorCode (err, L"On socket close");   
   }
   return socketEvents.lNetworkEvents;
 }
