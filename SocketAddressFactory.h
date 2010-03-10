@@ -1,5 +1,5 @@
 #pragma once
-#include "RSocketAddress.h"
+#include "RSingleprotoSocketAddress.h"
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 
@@ -27,9 +27,9 @@ public: // TODO add states
   }
 
   // Create appropriate type of socket address
-  RSocketAddress* create_socket_address ();
+  RSingleprotoSocketAddress* create_socket_address ();
 
 protected:
-  sockaddr_in6 buf; //now it is longest //FIXME
+  SOCKADDR_STORAGE buf; 
   int len;
 };

@@ -1,7 +1,8 @@
 #pragma once
-#include "rsocketaddress.h"
+#include "rSingleprotoSocketaddress.h"
 
-class IPv4SocketAddress : public RSocketAddress
+class IPv4SocketAddress 
+  : public RSingleprotoSocketAddress
 {
 public:
   IPv4SocketAddress 

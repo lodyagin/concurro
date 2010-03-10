@@ -50,7 +50,7 @@ ConnectionFactory<Connection, ConnectionPars>::create_new_connection
   (RConnectedSocket* cs)
 {
   assert (cs);
-  const RSocketAddress& rsa = cs
+  const RSingleprotoSocketAddress& rsa = cs
     -> get_peer_address ();
 
   LOG4STRM_INFO

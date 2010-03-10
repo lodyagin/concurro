@@ -8,27 +8,6 @@ RSocketAddress::~RSocketAddress (void)
 }
 
 void RSocketAddress::outString 
-  (std::ostream& out, const struct addrinfo* ai)
-{
-  if (ai == NULL)
-  {
-    out << "<null>";
-    return;
-  }
-
-  out << "addrinfo ("
-      << "ai_flags: "  << ai->ai_flags
-      << " ai_family: " << ai->ai_family
-      << " ai_socktype: " << ai->ai_socktype
-      << " ai_protocol: " << ai->ai_protocol
-      << " ai_canonname: [" 
-      << ((ai->ai_canonname) ? ai->ai_canonname : "<null>")
-      << "] ai_addr: ";
-  outString (out, ai->ai_addr);
-  out << ')';
-}
-
-void RSocketAddress::outString 
   (std::ostream& out, const struct sockaddr* sa)
 {
   if (sa == NULL)
@@ -51,6 +30,18 @@ void RSocketAddress::outString
         out << ')';
       }
       break;
+    case AF_INET6:
+      {
+        const struct sockaddr_in6* sain = 
+          (const struct sockaddr_in6*) sa;
+
+        out << "sockaddr_in6 ("
+          << "sin6_port = " << ::htons (sain->sin6_port)
+            << ", sin_addr = ";
+        outString (out, &sain->sin6_addr);
+        out << ')';
+      }
+      break;
     default:
       out << "sockaddr_xxx, sa_family = "
           << sa->sa_family;
@@ -65,6 +56,27 @@ void RSocketAddress::outString
       << (int) ia->s_host << '.'
       << (int) ia->s_lh << '.'
       << (int) ia->s_impno;
+}
+
+void RSocketAddress::outString 
+  (std::ostream& out, const struct in6_addr* ia)
+{
+  assert (ia);
+  bool first = true;
+  std::ios_base::fmtflags oldOpts = out.flags
+    (std::ios_base::hex /*| std::ios_base::showpoint*/);
+
+  out << '[';
+  for (int i = 0; i < 8; i++)
+  {
+    if (!first)
+      out << ':';
+    else 
+      first = false;
+    out << std::setw (4) << std::setfill ('0') << ia->u.Word [i];
+  }
+  out << ']';
+  out.flags (oldOpts);
 }
 
 void RSocketAddress::copy_sockaddr 

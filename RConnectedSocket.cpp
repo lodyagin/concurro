@@ -14,7 +14,8 @@ RConnectedSocket::~RConnectedSocket ()
   delete peer;
 }
 
-const RSocketAddress& RConnectedSocket::get_peer_address ()
+const RSingleprotoSocketAddress& RConnectedSocket::
+  get_peer_address ()
 {
   if (!peer)
   {

@@ -96,24 +96,20 @@ void RListeningSocket<ConnectionFactory>::bind
   (const RServerSocketAddress& addr,
    unsigned int backlog)
 {
-  RSocketAddress::SockAddrList srv_addr_list =
-    addr.get_all_addresses ();
-
   // bind for each discovered server address
-  for (RSocketAddress::SockAddrList::const_iterator cit =
-         srv_addr_list.begin ();
-       cit != srv_addr_list.end ();
-       cit++)
+  for (RMultiprotoSocketAddress::const_iterator ai =
+         addr.begin ();
+       ai != addr.end ();
+       ai++)
   {
-    const addrinfo* ai = *cit;
     SOCKET s = ::socket 
       (ai->ai_family, ai->ai_socktype, ai->ai_protocol);
     if (s == INVALID_SOCKET)
     {
       LOG4STRM_WARN 
         (log.GetLogger (),
-         oss_ << "Create socket failed for ";
-         RSocketAddress::outString (oss_, ai)
+         oss_ << "Create socket failed for "
+              << (*ai);
          );
       continue;
     }
@@ -147,8 +143,8 @@ void RListeningSocket<ConnectionFactory>::bind
     {
       LOG4STRM_WARN 
         (log.GetLogger (),
-         oss_ << "Bind socket failed for ";
-         RSocketAddress::outString (oss_, ai)
+         oss_ << "Bind socket failed for "
+              << (*ai)
          );
       ::shutdown (s, SD_BOTH); 
       ::closesocket (s);
@@ -161,10 +157,10 @@ void RListeningSocket<ConnectionFactory>::bind
 
     LOG4STRM_INFO
       (log.GetLogger (),
-       oss_ << "Start listen for connections at ";
+       oss_ << "Start listen for connections at "
        //<< ::inet_ntoa (saddr.sin_addr)
        //<< ':' << ::htons (saddr.sin_port)
-       RSocketAddress::outString (oss_, ai)
+            << (*ai);
        );
   }
 }

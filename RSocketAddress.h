@@ -1,44 +1,29 @@
 #pragma once
 #include "HasStringView.h"
 #include <string>
-#include <list>
 
 class RSocketAddress : public HasStringView
 {
 public:
   virtual ~RSocketAddress (void);
 
-  virtual int get_port () const = 0;
-  
-  virtual const std::string& get_ip () const = 0;
-
-  // addrinfo pretty print
-  static void outString (std::ostream& out, const struct addrinfo* ai);
-
   // sockaddr pretty print
-  static void outString (std::ostream& out, const struct sockaddr* sa);
+  static void outString 
+    (std::ostream& out, 
+     const struct sockaddr* sa
+     );
 
   // in_addr pretty print
-  static void outString (std::ostream& out, const struct in_addr* ia);
+  static void outString 
+    (std::ostream& out, 
+     const struct in_addr* ia
+     );
 
-  /*// return the first IPv4 socket address
-  virtual void get_IPv4_sockaddr 
-    (struct sockaddr* out, 
-     int out_max_size,
-     int* copied_size
-     ) const = 0;*/
-
-  // fills the sockaddr* family of structures
-  /*virtual void get_sockaddr 
-    (struct sockaddr* out, 
-     int out_max_size,
-     int* copied_size
-     ) const = 0;*/
-
-  //typedef std::list<sockaddr*> SockAddrList;
-  typedef std::list<const addrinfo*> SockAddrList;
-
-  //virtual SockAddrList get_all_addresses () const = 0;
+  // in6_addr pretty print
+  static void outString 
+    (std::ostream& out, 
+     const struct in6_addr* ia
+     );
 
   // Copy socket address
   // The size of information copied is defined by 
@@ -56,7 +41,8 @@ public:
 
   // Get the sockaddr length by its type.
   // Return 0 if the address family is unsupported
-  static int get_sockaddr_len (const struct sockaddr* sa);
+  static int get_sockaddr_len 
+    (const struct sockaddr* sa);
 };
 
 

@@ -1,13 +1,12 @@
 #pragma once
 #include "rsingleprotosocketaddress.h"
-#include <Ws2tcpip.h>
 
-class IPv6SocketAddress :
+class UnknownprotoSocketAddress :
   public RSingleprotoSocketAddress
 {
 public:
-  IPv6SocketAddress 
-    (const struct sockaddr* sa,
+  UnknownprotoSocketAddress
+    (const struct sockaddr* _sa,
      int sa_len
      );
   void outString (std::ostream& out) const;
@@ -26,8 +25,7 @@ public:
      ) const;
 
 protected:
-  struct sockaddr_in6 sa_in;
+  SOCKADDR_STORAGE sa;
 
-  mutable int port;
-  mutable std::string ip;
+  const static std::string unknown_ip;
 };

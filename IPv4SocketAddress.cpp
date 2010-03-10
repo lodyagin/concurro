@@ -46,12 +46,6 @@ const std::string& IPv4SocketAddress::get_ip
   return ip;
 }
 
-/*SockAddrList 
-IPv4SocketAddress::get_all_addresses () const
-{
-  retirn SockAddrList (1, 
-}*/
-
 void IPv4SocketAddress::get_sockaddr 
   (struct sockaddr* out, 
    int out_max_size,

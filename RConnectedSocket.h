@@ -1,6 +1,6 @@
 #pragma once
 #include "rinoutsocket.h"
-#include "RSocketAddress.h"
+#include "RSingleprotoSocketAddress.h"
 
 class RConnectedSocket : public RInOutSocket
 {
@@ -10,7 +10,7 @@ public:
   ~RConnectedSocket ();
 
   // Return the address of the peer's socket.
-  const RSocketAddress& get_peer_address ();
+  const RSingleprotoSocketAddress& get_peer_address ();
 protected:
-  RSocketAddress* peer;
+  RSingleprotoSocketAddress* peer;
 };

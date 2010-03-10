@@ -3,8 +3,8 @@
 #include "IPv4SocketAddress.h"
 #include "IPv6SocketAddress.h"
 
-RSocketAddress* SocketAddressFactory::create_socket_address
-  ()
+RSingleprotoSocketAddress* 
+SocketAddressFactory::create_socket_address ()
 {
   switch (((sockaddr*) &buf)->sa_family)
   {
