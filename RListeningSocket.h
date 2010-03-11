@@ -219,7 +219,7 @@ void RListeningSocket<ConnectionFactory>::listen (ConnectionFactory& cf)
          );
 
       cf.create_new_connection 
-        (new RConnectedSocket (s, true));
+        (new RConnectedSocket (s, true)); //FIXME memleak ?
     }
   }
 }

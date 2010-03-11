@@ -1,14 +1,25 @@
 #include "StdAfx.h"
 #include "RSingleSocket.h"
 
-RSingleSocket::RSingleSocket ()
- : socket (0), eventUsed (false),
-  waitFdWrite (false)
-{
-}
-
 RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent) 
   : socket (s), eventUsed (_withEvent), waitFdWrite (false)
+{
+  init ();
+}
+
+RSingleSocket::~RSingleSocket ()
+{
+  if (eventUsed)
+    ::WSACloseEvent (socketEvent); // TODO check ret
+
+  if (socket)
+  {
+    ::shutdown (socket, SD_BOTH);
+    ::closesocket (socket);
+  }
+}
+
+void RSingleSocket::init () 
 {
   if (eventUsed)
   {
@@ -27,18 +38,6 @@ RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent)
   }
 }
 
-RSingleSocket::~RSingleSocket ()
-{
-  if (eventUsed)
-    ::WSACloseEvent (socketEvent); // TODO check ret
-
-  if (socket)
-  {
-    ::shutdown (socket, SD_BOTH);
-    ::closesocket (socket);
-  }
-}
-
 void RSingleSocket::set_blocking (bool blocking)
 {
   u_long mode = (blocking) ? 0 : 1;
@@ -54,13 +53,15 @@ WSAEVENT RSingleSocket::get_event_object ()
   return socketEvent;
 }
 
-DWORD RSingleSocket::get_events ()
+DWORD RSingleSocket::get_events (bool reset_event_object)
 {
   WSANETWORKEVENTS socketEvents = {0};
 
   sSocketCheck
     (::WSAEnumNetworkEvents 
-        (socket, 0, &socketEvents)
+        (socket, 
+        (reset_event_object) ? socketEvent : 0, 
+         &socketEvents)
      == 0);
 
   // check errors

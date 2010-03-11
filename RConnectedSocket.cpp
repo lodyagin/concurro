@@ -2,12 +2,27 @@
 #include "RConnectedSocket.h"
 #include "SocketAddressFactory.h"
 #include "RConnection.h"
+#include "RClientSocketAddress.h"
 
-RConnectedSocket::RConnectedSocket (SOCKET con_socket, bool withEvent)
+RConnectedSocket::RConnectedSocket 
+  (SOCKET con_socket, bool withEvent)
    : RInOutSocket (con_socket, withEvent), peer (0)
 {
   waitFdWrite = true;
 }
+
+/*RConnectedSocket::RConnectedSocket 
+  (const RClientSocketAddress& csa)
+{
+  for 
+    (RClientSocketAddress::const_iterator it = 
+         csa.begin ();
+     it != csa.end ();
+     it++)
+   {
+     ::connect (
+   }
+}*/
 
 RConnectedSocket::~RConnectedSocket ()
 {

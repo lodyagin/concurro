@@ -31,7 +31,7 @@ RServerSocketAddress::RServerSocketAddress
 void RServerSocketAddress::outString 
   (std::ostream& out) const
 {
-  out << "RSocketAddress:\n";
+  out << "RServerSocketAddress:\n";
   RMultiprotoSocketAddress::outString (out);
   out << '\n';
 }
