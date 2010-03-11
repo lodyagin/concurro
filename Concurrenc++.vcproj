@@ -407,6 +407,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\ClientSocketConnector.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\IPv4SocketAddress.cpp"
 				>
 			</File>
@@ -420,6 +424,10 @@
 			</File>
 			<File
 				RelativePath=".\NamedPipe.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RClientSocketAddress.cpp"
 				>
 			</File>
 			<File
@@ -569,6 +577,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ClientSocketConnector.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ConnectionFactory.h"
 				>
 			</File>
@@ -590,6 +602,10 @@
 			</File>
 			<File
 				RelativePath=".\NamedPipe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RClientSocketAddress.h"
 				>
 			</File>
 			<File
