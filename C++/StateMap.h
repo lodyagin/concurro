@@ -24,7 +24,7 @@ class StateMap;
 
 class UniversalState
 {
-  friend StateMap;
+  friend class StateMap;
 
 public:
   UniversalState () 
@@ -147,7 +147,7 @@ protected:
     Name2Idx;
   typedef std::map<StateIdx, std::string> Idx2Name;
 
-  typedef std::vector<std::vector <int>> Trans2Number;
+  typedef std::vector< std::vector <int> > Trans2Number;
   typedef std::vector<IdxTransRec> Number2Trans;
 
   Name2Idx     name2idx;

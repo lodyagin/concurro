@@ -1,7 +1,7 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "SShutdown.h"
 
-
+#ifdef _WIN32
 // SShutdown  ========================================================
 
 SShutdown::SShutdown() :
@@ -43,11 +43,11 @@ void SShutdown::unregisterComplPort( SComplPort & port )
     }
   SCHECK(0);  // unregistering non-registered port
 }
-
+#endif
 
 // XShuttingDown  ====================================================
 
-XShuttingDown::XShuttingDown( const wstring & act ) :
+XShuttingDown::XShuttingDown( const std::wstring & act ) :
   Parent(sFormat(L"%s action interrupted by shutdown signal", act.c_str())),
   _action(act)
 {
@@ -56,12 +56,14 @@ XShuttingDown::XShuttingDown( const wstring & act ) :
 
 //====================================================================
 
-void xShuttingDown( const wstring & act )
+void xShuttingDown( const std::wstring & act )
 {
   throw XShuttingDown(act);
 }
 
+#ifdef _WIN32
 void sCheckShuttingDown()
 {
   if ( SSHUTDOWN.isShuttingDown() ) xShuttingDown();
 }
+#endif

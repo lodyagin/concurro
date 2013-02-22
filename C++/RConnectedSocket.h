@@ -1,5 +1,5 @@
 #pragma once
-#include "rinoutsocket.h"
+#include "RInOutSocket.h"
 #include "RSingleprotoSocketAddress.h"
 
 class RConnectedSocket : public RInOutSocket

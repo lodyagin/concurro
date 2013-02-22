@@ -1,0 +1,8 @@
+*~
+*.a
+*.cmake
+*.so
+*.so.*
+CMakeCache.txt
+Makefile
+CMakeFiles/

@@ -2,21 +2,32 @@
 
 #include <string>
 #include <stdarg.h>
+#ifdef _WIN32
 #include <atlbase.h>
+#else
+#define __declspec(x)
+#endif
 
 #include <sstream>
 #include <ostream>
 #include <iomanip>
+#include <string.h>
 
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
 
 
-using std::string;
-using std::wstring;
-using std::istream;
-using std::ostream;
-using std::iostream;
+//using std::string;
+//using std::wstring;
+//using std::istream;
+//using std::ostream;
+//using std::iostream;
+
+#ifdef _WIN32
+#  define _T L
+#else
+#  define _T
+#endif
 
 typedef unsigned short ushort;
 typedef unsigned long ulong;
@@ -25,9 +36,9 @@ typedef unsigned char uchar;
 
 
 // cut out not more than maxCount chars that equal to passed one. If maxCount == -1 then cut out all
-string trimLeft ( const string &, char = ' ', int maxCount = -1 );
-string trimRight( const string &, char = ' ', int maxCount = -1 );
-string trimBoth ( const string &, char = ' ', int maxCount = -1 );
+std::string trimLeft ( const std::string &, char = ' ', int maxCount = -1 );
+std::string trimRight( const std::string &, char = ' ', int maxCount = -1 );
+std::string trimBoth ( const std::string &, char = ' ', int maxCount = -1 );
 
 const char * strnchr( const char * str, int chr, size_t maxLen );
 //int strnlen( const char * str, size_t maxLen );  // returns -1 if len > maxLen
@@ -60,6 +71,7 @@ strlcat (char       *dest,
          const char *src,
          size_t      dest_size);
 
+#ifdef _WIN32
 /**
  * It is got from glib 2.0.
  *
@@ -78,15 +90,18 @@ int
 vasprintf (char      **string,
            char const *format,
            va_list      args);
+#endif
 
 char *
 strsep (char **stringp, const char *delim);
 
+#ifdef _WIN32
 // convert windows error code to string
-wstring sWinErrMsg (DWORD errorCode);
+std::wstring sWinErrMsg (DWORD errorCode);
+#endif
 
 // formats string a la sprintf, max 10k size
-wstring sFormat( wstring format, ... );
+std::wstring sFormat( std::wstring format, ... );
 
 #define WSFORMAT(e) ((dynamic_cast<const std::wostringstream&>(std::wostringstream().flush() << e)).str())
 #ifndef UNICODE
@@ -95,18 +110,18 @@ wstring sFormat( wstring format, ... );
 #define SFORMAT WSFORMAT
 #endif
 
-string AmountFormat(double amt, int precision = 2);
-string StripDotZeros (const string& s);
-string RateFormat(double rate);	//2 or 4 fractional digits
-string FixFormat(double lot, int precision = 1);	//0 or 1 fractional digit
+std::string AmountFormat(double amt, int precision = 2);
+std::string StripDotZeros (const std::string& s);
+std::string RateFormat(double rate);	//2 or 4 fractional digits
+std::string FixFormat(double lot, int precision = 1);	//0 or 1 fractional digit
 
-wstring sFormatVa( const wstring & format, va_list list );
+std::wstring sFormatVa( const std::wstring & format, va_list list );
 
 // ansi version
-string sFormatVaA( const string & format, va_list list );
+std::string sFormatVaA( const std::string & format, va_list list );
 
-//string uni2ascii (const wstring & str);
-//wstring ascii2uni (const string & str);
+//string uni2ascii (const std::wstring & str);
+//std::wstring ascii2uni (const string & str);
 
 #define FORMAT_SYS_ERR(sysFun, sysErr) \
    (SFORMAT("When calling '" << sysFun << " (...)' the system error '" \
@@ -116,22 +131,24 @@ string sFormatVaA( const string & format, va_list list );
 __declspec(noreturn) void sThrow( const wchar_t * format, ... );
 
 // load string with given id from resources. Maximum string length is 10k
-string loadResourceStr( int id );
+std::string loadResourceStr( int id );
 
+#ifdef _WIN32
 void checkHR( HRESULT );
+#endif
 
-wstring str2wstr( const string & );
-string wstr2str( const wstring & );
+std::wstring str2wstr( const std::string & );
+std::string wstr2str( const std::wstring & );
 
-string toUTF8 (const wstring&);
-wstring fromUTF8 (const string&);
+std::string toUTF8 (const std::wstring&);
+std::wstring fromUTF8 (const std::string&);
 
-inline const char * ptr2ptr( const string & s )
+inline const char * ptr2ptr( const std::string & s )
 {
   return s.c_str();
 }
 
-inline const wchar_t * ptr2ptr( const wstring & s )
+inline const wchar_t * ptr2ptr( const std::wstring & s )
 {
   return s.c_str();
 }
@@ -179,8 +196,8 @@ T fromString (const std::string& s)
 }
 
 #define SMAKE_THROW_FN_DECL(name, XClass)  \
-void name( const wchar_t * fmt, ... ); void name(const wstring& msg); 
-//void name( const char * fmt, ... ); void name(const string& msg); \
+void name( const wchar_t * fmt, ... ); void name(const std::wstring& msg); 
+//void name( const char * fmt, ... ); void name(const std::string& msg); \
 
 SMAKE_THROW_FN_DECL(sThrow,SException)
 
@@ -195,16 +212,18 @@ void name( const wchar_t * fmt, ... )  \
 {  \
   va_list va;  \
   va_start(va, fmt);  \
-  wstring msg(sFormatVa(fmt, va));  \
+  std::wstring msg(sFormatVa(fmt, va));  \
   va_end(va);  \
   throw XClass(msg);  \
-}; void name(const wstring& msg) { throw XClass(msg); };
+}; void name(const std::wstring& msg) { throw XClass(msg); };
 
 //template<class X>
 //SMAKE_THROW_FN_IMPL(sThrowX, X)
 
+#ifdef _WIN32
 FILETIME TimetToFileTime (time_t t);
 time_t FileTimeToTimet (FILETIME ft);
+#endif
 
 // copy if (see Stroustrup 3rd ed, 18.6.1)
 
@@ -218,4 +237,14 @@ Out copy_if (In first, In last, Out res, Pred p)
     ++first;
   }
   return res;
+}
+
+/**
+ * Allocate a new char* string by the std::string arg.
+ */
+char* string2char_ptr (const std::string& str)
+{
+  char *cstr = new char[str.length() + 1];
+  strcpy(cstr, str.c_str());
+  return cstr;
 }

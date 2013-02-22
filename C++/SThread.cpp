@@ -1,6 +1,8 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "SThread.h"
-#include <objbase.h>
+#ifdef _WIN32
+#  include <objbase.h>
+#endif
 
 
 using namespace std;

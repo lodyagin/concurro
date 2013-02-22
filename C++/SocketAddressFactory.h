@@ -1,7 +1,9 @@
 #pragma once
 #include "RSingleprotoSocketAddress.h"
+#ifdef _WIN32
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#endif
 
 // 1. Get pointer to buffer by buffer () call
 // 2. Fill buffer

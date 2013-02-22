@@ -1,11 +1,11 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "SException.h"
-#include "scommon.h"
+#include "SCommon.h"
 
 
 // SException  ==================================================================
 
-SException::SException (const wstring & w, bool alreadyLogged) :
+SException::SException (const std::wstring & w, bool alreadyLogged) :
   whatU(w), alreadyLoggedFlag (alreadyLogged)
 {
   _what = wstr2str (whatU);
@@ -13,7 +13,7 @@ SException::SException (const wstring & w, bool alreadyLogged) :
      LOG4CXX_DEBUG (Logging::Root (), std::wstring (L"SException: ") + w);
 }
 
-SException::SException (const string & w, bool alreadyLogged) :
+SException::SException (const std::string & w, bool alreadyLogged) :
   _what(w), alreadyLoggedFlag (alreadyLogged)
 {
   whatU = str2wstr (_what);
@@ -21,11 +21,11 @@ SException::SException (const string & w, bool alreadyLogged) :
      LOG4CXX_DEBUG (Logging::Root (), std::string ("SException: ") + w);
 }
 
-SException::~SException()
+SException::~SException() throw ()
 {
 }
 
-const char * SException::what() const
+const char * SException::what() const throw ()
 {
   return _what.c_str();
 }

@@ -1,8 +1,10 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "SCommon.h"
+#ifdef _WIN32
 #include <atlstr.h>
+#endif
 
-using namespace std;
+//using namespace std;
 
 #if 0
 string AmountFormat(double amt, int precision/* = 2*/) {
@@ -43,24 +45,24 @@ string FixFormat(double lot, int precision) {
 }
 #endif
 
-string trimLeft( const string & s, char ch, int maxCount )
+std::string trimLeft( const std::string & s, char ch, int maxCount )
 {
   const char * b = ptr2ptr(s);
   const char * p = b;
   while ( *p != 0 && *p == ch && (maxCount == -1 || p - b < maxCount ) ) ++p;
-  return string(p);
+  return std::string(p);
 }
 
-string trimRight( const string & s, char ch, int maxCount )
+std::string trimRight( const std::string & s, char ch, int maxCount )
 {
   const char * b = ptr2ptr(s);
   const char * e = strchr(b, 0);
   const char * p = e - 1;
   while ( p > b && *p == ch && (maxCount == -1 || e - p + 1 < maxCount ) ) --p;
-  return string(b, p - b + 1);
+  return std::string(b, p - b + 1);
 }
 
-string trimBoth( const string & s, char ch, int maxCount )
+std::string trimBoth( const std::string & s, char ch, int maxCount )
 {
   return trimLeft(trimRight(s, ch, maxCount), ch, maxCount);
 }
@@ -174,6 +176,7 @@ strlcat (char       *dest,
 
 #define G_VA_COPY(ap1, ap2)   (*(ap1) = *(ap2))
 
+#ifdef _WIN32
 /**
  * It is got from glib 2.0.
  *
@@ -259,30 +262,32 @@ strsep (char **stringp, const char *delim)
 
   return begin;
 }
+#endif
 
-
-wstring sFormat( wstring format, ... )
+std::wstring sFormat( std::wstring format, ... )
 {
   va_list list;
   va_start(list, format);
-  wstring s(sFormatVa(format, list));
+  std::wstring s(sFormatVa(format, list));
   va_end(list);
   return s;
 }
 
-wstring sFormatVa( const wstring & format, va_list list )
+#ifdef _WIN32
+std::wstring sFormatVa( const std::wstring & format, va_list list )
 {
 	CString buf;
 	buf.FormatV(format.c_str(), list);
 	return buf.GetString();
 }
 
-string sFormatVaA( const string & format, va_list list )
+std::string sFormatVaA( const std::string & format, va_list list )
 {
 	CStringA buf;
 	buf.FormatV(format.c_str(), list);
 	return buf.GetString();
 }
+#endif
 
 SMAKE_THROW_FN_IMPL(sThrow, SException)
 
@@ -293,9 +298,10 @@ SMAKE_THROW_FN_IMPL(sThrow, SException)
   if ( buf[len - 1] == ch ) buf[len - 1] = '\0';
 }*/
 
+#ifdef _WIN32
 std::wstring sWinErrMsg (DWORD errorCode)
 {
-   std::wstring res;
+   std::std::wstring res;
    
    LPVOID lpMsgBuf = 0;;
    bool messageFound = false;
@@ -349,7 +355,7 @@ std::wstring sWinErrMsg (DWORD errorCode)
 }
 
 /*
-string sWinErrMsg( unsigned long err )
+std::string sWinErrMsg( unsigned long err )
 {
   char buf[10 * 1024];
   char *_buf = buf ;
@@ -362,17 +368,17 @@ string sWinErrMsg( unsigned long err )
     stripEndChar(buf, '\n');
     stripEndChar(buf, '\r');
     stripEndChar(buf, '.');
-    return string(buf);
+    return std::string(buf);
   }
-  else return string();
+  else return std::string();
 }
 */
 
-string loadResourceStr( int id )
+std::string loadResourceStr( int id )
 {
   char buf[1024 * 10];
   LoadStringA(0, id, buf, sizeof(buf));
-  return string(buf);
+  return std::string(buf);
 }
 
 void checkHR( HRESULT r )
@@ -381,58 +387,58 @@ void checkHR( HRESULT r )
     sThrow(sWinErrMsg(r));
 }
 
-
-wstring str2wstr( const string & str )
+std::wstring str2wstr( const std::string & str )
 {
   int slen = strlen(str.c_str());
   int wlen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, 0, 0);
   wchar_t* buf = new wchar_t [wlen + 1];
   MultiByteToWideChar(CP_ACP, 0, str.c_str(), slen, buf, wlen);
-  wstring wstr(buf, wlen);
+  std::wstring wstr(buf, wlen);
   delete [] buf;
   return wstr;
 }
 
-string wstr2str( const wstring & wstr )
+std::string wstr2str( const std::wstring & wstr )
 {
   int slen = ::WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), 0, 0, 0, 0);
   char * buf = new char [slen + 1];
   WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), buf, slen, 0, 0);
   buf[slen] = 0;
-  string str(buf);
+  std::string str(buf);
   delete [] buf;
   return str;
 }
 
-string toUTF8 (const wstring& wstr)
+std::string toUTF8 (const std::wstring& wstr)
 {
   int slen = ::WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.length(), 0, 0, 0, 0);
   char * buf = new char [slen + 1];
   WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.length(), buf, slen, 0, 0);
   buf[slen] = 0;
-  string str(buf);
+  std::string str(buf);
   delete [] buf;
   return str;
 }
 
-wstring fromUTF8 (const string& str)
+std::wstring fromUTF8 (const std::string& str)
 {
   int slen = strlen(str.c_str());
   int wlen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), slen, 0, 0);
   wchar_t* buf = new wchar_t [wlen + 1];
   MultiByteToWideChar(CP_UTF8, 0, str.c_str(), slen, buf, wlen);
-  wstring wstr(buf, wlen);
+  std::wstring wstr(buf, wlen);
   delete [] buf;
   return wstr;
 }
+#endif
 
-/*string uni2ascii (const wstring & str)
+/*std::string uni2ascii (const std::wstring & str)
 {
-  string res (str.length (), ' ');
+  std::string res (str.length (), ' ');
 
   for (
-    wstring::const_iterator cit = str.begin (),
-    string::iterator it = res.begin ()
+    std::wstring::const_iterator cit = str.begin (),
+    std::string::iterator it = res.begin ()
     cit != str.end ();
     cit++, it++
       )
@@ -445,13 +451,13 @@ wstring fromUTF8 (const string& str)
     }
 }
 
-wstring ascii2uni (const string & str)
+std::wstring ascii2uni (const std::string & str)
 {
-  wstring res (str.length (), L' ');
+  std::wstring res (str.length (), L' ');
 
   for (
-    string::const_iterator cit = str.begin (),
-    wstring::iterator it = res.begin ()
+    std::string::const_iterator cit = str.begin (),
+    std::wstring::iterator it = res.begin ()
     cit != str.end ();
     cit++, it++
       )
@@ -464,6 +470,7 @@ wstring ascii2uni (const string & str)
     }
 }*/
 
+#ifdef _WIN32
 #define TIME_ADJUST_32_64 116444736000000000I64
 
 // Got from MSDN
@@ -488,4 +495,4 @@ time_t FileTimeToTimet (FILETIME ft)
     return (li.QuadPart - TIME_ADJUST_32_64) 
       / 10000000;
 }
-
+#endif

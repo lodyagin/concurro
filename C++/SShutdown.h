@@ -1,13 +1,16 @@
 #ifndef __SSHUTDOWN_H
 #define __SSHUTDOWN_H
 
+#ifdef _WIN32
 #include "SComplPort.h"
+#endif
 #include "SSingleton.h"
 #include "SException.h"
 #include "SCommon.h"
 #include <vector>
 
 
+#ifdef _WIN32
 #define SSHUTDOWN  SShutdown::instance()
 
 
@@ -34,6 +37,7 @@ private:
   std::vector<SComplPort *> ports;
 
 };
+#endif
 
 
 class XShuttingDown : public SException
@@ -42,17 +46,18 @@ public:
 
   typedef SException Parent;
 
-  explicit XShuttingDown( const wstring & interruptedAction = L"unknown" );
+  explicit XShuttingDown( const std::wstring & interruptedAction = L"unknown" );
+  ~XShuttingDown () throw ();
 
 private:
 
-  wstring _action;
+  std::wstring _action;
 
 };
 
 
 // throw XShuttindDown
-void xShuttingDown( const wstring & interruptedAction = L"unknown" );
+void xShuttingDown( const std::wstring & interruptedAction = L"unknown" );
 void sCheckShuttingDown();  // throws ZSD if is shuttind down
 
 

@@ -10,17 +10,17 @@ class SException : public std::exception
 {
 public:
 
-  explicit SException (const string & what, bool alreadyLogged = false);
-  explicit SException (const wstring & what, bool alreadyLogged = false);
-  virtual ~SException();
+  explicit SException (const std::string & what, bool alreadyLogged = false);
+  explicit SException (const std::wstring & what, bool alreadyLogged = false);
+  virtual ~SException() throw();
 
   bool isAlreadyLogged () const  { return alreadyLoggedFlag; }
 
-  virtual const char * what() const;
+  virtual const char * what() const throw();
 
 protected:
-  wstring whatU;
-  string _what;
+  std::wstring whatU;
+  std::string _what;
   bool alreadyLoggedFlag;
 };
 
@@ -40,8 +40,8 @@ public:
 
   typedef SException Parent;
 
-  SUserError( const string & what ) : Parent(what) {}
-  SUserError( const wstring & what ) : Parent(what) {}
+  SUserError( const std::string & what ) : Parent(what) {}
+  SUserError( const std::wstring & what ) : Parent(what) {}
 
 };
 

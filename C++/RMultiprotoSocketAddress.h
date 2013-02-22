@@ -1,10 +1,12 @@
 #pragma once
-#include "rsocketaddress.h"
+#include "RSocketAddress.h"
 #include "RSingleprotoSocketAddress.h"
 #include "SocketAddressFactory.h"
 #include "SNotCopyable.h"
 #include <iostream>
+#ifdef _WIN32
 #include <Ws2tcpip.h>
+#endif
 #include <vector>
 
 std::ostream& operator << 

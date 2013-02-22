@@ -1,4 +1,11 @@
-#include "stdafx.h"
+#include "StdAfx.h"
+#ifndef _WIN32
+#  include "AppConfig.h"
+#else
+#  include <sys/types.h>
+#  include <unistd.h>
+#endif
+#include "Logging.h"
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/properties.h>
 #include <fstream>
@@ -11,7 +18,7 @@ log4cxx::LoggerPtr Logging::m_ThreadLogger(log4cxx::Logger::getLogger("Thread"))
 log4cxx::LoggerPtr Logging::m_ConcurrencyLogger(log4cxx::Logger::getLogger("Concurrency"));
 
 Logging::Logging(const char* szName)
-   : m_pLogger(NULL)
+   : m_pLogger(0)
    , m_sName(szName)
    , m_bFunctionLogger(false)
 {
@@ -50,51 +57,61 @@ void Logging::Init()
 
    try 
    {
+#ifdef _WIN32
       HMODULE hModule = GetModuleHandle(NULL);
       WCHAR szFilename[MAX_PATH] = L"";
       GetModuleFileName(hModule,szFilename,MAX_PATH); //FIXME path overflow
       std::wstring sFilename = szFilename;
-#if 0
+#  if 0
       {
          std::ofstream a ("log.log");
          a << szFilename << std::endl;
       }
-#endif
+#  endif
       const std::wstring::size_type idx = sFilename.rfind(L'\\');
       std::wstring sModuleDir = sFilename.substr(0,idx);
 
-	  SetCurrentDirectory(sModuleDir.c_str());
+		SetCurrentDirectory(sModuleDir.c_str());
 
-    std::wstring fileName;
-    fileName = sModuleDir + L"\\log4cxx.properties";
+		std::wstring fileName;
+		fileName = sModuleDir + L"\\log4cxx.properties";
+#else
+		const std::string& fileName = std::string("/etc/") + APPCONFIG_PKG_NAME
+		  + "log4cxx.properties";
+#endif
 
-    ::_wputenv (SFORMAT(L"LOGPID="<<GetCurrentProcessId()).c_str()); // put our PID into env
+		// put our PID into env
+#ifdef _WIN32
+		::_wputenv (SFORMAT(L"LOGPID="<<GetCurrentProcessId()).c_str()); 
+#else
+		::putenv (string2char_ptr (SFORMAT("LOGPID="<<getpid()))); 
+#endif
 
-    { 
-      std::ifstream f(fileName.c_str()); 
-      if ((void*)f == 0) throw 0;
-    }
-	  log4cxx::PropertyConfigurator::configure (fileName);
+		{ 
+		  std::ifstream f(fileName.c_str()); 
+		  if ((void*)f == 0) throw 0;
+		}
+		log4cxx::PropertyConfigurator::configure (fileName);
    }
    catch (...) 
    {	// here let's do default configuration
 	   log4cxx::helpers::Properties p;
 #ifndef _DEBUG
-	   p.setProperty(L"log4j.rootLogger", L"INFO, A1");
-	   p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.RollingFileAppender");
-	   p.setProperty(L"log4j.appender.A1.Append", L"True");
-	   p.setProperty(L"log4j.appender.A1.File", L"coressh.log");
-	   p.setProperty(L"log4j.appender.A1.MaxFileSize", L"1048576");
-	   p.setProperty(L"log4j.appender.A1.MaxBackupIndex", L"12");
-	   p.setProperty(L"log4j.appender.A1.layout", L"org.apache.log4j.PatternLayout");
-	   p.setProperty(L"log4j.appender.A1.layout.ConversionPattern", L"%p %d{%Y-%m-%d %H:%M:%S} %t %m%n");
+	   p.setProperty(_T"log4j.rootLogger", _T"INFO, A1");
+	   p.setProperty(_T"log4j.appender.A1", _T"org.apache.log4j.RollingFileAppender");
+	   p.setProperty(_T"log4j.appender.A1.Append", _T"True");
+	   p.setProperty(_T"log4j.appender.A1.File", _T"coressh.log");
+	   p.setProperty(_T"log4j.appender.A1.MaxFileSize", _T"1048576");
+	   p.setProperty(_T"log4j.appender.A1.MaxBackupIndex", _T"12");
+	   p.setProperty(_T"log4j.appender.A1.layout", _T"org.apache.log4j.PatternLayout");
+	   p.setProperty(_T"log4j.appender.A1.layout.ConversionPattern", _T"%p %d{%Y-%m-%d %H:%M:%S} %t %m%n");
 #else
-	   p.setProperty(L"log4j.rootLogger", L"DEBUG, A1");
-	   p.setProperty(L"log4j.appender.A1", L"org.apache.log4j.ConsoleAppender");
-	   p.setProperty(L"log4j.appender.A1.layout", L"org.apache.log4j.PatternLayout");
+	   p.setProperty(_T"log4j.rootLogger", _T"DEBUG, A1");
+	   p.setProperty(_T"log4j.appender.A1", _T"org.apache.log4j.ConsoleAppender");
+	   p.setProperty(_T"log4j.appender.A1.layout", _T"org.apache.log4j.PatternLayout");
 	   p.setProperty
-       (L"log4j.appender.A1.layout.ConversionPattern", 
-        L"%p %d{%Y-%m-%d %H:%M:%S} %t %C.%M%n----%n%m%n%n");
+       (_T"log4j.appender.A1.layout.ConversionPattern", 
+        _T"%p %d{%Y-%m-%d %H:%M:%S} %t %C.%M%n----%n%m%n%n");
 #endif
 	   /* this is BasicConfigurator properties. 
 	   We change DEBUG to WARN, and ConsoleAppender to NTEventLog
@@ -107,5 +124,5 @@ void Logging::Init()
    }
 }
 
-static int zqw = (Logging::Init(), 1); // as teaches Stroustrup :>
+static int zqw = (Logging::Init(), 1); // as Stroustrup teaches :>
 
