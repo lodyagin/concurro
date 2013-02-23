@@ -1,0 +1,231 @@
+/**
+ * @file
+ * An unified wrapper over different type of threads (i.e., QThread, posix thread etc.).
+ */
+
+#ifndef RTHREADWRAPPER_H_
+#define RTHREADWRAPPER_H_
+
+#include "SNotCopyable.h"
+#include "StateMap.h"
+#include <cstdatomic>
+
+class ThreadStateSpace {};
+
+class RThreadBase
+  : public SNotCopyable,
+    public HasStringView
+{
+public:
+  explicit RThreadBase (bool main);
+  virtual ~RThreadBase ();
+  int id () const { return _id; }
+
+  /* 
+  It is a group of functions 
+  for access from a calling thread 
+  */
+  void start();
+#ifdef EVENT_IMPLEMENTED
+  void wait();  // wait while thread finished
+#endif
+  virtual void stop (); ///< try to stop implicitly
+
+  bool is_running () const
+  {
+#ifdef MUTEX_IMPLEMENTED
+    SMutex::Lock lock (cs);
+#endif
+    return currentState == workingState;
+  }
+
+  // Overrides
+  void outString (std::ostream& out) const;
+
+#ifdef EVENT_IMPLEMENTED
+  SEvent& get_stop_event ()
+  {
+    return stopEvent;
+  }
+#endif
+
+  // the state stuff
+  class ThreadState 
+    : public UniversalState, // TODO protected
+      public ThreadStateSpace
+  {
+    friend class RThreadBase;
+  public:
+    ThreadState (const char* name);
+
+    // TODO base mechanics
+    template<class Object>
+    static void check_moving_to
+      (const Object& obj, const ThreadState& to)
+    {
+      ThreadState from = to;
+      obj.state (from);
+      obj.get_state_map (from) -> check_transition
+        (from, to);
+    }
+
+    // TODO base mechanics
+    template<class Object>
+    static void move_to
+      (Object& obj, const ThreadState& to)
+    {
+      check_moving_to (obj, to);
+      obj.set_state_internal (to);
+      // FIXME add logging
+    }
+
+    // TODO base mechanics
+    template<class Object>
+    static bool state_is
+      (const Object& obj, const ThreadState& st)
+    {
+      ThreadState current = st;
+      obj.state (current);
+      return current.state_idx == st.state_idx;
+    }
+
+    // TODO base mechanics
+    std::string name () const
+    {
+      return stateMap->get_state_name (*this);
+    }
+
+  protected:
+    static StateMap* stateMap;
+  };
+
+  // States
+  static ThreadState readyState;
+  static ThreadState workingState;
+  static ThreadState terminatedState;
+  static ThreadState destroyedState;
+
+  void state (ThreadState& state) const;
+
+protected:
+
+#ifdef MUTEX_IMPLEMENTED
+  /// Mutex for concurrent access to this object.
+  SMutex cs;
+#endif
+
+  void set_state_internal (const ThreadState& state)
+  {
+    currentState = state;
+  }
+
+  void log_from_constructor ();
+
+#if 0
+  // It is ThreadProc, it simple calls _run ()
+  // (Access inside the thread)
+  static unsigned int __stdcall _helper( void * );
+#endif
+
+  /// Start the thread procedure (called from _helper)
+  void _run ();
+
+  /// It will be overrided with real thread procedure.
+  virtual void run() = 0;
+
+  virtual void start_impl () = 0;
+
+
+#ifdef EVENT_IMPLEMENTED
+  SEvent stopEvent; //stop is requested
+#endif
+
+  // number of threads waiting termination
+  // of this thread
+  //std::atomic<int> waitCnt; 
+
+  /// somebody has requested a termination
+  std::atomic<bool> exitRequested; 
+
+  StateMap* get_state_map (ThreadState&) const
+  { return ThreadState::stateMap; }
+
+private:
+  int _id;
+  static std::atomic<bool> mainThreadCreated;
+  static std::atomic<int> counter;
+
+  static const State2Idx allStates[];
+  static const StateTransition allTrans[];
+
+  // this class has a complex state:
+  // (currentState, waitCnt, exitRequested)
+  ThreadState currentState;
+
+#ifdef EVENT_IMPLEMENTED
+  //thread terminate its processing
+  SEvent isTerminatedEvent; 
+  SEvent* externalTerminated;
+#endif
+
+  // called from Windows
+  // (Access inside the thread)
+  //void _run();
+};
+
+/*
+  It can be started and stoped only once, like Java thread.
+  SException will be raised if we try to start several times.
+*/
+
+/**
+ * Any kind thread-wrapper object. Thread is the real thread
+ * class.
+ */
+template<class Thread>
+class RThread
+  : public RThreadBase,
+    protected Thread
+{
+public:
+
+  /// Create a new thread. main == true will crate the main
+  /// thread. One and only one main thread can be created.
+  static RThread* create (bool main = false) {
+    return new RThread (main);
+  }
+
+  // Return the pointer to the RThread object
+  // for the current thread.
+  // TODO UT on thread not created by RThread.
+  static RThread<Thread>& current();
+
+  // Overrides
+  void outString (std::ostream& out) const;
+
+protected:
+
+  RThread (
+#ifdef EVENT_IMPLEMENTED
+    SEvent* extTerminated = 0
+#endif
+    );
+
+  /// Create a new thread. main == true will crate the main
+  /// thread. One and only one main thread can be created.
+  //!! set _current if it is needed
+  explicit RThread (bool main) : RThreadBase (main) {}
+
+  /* Access inside the thread */
+  // Override it for a real thread job
+  // but leave protected. It should not be called
+  // directly!
+  virtual void run() {}
+  //!! release _current if it is needed
+  virtual ~RThread();
+};
+
+void sSleep( int ms );
+
+
+#endif

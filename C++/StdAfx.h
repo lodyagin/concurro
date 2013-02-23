@@ -1,4 +1,8 @@
 #pragma once
+
+#undef EVENT_IMPLEMENTED
+#undef MUTEX_IMPLEMENTED
+
 #ifdef _WIN32
 #  include "targetver.h"
 
@@ -23,8 +27,13 @@
 #include "SEvent.h"
 #include "SMutex.h"
 #endif
+#ifdef MUTEX_IMPLEMENTED
+#  include "RMutex.h"
+#endif
+#ifdef EVENT_IMPLEMENTED
+#  include "REvent.h"
+#endif
 #include "SShutdown.h"
 
 #include <string>
 #include <assert.h>
-

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6.4)
 
+set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x")
+
 project (concurrentcpp)
 set (concurrentcpp_SOURCES 
 #  ClientSocketConnector.cpp
@@ -26,7 +28,7 @@ set (concurrentcpp_SOURCES
   SShutdown.cpp
   StateMap.cpp
   StdAfx.cpp
-#  SThread.cpp
+  RThread.cpp
 #  SWinCheck.cpp
   ThreadRepository.cpp
 #  time_wce.cpp

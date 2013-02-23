@@ -34,6 +34,8 @@ public:
 
   virtual Object* create_object (const Parameter& param);
 
+  /// Delete obj from the repository. freeMemory means call the object
+  /// desctructor after it.
   virtual void delete_object 
     (Object* obj, bool freeMemory);
 

@@ -6,6 +6,7 @@
 #include <atlbase.h>
 #else
 #define __declspec(x)
+#define __stdcall
 #endif
 
 #include <sstream>
