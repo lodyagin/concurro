@@ -5,6 +5,7 @@
 
 // SException  ==================================================================
 
+#ifdef _WIN32
 SException::SException (const std::wstring & w, bool alreadyLogged) :
   whatU(w), alreadyLoggedFlag (alreadyLogged)
 {
@@ -12,11 +13,14 @@ SException::SException (const std::wstring & w, bool alreadyLogged) :
    if (!alreadyLogged)
      LOG4CXX_DEBUG (Logging::Root (), std::wstring (L"SException: ") + w);
 }
+#endif
 
 SException::SException (const std::string & w, bool alreadyLogged) :
   _what(w), alreadyLoggedFlag (alreadyLogged)
 {
+#ifdef _WIN32
   whatU = str2wstr (_what);
+#endif
    if (!alreadyLogged)
      LOG4CXX_DEBUG (Logging::Root (), std::string ("SException: ") + w);
 }
@@ -33,5 +37,7 @@ const char * SException::what() const throw ()
 //const SException ProgramError ("Program Error");
 //extern const SException NotImplemented ("Not Implemented");
 
+#ifdef _WIN32
 SMAKE_THROW_FN_IMPL(throwSException, SException)
 SMAKE_THROW_FN_IMPL(sUserError, SUserError)
+#endif

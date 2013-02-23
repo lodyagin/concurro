@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "RThread.h"
+#include "SShutdown.h"
 
 // RThread states  ========================================
 
@@ -80,7 +81,7 @@ RThreadBase::RThreadBase (bool main)
   if (main) {
     bool main_was_created = mainThreadCreated.exchange (true);
     if (main_was_created)
-      throw SException (L"Only one thread with id = 0 can exist");
+      throw SException (_T"Only one thread with id = 0 can exist");
     _id = 0;
   }
   else _id = counter++;

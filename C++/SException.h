@@ -19,7 +19,9 @@ public:
   virtual const char * what() const throw();
 
 protected:
+#ifdef _WIN32
   std::wstring whatU;
+#endif
   std::string _what;
   bool alreadyLoggedFlag;
 };

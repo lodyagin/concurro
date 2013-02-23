@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SCOMMON_H_
+#define SCOMMON_H_
 
 #include <string>
 #include <stdarg.h>
@@ -243,9 +244,6 @@ Out copy_if (In first, In last, Out res, Pred p)
 /**
  * Allocate a new char* string by the std::string arg.
  */
-char* string2char_ptr (const std::string& str)
-{
-  char *cstr = new char[str.length() + 1];
-  strcpy(cstr, str.c_str());
-  return cstr;
-}
+char* string2char_ptr (const std::string& str);
+
+#endif

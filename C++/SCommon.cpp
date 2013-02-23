@@ -264,6 +264,7 @@ strsep (char **stringp, const char *delim)
 }
 #endif
 
+#ifdef _WIN32
 std::wstring sFormat( std::wstring format, ... )
 {
   va_list list;
@@ -273,7 +274,6 @@ std::wstring sFormat( std::wstring format, ... )
   return s;
 }
 
-#ifdef _WIN32
 std::wstring sFormatVa( const std::wstring & format, va_list list )
 {
 	CString buf;
@@ -289,7 +289,9 @@ std::string sFormatVaA( const std::string & format, va_list list )
 }
 #endif
 
+#ifdef _WIN32
 SMAKE_THROW_FN_IMPL(sThrow, SException)
+#endif
 
 
 /*void stripEndChar( char * buf, char ch )
@@ -496,3 +498,14 @@ time_t FileTimeToTimet (FILETIME ft)
       / 10000000;
 }
 #endif
+
+/**
+ * Allocate a new char* string by the std::string arg.
+ */
+char* string2char_ptr (const std::string& str)
+{
+  char *cstr = new char[str.length() + 1];
+  strcpy(cstr, str.c_str());
+  return cstr;
+}
+

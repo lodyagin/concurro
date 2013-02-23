@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.6.4)
 
 set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x")
 
-project (concurrentcpp)
-set (concurrentcpp_SOURCES 
+project (concurrent)
+set (concurrent_SOURCES 
 #  ClientSocketConnector.cpp
 #  IPv4SocketAddress.cpp
 #  IPv6SocketAddress.cpp
@@ -37,4 +37,4 @@ set (concurrentcpp_SOURCES
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-add_LIBRARY(concurrentcpp ${concurrentcpp_SOURCES})
+add_LIBRARY(concurrent ${concurrent_SOURCES})

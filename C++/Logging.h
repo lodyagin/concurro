@@ -16,6 +16,7 @@ private:
    static log4cxx::LoggerPtr m_ThreadLogger;
    static log4cxx::LoggerPtr m_TrackLogger;
    static log4cxx::LoggerPtr m_ConcurrencyLogger;
+	static log4cxx::LoggerPtr m_StatesLogger;
 
    // Pointer to logger
    log4cxx::LoggerPtr m_pLogger;
@@ -46,9 +47,21 @@ public:
    // Reads settings for logger
    static void Init();
 
-   static inline log4cxx::LoggerPtr Root() { return m_RootLogger ; };
-   static inline log4cxx::LoggerPtr Thread() { return m_ThreadLogger ; };
-   static inline log4cxx::LoggerPtr Concurrency() { return m_ConcurrencyLogger ; };
+   static inline log4cxx::LoggerPtr Root() { 
+	  return m_RootLogger; 
+	}
+
+   static inline log4cxx::LoggerPtr Thread() { 
+	  return m_ThreadLogger; 
+	}
+
+   static inline log4cxx::LoggerPtr Concurrency() { 
+	  return m_ConcurrencyLogger; 
+	}
+
+   static inline log4cxx::LoggerPtr States() { 
+	  return m_StatesLogger; 
+	}
 };
 
 inline log4cxx::LoggerPtr GetLogger(const char * subname, const Logging& parent) {

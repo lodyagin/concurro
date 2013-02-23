@@ -13,9 +13,14 @@
 
 bool Logging::m_bConfigured = false;
 
-log4cxx::LoggerPtr Logging::m_RootLogger(log4cxx::Logger::getRootLogger());
-log4cxx::LoggerPtr Logging::m_ThreadLogger(log4cxx::Logger::getLogger("Thread"));
-log4cxx::LoggerPtr Logging::m_ConcurrencyLogger(log4cxx::Logger::getLogger("Concurrency"));
+log4cxx::LoggerPtr Logging::m_RootLogger
+  (log4cxx::Logger::getRootLogger());
+log4cxx::LoggerPtr Logging::m_ThreadLogger
+  (log4cxx::Logger::getLogger("Thread"));
+log4cxx::LoggerPtr Logging::m_ConcurrencyLogger
+  (log4cxx::Logger::getLogger("Concurrency"));
+log4cxx::LoggerPtr Logging::m_StatesLogger
+  (log4cxx::Logger::getLogger("States"));
 
 Logging::Logging(const char* szName)
    : m_pLogger(0)
@@ -76,8 +81,8 @@ void Logging::Init()
 		std::wstring fileName;
 		fileName = sModuleDir + L"\\log4cxx.properties";
 #else
-		const std::string& fileName = std::string("/etc/") + APPCONFIG_PKG_NAME
-		  + "log4cxx.properties";
+		const std::string& fileName = std::string("/etc/") 
+		  + APPCONFIG_PKG_NAME + "/log4cxx.properties";
 #endif
 
 		// put our PID into env

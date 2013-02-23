@@ -45,6 +45,7 @@ void SShutdown::unregisterComplPort( SComplPort & port )
 }
 #endif
 
+#if 1
 // XShuttingDown  ====================================================
 
 XShuttingDown::XShuttingDown( const std::wstring & act ) :
@@ -60,6 +61,7 @@ void xShuttingDown( const std::wstring & act )
 {
   throw XShuttingDown(act);
 }
+#endif
 
 #ifdef _WIN32
 void sCheckShuttingDown()

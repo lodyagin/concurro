@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "StateMap.h"
 
-Logging StateMap::log ("StateMap");
-
 StateMap::StateMap 
     (const State2Idx new_states[], 
      const StateTransition transitions[]
@@ -37,7 +35,7 @@ StateMap::StateMap
   const StateIdx nStates = maxIdx;
 
   LOG4STRM_DEBUG 
-    (log.GetLogger (), 
+    (Logging::States (), 
      oss_ << "Total " << nStates << " states in the map."
      );
 
@@ -119,7 +117,7 @@ void StateMap::add_transitions
     }
     else
       LOG4CXX_WARN 
-        (log.GetLogger (),
+        (Logging::States (),
         std::string ("Transition ")
         + transitions[i].from
         + " -> "
