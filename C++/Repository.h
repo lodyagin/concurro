@@ -1,10 +1,14 @@
 #pragma once
-#include "smutex.h"
-#include "snotcopyable.h"
-#include "sexception.h"
+#ifdef MUTEX_IMPLEMENTED
+#include "RMutex.h"
+#endif
+#include "SNotCopyable.h"
+#include "SException.h"
 #include "SShutdown.h"
-#include "SEvent.h"
-#include "SThread.h"
+#ifdef EVENT_IMPLEMENTED
+#include "REvent.h"
+#endif
+#include "RThread.h"
 #include "StateMap.h"
 #include <vector>
 #include <algorithm>
@@ -73,7 +77,7 @@ public:
   {
     //const Parameter* info;
     Repository* repository;
-    std::string objectId;
+    size_t objectId;
   };
 
   class Destroy 
@@ -95,7 +99,9 @@ protected:
   enum {startMapSize = 10, mapSizeStep = 10};
 
   ObjectMap* objects;
-  SMutex objectsM;
+#ifdef MUTEX_IMPLEMENTED
+  RMutex objectsM;
+#endif
   //SSemaphore semaphore;
 };
 
@@ -152,15 +158,14 @@ Object* Repository<Object, Parameter>::create_object
         (L"Stop request from the owner thread.");*/
 
   { 
-    SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+    RMutex::Lock lock (objectsM);
+#endif
 
     const ObjectId objId = get_first_unused_object_id 
       (*objects);
 
-    std::string uniId;
-    toString (objId, uniId);
-    const ObjectCreationInfo cinfo =
-      { this, uniId };
+    const ObjectCreationInfo cinfo = { this, objId };
 
     Object* obj = param.create_derivation (cinfo);
     //FIXME check creation
@@ -178,7 +183,9 @@ Object* Repository<Object, Parameter>::replace_object
    bool freeMemory
    )
 {
-  SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+  RMutex::Lock lock (objectsM);
+#endif
 
   Object* obj = objects->at (id);
   if (!obj)
@@ -204,7 +211,7 @@ void Repository<Object, Parameter>::delete_object
    )
 {
   assert (obj);
-  const ObjectId objId = fromString<ObjectId> (obj->universal_object_id);
+  const ObjectId objId = obj->universal_object_id;
 
   delete_object_by_id (objId, freeMemory);
 }
@@ -215,14 +222,16 @@ void Repository<Object, Parameter>::delete_object_by_id
 {
   Object* ptr = 0;
   {
-    SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+    RMutex::Lock lock (objectsM);
+#endif
 
-    ObjectMap::reference r = objects->at (id);
+    typename ObjectMap::reference r = objects->at (id);
     ptr = r;
     if (r == 0)
     {
       THROW_EXCEPTION
-      (SException, oss_ << L"Program error");
+      (SException, oss_ << _T"Program error");
     }
 
     r = 0;
@@ -239,7 +248,9 @@ Object* Repository<Object, Parameter>::get_object_by_id
   (typename Repository<Object, Parameter>::ObjectId id) const
 {
   { 
-    SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+    RMutex::Lock lock (objectsM);
+#endif
 
     if (id < 1 || id >= objects->size ())
       return 0;
@@ -253,7 +264,9 @@ typename Repository<Object, Parameter>::ObjectId
 Repository<Object, Parameter>::get_first_unused_object_id
   (ObjectMap& m)
 { //TODO UT
-  SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+  RMutex::Lock lock (objectsM);
+#endif
 
   // TODO change to stack
   for (ObjectId id = 1; id < m.size (); id++)
@@ -274,7 +287,9 @@ template<class Object, class Parameter>
 Out Repository<Object, Parameter>::
   get_object_ids_by_pred (Out res, Pred p)
 {
-  SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+  RMutex::Lock lock (objectsM);
+#endif
 
   for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i] && p (*(*objects)[i]))
@@ -308,7 +323,9 @@ template<class Object, class Parameter>
   template<class Op>
 void Repository<Object, Parameter>::for_each (Op& f)
 {
-  SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+  RMutex::Lock lock (objectsM);
+#endif
 
   for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i])
@@ -319,7 +336,9 @@ template<class Object, class Parameter>
   template<class Op>
 void Repository<Object, Parameter>::for_each (Op& f) const
 {
-  SMutex::Lock lock (objectsM);
+#ifdef MUTEX_IMPLEMENTED
+  RMutex::Lock lock (objectsM);
+#endif
 
   for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i])

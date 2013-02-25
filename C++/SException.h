@@ -26,14 +26,26 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-#define THROW_EXCEPTION(exception_class, stream_expr) { \
+#ifdef _WIN32
+#  define THROW_EXCEPTION(exception_class, stream_expr) { \
   std::wostringstream oss_; \
   { stream_expr ; } \
-  oss_ << L" at " << _T(__FILE__) << L':' << __LINE__ \
-       << L", " << _T(__FUNCTION__); \
+  oss_ << L" at " << L(__FILE__) << L':' << __LINE__						 \
+       << L", " << L(__FUNCTION__); \
        throw exception_class(oss_.str()); \
-}
+  } while (0)
+#else
+#define THROW_EXCEPTION(exception_class, stream_expr) { \
+  std::ostringstream oss_; \
+  { stream_expr ; } \
+  oss_ << " at " << (__FILE__) << ':' << __LINE__						 \
+       << ", " << (__FUNCTION__); \
+       throw exception_class(oss_.str()); \
+  } while (0)
+#endif
 
+#define THROW_PROGRAM_ERROR \
+  THROW_EXCEPTION(SException, oss_ << "Program Error")
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException

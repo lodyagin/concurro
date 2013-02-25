@@ -12,14 +12,27 @@
 
 class ThreadStateSpace {};
 
+/**
+ * It is a base class for RThread. It contains the base
+ * implementation which not depends on a particular physical thread.
+ */
 class RThreadBase
   : public SNotCopyable,
     public HasStringView
 {
 public:
-  explicit RThreadBase (bool main);
+  /// It is mandatory for any repository member. 
+  // Is always > 0. As a special
+  /// meaning the thread with 1 id is a main thread
+  const size_t universal_object_id;
+
+  explicit RThreadBase 
+	 (size_t id /// it comes from Repository::create_object. id
+	            /// == 0 for the main thread
+	  /*, bool main*/);
+
   virtual ~RThreadBase ();
-  int id () const { return _id; }
+  size_t id () const { return universal_object_id; }
 
   /* 
   It is a group of functions 
@@ -151,7 +164,7 @@ protected:
   { return ThreadState::stateMap; }
 
 private:
-  int _id;
+  //int _id;
   static std::atomic<bool> mainThreadCreated;
   static std::atomic<int> counter;
 
@@ -180,7 +193,7 @@ private:
 
 /**
  * Any kind thread-wrapper object. Thread is the real thread
- * class.
+ * class. Each RThread object must be member of a ThreadRepository.
  */
 template<class Thread>
 class RThread
@@ -191,9 +204,9 @@ public:
 
   /// Create a new thread. main == true will crate the main
   /// thread. One and only one main thread can be created.
-  static RThread* create (bool main = false) {
-    return new RThread (main);
-  }
+//  static RThread* create (bool main = false) {
+//    return new RThread (main);
+//  }
 
   // Return the pointer to the RThread object
   // for the current thread.
@@ -214,7 +227,7 @@ protected:
   /// Create a new thread. main == true will crate the main
   /// thread. One and only one main thread can be created.
   //!! set _current if it is needed
-  explicit RThread (bool main) : RThreadBase (main) {}
+  explicit RThread (size_t id) : RThreadBase (id) {}
 
   /* Access inside the thread */
   // Override it for a real thread job

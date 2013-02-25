@@ -66,8 +66,9 @@ RThreadBase::RThreadBase (SEvent* extTerminated)
 }
 #endif
 
-RThreadBase::RThreadBase (bool main)
+RThreadBase::RThreadBase (size_t id/*, bool main*/)
   : 
+    universal_object_id (id),
 #ifdef EVENT_IMPLEMENTED
     isTerminatedEvent (false),
     stopEvent (true, false),
@@ -78,13 +79,14 @@ RThreadBase::RThreadBase (bool main)
     exitRequested (false),
     currentState ("ready")
 {
-  if (main) {
+  if (universal_object_id == 0) {
+	 THROW_PROGRAM_ERROR;
+  }
+  else if (universal_object_id == 1) {
     bool main_was_created = mainThreadCreated.exchange (true);
     if (main_was_created)
-      throw SException (_T"Only one thread with id = 0 can exist");
-    _id = 0;
+      throw SException (_T"Only one thread with id = 1 can exist");
   }
-  else _id = counter++;
 
   LOG4STRM_INFO
     (Logging::Thread (),

@@ -1,5 +1,5 @@
 #pragma once
-#include "repository.h"
+#include "Repository.h"
 #include <list>
 #include <algorithm>
 
@@ -8,8 +8,10 @@ class ThreadRepository :
   public Repository<Thread, Parameter>
 {
 public:
+  typedef typename Repository<Thread,Parameter>::ObjectId ObjectId;
+
   ThreadRepository (int n)
-    : Repository (n)
+    : Repository<Thread,Parameter> (n)
   {}
 
   virtual void stop_subthreads ();
@@ -47,7 +49,9 @@ struct ThreadWaiter : std::unary_function<Thread*, void>
 {
   void operator () (Thread* th)
   {
+#ifdef EVENT_IMPLEMENTED
     if (th) th->wait ();
+#endif
   }
 };
 
@@ -55,8 +59,8 @@ template<class Thread, class Parameter>
 void ThreadRepository<Thread,Parameter>::stop_subthreads ()
 {
   std::for_each (
-    objects->begin (),
-    objects->end (),
+    this->objects->begin (),
+    this->objects->end (),
     ThreadStopper<Thread> ()
     );
 }
@@ -65,8 +69,8 @@ template<class Thread, class Parameter>
 void ThreadRepository<Thread,Parameter>::wait_subthreads ()
 {
   std::for_each (
-    objects->begin (),
-    objects->end (),
+    this->objects->begin (),
+    this->objects->end (),
     ThreadWaiter<Thread> ()
     );
 }
@@ -79,8 +83,10 @@ void ThreadRepository<Thread,Parameter>::
   if (th) 
   {
     th->stop ();
+#ifdef EVENT_IMPLEMENTED
     th->wait ();
-    Repository::delete_object_by_id (id, freeMemory);
+#endif
+    Repository<Thread,Parameter>::delete_object_by_id (id, freeMemory);
   }
 }
 
