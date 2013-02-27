@@ -137,70 +137,76 @@ inline LogBase* Logger<LOG::States>::init_base
 
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOG4STRM_DEBUG(log, stream_expr) { \
+#define LOG_DEBUG_LOC(log, stream_expr, loc) {										\
 	 if (LOG4CXX_UNLIKELY(log::logger()->isDebugEnabled())) {				\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), LOG4CXX_LOCATION); }} while (0)
+		log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG4STRM_DEBUG(log, message)
+#define LOG_DEBUG_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
-#define LOG4STRM_TRACE(log, stream_expr) {									\
+#define LOG_TRACE_LOC(log, stream_expr, loc) {										\
 	 if (LOG4CXX_UNLIKELY(log::logger()->isTraceEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), LOG4CXX_LOCATION); }} while (0)
+		log::logger()->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG4STRM_TRACE(log, message)
+#define LOG_TRACE_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
-#define LOG4STRM_INFO(log, stream_expr) {										\
+#define LOG_INFO_LOC(log, stream_expr, loc) {											\
 	 if (LOG4CXX_UNLIKELY(log::logger()->isInfoEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), LOG4CXX_LOCATION); }} while (0)
+		log::logger()->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG4STRM_INFO(log, message)
+#define LOG_INFO_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
-#define LOG4STRM_WARN(log, stream_expr) {										\
+#define LOG_WARN_LOC(log, stream_expr, loc) {											\
 	 if (LOG4CXX_UNLIKELY(log::logger()->isWarnEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), LOG4CXX_LOCATION); }} while (0)
+		log::logger()->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG4STRM_WARN(log, message)
+#define LOG_WARN_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
-#define LOG4STRM_ERROR(log, stream_expr) {									\
+#define LOG_ERROR_LOC(log, stream_expr, loc) {										\
 	 if (LOG4CXX_UNLIKELY(log::logger()->isErrorEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), LOG4CXX_LOCATION); }} while (0)
+		log::logger()->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG4STRM_ERROR(log, message)
+#define LOG_ERROR_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
-#define LOG4STRM_FATAL(log, stream_expr) {									\
+#define LOG_FATAL_LOC(log, stream_expr, loc) {										\
 	 if (LOG4CXX_UNLIKELY(log::logger()->isFatalEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), LOG4CXX_LOCATION); }} while (0)
+		log::logger()->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG4STRM_FATAL(logger, message)
+#define LOG_FATAL_LOC(logger, message, loc)
 #endif
 
-#define LOG_TRACE LOG4STRM_TRACE
-#define LOG_DEBUG LOG4STRM_DEBUG
-#define LOG_INFO LOG4STRM_INFO
-#define LOG_WARN LOG4STRM_WARN
-#define LOG_ERROR LOG4STRM_ERROR
-#define LOG_FATAL LOG4STRM_FATAL
+#define LOG_TRACE(logger, message) \
+  LOG_TRACE_LOC(logger, message, LOG4CXX_LOCATION)
+#define LOG_DEBUG(logger, message) \
+  LOG_DEBUG_LOC(logger, message, LOG4CXX_LOCATION)
+#define LOG_INFO(logger, message) \
+  LOG_INFO_LOC(logger, message, LOG4CXX_LOCATION)
+#define LOG_WARN(logger, message) \
+  LOG_WARN_LOC(logger, message, LOG4CXX_LOCATION)
+#define LOG_ERROR(logger, message) \
+  LOG_ERROR_LOC(logger, message, LOG4CXX_LOCATION)
+#define LOG_FATAL(logger, message) \
+  LOG_FATAL_LOC(logger, message, LOG4CXX_LOCATION)
 
 #endif

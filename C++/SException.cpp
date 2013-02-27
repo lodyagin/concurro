@@ -22,7 +22,7 @@ SException::SException (const std::string & w, bool alreadyLogged) :
   whatU = str2wstr (_what);
 #endif
    if (!alreadyLogged)
-     LOG4STRM_DEBUG (Logger<LOG::Root>, "SException: " << w);
+     LOG_DEBUG (Logger<LOG::Root>, "SException: " << w);
 }
 
 SException::~SException() throw ()

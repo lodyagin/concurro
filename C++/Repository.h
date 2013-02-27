@@ -1,9 +1,9 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 #ifndef REPOSITORY_H_
 #define REPOSITORY_H_
 
-#ifdef MUTEX_IMPLEMENTED
 #include "RMutex.h"
-#endif
 #include "SNotCopyable.h"
 #include "SException.h"
 #include "SShutdown.h"
@@ -102,9 +102,7 @@ protected:
   enum {startMapSize = 10, mapSizeStep = 10};
 
   ObjectMap* objects;
-#ifdef MUTEX_IMPLEMENTED
   RMutex objectsM;
-#endif
   //SSemaphore semaphore;
 };
 
@@ -161,9 +159,7 @@ Object* Repository<Object, Parameter>::create_object
         (L"Stop request from the owner thread.");*/
 
   { 
-#ifdef MUTEX_IMPLEMENTED
-    RMutex::Lock lock (objectsM);
-#endif
+    RLOCK (objectsM);
 
     const ObjectId objId = get_first_unused_object_id 
       (*objects);
@@ -186,9 +182,7 @@ Object* Repository<Object, Parameter>::replace_object
    bool freeMemory
    )
 {
-#ifdef MUTEX_IMPLEMENTED
-  RMutex::Lock lock (objectsM);
-#endif
+  RLOCK(objectsM);
 
   Object* obj = objects->at (id);
   if (!obj)
@@ -225,9 +219,7 @@ void Repository<Object, Parameter>::delete_object_by_id
 {
   Object* ptr = 0;
   {
-#ifdef MUTEX_IMPLEMENTED
-    RMutex::Lock lock (objectsM);
-#endif
+    RLOCK(objectsM);
 
     typename ObjectMap::reference r = objects->at (id);
     ptr = r;
@@ -251,9 +243,7 @@ Object* Repository<Object, Parameter>::get_object_by_id
   (typename Repository<Object, Parameter>::ObjectId id) const
 {
   { 
-#ifdef MUTEX_IMPLEMENTED
-    RMutex::Lock lock (objectsM);
-#endif
+    RLOCK(objectsM);
 
     if (id < 1 || id >= objects->size ())
       return 0;
@@ -267,8 +257,8 @@ typename Repository<Object, Parameter>::ObjectId
 Repository<Object, Parameter>::get_first_unused_object_id
   (ObjectMap& m)
 { //TODO UT
-#ifdef MUTEX_IMPLEMENTED
-  RMutex::Lock lock (objectsM);
+#ifndef MUTEX_BUG
+  RLOCK(objectsM);
 #endif
 
   // TODO change to stack
@@ -290,9 +280,7 @@ template<class Object, class Parameter>
 Out Repository<Object, Parameter>::
   get_object_ids_by_pred (Out res, Pred p)
 {
-#ifdef MUTEX_IMPLEMENTED
-  RMutex::Lock lock (objectsM);
-#endif
+  RLOCK(objectsM);
 
   for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i] && p (*(*objects)[i]))
@@ -326,9 +314,7 @@ template<class Object, class Parameter>
   template<class Op>
 void Repository<Object, Parameter>::for_each (Op& f)
 {
-#ifdef MUTEX_IMPLEMENTED
-  RMutex::Lock lock (objectsM);
-#endif
+  RLOCK(objectsM);
 
   for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i])
@@ -339,9 +325,7 @@ template<class Object, class Parameter>
   template<class Op>
 void Repository<Object, Parameter>::for_each (Op& f) const
 {
-#ifdef MUTEX_IMPLEMENTED
-  RMutex::Lock lock (objectsM);
-#endif
+  RLOCK(objectsM);
 
   for (ObjectId i = 0; i < objects->size (); i++)
     if ((*objects)[i])

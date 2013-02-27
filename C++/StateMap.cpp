@@ -35,7 +35,7 @@ StateMap::StateMap
   }
   const StateIdx nStates = maxIdx;
 
-  LOG4STRM_DEBUG(log, 
+  LOG_DEBUG(log, 
 	  "There are " << nStates << " states in the map.");
 
   int nTransitions = 0;
@@ -115,7 +115,7 @@ void StateMap::add_transitions
       transId++;
     }
     else
-      LOG4STRM_WARN (log,
+      LOG_WARN (log,
 		  "Transition " << transitions[i].from
 		  << " -> " << transitions[i].to
 		  << " is registered already."

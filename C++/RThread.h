@@ -8,6 +8,8 @@
 
 #include "SNotCopyable.h"
 #include "StateMap.h"
+#include "RThread.h"
+#include "RMutex.h"
 #include <cstdatomic>
 
 class ThreadStateSpace {};
@@ -46,9 +48,7 @@ public:
 
   bool is_running () const
   {
-#ifdef MUTEX_IMPLEMENTED
-    SMutex::Lock lock (cs);
-#endif
+    RLOCK(cs);
     return currentState == workingState;
   }
 
@@ -124,10 +124,8 @@ protected:
 
   typedef Logger<LOG::Thread> logger;
 
-#ifdef MUTEX_IMPLEMENTED
   /// Mutex for concurrent access to this object.
-  SMutex cs;
-#endif
+  RMutex cs;
 
   void set_state_internal (const ThreadState& state)
   {
