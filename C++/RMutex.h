@@ -26,7 +26,7 @@ public:
   RMutex();
   ~RMutex();
 
-  void acquare();
+  void acquire();
   void release();
 
 protected:
@@ -40,12 +40,11 @@ public:
 
   Lock
     (const RMutex &,
-     bool lock = true, 
-     bool debug = false/*,
-     bool wait = false*/);
+     bool lock = true 
+     /*, bool wait = false*/);
   ~Lock();
 
-  void acquare();
+  void acquire();
   void release();
 
 private:
@@ -67,7 +66,7 @@ public:
 private:
 
   RMutex & mutex;
-  bool debug;
+  //bool debug;
 
 };
 
@@ -87,7 +86,7 @@ inline RMutex::~RMutex()
   //DeleteCriticalSection(&cs);
 }
 
-inline void RMutex::acquare()
+inline void RMutex::acquire()
 {
 	mx.lock();
 }
@@ -101,50 +100,49 @@ inline void RMutex::release()
 
 inline RMutex::Lock::Lock
     (const RMutex & m,
-     bool lock , 
-     bool _debug/*,
-     bool wait*/
+     bool lock 
+     /*, bool wait*/
      )
  :
   mutex(const_cast<RMutex &>(m)),
-  locked(lock),debug(_debug)
+				  locked(lock)//,debug(_debug)
 {
-	if ( lock ) {
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex"); }
+  if ( lock ) {
+	 LOG_DEBUG(Logger<LOG::Concurrency>, "Acquiring mutex");
+  }
 
-		/*if (wait)
-      mutex.wait ();
+  /*if (wait)
+	 mutex.wait ();
     else*/
-      mutex.acquare();
+  mutex.acquire();
 
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
-	}
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
 }
 
 inline RMutex::Lock::~Lock()
 {
-	if ( locked ) { 
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex"); }
-		mutex.release(); 
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
-	}
+  if ( locked ) { 
+	 LOG_DEBUG(Logger<LOG::Concurrency>, "Releasing mutex");
+  }
+  mutex.release(); 
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
 }
 
-inline void RMutex::Lock::acquare()
+inline void RMutex::Lock::acquire()
 {
   assert(!locked); // precondition
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex"); }
-  mutex.acquare();
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Acquiring mutex");
+  mutex.acquire();
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
   locked = true;
 }
 
 inline void RMutex::Lock::release()
 {
   assert(locked); // precondition
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Releasing mutex");
   mutex.release();
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
   locked = false;
 }
 
@@ -152,19 +150,19 @@ inline void RMutex::Lock::release()
 // RMutex::Unlock  ===================================================
 
 inline RMutex::Unlock::Unlock( const RMutex & m , bool _debug ) :
-  mutex(const_cast<RMutex &>(m)), debug(_debug)
+				  mutex(const_cast<RMutex &>(m))//, debug(_debug)
 {
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Releasing mutex");
   mutex.release();
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
 }
 
 inline RMutex::Unlock::~Unlock()
 {
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex"); }
-  mutex.acquare();
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Acquiring mutex");
+  mutex.acquire();
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
 }
 
 
-#endif  // __RMutex_H
+#endif  
