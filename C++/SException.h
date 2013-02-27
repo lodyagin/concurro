@@ -29,7 +29,7 @@ protected:
 #ifdef _WIN32
 #  define THROW_EXCEPTION(exception_class, stream_expr) { \
   std::wostringstream oss_; \
-  { stream_expr ; } \
+  { oss_ << stream_expr ; } \
   oss_ << L" at " << L(__FILE__) << L':' << __LINE__						 \
        << L", " << L(__FUNCTION__); \
        throw exception_class(oss_.str()); \
@@ -37,7 +37,7 @@ protected:
 #else
 #define THROW_EXCEPTION(exception_class, stream_expr) { \
   std::ostringstream oss_; \
-  { stream_expr ; } \
+  { oss_ << stream_expr ; } \
   oss_ << " at " << (__FILE__) << ':' << __LINE__						 \
        << ", " << (__FUNCTION__); \
        throw exception_class(oss_.str()); \
