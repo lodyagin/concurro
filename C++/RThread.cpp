@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "RThread.h"
 #include "SShutdown.h"
+#include <assert.h>
 
 // RThread states  ========================================
 
@@ -87,11 +88,7 @@ RThreadBase::RThreadBase (size_t id/*, bool main*/)
     if (main_was_created)
       throw SException (_T"Only one thread with id = 1 can exist");
   }
-
-  LOG4STRM_INFO
-    (Logging::Thread (),
-     oss_ << "New "; outString (oss_)
-     );
+  LOG4STRM_INFO (logger, "New " << *this);
 }
 
 void RThreadBase::state (ThreadState& state) const
@@ -211,7 +208,7 @@ RThreadBase::~RThreadBase()
 #ifdef MUTEX_IMPLEMENTED
     SMutex::Lock lock (cs);
 #endif
-    assert (!ThreadState::state_is (*this, destroyedState));
+    SCHECK(!ThreadState::state_is(*this, destroyedState));
     needStop = ThreadState::state_is (*this, workingState)
       && !exitRequested;
     needWait = needStop || exitRequested;
@@ -229,22 +226,14 @@ RThreadBase::~RThreadBase()
 #endif
     ThreadState::move_to (*this, destroyedState);
   }
-
- LOG4STRM_INFO
-    (Logging::Thread (),
-     oss_ << "Destroy "; outString (oss_)
-     );
+  LOG4STRM_INFO(logger, "Destroy " << *this);
 }
 
 
 void RThreadBase::_run()
 {
    //TODO check run from current thread
-
-   LOG4STRM_DEBUG
-     (Logging::Thread (),
-     outString (oss_); oss_ << " started");
-
+  LOG4STRM_DEBUG(logger, *this << " started");
   try
   {
     run();
@@ -255,15 +244,13 @@ void RThreadBase::_run()
   }
   catch ( std::exception & x )
   {
-      LOG4STRM_DEBUG
-        (Logging::Thread (),
-        oss_ << "Exception in thread: " << x.what ());
+	 LOG4STRM_DEBUG(logger, "Exception in thread: " 
+						 << x.what ());
   }
   catch ( ... )
   {
-    LOG4CXX_WARN
-      (Logging::Thread (),
-       "Unknown type of exception in thread.");
+    LOG4STRM_WARN(logger, 
+		"Unknown type of exception in the thread.");
   }
   {
 #ifdef MUTEX_IMPLEMENTED
@@ -273,10 +260,7 @@ void RThreadBase::_run()
     ThreadState::move_to (*this, terminatedState);
   }
 
-   LOG4STRM_DEBUG
-     (Logging::Thread (), 
-      outString (oss_); oss_ << " finished"
-      );
+  LOG4STRM_DEBUG(logger, *this << " is finished.");
 
 #ifdef EVENT_IMPLEMENTED
   if (externalTerminated) 
@@ -291,16 +275,13 @@ RThread & RThread::current()
   RThread * thread = reinterpret_cast<RThread*> 
     (RThread::get_current ());
 
-  assert (thread); //FIXME check
+  SCHECK(thread); //FIXME check
   return *thread;
 }
 #endif
 
 void RThreadBase::log_from_constructor ()
 {
-  LOG4STRM_INFO
-    (Logging::Thread (),
-     oss_ << "New "; outString (oss_) 
-       );
+  LOG4STRM_INFO(logger, "New " << *this);
 }
 

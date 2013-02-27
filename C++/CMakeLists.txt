@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x")
 project (concurrent)
 set (concurrent_SOURCES 
 #  ClientSocketConnector.cpp
+  HasStringView.cpp
 #  IPv4SocketAddress.cpp
 #  IPv6SocketAddress.cpp
   Logging.cpp

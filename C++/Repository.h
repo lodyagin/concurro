@@ -1,4 +1,6 @@
-#pragma once
+#ifndef REPOSITORY_H_
+#define REPOSITORY_H_
+
 #ifdef MUTEX_IMPLEMENTED
 #include "RMutex.h"
 #endif
@@ -12,6 +14,7 @@
 #include "StateMap.h"
 #include <vector>
 #include <algorithm>
+#include <assert.h>
 
 class InvalidObjectParameters : public SException
 {
@@ -170,7 +173,7 @@ Object* Repository<Object, Parameter>::create_object
     Object* obj = param.create_derivation (cinfo);
     //FIXME check creation
 
-    assert (obj);
+    SCHECK (obj);
     objects->at (objId) = obj;
     return obj;
   }
@@ -193,7 +196,7 @@ Object* Repository<Object, Parameter>::replace_object
       (SException, oss_ << L"Program error");
 
   (*objects)[id] = param.transform_object (obj);
-  assert ((*objects)[id]);
+  SCHECK ((*objects)[id]);
 
   if ((*objects)[id] == obj)
     return obj; // no transformation
@@ -345,6 +348,6 @@ void Repository<Object, Parameter>::for_each (Op& f) const
       f (*(*objects)[i]);
 }
 
-
+#endif
 
 

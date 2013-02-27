@@ -122,6 +122,8 @@ public:
 
 protected:
 
+  typedef Logger<LOG::Thread> logger;
+
 #ifdef MUTEX_IMPLEMENTED
   /// Mutex for concurrent access to this object.
   SMutex cs;

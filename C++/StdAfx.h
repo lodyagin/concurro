@@ -34,6 +34,7 @@
 #  include "REvent.h"
 #endif
 #include "SShutdown.h"
+#include "SCheck.h"
 
 #include <string>
-#include <assert.h>
+//#include <assert.h> better use SCheck
