@@ -5,7 +5,7 @@
 
 #include "SCheck.h"
 
-class DeadReferenceExeption : public std::exception{};
+class DeadReferenceException : public std::exception{};
 
 /**
  * Base class for classes that can have only one instance
@@ -76,7 +76,7 @@ inline T & SSingleton<T>::instance()
 {
   if(destroyed)
   {
-     throw DeadReferenceExeption();
+     throw DeadReferenceException();
   }
    SPRECONDITION(_instance);
   return *_instance;
