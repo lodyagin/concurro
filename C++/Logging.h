@@ -196,4 +196,11 @@ inline LogBase* Logger<LOG::States>::init_base
 #define LOG4STRM_FATAL(logger, message)
 #endif
 
+#define LOG_TRACE LOG4STRM_TRACE
+#define LOG_DEBUG LOG4STRM_DEBUG
+#define LOG_INFO LOG4STRM_INFO
+#define LOG_WARN LOG4STRM_WARN
+#define LOG_ERROR LOG4STRM_ERROR
+#define LOG_FATAL LOG4STRM_FATAL
+
 #endif
