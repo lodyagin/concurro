@@ -11,10 +11,11 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/properties.h>
 #include <fstream>
+#include <iostream>
 
 LogBase::LogBase (const std::string& szName)
-  : m_sName (szName),
-	 logger (log4cxx::Logger::getLogger(szName.c_str()))
+  : m_sName (szName)/*,
+							 logger (log4cxx::Logger::getLogger(szName.c_str()))*/
 {
   if (!szName.empty ()) {
 	 LOG4STRM_DEBUG(Logger<LOG::Root>,
@@ -28,6 +29,7 @@ LogBase::LogBase (const std::string& szName)
 	 // than once
 	 Init ();
   }
+  logger = log4cxx::Logger::getLogger(szName.c_str());
 }
 
 void LogBase::Init()
@@ -119,3 +121,4 @@ Log::Log (const std::string& szName,
 
 Log::~Log () {}
 #endif
+

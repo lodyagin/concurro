@@ -22,45 +22,25 @@ public:
 
   std::string GetName() const { return m_sName; }
 
-  log4cxx::LoggerPtr GetLogger () { return logger; }
+  //log4cxx::LoggerPtr GetLogger () { return logger; }
 
+  /// Pointer to a log4cxx logger
+  log4cxx::LoggerPtr logger;
 protected:
   /// Name for the class logger
   std::string m_sName;
-  /// Pointer to a log4cxx logger
-  log4cxx::LoggerPtr logger;
 
   static bool& root_logger_created()
   {
 	 static bool created = false;
 	 return created;
   }
+
 private:
   /// Configure the logging system. It is called only once
   /// from the first LogBase constructor call.
   static void Init();
 };
-
-#if 0
-/**
- * This logging class is for embedding in classes and
- * functions.
- */
-class Log : public LogBase
-{
-public:
-  /// Constructor for using as class logger
-  Log (const std::string& szName);
-  /// Constructor for using in functions
-  Log (const std::string& szName, 
-		 const LogBase& ParentLogger);
-  virtual ~Log ();
-	
-protected:
-  /// true if the class used as AutoLogger
-  bool m_bFunctionLogger;
-};
-#endif
 
 inline log4cxx::LoggerPtr GetLogger
 (const char * subname, const LogBase& parent) 
@@ -86,48 +66,74 @@ public:
   class States {};
 };
 
-/*class ClassWithLogging
-{
-public:
-  const std:string _logging_class_name;
-protected:
-  ClassWithLogging (const std::string& className)
-	 : _logging_class_name (className);
-	 };*/
-
 /**
  */
 template<class Type>
 class Logger
-  : public LogBase,
-	 public SAutoSingleton< Logger<Type> >
+//: //public LogBase,
+//	 public SAutoSingleton< Logger<Type> >
 {
 public:
-  Logger () : LogBase (typeid(Type).name ()) {}
+  //Logger () : LogBase (typeid(Type).name ()) {}
 
   static log4cxx::LoggerPtr logger() {
-	 if (!root_logger_created ()) 
+	 /*if (!root_logger_created ()) 
 		// TODO make a pre-logger to log before the log
 		// system is initialized. Now core dumps.
-		return 0;
+		return 0;*/
 
-	 return SAutoSingleton< Logger<Type> >::instance()
-		. GetLogger();
+	 if (!base)
+		base = init_base (typeid(Type).name ());
+
+	 /*return SAutoSingleton< Logger<Type> >::instance()
+		. GetLogger ();*/
+	 return base->logger;
+  }
+protected:
+  /// It is used to prior-static-initialization
+  /// logging. We hope all data members are initialized
+  /// with 0 (http://stackoverflow.com/a/60707/1326885)
+  /// prior other initialization. So Logger::logger() will
+  /// check if this is null it will create the LogBase
+  /// class which is a delegate. 
+  static LogBase* base;
+  /// It is for partial specialization and use special
+  /// names for common log classes (the members of LOG).
+  static LogBase* init_base (const std::string& name) {
+	 return new LogBase(name);
   }
 };
 
-template<>
-inline Logger<LOG::Root>::Logger() : LogBase("") {}
+template<class Type>
+LogBase* Logger<Type>::base = 0;
 
 template<>
-inline Logger<LOG::Thread>::Logger() : LogBase("Thread") {}
+inline LogBase* Logger<LOG::Root>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("");
+}
 
 template<>
-inline Logger<LOG::Concurrency>::Logger() 
-: LogBase("Concurrency"){}
+inline LogBase* Logger<LOG::Thread>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("Thread");
+}
 
 template<>
-inline Logger<LOG::States>::Logger() : LogBase("States") {}
+inline LogBase* Logger<LOG::Concurrency>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("Concurrency");
+}
+
+template<>
+inline LogBase* Logger<LOG::States>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("States");
+}
 
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 

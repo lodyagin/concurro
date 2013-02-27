@@ -6,12 +6,13 @@
 
 
 #define SCHECK(val) {		\
+  if (!(val)) { \
   std::ostringstream oss_; \
   oss_ << "SCHECK(" #val ") failed" \
        << " at " << (__FILE__) << ':' << __LINE__		\
        << ", " << (__FUNCTION__); \
        throw SException(oss_.str()); \
-  } while (0)
+  }} while (0)
 
 #define SPRECONDITION(val) SCHECK(val)
 
