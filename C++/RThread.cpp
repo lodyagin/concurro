@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "RThread.h"
 #include "SShutdown.h"
+#include <assert.h>
 
 // RThread states  ========================================
 
@@ -87,26 +88,20 @@ RThreadBase::RThreadBase (size_t id/*, bool main*/)
     if (main_was_created)
       throw SException (_T"Only one thread with id = 1 can exist");
   }
-
-  LOG4STRM_INFO
-    (Logging::Thread (),
-     oss_ << "New "; outString (oss_)
-     );
+  LOG_INFO (logger, "New " << *this);
 }
 
 void RThreadBase::state (ThreadState& state) const
 {
-#ifdef MUTEX_IMPLEMENTED
-  SMutex::Lock lock (cs);
+#ifndef MUTEX_BUG
+  RLOCK(cs);
 #endif
   state = currentState;
 }
 
 void RThreadBase::start ()
 {
-#ifdef MUTEX_IMPLEMENTED
-  SMutex::Lock lock(cs);
-#endif
+  RLOCK(cs);
   ThreadState::check_moving_to (*this, workingState);
 
   start_impl ();
@@ -121,7 +116,7 @@ void RThreadBase::wait()
   bool cntIncremented = false;
   try
   {
-    { SMutex::Lock lock(cs);
+    { RLOCK(cs);
 
       if (ThreadState::state_is (*this, terminatedState)
           || ThreadState::state_is (*this, readyState) // <NB>
@@ -133,7 +128,7 @@ void RThreadBase::wait()
       cntIncremented = true;
     }
 
-    LOG4STRM_DEBUG
+    LOG_DEBUG
       (Logging::Thread (),
        oss_ << "Wait a termination of ";
        outString (oss_);
@@ -157,9 +152,7 @@ void RThreadBase::wait()
 
 void RThreadBase::stop ()
 {
-#ifdef MUTEX_IMPLEMENTED
-  SMutex::Lock lock(cs);
-#endif
+  RLOCK(cs);
 #ifdef EVENT_IMPLEMENTED
   stopEvent.set ();
 #endif
@@ -183,9 +176,7 @@ unsigned int __stdcall RThread::_helper( void * p )
 
 void RThreadBase::outString (std::ostream& out) const
 {
-#ifdef MUTEX_IMPLEMENTED
-  SMutex::Lock lock (cs);
-#endif
+  RLOCK(cs);
   out << "RThread(id = "  
       << id ()
       << ", this = " 
@@ -208,10 +199,8 @@ RThreadBase::~RThreadBase()
   bool needWait = true;
   bool needStop = true;
   { 
-#ifdef MUTEX_IMPLEMENTED
-    SMutex::Lock lock (cs);
-#endif
-    assert (!ThreadState::state_is (*this, destroyedState));
+    RLOCK(cs);
+    SCHECK(!ThreadState::state_is(*this, destroyedState));
     needStop = ThreadState::state_is (*this, workingState)
       && !exitRequested;
     needWait = needStop || exitRequested;
@@ -224,27 +213,17 @@ RThreadBase::~RThreadBase()
     wait ();
 
   { 
-#ifdef MUTEX_IMPLEMENTED
-    SMutex::Lock lock (cs);
-#endif
+    RLOCK(cs);
     ThreadState::move_to (*this, destroyedState);
   }
-
- LOG4STRM_INFO
-    (Logging::Thread (),
-     oss_ << "Destroy "; outString (oss_)
-     );
+  LOG_INFO(logger, "Destroy " << *this);
 }
 
 
 void RThreadBase::_run()
 {
    //TODO check run from current thread
-
-   LOG4STRM_DEBUG
-     (Logging::Thread (),
-     outString (oss_); oss_ << " started");
-
+  LOG_DEBUG(logger, *this << " started");
   try
   {
     run();
@@ -255,28 +234,21 @@ void RThreadBase::_run()
   }
   catch ( std::exception & x )
   {
-      LOG4STRM_DEBUG
-        (Logging::Thread (),
-        oss_ << "Exception in thread: " << x.what ());
+	 LOG_DEBUG(logger, "Exception in thread: " 
+						 << x.what ());
   }
   catch ( ... )
   {
-    LOG4CXX_WARN
-      (Logging::Thread (),
-       "Unknown type of exception in thread.");
+    LOG_WARN(logger, 
+		"Unknown type of exception in the thread.");
   }
   {
-#ifdef MUTEX_IMPLEMENTED
-    SMutex::Lock lock(cs);
-#endif
+    RLOCK(cs);
     
     ThreadState::move_to (*this, terminatedState);
   }
 
-   LOG4STRM_DEBUG
-     (Logging::Thread (), 
-      outString (oss_); oss_ << " finished"
-      );
+  LOG_DEBUG(logger, *this << " is finished.");
 
 #ifdef EVENT_IMPLEMENTED
   if (externalTerminated) 
@@ -291,16 +263,13 @@ RThread & RThread::current()
   RThread * thread = reinterpret_cast<RThread*> 
     (RThread::get_current ());
 
-  assert (thread); //FIXME check
+  SCHECK(thread); //FIXME check
   return *thread;
 }
 #endif
 
 void RThreadBase::log_from_constructor ()
 {
-  LOG4STRM_INFO
-    (Logging::Thread (),
-     oss_ << "New "; outString (oss_) 
-       );
+  LOG_INFO(logger, "New " << *this);
 }
 

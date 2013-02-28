@@ -1,27 +1,34 @@
-#ifndef __SSINGLETON_H
-#define __SSINGLETON_H
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+#ifndef SSINGLETON_H_
+#define SSINGLETON_H_
 
 #include "SCheck.h"
 
+class DeadReferenceException : public std::exception{};
 
-// base class for classes that can have only one instance
-// parametrized by the actual singleton class
-// use as: class MyClass : public SSingleton<MyClass>
-
-class DeadReferenceExeption : public std::exception{};
-
+/**
+ * Base class for classes that can have only one instance
+ * parametrised by the actual singleton class use as:
+ * class MyClass : public SSingleton<MyClass>
+ */
 template<class T>
 class SSingleton
 {
 public:
- 
+  /// One and only one class instance must be created with
+  /// this function.
   SSingleton();
   virtual ~SSingleton();
 
+  /// Return the reference to the class instance. If no
+  /// class is crated with SSingleton() raise exception.
   static T & instance();
 
-  // Added by slod to prevent assertion with MainWin in Common::ErrorMessage.
-  // It is not true singleton (why?) and thus we need a trick.
+  // Added by slod to prevent assertion with MainWin in
+  // Common::ErrorMessage.
+  // It is not true singleton (why?) and thus we need a
+  // trick.
   static bool isConstructed ()
   {
      return _instance != NULL;
@@ -34,6 +41,19 @@ private:
 
 };
 
+/**
+ * Extends SSingleton to allow auto-construct it by the
+ * RAutoSingleton::instance() call.
+ */
+template<class T>
+class SAutoSingleton : public SSingleton<T>
+{
+public:
+  static T & instance () {
+	 if (!SSingleton<T>::isConstructed ()) new T (); 
+	 return SSingleton<T>::instance ();
+  }
+};
 
 template<class T>
 SSingleton<T>::SSingleton()
@@ -46,7 +66,7 @@ SSingleton<T>::SSingleton()
 template<class T>
 SSingleton<T>::~SSingleton()
 {
-  SWARN(!_instance, L"singleton dtr without ctr?!");
+  SCHECK(_instance);
   _instance = 0;
   destroyed = true;
 }
@@ -56,7 +76,7 @@ inline T & SSingleton<T>::instance()
 {
   if(destroyed)
   {
-     throw DeadReferenceExeption();
+     throw DeadReferenceException();
   }
    SPRECONDITION(_instance);
   return *_instance;
@@ -68,4 +88,5 @@ T * SSingleton<T>::_instance = 0;
 template<class T> bool SSingleton<T>::destroyed = false;
 
 
-#endif  // __SSINGLETON_H
+
+#endif

@@ -160,7 +160,7 @@ protected:
      const UniversalState& to) const;
 
 private:
-  static Logging log;
+  typedef Logger<LOG::States> log;
 
   // Is used from constructor
   // Fills trans2number and number2trans

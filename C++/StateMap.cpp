@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "StateMap.h"
+#include <assert.h>
 
 StateMap::StateMap 
     (const State2Idx new_states[], 
@@ -34,10 +35,8 @@ StateMap::StateMap
   }
   const StateIdx nStates = maxIdx;
 
-  LOG4STRM_DEBUG 
-    (Logging::States (), 
-     oss_ << "Total " << nStates << " states in the map."
-     );
+  LOG_DEBUG(log, 
+	  "There are " << nStates << " states in the map.");
 
   int nTransitions = 0;
   {
@@ -116,13 +115,10 @@ void StateMap::add_transitions
       transId++;
     }
     else
-      LOG4CXX_WARN 
-        (Logging::States (),
-        std::string ("Transition ")
-        + transitions[i].from
-        + " -> "
-        + transitions[i].to
-        + " is registered already."
+      LOG_WARN (log,
+		  "Transition " << transitions[i].from
+		  << " -> " << transitions[i].to
+		  << " is registered already."
         );
   }
 }

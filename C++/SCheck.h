@@ -2,13 +2,23 @@
 #define __SCHECK_H
 
 #include "SCommon.h"
-#include <assert.h>
+#include "SException.h"
 
 
-#define SCHECK(val)        assert(val);
-#define SPRECONDITION(val) assert(val);
+#define SCHECK(val) {		\
+  if (!(val)) { \
+  std::ostringstream oss_; \
+  oss_ << "SCHECK(" #val ") failed" \
+       << " at " << (__FILE__) << ':' << __LINE__		\
+       << ", " << (__FUNCTION__); \
+       throw SException(oss_.str()); \
+  }} while (0)
 
+#define SPRECONDITION(val) SCHECK(val)
+
+#ifdef _WIN32
 #define SWARN   sWarn
+#endif
 
 #ifdef __STRACE 
 #define STRACE sTrace

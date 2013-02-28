@@ -1,20 +1,23 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 #ifndef __RMutex_H
 #define __RMutex_H
+
+#define MUTEX_BUG
 
 #include <assert.h>
 #include "SNotCopyable.h"
 
 #include "Logging.h"
+#include <log4cxx/spi/location/locationinfo.h>
 
 #include <boost/thread/mutex.hpp>
 //plain versions
-#define SLOCK(mutex)    RMutex::Lock   _lock  (mutex)
-#define SUNLOCK(mutex)  RMutex::Unlock _unlock(mutex)
+#define RLOCK(mutex) \
+  RMutex::Lock _lock(mutex, true, LOG4CXX_LOCATION)
 
-//debugging versions
-#define SLOCKD(mutex)    LOG4CXX_DEBUG(Logging::Concurrency(), "SLOCK begin"); RMutex::Lock   _lock  (mutex,true,true);
-#define SUNLOCKD(mutex)  LOG4CXX_DEBUG(Logging::Concurrency(), "SUNLOCK begin"); RMutex::Unlock _unlock(mutex,true);
-//Logging before construction is to have proper filenames/linenumbers
+#define RUNLOCK(mutex) \
+  RMutex::Unlock _unlock(mutex, LOG4CXX_LOCATION)
 
 class RMutex : public SNotCopyable
 {
@@ -26,49 +29,52 @@ public:
   RMutex();
   ~RMutex();
 
-  void acquare();
+  void acquire();
   void release();
 
 protected:
   boost::mutex mx;
 };
 
-
+/// Add an RAII semantics to RMutex - do acquire in the
+/// constructor and release in the destructor
 class RMutex::Lock : public SNotCopyable
 {
 public:
 
-  Lock
-    (const RMutex &,
-     bool lock = true, 
-     bool debug = false/*,
-     bool wait = false*/);
+  Lock(const RMutex &,
+		 bool lock = true,
+		 const log4cxx::spi::LocationInfo& debug_location = 
+	      LOG4CXX_LOCATION);
   ~Lock();
 
-  void acquare();
+  void acquire();
   void release();
 
-private:
+protected:
+  const log4cxx::spi::LocationInfo location;
 
+private:
   RMutex & mutex;
   bool locked;
-  bool debug;
-
 };
 
-
+/// Like RMutex::Lock but do release in the constructor
+/// and acquire in the descrutctor
 class RMutex::Unlock : public SNotCopyable
 {
 public:
 
-  Unlock( const RMutex & ,bool debug = false);
+  Unlock(const RMutex &,
+			const log4cxx::spi::LocationInfo& debug_location = 
+	        LOG4CXX_LOCATION);
   ~Unlock();
 
+protected:
+  const log4cxx::spi::LocationInfo location;
+
 private:
-
   RMutex & mutex;
-  bool debug;
-
 };
 
 
@@ -87,7 +93,7 @@ inline RMutex::~RMutex()
   //DeleteCriticalSection(&cs);
 }
 
-inline void RMutex::acquare()
+inline void RMutex::acquire()
 {
 	mx.lock();
 }
@@ -99,72 +105,83 @@ inline void RMutex::release()
 
 // RMutex::Lock  =====================================================
 
-inline RMutex::Lock::Lock
-    (const RMutex & m,
-     bool lock , 
-     bool _debug/*,
-     bool wait*/
-     )
- :
-  mutex(const_cast<RMutex &>(m)),
-  locked(lock),debug(_debug)
+inline RMutex::Lock::Lock 
+(const RMutex & m,
+ bool lock,
+ const log4cxx::spi::LocationInfo& debug_location
+) : mutex(const_cast<RMutex &>(m)), locked(lock),
+  location (debug_location)
 {
-	if ( lock ) {
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex"); }
+  if ( lock ) {
+	 LOG_DEBUG_LOC(Logger<LOG::Concurrency>, 
+						"Acquiring mutex",
+						location);
 
-		/*if (wait)
-      mutex.wait ();
-    else*/
-      mutex.acquare();
+	 /*if (wait)
+		mutex.wait ();
+		else*/
+	 mutex.acquire();
 
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
-	}
+	 LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "Success",
+				  location);
+  }
 }
 
 inline RMutex::Lock::~Lock()
 {
-	if ( locked ) { 
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex"); }
-		mutex.release(); 
-		 if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
-	}
+  if ( locked ) { 
+	 LOG_DEBUG_LOC(Logger<LOG::Concurrency>, 
+						"Releasing mutex",
+						location);
+	 mutex.release(); 
+	 LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "Success",
+						location);
+  }
 }
 
-inline void RMutex::Lock::acquare()
+inline void RMutex::Lock::acquire()
 {
   assert(!locked); // precondition
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex"); }
-  mutex.acquare();
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, 
+				"Acquiring mutex by RMutex::Lock::acquire()");
+  mutex.acquire();
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
   locked = true;
 }
 
 inline void RMutex::Lock::release()
 {
   assert(locked); // precondition
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, 
+				"Releasing mutex by RMutex::Lock::release()");
   mutex.release();
-   if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG(Logger<LOG::Concurrency>, "Success");
   locked = false;
 }
 
 
 // RMutex::Unlock  ===================================================
 
-inline RMutex::Unlock::Unlock( const RMutex & m , bool _debug ) :
-  mutex(const_cast<RMutex &>(m)), debug(_debug)
+inline RMutex::Unlock::Unlock
+(const RMutex & m, 
+ const log4cxx::spi::LocationInfo& debug_location
+  ) : mutex(const_cast<RMutex &>(m)),
+  location(debug_location) 
 {
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Releasing mutex"); }
+  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "Releasing mutex",
+					 location);
   mutex.release();
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "Success", 
+					 location);
 }
 
 inline RMutex::Unlock::~Unlock()
 {
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Acquiring mutex"); }
-  mutex.acquare();
-    if (debug) { LOG4CXX_DEBUG(Logging::Concurrency(), "Success"); }
+  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "Acquiring mutex",
+					 location);
+  mutex.acquire();
+  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "Success",
+					 location);
 }
 
-
-#endif  // __RMutex_H
+#endif  
