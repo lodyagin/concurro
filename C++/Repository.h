@@ -7,13 +7,12 @@
 #include "SNotCopyable.h"
 #include "SException.h"
 #include "SShutdown.h"
-#ifdef EVENT_IMPLEMENTED
 #include "REvent.h"
-#endif
 #include "RThread.h"
 #include "StateMap.h"
-#include <vector>
 #include <algorithm>
+#include <utility>
+#include <unordered_map>
 #include <assert.h>
 
 class InvalidObjectParameters : public SException
@@ -25,37 +24,136 @@ public:
   {}
 };
 
-// TODO separate read and write lock
-
-template<class Object, class Parameter>
-class Repository : public SNotCopyable
+class IdIsAlreadyUsed : public SException
 {
-protected:
-  typedef std::vector<Object*> ObjectMap;
-
 public:
-  typedef typename ObjectMap::size_type ObjectId;
+  IdIsAlreadyUsed ()
+    : SException 
+      ("This Id is already used in the repository")
+  {}
+};
 
-  Repository (int maxNumberOfObjects);
-  virtual ~Repository ();
+/**
+ * A RepositoryBase contain not-specialized methods of
+ * Repository, i.e., methods not dependent on the ObjMap.
+ */
+template<class Obj, class Par, class ObjMap, class ObjId>
+class RepositoryBase
+{
+public:
+  RepositoryBase () {}
+//  RepositoryBase (size_t initial_value);
 
-  virtual Object* create_object (const Parameter& param);
+  virtual ~RepositoryBase ();
 
-  /// Delete obj from the repository. freeMemory means call the object
-  /// desctructor after it.
-  virtual void delete_object 
-    (Object* obj, bool freeMemory);
+  virtual Obj* create_object (const Par& param);
+
+  /// Delete obj from the repository. freeMemory means
+  /// to call the object desctructor after it.
+  virtual void delete_object(Obj* obj, bool freeMemory);
 
   virtual void delete_object_by_id 
-    (ObjectId id, bool freeMemory);
+	 (ObjId id, bool freeMemory);
 
-  virtual Object* get_object_by_id (ObjectId id) const;
+  virtual Obj* get_object_by_id (ObjId id) const;
 
   // Replace the old object by new one
   // The old object is deleted
-  virtual Object* replace_object 
-    (ObjectId id, 
-     const Parameter& param,
+  virtual Obj* replace_object 
+	 (ObjId id, const Par& param, bool freeMemory);
+
+  // return ids of objects selected by a predicate
+  template<class Out, class Pred>
+  Out get_object_ids_by_pred (Out res, Pred p);
+
+  // return ids of objects selected by 
+  // an UniversalState
+  template<class Out, class State>
+  Out get_object_ids_by_state
+    (Out res, const State& state);
+
+  template<class Op>
+  void for_each (Op& f);
+
+  template<class Op>
+  void for_each (Op& f) const;
+
+  // It is used for object creation
+  struct ObjectCreationInfo
+  {
+    //const Par* info;
+    RepositoryBase* repository;
+	 std::string objectId;
+  };
+
+  class Destroy 
+    : public std::unary_function<int, void>
+  {
+  public:
+    Destroy (RepositoryBase& _repo) : repo (_repo) {}
+    void operator () (int objId)
+    {
+      repo.delete_object_by_id (objId, true);
+    }
+  protected:
+    RepositoryBase& repo;
+  };
+
+protected:
+  ObjMap* objects;
+  RMutex objectsM;
+
+  virtual ObjId get_object_id (const Par&) = 0;
+  /// Insert new object into objects
+  virtual void insert_object (ObjId, Obj*) = 0;
+};
+
+// TODO separate read and write lock
+
+/**
+ * This is implementation of Repository for vector-like
+ * objects. 
+ */
+template<
+  class Obj, 
+  class Par, 
+  class ObjMap, 
+  class ObjId/*, 
+					class ObjMapValue*/
+>
+class Repository 
+  : public RepositoryBase<Obj, Par, ObjMap, ObjId>,
+  public SNotCopyable
+{
+public:
+  /// Create the repo. initial_value means initial size
+  /// for vector and size for hash tables.
+  Repository (size_t initial_value)
+  {
+	 this->objects = new ObjMap (initial_value);
+	 this->objects->push_back (0); // id 0 is not used for
+											 // real objects
+  }
+
+#if 0
+  //virtual ~Repository ();
+
+  virtual Obj* create_object (const Par& param);
+
+  /// Delete obj from the repository. freeMemory means
+  /// to call the object desctructor after it.
+  virtual void delete_object(Obj* obj, bool freeMemory);
+
+  virtual void delete_object_by_id 
+	 (ObjId id, bool freeMemory);
+
+  virtual Obj* get_object_by_id (ObjId id) const;
+
+  // Replace the old object by new one
+  // The old object is deleted
+  virtual Obj* replace_object 
+    (ObjId id, 
+     const Par& param,
      bool freeMemory
      );
 
@@ -78,9 +176,9 @@ public:
   // It is used for object creation
   struct ObjectCreationInfo
   {
-    //const Parameter* info;
+    //const Par* info;
     Repository* repository;
-    size_t objectId;
+	 std::string objectId;
   };
 
   class Destroy 
@@ -97,63 +195,154 @@ public:
   };
 
 protected:
-  ObjectId get_first_unused_object_id (ObjectMap&);
+  ObjId get_object_id (const Par&);
 
-  enum {startMapSize = 10, mapSizeStep = 10};
+//  enum {startMapSize = 10, mapSizeStep = 10};
 
-  ObjectMap* objects;
-  RMutex objectsM;
   //SSemaphore semaphore;
+#endif
+
+protected:
+  /// This specialization takes the first unused (numeric)
+  /// id and ignores Par
+  ObjId get_object_id (const Par&)
+  {
+	 RLOCK(this->objectsM);
+
+	 // FIXME ! change to stack
+	 for (ObjId id = 1; id < this->objects->size (); id++)
+	 {
+		if (!(*this->objects)[id]) return id;
+	 }
+
+	 if (this->objects->size () == this->objects->capacity ())
+		this->objects->reserve (this->objects->size () 
+										+ this->objects->size () * 0.2);
+	 // TODO check the stepping
+
+	 this->objects->push_back (0);
+	 return this->objects->size () - 1;
+  }
+
+  void insert_object (ObjId id, Obj* obj)
+  {
+	 RLOCK(this->objectsM);
+	 this->objects->at(id) = obj;
+  }
 };
 
-template<class Object, class Parameter>
-Repository<Object, Parameter>::Repository 
-  (int maxNumberOfObjects)
-: objects (NULL)/*, 
-  semaphore (maxNumberOfObjects, maxNumberOfObjects)*/
-{
-  objects = new ObjectMap ();
-  objects->reserve (startMapSize);
-  //FIXME check obj creation
-  objects->push_back (0); // obj id 0 is not used
-}
-
-template<class Object, class Parameter>
-class Destructor : 
-  public std::unary_function<Object*, void>
+/**
+ * This is implementation of Repository for hash-like
+ * objects. 
+ */
+template<class Obj, class Par, class ObjId>
+class Repository<Obj, Par, std::unordered_map<ObjId, Obj*>, ObjId>
+  : public RepositoryBase<Obj, Par, std::unordered_map<ObjId, Obj*>, ObjId>,
+  public SNotCopyable
 {
 public:
-  Destructor (Repository<Object, Parameter>* _repo)
+  typedef std::unordered_map<ObjId, Obj*> ObjMap;
+  /// Create the repo. initial_value means initial size
+  /// for vector and size for hash tables.
+  Repository (size_t initial_value)
+  {
+	 this->objects = new ObjMap (initial_value);
+  }
+protected:
+  /// This specialization takes the key value from pars.
+  ObjId get_object_id (const Par& param)
+  {
+	 RLOCK(this->objectsM);
+
+	 ObjId id = param.get_id ();
+
+	 if (this->objects->find(id) != this->objects->end())
+		throw IdIsAlreadyUsed ();
+	 
+	 return id;
+  }
+
+  void insert_object (ObjId id, Obj* obj)
+  {
+	 RLOCK(this->objectsM);
+	 // will be add new element if id doesn't exists
+	 (*this->objects)[id] = obj;
+  }
+};
+
+template<class Obj, class Par, class ObjMap, 
+  class ObjId, class ObjMapValue>
+class Destructor 
+  : public std::unary_function<ObjMapValue, void>
+{};
+
+template<class Obj, class Par, class ObjMap, class ObjId>
+class Destructor<Obj, Par, ObjMap, ObjId, Obj*> 
+  : public std::unary_function<Obj*, void>
+{
+public:
+  Destructor 
+	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
     : repo (_repo)
   {}
 
-  void operator () (Object* obj)
+  void operator () (Obj* obj)
   { 
     if (obj) 
       repo->delete_object (obj, true); 
   }
 
 protected:
-  Repository<Object, Parameter>* repo;
+  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
 };
 
-template<class Object, class Parameter>
-Repository<Object, Parameter>::~Repository ()
+template<class Obj, class Par, class ObjMap, class ObjId>
+class Destructor<Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>> 
+  : public std::unary_function<std::pair<const ObjId, Obj*>, void>
+{
+public:
+  Destructor (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
+    : repo (_repo)
+  {}
+
+  void operator () (const std::pair<const ObjId, Obj*>& pair)
+  { 
+    if (pair.second) 
+      repo->delete_object (pair.second, true); 
+  }
+
+protected:
+  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
+};
+
+template<
+  class Obj, 
+  class Par, 
+  class ObjMap, 
+  class ObjId 
+>
+RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::~RepositoryBase ()
 {
   std::for_each
     (objects->begin (), 
      objects->end (),
-     Destructor<Object, Parameter> (this)
+     Destructor<Obj, Par, ObjMap, ObjId, typename ObjMap::value_type> (this)
      );
   delete objects;
 }
 
-template<class Object, class Parameter>
-Object* Repository<Object, Parameter>::create_object 
-  (const Parameter& param)
+template<
+  class Obj, 
+  class Par, 
+  class ObjMap, 
+  class ObjId
+>
+Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::create_object (const Par& param)
 {
-  //semaphore.wait ();
-
   /*if (SThread::current ().is_stop_requested ())
        ::xShuttingDown 
         (L"Stop request from the owner thread.");*/
@@ -161,30 +350,27 @@ Object* Repository<Object, Parameter>::create_object
   { 
     RLOCK (objectsM);
 
-    const ObjectId objId = get_first_unused_object_id 
-      (*objects);
+    const ObjId objId = get_object_id(param);
 
-    const ObjectCreationInfo cinfo = { this, objId };
+    std::string uniId;
+    toString (objId, uniId);
+    const ObjectCreationInfo cinfo = { this, uniId };
 
-    Object* obj = param.create_derivation (cinfo);
-    //FIXME check creation
-
+    Obj* obj = param.create_derivation (cinfo);
     SCHECK (obj);
-    objects->at (objId) = obj;
+    insert_object (objId, obj);
     return obj;
   }
 }
 
-template<class Object, class Parameter>
-Object* Repository<Object, Parameter>::replace_object 
-  (ObjectId id, 
-   const Parameter& param,
-   bool freeMemory
-   )
+template<class Obj, class Par, class ObjMap, class ObjId>
+Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::replace_object (ObjId id, const Par& param, bool freeMemory)
 {
   RLOCK(objectsM);
 
-  Object* obj = objects->at (id);
+  Obj* obj = objects->at (id);
   if (!obj)
     THROW_EXCEPTION
       (SException, oss_ << L"Program error");
@@ -201,100 +387,95 @@ Object* Repository<Object, Parameter>::replace_object
   return (*objects)[id];
 }
 
-template<class Object, class Parameter>
-void Repository<Object, Parameter>::delete_object 
-  (Object* obj, 
-   bool freeMemory
-   )
+template<class Obj, class Par, class ObjMap, class ObjId>
+void RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::delete_object (Obj* obj, bool freeMemory)
 {
   assert (obj);
-  const ObjectId objId = obj->universal_object_id;
+  const ObjId objId = fromString<ObjId> (obj->universal_object_id);
 
   delete_object_by_id (objId, freeMemory);
 }
 
-template<class Object, class Parameter>
-void Repository<Object, Parameter>::delete_object_by_id 
-    (ObjectId id, bool freeMemory)
+template<class Obj, class Par, class ObjMap, class ObjId>
+void RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::delete_object_by_id (ObjId id, bool freeMemory)
 {
-  Object* ptr = 0;
+  Obj* ptr = 0;
   {
     RLOCK(objectsM);
-
-    typename ObjectMap::reference r = objects->at (id);
+    Obj* r = objects->at (id);
     ptr = r;
-    if (r == 0)
-    {
-      THROW_EXCEPTION
-      (SException, oss_ << _T"Program error");
-    }
-
+    if (r == 0) 
+		THROW_EXCEPTION(SException, "Program error");
     r = 0;
   }
-
-  //semaphore.release ();
-
-  if (freeMemory)
-    delete ptr;
+  if (freeMemory) delete ptr;
 }
 
-template<class Object, class Parameter>
-Object* Repository<Object, Parameter>::get_object_by_id 
-  (typename Repository<Object, Parameter>::ObjectId id) const
+/*
+template<
+  class Obj, 
+  class Par, 
+  class ObjMap, 
+  class ObjId, 
+  class Obj*
+>
+void Repository<Obj, Par, ObjMap, ObjId, Obj*>
+//
+::delete_object_by_id (ObjId id, bool freeMemory)
+{
+  Obj* ptr = 0;
+  {
+    RLOCK(objectsM);
+    typename ObjMap::reference r = objects->at (id);
+    ptr = r;
+    if (r == 0) 
+		THROW_EXCEPTION(SException, "Program error");
+    r = 0;
+  }
+  if (freeMemory) delete ptr;
+}
+*/
+
+template <class Obj, class Par, class ObjMap, class ObjId>
+Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
+//
+::get_object_by_id (ObjId id) const
 {
   { 
     RLOCK(objectsM);
 
-    if (id < 1 || id >= objects->size ())
+    /*if (id < 1 || id >= objects->size ())
       return 0;
-    else
+		else*/
       return objects->at (id);
   }
 }
 
-template<class Object, class Parameter>
-typename Repository<Object, Parameter>::ObjectId 
-Repository<Object, Parameter>::get_first_unused_object_id
-  (ObjectMap& m)
-{ //TODO UT
-#ifndef MUTEX_BUG
-  RLOCK(objectsM);
-#endif
-
-  // TODO change to stack
-  for (ObjectId id = 1; id < m.size (); id++)
-  {
-    if (!m[id]) return id;
-  }
-
-  if (m.size () == m.capacity ())
-    m.reserve (m.size () + mapSizeStep);
-  // TODO check the stepping
-
-  m.push_back (0);
-  return m.size () - 1;
-}
-
-template<class Object, class Parameter> 
-  template<class Out, class Pred>
-Out Repository<Object, Parameter>::
-  get_object_ids_by_pred (Out res, Pred p)
+template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Out, class Pred>
+Out RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::get_object_ids_by_pred (Out res, Pred p)
 {
   RLOCK(objectsM);
 
-  for (ObjectId i = 0; i < objects->size (); i++)
+  for (ObjId i = 0; i < objects->size (); i++)
     if ((*objects)[i] && p (*(*objects)[i]))
       *res++ = i;
   return res;
 }
 
-template<class Object, class State>
+template<class Obj, class State>
 class StateMatch 
-  : public std::unary_function<const Object&, bool>
+  : public std::unary_function<const Obj&, bool>
 {
 public:
   StateMatch (const State& _state) : state (_state) {}
-  bool operator () (const Object& obj) const
+  bool operator () (const Obj& obj) const
   { 
     return State::state_is (obj, state);
   }
@@ -302,32 +483,37 @@ protected:
   State state;
 };
 
-template<class Object, class Parameter>
-  template<class Out, class State>
-Out Repository<Object, Parameter>::
-  get_object_ids_by_state (Out res, const State& state)
+template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Out, class State>
+Out RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::get_object_ids_by_state (Out res, const State& state)
 {
-  return get_object_ids_by_pred<Out, StateMatch<Object, State>> (res, StateMatch<Object, State> (state));
+  return get_object_ids_by_pred<Out, StateMatch<Obj,
+  State>> 
+	 (res, StateMatch<Obj, State> (state));
 }
 
-template<class Object, class Parameter>
-  template<class Op>
-void Repository<Object, Parameter>::for_each (Op& f)
+template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Op>
+void RepositoryBase<Obj, Par, ObjMap, ObjId>::for_each (Op& f)
 {
   RLOCK(objectsM);
 
-  for (ObjectId i = 0; i < objects->size (); i++)
+  for (ObjId i = 0; i < objects->size (); i++)
     if ((*objects)[i])
       f (*(*objects)[i]);
 }
 
-template<class Object, class Parameter>
-  template<class Op>
-void Repository<Object, Parameter>::for_each (Op& f) const
+template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Op>
+void RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::for_each (Op& f) const
 {
   RLOCK(objectsM);
 
-  for (ObjectId i = 0; i < objects->size (); i++)
+  for (ObjId i = 0; i < objects->size (); i++)
     if ((*objects)[i])
       f (*(*objects)[i]);
 }

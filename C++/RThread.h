@@ -10,6 +10,8 @@
 #include "StateMap.h"
 #include "RThread.h"
 #include "RMutex.h"
+#include "SCommon.h"
+#include <string>
 #include <cstdatomic>
 
 class ThreadStateSpace {};
@@ -26,15 +28,17 @@ public:
   /// It is mandatory for any repository member. 
   // Is always > 0. As a special
   /// meaning the thread with 1 id is a main thread
-  const size_t universal_object_id;
+  const std::string universal_object_id;
+  const size_t num_id;
 
   explicit RThreadBase 
-	 (size_t id /// it comes from Repository::create_object. id
-	            /// == 0 for the main thread
-	  /*, bool main*/);
+	 (const std::string& id 
+    ///< it comes from Repository::create_object. id == 1
+	 /// for the main thread
+		);
 
   virtual ~RThreadBase ();
-  size_t id () const { return universal_object_id; }
+  size_t id () const { return num_id; }
 
   /* 
   It is a group of functions 

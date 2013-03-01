@@ -2,17 +2,27 @@
 #include "Repository.h"
 #include <list>
 #include <algorithm>
+#include <vector>
 
 template<class Thread, class Parameter>
 class ThreadRepository :
-  public Repository<Thread, Parameter>
+  public Repository<
+	 Thread, 
+	 Parameter, 
+	 std::vector<Thread*>,
+	 typename std::vector<Thread*>::size_type>
 {
 public:
-  typedef typename Repository<Thread,Parameter>::ObjectId ObjectId;
+  typedef typename std::vector<Thread*>::size_type ObjectId;
 
-  ThreadRepository (int n)
-    : Repository<Thread,Parameter> (n)
-  {}
+  typedef Repository<
+	 Thread, 
+	 Parameter, 
+	 std::vector<Thread*>, 
+	 ObjectId> Parent;
+
+  ThreadRepository(size_t initial_value) 
+	 : Parent(initial_value) {}
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
@@ -77,7 +87,7 @@ void ThreadRepository<Thread,Parameter>::wait_subthreads ()
 
 template<class Thread, class Parameter>
 void ThreadRepository<Thread,Parameter>::
-  delete_object_by_id (typename Repository<Thread,Parameter>::ObjectId id, bool freeMemory)
+  delete_object_by_id (ObjectId id, bool freeMemory)
 {
   Thread* th = get_object_by_id (id);
   if (th) 
@@ -86,7 +96,7 @@ void ThreadRepository<Thread,Parameter>::
 #ifdef EVENT_IMPLEMENTED
     th->wait ();
 #endif
-    Repository<Thread,Parameter>::delete_object_by_id (id, freeMemory);
+    Parent::delete_object_by_id (id, freeMemory);
   }
 }
 

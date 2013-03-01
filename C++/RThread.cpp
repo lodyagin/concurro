@@ -67,9 +67,10 @@ RThreadBase::RThreadBase (SEvent* extTerminated)
 }
 #endif
 
-RThreadBase::RThreadBase (size_t id/*, bool main*/)
+RThreadBase::RThreadBase (const std::string& id)
   : 
     universal_object_id (id),
+	 num_id (fromString<size_t>(id)),
 #ifdef EVENT_IMPLEMENTED
     isTerminatedEvent (false),
     stopEvent (true, false),
@@ -80,10 +81,10 @@ RThreadBase::RThreadBase (size_t id/*, bool main*/)
     exitRequested (false),
     currentState ("ready")
 {
-  if (universal_object_id == 0) {
+  if (num_id == 0) {
 	 THROW_PROGRAM_ERROR;
   }
-  else if (universal_object_id == 1) {
+  else if (num_id == 1) {
     bool main_was_created = mainThreadCreated.exchange (true);
     if (main_was_created)
       throw SException (_T"Only one thread with id = 1 can exist");
