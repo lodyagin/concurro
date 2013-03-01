@@ -10,6 +10,7 @@
 #include "REvent.h"
 #include "RThread.h"
 #include "StateMap.h"
+#include "Logging.h"
 #include <algorithm>
 #include <utility>
 #include <unordered_map>
@@ -100,6 +101,8 @@ public:
   };
 
 protected:
+  typedef Logger<RepositoryBase> log;
+
   ObjMap* objects;
   RMutex objectsM;
 
@@ -134,73 +137,6 @@ public:
 	 this->objects->push_back (0); // id 0 is not used for
 											 // real objects
   }
-
-#if 0
-  //virtual ~Repository ();
-
-  virtual Obj* create_object (const Par& param);
-
-  /// Delete obj from the repository. freeMemory means
-  /// to call the object desctructor after it.
-  virtual void delete_object(Obj* obj, bool freeMemory);
-
-  virtual void delete_object_by_id 
-	 (ObjId id, bool freeMemory);
-
-  virtual Obj* get_object_by_id (ObjId id) const;
-
-  // Replace the old object by new one
-  // The old object is deleted
-  virtual Obj* replace_object 
-    (ObjId id, 
-     const Par& param,
-     bool freeMemory
-     );
-
-  // return ids of objects selected by a predicate
-  template<class Out, class Pred>
-  Out get_object_ids_by_pred (Out res, Pred p);
-
-  // return ids of objects selected by 
-  // an UniversalState
-  template<class Out, class State>
-  Out get_object_ids_by_state
-    (Out res, const State& state);
-
-  template<class Op>
-  void for_each (Op& f);
-
-  template<class Op>
-  void for_each (Op& f) const;
-
-  // It is used for object creation
-  struct ObjectCreationInfo
-  {
-    //const Par* info;
-    Repository* repository;
-	 std::string objectId;
-  };
-
-  class Destroy 
-    : public std::unary_function<int, void>
-  {
-  public:
-    Destroy (Repository& _repo) : repo (_repo) {}
-    void operator () (int objId)
-    {
-      repo.delete_object_by_id (objId, true);
-    }
-  protected:
-    Repository& repo;
-  };
-
-protected:
-  ObjId get_object_id (const Par&);
-
-//  enum {startMapSize = 10, mapSizeStep = 10};
-
-  //SSemaphore semaphore;
-#endif
 
 protected:
   /// This specialization takes the first unused (numeric)
@@ -346,7 +282,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   /*if (SThread::current ().is_stop_requested ())
        ::xShuttingDown 
         (L"Stop request from the owner thread.");*/
-
+  Obj* obj = 0;
   { 
     RLOCK (objectsM);
 
@@ -356,11 +292,12 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     toString (objId, uniId);
     const ObjectCreationInfo cinfo = { this, uniId };
 
-    Obj* obj = param.create_derivation (cinfo);
+    obj = param.create_derivation (cinfo);
     SCHECK (obj);
     insert_object (objId, obj);
-    return obj;
   }
+  LOG_DEBUG(log, "Object " << *obj << " is created.");
+  return obj;
 }
 
 template<class Obj, class Par, class ObjMap, class ObjId>
@@ -445,13 +382,14 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
 //
 ::get_object_by_id (ObjId id) const
 {
-  { 
+  try { 
     RLOCK(objectsM);
-
-    /*if (id < 1 || id >= objects->size ())
-      return 0;
-		else*/
-      return objects->at (id);
+	 return objects->at (id);
+  }
+  catch (const std::out_of_range&)
+  {
+	 THROW_EXCEPTION(SException, 
+						  "No object with id = [" << id << "]");
   }
 }
 
