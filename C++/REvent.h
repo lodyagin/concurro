@@ -1,10 +1,10 @@
 #ifndef REVENT_H
 #define REVENT_H
 
-#ifndef WIN
-#include "../PEvents/pevents.h"
+#ifndef _WIN32
+#define WFMO
+#include "pevents.h"
 typedef neosmart::neosmart_event_t HANDLE;
-
 #endif
 
 class REvtBase

@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "RThread.h"
 #include "SShutdown.h"
+#include "Logging.h"
 #include <assert.h>
 
 // RThread states  ========================================
@@ -49,37 +50,19 @@ RThreadBase::ThreadState RThreadBase::workingState("working");
 RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
 RThreadBase::ThreadState RThreadBase::destroyedState("destroyed");
 
-#ifdef EVENT_IMPLEMENTED
-RThreadBase::RThreadBase (SEvent* extTerminated) 
-:
-  RThread(),
-  handle(0),
-  isTerminatedEvent (false),
-  stopEvent (true, false),
-#ifndef EVENT_IMPLEMENTED
-  waitCnt (0), 
-#endif
-  exitRequested (false),
-  currentState ("ready"),
-  externalTerminated (extTerminated)
-{
-  log_from_constructor ();
-}
-#endif
-
-RThreadBase::RThreadBase (const std::string& id)
+RThreadBase::RThreadBase 
+(const std::string& id, 
+ REvent* extTerminated
+)
   : 
     universal_object_id (id),
 	 num_id (fromString<size_t>(id)),
-#ifdef EVENT_IMPLEMENTED
     isTerminatedEvent (false),
     stopEvent (true, false),
-#endif
-#ifdef EVENT_IMPLEMENTED
     waitCnt (0), 
-#endif
     exitRequested (false),
-    currentState ("ready")
+    currentState ("ready"),
+	 externalTerminated (extTerminated)
 {
   if (num_id == 0) {
 	 THROW_PROGRAM_ERROR;
@@ -94,9 +77,7 @@ RThreadBase::RThreadBase (const std::string& id)
 
 void RThreadBase::state (ThreadState& state) const
 {
-#ifndef MUTEX_BUG
   RLOCK(cs);
-#endif
   state = currentState;
 }
 
@@ -111,7 +92,6 @@ void RThreadBase::start ()
   ThreadState::move_to (*this, workingState);
 }
 
-#ifdef EVENT_IMPLEMENTED
 void RThreadBase::wait()
 {
   bool cntIncremented = false;
@@ -130,11 +110,12 @@ void RThreadBase::wait()
     }
 
     LOG_DEBUG
-      (Logging::Thread (),
-       oss_ << "Wait a termination of ";
-       outString (oss_);
-       oss_ << " requested by ";
-       RThread::current ().outString (oss_)
+      (Logger<LOG::Thread>,
+       "Wait a termination of " << *this
+       << " requested by " 
+#ifdef CURRENT_NOT_IMPLEMENTED
+		 << RThread::current ()
+#endif
        );
 
     isTerminatedEvent.wait ();
@@ -144,19 +125,14 @@ void RThreadBase::wait()
   {
      if (cntIncremented) waitCnt--;
 
-     LOG4CXX_ERROR 
-       (Logging::Root (), 
-        "Unknown exception in RThread::wait");
+     LOG_ERROR(Logger<LOG::Root>, "Unknown exception in RThread::wait");
   }
 }
-#endif
 
 void RThreadBase::stop ()
 {
   RLOCK(cs);
-#ifdef EVENT_IMPLEMENTED
   stopEvent.set ();
-#endif
   exitRequested = true;
 }
 
@@ -251,15 +227,19 @@ void RThreadBase::_run()
 
   LOG_DEBUG(logger, *this << " is finished.");
 
-#ifdef EVENT_IMPLEMENTED
   if (externalTerminated) 
     externalTerminated->set ();
   isTerminatedEvent.set ();
-#endif
 }
 
-#if 0
-RThread & RThread::current()
+void RThreadBase::log_from_constructor ()
+{
+  LOG_INFO(logger, "New " << *this);
+}
+
+#if 1
+template<class Thread>
+RThread<Thread> & RThread<Thread>::current()
 {
   RThread * thread = reinterpret_cast<RThread*> 
     (RThread::get_current ());
@@ -269,8 +249,4 @@ RThread & RThread::current()
 }
 #endif
 
-void RThreadBase::log_from_constructor ()
-{
-  LOG_INFO(logger, "New " << *this);
-}
 

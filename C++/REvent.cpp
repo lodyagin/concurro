@@ -1,9 +1,9 @@
-#include "Logging.h"
+#include "StdAfx.h"
 #include "REvent.h"
-#ifdef WIN
-#include "stdAfx.h"
-#include "SShutdown.h"
+#include "Logging.h"
 #include "RThread.h"
+#ifdef WIN
+#include "SShutdown.h"
 
 // REvtBase  =========================================================
 
@@ -140,7 +140,6 @@ size_t waitMultipleSD( HANDLE * _evts, size_t count )
   return idx - 1;
 }
 #else
-//#include "pevents.h"
 using namespace neosmart;
 
 // REvtBase  =========================================================
@@ -160,9 +159,13 @@ REvtBase::~REvtBase()
 void REvtBase::wait()
 {
 
-  HANDLE evts[] = { /*SShutdown::instance().event(),*/ h };
+  HANDLE evts[] = { 
+#ifndef SHUTDOWN_UNIMPL
+SShutdown::instance().event(), 
+#endif
+h };
 
-  int code = WaitForMultipleEvents(evts, 1, false, -1);
+  int code = WaitForMultipleEvents(evts, 1, false, (uint64_t) -1);
 
   //if ( code == WAIT_OBJECT_0 ) xShuttingDown(L"REvent.wait");
   //if ( code != WAIT_OBJECT_0 + 1 )
@@ -172,7 +175,11 @@ void REvtBase::wait()
 bool REvtBase::wait( int time )
 {
 
-  HANDLE evts[] = { /*SShutdown::instance().event(),*/ h };
+  HANDLE evts[] = { 
+#ifndef SHUTDOWN_UNIMPL
+SShutdown::instance().event(), 
+#endif
+h };
 
   int code = WaitForMultipleEvents(evts, 1, false, time);
   /*

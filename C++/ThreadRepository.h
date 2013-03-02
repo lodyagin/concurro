@@ -59,9 +59,7 @@ struct ThreadWaiter : std::unary_function<Thread*, void>
 {
   void operator () (Thread* th)
   {
-#ifdef EVENT_IMPLEMENTED
     if (th) th->wait ();
-#endif
   }
 };
 
@@ -93,9 +91,7 @@ void ThreadRepository<Thread,Parameter>::
   if (th) 
   {
     th->stop ();
-#ifdef EVENT_IMPLEMENTED
     th->wait ();
-#endif
     Parent::delete_object_by_id (id, freeMemory);
   }
 }

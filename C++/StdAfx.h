@@ -1,6 +1,6 @@
 #pragma once
 
-#undef EVENT_IMPLEMENTED
+#define SHUTDOWN_UNIMPL
 
 #ifdef _WIN32
 #  include "targetver.h"
@@ -27,9 +27,7 @@
 #include "SMutex.h"
 #endif
 #include "RMutex.h"
-#ifdef EVENT_IMPLEMENTED
-#  include "REvent.h"
-#endif
+#include "REvent.h"
 #include "SShutdown.h"
 #include "SCheck.h"
 

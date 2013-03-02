@@ -10,6 +10,7 @@
 #include "StateMap.h"
 #include "RThread.h"
 #include "RMutex.h"
+#include "REvent.h"
 #include "SCommon.h"
 #include <string>
 #include <cstdatomic>
@@ -31,11 +32,14 @@ public:
   const std::string universal_object_id;
   const size_t num_id;
 
-  explicit RThreadBase 
-	 (const std::string& id 
-    ///< it comes from Repository::create_object. id == 1
-	 /// for the main thread
-		);
+  RThreadBase 
+	 (const std::string& id,
+	  ///< it comes from Repository::create_object. id == 1
+	  /// for the main thread
+	  REvent* extTerminated = 0
+	  ///< If not null the thread will set this event at the exit of
+     /// the run() method
+	  );
 
   virtual ~RThreadBase ();
   size_t id () const { return num_id; }
@@ -45,9 +49,7 @@ public:
   for access from a calling thread 
   */
   void start();
-#ifdef EVENT_IMPLEMENTED
   void wait();  // wait while thread finished
-#endif
   virtual void stop (); ///< try to stop implicitly
 
   bool is_running () const
@@ -59,12 +61,10 @@ public:
   // Overrides
   void outString (std::ostream& out) const;
 
-#ifdef EVENT_IMPLEMENTED
-  SEvent& get_stop_event ()
+  REvent& get_stop_event ()
   {
     return stopEvent;
   }
-#endif
 
   // the state stuff
   class ThreadState 
@@ -153,15 +153,13 @@ protected:
   virtual void start_impl () = 0;
 
 
-#ifdef EVENT_IMPLEMENTED
-  SEvent stopEvent; //stop is requested
-#endif
+  REvent stopEvent; //stop is requested
 
-  // number of threads waiting termination
-  // of this thread
-  //std::atomic<int> waitCnt; 
+  /// A number of threads waiting termination
+  /// of this thread.
+  std::atomic<int> waitCnt; 
 
-  /// somebody has requested a termination
+  /// Somebody has requested a termination.
   std::atomic<bool> exitRequested; 
 
   StateMap* get_state_map (ThreadState&) const
@@ -179,11 +177,9 @@ private:
   // (currentState, waitCnt, exitRequested)
   ThreadState currentState;
 
-#ifdef EVENT_IMPLEMENTED
   //thread terminate its processing
-  SEvent isTerminatedEvent; 
-  SEvent* externalTerminated;
-#endif
+  REvent isTerminatedEvent; 
+  REvent* externalTerminated;
 
   // called from Windows
   // (Access inside the thread)
@@ -212,8 +208,8 @@ public:
 //    return new RThread (main);
 //  }
 
-  // Return the pointer to the RThread object
-  // for the current thread.
+  /// Return the pointer to the RThread object
+  /// for the current thread.
   // TODO UT on thread not created by RThread.
   static RThread<Thread>& current();
 
@@ -221,17 +217,14 @@ public:
   void outString (std::ostream& out) const;
 
 protected:
-
-  RThread (
-#ifdef EVENT_IMPLEMENTED
-    SEvent* extTerminated = 0
-#endif
-    );
-
+  
   /// Create a new thread. main == true will crate the main
   /// thread. One and only one main thread can be created.
-  //!! set _current if it is needed
-  explicit RThread (size_t id) : RThreadBase (id) {}
+  // !! set _current if it is needed
+  explicit RThread (
+	 size_t id,
+	 REvent* extTerminated = 0) 
+	 : RThreadBase (id, extTerminated) {}
 
   /* Access inside the thread */
   // Override it for a real thread job

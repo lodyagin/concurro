@@ -25,7 +25,7 @@ set (concurrent_SOURCES
 #  SCheck.cpp
   SCommon.cpp
 #  SComplPort.cpp
-#  SEvent.cpp
+  REvent.cpp
   SException.cpp
 #  SocketAddressFactory.cpp
   SShutdown.cpp
@@ -39,5 +39,6 @@ set (concurrent_SOURCES
 )
 
 include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/PEvents)
 
 add_LIBRARY(concurrent ${concurrent_SOURCES})
