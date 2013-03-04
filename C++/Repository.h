@@ -16,21 +16,13 @@
 #include <unordered_map>
 #include <assert.h>
 
+/// The Par contains invalid parameters.
 class InvalidObjectParameters : public SException
 {
 public:
   InvalidObjectParameters ()
-    : SException 
-      ("Invalid parameters for repository object creation")
-  {}
-};
-
-class IdIsAlreadyUsed : public SException
-{
-public:
-  IdIsAlreadyUsed ()
-    : SException 
-      ("This Id is already used in the repository")
+	 : SException 
+	 ("Invalid parameters for repository object creation")
   {}
 };
 
@@ -42,33 +34,67 @@ template<class Obj, class Par, class ObjMap, class ObjId>
 class RepositoryBase
 {
 public:
+
+  /// No object with such id exists.
+  class NoSuchId : public SException
+  {
+  public:
+	 NoSuchId (ObjId the_id) 
+		: id (the_id), SException (SFORMAT("No object with id [" << the_id << "] exists."))
+	 {}
+	 ~NoSuchId () throw () {}
+
+	 const ObjId id;
+  };
+
+  /// It can be raised, for example, when the repository is based on
+  /// Par when calculating the new Id (i.e., unordered_map).
+  class IdIsAlreadyUsed : public SException
+  {
+  public:
+	 IdIsAlreadyUsed (ObjId the_id) 
+		: id (the_id), 
+		SException (SFORMAT("The object id [" << the_id << "] is used already."))
+	 {}
+	 ~IdIsAlreadyUsed () throw () {}
+
+	 const ObjId id;
+  };
+
   RepositoryBase () {}
 //  RepositoryBase (size_t initial_value);
 
   virtual ~RepositoryBase ();
 
+  /// Create a new object in the repository by parameters Par.
+  /// \exception InvalidObjectParameters something is wrong with param. 
   virtual Obj* create_object (const Par& param);
 
   /// Delete obj from the repository. freeMemory means
   /// to call the object desctructor after it.
   virtual void delete_object(Obj* obj, bool freeMemory);
 
-  virtual void delete_object_by_id 
-	 (ObjId id, bool freeMemory);
+  /// Delete the object with id.
+  /// \param freeMemory call delete on the object itself
+  ///        (destructor). false means only remove a registration in the
+  ///        repository.
+  /// \exception NoSuchId
+  virtual void delete_object_by_id (ObjId id, bool freeMemory);
 
   virtual Obj* get_object_by_id (ObjId id) const;
 
-  // Replace the old object by new one
-  // The old object is deleted
+  /// Replace the old object by new one (and create the new).
+  /// The old object is deleted.
+  /// \exception InvalidObjectParameters something is wrong with param. 
+  /// \exception NoSuchId
   virtual Obj* replace_object 
 	 (ObjId id, const Par& param, bool freeMemory);
 
-  // return ids of objects selected by a predicate
+  /// return ids of objects selected by a predicate
   template<class Out, class Pred>
   Out get_object_ids_by_pred (Out res, Pred p);
 
-  // return ids of objects selected by 
-  // an UniversalState
+  /// return ids of objects selected by  an UniversalState
   template<class Out, class State>
   Out get_object_ids_by_state
     (Out res, const State& state);
@@ -79,10 +105,9 @@ public:
   template<class Op>
   void for_each (Op& f) const;
 
-  // It is used for object creation
+  /// It is used for object creation as an argument to Par::create_derivation
   struct ObjectCreationInfo
   {
-    //const Par* info;
     RepositoryBase* repository;
 	 std::string objectId;
   };
@@ -106,7 +131,10 @@ protected:
   ObjMap* objects;
   RMutex objectsM;
 
+  /// Calculate an id for a new object, possible based on Par
+  /// (depending of the Repository type)
   virtual ObjId get_object_id (const Par&) = 0;
+
   /// Insert new object into objects
   virtual void insert_object (ObjId, Obj*) = 0;
 };
@@ -117,18 +145,16 @@ protected:
  * This is implementation of Repository for vector-like
  * objects. 
  */
-template<
-  class Obj, 
-  class Par, 
-  class ObjMap, 
-  class ObjId/*, 
-					class ObjMapValue*/
->
+template< class Obj, class Par, class ObjMap, class ObjId >
 class Repository 
   : public RepositoryBase<Obj, Par, ObjMap, ObjId>,
   public SNotCopyable
 {
 public:
+  typedef RepositoryBase<Obj, Par, ObjMap, ObjId> Parent;
+  using Parent::NoSuchId;
+  using Parent::IdIsAlreadyUsed;
+
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
   Repository (size_t initial_value)
@@ -177,6 +203,11 @@ class Repository<Obj, Par, std::unordered_map<ObjId, Obj*>, ObjId>
   public SNotCopyable
 {
 public:
+  typedef RepositoryBase<Obj, Par, std::unordered_map<ObjId, Obj*>,
+	 ObjId> Parent;
+  using Parent::NoSuchId;
+  using Parent::IdIsAlreadyUsed;
+
   typedef std::unordered_map<ObjId, Obj*> ObjMap;
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
@@ -192,8 +223,9 @@ protected:
 
 	 ObjId id = param.get_id ();
 
-	 if (this->objects->find(id) != this->objects->end())
-		throw IdIsAlreadyUsed ();
+	 if (this->objects->find(id) != this->objects->end()) {
+		throw typename Parent::IdIsAlreadyUsed (id);
+	 }
 	 
 	 return id;
   }
@@ -307,7 +339,14 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 {
   RLOCK(objectsM);
 
-  Obj* obj = objects->at (id);
+  Obj* obj = 0;
+  try {
+	 obj = objects->at (id);
+  }
+  catch (const std::out_of_range&) {
+	 throw NoSuchId(id);
+  }
+
   if (!obj)
     THROW_EXCEPTION
       (SException, oss_ << L"Program error");
@@ -343,7 +382,15 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
   Obj* ptr = 0;
   {
     RLOCK(objectsM);
-    Obj* r = objects->at (id);
+
+	 Obj* r = 0;
+	 try {
+		r = objects->at (id);
+	 }
+	 catch (const std::out_of_range&) {
+		throw NoSuchId(id);
+	 }
+
     ptr = r;
     if (r == 0) 
 		THROW_EXCEPTION(SException, "Program error");
@@ -388,8 +435,7 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
   catch (const std::out_of_range&)
   {
-	 THROW_EXCEPTION(SException, 
-						  "No object with id = [" << id << "]");
+	 throw NoSuchId(id);
   }
 }
 
