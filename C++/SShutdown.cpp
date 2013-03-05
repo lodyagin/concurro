@@ -48,8 +48,8 @@ void SShutdown::unregisterComplPort( SComplPort & port )
 #if 1
 // XShuttingDown  ====================================================
 
-XShuttingDown::XShuttingDown( const std::wstring & act ) :
-  Parent(sFormat(L"%s action interrupted by shutdown signal", act.c_str())),
+XShuttingDown::XShuttingDown( const std::string & act ) :
+  Parent(SFORMAT(act << " action interrupted by a shutdown signal")),
   _action(act)
 {
 }
@@ -57,7 +57,7 @@ XShuttingDown::XShuttingDown( const std::wstring & act ) :
 
 //====================================================================
 
-void xShuttingDown( const std::wstring & act )
+void xShuttingDown( const std::string & act )
 {
   throw XShuttingDown(act);
 }

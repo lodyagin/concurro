@@ -39,26 +39,24 @@ private:
 };
 #endif
 
-#if 1
 class XShuttingDown : public SException
 {
 public:
 
   typedef SException Parent;
 
-  explicit XShuttingDown( const std::wstring & interruptedAction = L"unknown" );
+  explicit XShuttingDown( const std::string & interruptedAction = "unknown" );
   ~XShuttingDown () throw () {};
 
 private:
 
-  std::wstring _action;
+  std::string _action;
 
 };
 
 
 // throw XShuttindDown
-void xShuttingDown( const std::wstring & interruptedAction = L"unknown" );
+void xShuttingDown( const std::string & interruptedAction = "unknown" );
 void sCheckShuttingDown();  // throws ZSD if is shuttind down
-#endif
 
 #endif  // __SSHUTDOWN_H
