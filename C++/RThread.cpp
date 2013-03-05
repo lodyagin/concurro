@@ -237,7 +237,8 @@ void RThreadBase::log_from_constructor ()
   LOG_INFO(logger, "New " << *this);
 }
 
-#if 1
+#if 0
+
 template<class Thread>
 RThread<Thread> & RThread<Thread>::current()
 {

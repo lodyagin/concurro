@@ -1,8 +1,9 @@
 #include "RMutex.h"
 #include "CUnit.h"
-#include "pthread.h"
+#include "RThread.h"
 #include <iostream>
-//#include <iostream>
+#include <string>
+#include <thread>
 //#include "concurrent/C++/REvent.h"
 //#include <boost/thread/thread.hpp>
 
@@ -56,21 +57,42 @@ void test_same_thread_overrelease()
   mx.release();
 }
 RMutex mx1;
-void* threadFunc(void *arg){
-	mx1.acquire();
-	static volatile int test = 0;
-	sleep(*(int *)arg);
-	*(int*)arg = ++test;
-	mx1.release();
-}
+class TestThread : public RThread<std::thread> {
+public:
+	TestThread(const std::string& id,
+					   RMutex& mutex, int sleep_time)
+   :RThread<std::thread>(id), mx(mutex), sleept(sleep_time)
+{}
+	int getResuilt(){return arg;}
+protected:
+	void run(){
+		static volatile int test=0;
+		mx.acquire();
+		sleep(sleept);
+		arg = ++test;
+		std::cout << "\n\n\n\n  "<<test<< "\n\n\n\n";
+		mx.release();
+  }
+	volatile int sleept;
+	volatile int arg;
+	RMutex& mx;
+};
+
 void test_2_threads_try_acquire(){
-	pthread_t thread1, thread2;
+	RMutex mx;
 	int id1 = 2, id2 = 0;
-	pthread_create(&thread1, NULL, threadFunc, &id1);
+	std::string s = "11111";
+	std::string s1 = "22222";
+	TestThread thread1(s, mx, id1);
+	thread1.start();
 	sleep(1);
-	pthread_create(&thread2, NULL, threadFunc, &id2);
+	TestThread thread2(s1, mx, id2);
+	thread2.start();
 	sleep(3);
-	if (id1 == 1 && id2 == 2)
+	std::cout << "\n\n\n\n  "<<thread1.getResuilt()<< "\n\n\n\n";
+	std::cout << "\n\n\n\n  "<<thread2.getResuilt()<< "\n\n\n\n";
+
+	if (thread1.getResuilt() == 1 && thread2.getResuilt() == 2)
 		CU_PASS(id1 == 1)
 	else
 		CU_FAIL(id1! = 1);

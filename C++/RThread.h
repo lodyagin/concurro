@@ -14,6 +14,7 @@
 #include "SCommon.h"
 #include <string>
 #include <cstdatomic>
+#include <thread>
 
 class ThreadStateSpace {};
 
@@ -26,6 +27,7 @@ class RThreadBase
     public HasStringView
 {
 public:
+	void _run ();
   /// It is mandatory for any repository member. 
   // Is always > 0. As a special
   /// meaning the thread with 1 id is a main thread
@@ -145,7 +147,7 @@ protected:
 #endif
 
   /// Start the thread procedure (called from _helper)
-  void _run ();
+
 
   /// It will be overrided with real thread procedure.
   virtual void run() = 0;
@@ -200,7 +202,8 @@ class RThread
   : public RThreadBase,
     protected Thread
 {
-public:
+#if 0
+	public:
 
   /// Create a new thread. main == true will crate the main
   /// thread. One and only one main thread can be created.
@@ -222,7 +225,7 @@ protected:
   /// thread. One and only one main thread can be created.
   // !! set _current if it is needed
   explicit RThread (
-	 size_t id,
+	 const std::string& id,
 	 REvent* extTerminated = 0) 
 	 : RThreadBase (id, extTerminated) {}
 
@@ -233,9 +236,26 @@ protected:
   virtual void run() {}
   //!! release _current if it is needed
   virtual ~RThread();
+#endif
 };
 
-void sSleep( int ms );
+template<>
+class RThread<std::thread> : public RThreadBase
+{
+public:
+	RThread(const std::string& id, REvent* extTerminated = 0)
+	: RThreadBase(id, extTerminated) {}
 
+
+protected:
+	void start_impl () {
+		th = new std::thread(&RThreadBase::_run, this);
+	}
+
+	std::thread* th;
+};
+
+
+void sSleep( int ms );
 
 #endif
