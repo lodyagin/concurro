@@ -56,7 +56,7 @@ void test_same_thread_overrelease()
   MUTEX_RELEASE(mx);;
   MUTEX_RELEASE(mx);;
 }
-RMutex mx1;
+RMutex mx1("mx1");
 class TestThread : public RThread<std::thread> {
 public:
 	TestThread(const std::string& id,
@@ -67,11 +67,11 @@ public:
 protected:
 	void run(){
 		static volatile int test=0;
-		mx.acquire();
+		MUTEX_ACQUIRE(mx);
 		sleep(sleept);
 		arg = ++test;
 		std::cout << "\n\n\n\n  "<<test<< "\n\n\n\n";
-		mx.release();
+		MUTEX_RELEASE(mx);
   }
 	volatile int sleept;
 	volatile int arg;
@@ -79,7 +79,7 @@ protected:
 };
 
 void test_2_threads_try_acquire(){
-	RMutex mx;
+  RMutex mx("mx");
 	int id1 = 2, id2 = 0;
 	std::string s = "11111";
 	std::string s1 = "22222";
