@@ -21,8 +21,9 @@ public:
 	 std::vector<Thread*>, 
 	 ObjectId> Parent;
 
-  ThreadRepository(size_t initial_value) 
-	 : Parent(initial_value) {}
+  ThreadRepository
+	 (const std::string& repository_name, size_t initial_value) 
+	 : Parent(repository_name, initial_value) {}
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
@@ -40,7 +41,7 @@ public:
   {
     THROW_EXCEPTION
       (SException, 
-       L"replace_object is not realised for threads."
+       "replace_object is not realised for threads."
        );
   }
 };

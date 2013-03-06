@@ -62,7 +62,8 @@ RThreadBase::RThreadBase
     waitCnt (0), 
     exitRequested (false),
     currentState ("ready"),
-	 externalTerminated (extTerminated)
+	 externalTerminated (extTerminated),
+	 cs(SFORMAT("RThreadBase with id=["<<id<<"]"))
 {
   if (num_id == 0) {
 	 THROW_PROGRAM_ERROR;

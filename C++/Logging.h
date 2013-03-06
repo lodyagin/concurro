@@ -6,6 +6,7 @@
 
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/spi/location/locationinfo.h>
 #include "SSingleton.h"
 #include <string>
 #include <typeinfo>
@@ -208,5 +209,9 @@ inline LogBase* Logger<LOG::States>::init_base
   LOG_ERROR_LOC(logger, message, LOG4CXX_LOCATION)
 #define LOG_FATAL(logger, message) \
   LOG_FATAL_LOC(logger, message, LOG4CXX_LOCATION)
+
+// the aliases
+#define LOG_WARNING LOG_WARN
+#define LOG_WARNING_LOC LOG_WARN
 
 #endif

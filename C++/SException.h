@@ -1,22 +1,28 @@
 #pragma once
 
 #include "SCommon.h"
+#include "HasStringView.h"
 #include <exception>
-
+#include <ostream>
 
 // base for the all SCommon exceptions
 
-class SException : public std::exception
+class SException : public std::exception, public HasStringView
 {
 public:
 
-  explicit SException (const std::string & what, bool alreadyLogged = false);
-  explicit SException (const std::wstring & what, bool alreadyLogged = false);
+  explicit SException (const std::string & what/*, bool alreadyLogged = false*/);
+  explicit SException (const std::wstring & what/*, bool alreadyLogged = false*/);
   virtual ~SException() throw();
 
   bool isAlreadyLogged () const  { return alreadyLoggedFlag; }
 
   virtual const char * what() const throw();
+
+  void outString(std::ostream& out) const
+  {
+	 out << this->what();
+  }
 
 protected:
 #ifdef _WIN32
@@ -26,26 +32,14 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-#ifdef _WIN32
-#  define THROW_EXCEPTION(exception_class, stream_expr) { \
-  std::wostringstream oss_; \
-  { oss_ << stream_expr ; } \
-  oss_ << L" at " << L(__FILE__) << L':' << __LINE__						 \
-       << L", " << L(__FUNCTION__); \
-       throw exception_class(oss_.str()); \
+#define THROW_EXCEPTION(exception_class, par) { \
+	 exception_class exc_(par);								  \
+  LOG_DEBUG(Logger<LOG::Root>, "Throw " << exc_); \
+  throw exc_; \
   } while (0)
-#else
-#define THROW_EXCEPTION(exception_class, stream_expr) { \
-  std::ostringstream oss_; \
-  { oss_ << stream_expr ; } \
-  oss_ << " at " << (__FILE__) << ':' << __LINE__						 \
-       << ", " << (__FUNCTION__); \
-       throw exception_class(oss_.str()); \
-  } while (0)
-#endif
 
 #define THROW_PROGRAM_ERROR \
-  THROW_EXCEPTION(SException, oss_ << "Program Error")
+  THROW_EXCEPTION(SException, "Program Error")
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException
@@ -62,4 +56,4 @@ public:
 
 SMAKE_THROW_FN_DECL(sUserError, SUserError)
 
-
+std::ostream& operator<< (std::ostream&, const SException& exc);

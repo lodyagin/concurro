@@ -1,5 +1,6 @@
 #include "RMutex.h"
 #include "CUnit.h"
+#include "Logging.h"
 
 //#include <iostream>
 //#include "concurrent/C++/REvent.h"
@@ -33,22 +34,22 @@ int RMutexCUClean()
 
 void test_same_thread_acquire()
 {
-  RMutex mx;
+  RMutex mx("test_same_thread_acquire");
 
-  mx.acquire();
-  mx.acquire();
-  mx.release();
-  mx.release();
+  MUTEX_ACQUIRE(mx);;
+  MUTEX_ACQUIRE(mx);;
+  MUTEX_RELEASE(mx);;
+  MUTEX_RELEASE(mx);;
 }
 
 void test_same_thread_overrelease()
 {
-  RMutex mx;
+  RMutex mx("test_same_thread_overrelease");
 
-  mx.acquire();
-  mx.acquire();
-  mx.release();
-  mx.release();
-  mx.release();
+  MUTEX_ACQUIRE(mx);;
+  MUTEX_ACQUIRE(mx);;
+  MUTEX_RELEASE(mx);;
+  MUTEX_RELEASE(mx);;
+  MUTEX_RELEASE(mx);;
 }
 

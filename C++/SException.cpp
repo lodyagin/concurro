@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "SException.h"
 #include "SCommon.h"
-
+#include <typeinfo>
 
 // SException  ==================================================================
 
@@ -15,14 +15,12 @@ SException::SException (const std::wstring & w, bool alreadyLogged) :
 }
 #endif
 
-SException::SException (const std::string & w, bool alreadyLogged) :
-  _what(w), alreadyLoggedFlag (alreadyLogged)
+SException::SException (const std::string & w) :
+  _what(w)//, alreadyLoggedFlag (alreadyLogged)
 {
 #ifdef _WIN32
   whatU = str2wstr (_what);
 #endif
-   if (!alreadyLogged)
-     LOG_DEBUG (Logger<LOG::Root>, "SException: " << w);
 }
 
 SException::~SException() throw ()
@@ -41,3 +39,9 @@ const char * SException::what() const throw ()
 SMAKE_THROW_FN_IMPL(throwSException, SException)
 SMAKE_THROW_FN_IMPL(sUserError, SUserError)
 #endif
+
+std::ostream& operator<< (std::ostream& out, const SException& exc)
+{
+  out << typeid(exc).name() << ": " << exc.what();
+  return out;
+}

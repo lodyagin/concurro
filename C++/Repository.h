@@ -40,7 +40,7 @@ public:
   {
   public:
 	 NoSuchId (ObjId the_id) 
-		: id (the_id), SException (SFORMAT("No object with id [" << the_id << "] exists."))
+		: id (the_id), SException (SFORMAT("No object with id [" << the_id << "] exists"))
 	 {}
 	 ~NoSuchId () throw () {}
 
@@ -61,8 +61,8 @@ public:
 	 const ObjId id;
   };
 
-  RepositoryBase () {}
-//  RepositoryBase (size_t initial_value);
+  RepositoryBase (const std::string& repo_name) 
+	 : objectsM (SFORMAT(repo_name << ".objectsM")) {}
 
   virtual ~RepositoryBase ();
 
@@ -157,7 +157,9 @@ public:
 
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
-  Repository (size_t initial_value)
+  Repository 
+	 (const std::string& repository_name, size_t initial_value)
+	 : Parent (repository_name)
   {
 	 this->objects = new ObjMap (initial_value);
 	 this->objects->push_back (0); // id 0 is not used for
@@ -211,7 +213,9 @@ public:
   typedef std::unordered_map<ObjId, Obj*> ObjMap;
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
-  Repository (size_t initial_value)
+  Repository 
+	 (const std::string& repository_name, size_t initial_value)
+	 : Parent (repository_name)
   {
 	 this->objects = new ObjMap (initial_value);
   }
@@ -344,12 +348,10 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 	 obj = objects->at (id);
   }
   catch (const std::out_of_range&) {
-	 throw NoSuchId(id);
+	 THROW_EXCEPTION(NoSuchId, id);
   }
 
-  if (!obj)
-    THROW_EXCEPTION
-      (SException, oss_ << L"Program error");
+  if (!obj) THROW_PROGRAM_ERROR;
 
   (*objects)[id] = param.transform_object (obj);
   SCHECK ((*objects)[id]);
@@ -388,41 +390,15 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 		r = objects->at (id);
 	 }
 	 catch (const std::out_of_range&) {
-		throw NoSuchId(id);
+		THROW_EXCEPTION(NoSuchId, id);
 	 }
 
     ptr = r;
-    if (r == 0) 
-		THROW_EXCEPTION(SException, "Program error");
+    if (r == 0) THROW_PROGRAM_ERROR;
     r = 0;
   }
   if (freeMemory) delete ptr;
 }
-
-/*
-template<
-  class Obj, 
-  class Par, 
-  class ObjMap, 
-  class ObjId, 
-  class Obj*
->
-void Repository<Obj, Par, ObjMap, ObjId, Obj*>
-//
-::delete_object_by_id (ObjId id, bool freeMemory)
-{
-  Obj* ptr = 0;
-  {
-    RLOCK(objectsM);
-    typename ObjMap::reference r = objects->at (id);
-    ptr = r;
-    if (r == 0) 
-		THROW_EXCEPTION(SException, "Program error");
-    r = 0;
-  }
-  if (freeMemory) delete ptr;
-}
-*/
 
 template <class Obj, class Par, class ObjMap, class ObjId>
 Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
@@ -435,7 +411,7 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
   catch (const std::out_of_range&)
   {
-	 throw NoSuchId(id);
+	 THROW_EXCEPTION(NoSuchId, id);
   }
 }
 

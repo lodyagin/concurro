@@ -16,6 +16,7 @@ set (concurrent_SOURCES
 #  RConnectedSocket.cpp
 #  RInOutSocket.cpp
 #  RMultiprotoSocketAddress.cpp
+  RMutex.cpp
 #  RPath.cpp
 #  RServerSocketAddress.cpp
 #  RSingleSocket.cpp
