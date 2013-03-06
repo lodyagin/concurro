@@ -13,13 +13,16 @@
 void test_same_thread_acquire();
 void test_same_thread_overrelease();
 void test_2_threads_try_acquire();
+void test_local_thread_variable();
 
 CU_TestInfo RMutexTests[] = {
 	{"RMutex can be acquired by the same thread several times",
 	 test_same_thread_acquire },
-	 {"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
+	{"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
 	 	 test_2_threads_try_acquire },
-	 	{"RMutex more releases than acquire in the same thread",
+	{"we can't leave from local region while thread is run",
+		test_local_thread_variable },
+	{"RMutex more releases than acquire in the same thread",
 	 		 test_same_thread_overrelease },
 	CU_TEST_INFO_NULL
 };
@@ -56,7 +59,7 @@ void test_same_thread_overrelease()
   MUTEX_RELEASE(mx);;
   MUTEX_RELEASE(mx);;
 }
-RMutex mx1("mx1");
+
 class TestThread : public RThread<std::thread> {
 public:
 	TestThread(const std::string& id,
@@ -70,7 +73,6 @@ protected:
 		MUTEX_ACQUIRE(mx);
 		sleep(sleept);
 		arg = ++test;
-		std::cout << "\n\n\n\n  "<<test<< "\n\n\n\n";
 		MUTEX_RELEASE(mx);
   }
 	volatile int sleept;
@@ -89,12 +91,30 @@ void test_2_threads_try_acquire(){
 	TestThread thread2(s1, mx, id2);
 	thread2.start();
 	sleep(3);
-	std::cout << "\n\n\n\n  "<<thread1.getResuilt()<< "\n\n\n\n";
-	std::cout << "\n\n\n\n  "<<thread2.getResuilt()<< "\n\n\n\n";
-
 	if (thread1.getResuilt() == 1 && thread2.getResuilt() == 2)
 		CU_PASS(id1 == 1)
 	else
 		CU_FAIL(id1! = 1);
 }
 
+
+class TestThread1 : public RThread<std::thread> {
+public:
+	TestThread1(const std::string& id,  volatile bool*flg)
+   :RThread<std::thread>(id), flag(flg){}
+protected:
+	void run(){
+		sleep(3);
+		*flag = true;
+  }
+	volatile bool * flag;
+};
+void local(volatile bool *b){
+	TestThread1 thread1(std::string("111122"),b);
+	thread1.start();
+}
+void test_local_thread_variable(){
+	volatile bool * b = false;
+	local(b);
+	if(b)CU_PASS(*b) else CU_FAIL(*b);
+}
