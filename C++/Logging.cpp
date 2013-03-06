@@ -57,8 +57,12 @@ void LogBase::Init()
 	 std::wstring fileName;
 	 fileName = sModuleDir + L"\\log4cxx.properties";
 #else
-	 const std::string& fileName = std::string("/etc/") 
-		+ APPCONFIG_PKG_NAME + "/log4cxx.properties";
+
+
+	 const std::string& fileName =
+		 std::ifstream("log4cxx.properties").good() ? "log4cxx.properties"
+			 :std::string("/etc/") + APPCONFIG_PKG_NAME + "/log4cxx.properties";
+
 #endif
 
 	 // put our PID into env
