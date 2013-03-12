@@ -14,10 +14,9 @@ RClientSocketAddress::RClientSocketAddress
 
   init (hostname, port, hints);
 
-  LOG4STRM_DEBUG 
-    (Logging::Root (), 
-    oss_ << "New RClientSocketAddress is created: ";
-    outString (oss_)
+  LOG_DEBUG 
+    (Logger<LOG::Root>, 
+	  "New RClientSocketAddress is created: " << *this
     );
 }
 

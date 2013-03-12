@@ -15,9 +15,7 @@
 #endif
 
 #include "Logging.h"
-#ifdef _WIN32
-#include "SWinCheck.h"
-#endif
+#include "RCheck.h"
 #include "SException.h"
 //#include "logging.h"
 #include "SCommon.h"

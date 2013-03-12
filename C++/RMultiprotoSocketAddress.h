@@ -5,7 +5,9 @@
 #include "SNotCopyable.h"
 #include <iostream>
 #ifdef _WIN32
-#include <Ws2tcpip.h>
+#  include <Ws2tcpip.h>
+#else
+#  include <netdb.h>
 #endif
 #include <vector>
 

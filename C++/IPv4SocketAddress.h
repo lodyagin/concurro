@@ -1,5 +1,8 @@
 #pragma once
-#include "rSingleprotoSocketaddress.h"
+#include "RSingleprotoSocketAddress.h"
+#ifndef _WIN32
+#  include <netinet/in.h>
+#endif
 
 class IPv4SocketAddress 
   : public RSingleprotoSocketAddress

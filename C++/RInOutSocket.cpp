@@ -1,11 +1,20 @@
 #include "StdAfx.h"
 #include "RInOutSocket.h"
+#ifndef _WIN32
+#  include <sys/socket.h>
+#  define WSAEINTR EINTR
+#  define WSAEWOULDBLOCK EWOULDBLOCK
+#endif
 
 int RInOutSocket::send (void* data, int len, int* error)
 {
     int lenSent = ::send(socket, (const char*) data, len, 0);
 		if (lenSent == -1) {
+#ifdef _WIN32
       const int err = ::WSAGetLastError ();
+#else
+      const int err = errno;
+#endif
 			if (err == WSAEINTR || 
 			    err == WSAEWOULDBLOCK)
       {
@@ -13,14 +22,14 @@ int RInOutSocket::send (void* data, int len, int* error)
         *error = err;
 				return -1;
       }
-      THROW_EXCEPTION
-        (SException,
-         oss_ << L"Write failed: " << sWinErrMsg (err));
+      THROW_EXCEPTION(SException,
+							 SFORMAT("Write failed: " << strerror(err)));
 		}
     *error = 0;
     return lenSent;
 }
 
+#if 0 // FIX sleep
 size_t RInOutSocket::atomicio_send (void* data, size_t n)
 {
 	char *s = reinterpret_cast<char*> (data);
@@ -51,4 +60,4 @@ size_t RInOutSocket::atomicio_send (void* data, size_t n)
 	}
 	return (pos);
 }
-
+#endif

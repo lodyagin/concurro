@@ -12,9 +12,7 @@ SocketAddressFactory::create_socket_address ()
     if (len != RSocketAddress::get_sockaddr_len 
       ((sockaddr*) &buf)
       )
-      THROW_EXCEPTION
-        (SException,
-         oss_ << "Invalid sockaddr length");
+      THROW_EXCEPTION(SException, "Invalid sockaddr length");
     return new IPv4SocketAddress 
       ((const sockaddr*) &buf, len);
 
@@ -22,17 +20,15 @@ SocketAddressFactory::create_socket_address ()
     if (len != RSocketAddress::get_sockaddr_len 
       ((sockaddr*) &buf)
       )
-      THROW_EXCEPTION
-        (SException,
-         oss_ << "Invalid sockaddr length");
+      THROW_EXCEPTION(SException, "Invalid sockaddr length");
     return new IPv6SocketAddress 
       ((const sockaddr*) &buf, len);
 
   default:
     THROW_EXCEPTION
       (SException,
-      oss_ << "Unsupported socket family: "
-           << ((sockaddr*) &buf)->sa_family
+		 SFORMAT("Unsupported socket family: "
+					<< ((sockaddr*) &buf)->sa_family)
       );
   }
 }

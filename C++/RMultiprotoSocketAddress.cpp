@@ -44,15 +44,15 @@ void RMultiprotoSocketAddress::init
 {
   addrinfo* res;
 
-  LOG4STRM_DEBUG
-    (Logging::Root (),
-     oss_ << "Call getaddrinfo (" 
+  LOG_DEBUG
+    (Logger<LOG::Root>,
+          "Call getaddrinfo (" 
           << hostname
           << ", [" << service << "], "
           << hints;
      );
 
-  sSocketCheck
+  rSocketCheck
     (::getaddrinfo (hostname, service, &hints, &res)
      == 0);
   aiw = new AddrinfoWrapper (res); // FIXME check alloc

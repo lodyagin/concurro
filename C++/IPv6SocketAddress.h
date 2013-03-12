@@ -1,6 +1,10 @@
 #pragma once
-#include "rsingleprotosocketaddress.h"
-#include <Ws2tcpip.h>
+#include "RSingleprotoSocketAddress.h"
+#ifdef _WIN32
+#  include <Ws2tcpip.h>
+#else
+#  include <netinet/in.h>
+#endif
 
 class IPv6SocketAddress :
   public RSingleprotoSocketAddress

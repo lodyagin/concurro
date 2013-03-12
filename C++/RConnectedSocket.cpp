@@ -35,7 +35,7 @@ const RSingleprotoSocketAddress& RConnectedSocket::
   if (!peer)
   {
     SocketAddressFactory saf;
-    sSocketCheck (::getpeername 
+    rSocketCheck (::getpeername 
       (socket, 
        saf.buffer (),
        saf.buffer_len_ptr ()

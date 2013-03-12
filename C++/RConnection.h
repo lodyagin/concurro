@@ -2,9 +2,10 @@
 It is a connection created by the socket.
 */
 
-#pragma once
+#ifndef CONCURRO_RCONNECTION_H_
+#define CONCURRO_RCONNECTION_H_
 
-#include "sthread.h"
+#include "RThread.h"
 #include "RConnectedSocket.h"
 #include "Logging.h"
 
@@ -35,7 +36,7 @@ protected:
      RConnectedSocket* cs,
      const std::string& objId,
      const typename Thread::ConstrPar& par,
-     SEvent* connectionTerminated
+     REvent* connectionTerminated
      )
    : Thread (connectionTerminated, par),
      socket (cs), 
@@ -49,5 +50,7 @@ protected:
   RConnectedSocket* socket;
   void* repository;
 private:
-  static Logging log;
+  typedef Logger<RConnection> log;
 };
+
+#endif

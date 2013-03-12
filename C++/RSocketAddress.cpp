@@ -1,7 +1,12 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "RSocketAddress.h"
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <Ws2tcpip.h>
+#else
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
+#endif
 
 RSocketAddress::~RSocketAddress (void)
 {
@@ -52,16 +57,22 @@ void RSocketAddress::outString
   (std::ostream& out, const struct in_addr* ia)
 {
   assert (ia);
+#ifdef _WIN32
   out << (int) ia->s_net << '.'
       << (int) ia->s_host << '.'
       << (int) ia->s_lh << '.'
       << (int) ia->s_impno;
+#else
+  char buf[(3+1)*4];
+  out << inet_ntop(AF_INET, ia, buf, sizeof(buf));
+#endif
 }
 
 void RSocketAddress::outString 
   (std::ostream& out, const struct in6_addr* ia)
 {
   assert (ia);
+#ifdef _WIN32
   bool first = true;
   std::ios_base::fmtflags oldOpts = out.flags
     (std::ios_base::hex /*| std::ios_base::showpoint*/);
@@ -77,6 +88,10 @@ void RSocketAddress::outString
   }
   out << ']';
   out.flags (oldOpts);
+#else
+  char buf[(4+1)*8];
+  out << inet_ntop(AF_INET6, ia, buf, sizeof(buf));
+#endif
 }
 
 void RSocketAddress::copy_sockaddr 
@@ -89,14 +104,18 @@ void RSocketAddress::copy_sockaddr
   const int in_size = get_sockaddr_len (in);
   if (sockaddr_out_size < in_size)
     THROW_EXCEPTION
-      (SException,
-      oss_ << "Too little space for copy sockaddr: "
+      (SException, SFORMAT(
+              "Too little space for copy sockaddr: "
            << "there is " << sockaddr_out_size
            << " bytes but " << in_size
-           << " bytes required.");
+           << " bytes required."));
 
   //FIXME allow invalid parameter handle
+#ifdef _WIN32
   ::memcpy_s (out, sockaddr_out_size, in, in_size);
+#else
+  ::memcpy(out, in, sockaddr_out_size);
+#endif
 
   if (sockaddr_in_size)
     *sockaddr_in_size = in_size;

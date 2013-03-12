@@ -1,8 +1,14 @@
-#pragma once
+#ifndef CONCURRO_SOCKETADDRESSFACTORY_H_
+#define CONCURRO_SOCKETADDRESSFACTORY_H_
+
 #include "RSingleprotoSocketAddress.h"
 #ifdef _WIN32
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+#  include <winsock2.h>
+#  include <Ws2tcpip.h>
+typedef socklen_t int;
+#else
+#  include <sys/socket.h>
+#  define SOCKADDR_STORAGE struct sockaddr_storage
 #endif
 
 // 1. Get pointer to buffer by buffer () call
@@ -23,7 +29,7 @@ public: // TODO add states
     return (sockaddr*) &buf;
   }
 
-  int* buffer_len_ptr ()
+  socklen_t* buffer_len_ptr ()
   {
     return &len;
   }
@@ -32,6 +38,8 @@ public: // TODO add states
   RSingleprotoSocketAddress* create_socket_address ();
 
 protected:
-  SOCKADDR_STORAGE buf; 
-  int len;
+  SOCKADDR_STORAGE buf;
+  socklen_t len;
 };
+
+#endif

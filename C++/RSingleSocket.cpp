@@ -1,5 +1,11 @@
 #include "StdAfx.h"
 #include "RSingleSocket.h"
+#ifndef _WIN32
+#  include <sys/socket.h>
+#  include <fcntl.h>
+#  define SD_BOTH SHUT_RDWR
+#  define closesocket close
+#endif
 
 RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent) 
   : socket (s), eventUsed (_withEvent), waitFdWrite (false)
@@ -9,8 +15,10 @@ RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent)
 
 RSingleSocket::~RSingleSocket ()
 {
+#ifndef NO_SOCKET_EVENTS
   if (eventUsed)
     ::WSACloseEvent (socketEvent); // TODO check ret
+#endif
 
   if (socket)
   {
@@ -21,6 +29,7 @@ RSingleSocket::~RSingleSocket ()
 
 void RSingleSocket::init () 
 {
+#ifndef NO_SOCKET_EVENTS
   if (eventUsed)
   {
     const long networkEvents = FD_READ | FD_WRITE | FD_CLOSE;
@@ -36,14 +45,26 @@ void RSingleSocket::init ()
         (socket, socketEvent, networkEvents)
       != SOCKET_ERROR, L" on WSAEventSelect");
   }
+#endif
 }
 
 void RSingleSocket::set_blocking (bool blocking)
 {
+#ifdef _WIN32
   u_long mode = (blocking) ? 0 : 1;
   ioctlsocket(socket, FIONBIO, &mode);
+#else
+  int opts = 0;
+  rSocketCheck(opts = fcntl(socket, F_GETFL));
+  if (blocking)
+	 opts &= (~O_NONBLOCK);
+  else
+	 opts |= O_NONBLOCK;
+  rSocketCheck(fcntl(socket, F_SETFL, opts));
+#endif
 }
 
+#ifndef NO_SOCKET_EVENTS
 WSAEVENT RSingleSocket::get_event_object ()
 {
   if (!eventUsed)
@@ -85,3 +106,4 @@ DWORD RSingleSocket::get_events (bool reset_event_object)
   }
   return socketEvents.lNetworkEvents;
 }
+#endif

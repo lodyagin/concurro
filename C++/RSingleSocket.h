@@ -2,7 +2,10 @@
 
 #include "RSocket.h"
 #ifdef _WIN32
-#include <winsock2.h>
+#  include <winsock2.h>
+#else
+#  define SOCKET int
+#  define NO_SOCKET_EVENTS //TODO implement it
 #endif
 
 class RSingleSocket : public RSocket
@@ -17,9 +20,11 @@ public:
     return socket;
   }
 
+#ifndef NO_SOCKET_EVENTS
   WSAEVENT get_event_object ();
 
   DWORD get_events (bool reset_event_object = false);
+#endif
 
   bool wait_fd_write () const 
   { return waitFdWrite; }
@@ -32,7 +37,9 @@ protected:
 
   SOCKET socket;
   
+#ifndef NO_SOCKET_EVENTS
   WSAEVENT socketEvent;
+#endif
   // FD_WRITE is generated in 2 cases:
   // 1) after connect
   // 2) last send returns WSAWOULDBLOCK but now we can

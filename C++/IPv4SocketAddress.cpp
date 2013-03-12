@@ -1,7 +1,11 @@
 #include "StdAfx.h"
 #include "IPv4SocketAddress.h"
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <Ws2tcpip.h>
+#else
+#  include <arpa/inet.h>
+#endif
 
 IPv4SocketAddress::IPv4SocketAddress
   (const struct sockaddr* sa,
@@ -12,15 +16,10 @@ IPv4SocketAddress::IPv4SocketAddress
   assert (sa);
 
   if (sa->sa_family != AF_INET)
-    THROW_EXCEPTION
-      (SException, 
-       oss_ << "Not IPv4 address"
-       );
+    THROW_EXCEPTION(SException, "Not IPv4 address");
 
   if (sa_len != sizeof (sa_in))
-    THROW_EXCEPTION
-      (SException,
-       oss_ << "Bad value of sa_len parameter");
+    THROW_EXCEPTION(SException, "Bad value of sa_len parameter");
 
   copy_sockaddr 
     ((struct sockaddr*) &sa_in,
@@ -40,8 +39,14 @@ int IPv4SocketAddress::get_port () const
 const std::string& IPv4SocketAddress::get_ip 
 () const
 {
-  if (ip.length () == 0)
+  if (ip.length () == 0) {
+#ifdef _WIN32
     ip = ::inet_ntoa (sa_in.sin_addr);
+#else
+	 char buf[(3+1)*4];
+	 ip = ::inet_ntop(AF_INET, &sa_in, buf, sizeof(buf));
+#endif
+  }
 
   return ip;
 }

@@ -6,8 +6,11 @@
 #ifdef _WIN32
 #include <atlbase.h>
 #else
+#include <errno.h>
 #define __declspec(x)
 #define __stdcall
+#define INVALID_SOCKET (-1)
+#define BOOL bool
 #endif
 
 #include <sstream>
@@ -18,12 +21,6 @@
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
 
-
-//using std::string;
-//using std::wstring;
-//using std::istream;
-//using std::ostream;
-//using std::iostream;
 
 #ifdef _WIN32
 #  define _T L

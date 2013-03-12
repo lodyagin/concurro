@@ -1,7 +1,9 @@
 #include "StdAfx.h"
 #include "IPv6SocketAddress.h"
+#ifdef _WIN32
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#endif
 
 IPv6SocketAddress::IPv6SocketAddress
   (const struct sockaddr* sa,
@@ -12,15 +14,10 @@ IPv6SocketAddress::IPv6SocketAddress
   assert (sa);
 
   if (sa->sa_family != AF_INET6)
-    THROW_EXCEPTION
-      (SException, 
-       oss_ << "Not IPv6 address"
-       );
+    THROW_EXCEPTION(SException, "Not IPv6 address");
 
   if (sa_len != sizeof (sa_in))
-    THROW_EXCEPTION
-      (SException,
-       oss_ << "Bad value of sa_len parameter");
+    THROW_EXCEPTION(SException, "Bad value of sa_len parameter");
 
   copy_sockaddr 
     ((struct sockaddr*) &sa_in,

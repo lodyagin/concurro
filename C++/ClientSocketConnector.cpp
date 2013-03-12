@@ -13,14 +13,14 @@ RConnectedSocket* ClientSocketConnector::connect_first
      cit != csa.end ();
      cit++)
   {
-    sSocketCheck 
+    rSocketCheck 
       ((s = ::socket 
         (cit->ai_family, 
          cit->ai_socktype,
          cit->ai_protocol)
         ) != INVALID_SOCKET
        );
-    sSocketCheck
+    rSocketCheck
       (::connect (s, cit->ai_addr, cit->ai_addrlen)
        == 0
        );
