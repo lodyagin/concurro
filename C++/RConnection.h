@@ -6,12 +6,14 @@ It is a connection created by the socket.
 #define CONCURRO_RCONNECTION_H_
 
 #include "RThread.h"
-#include "RConnectedSocket.h"
 #include "Logging.h"
+#include "StateMap.h"
 
-template<class Thread>
+class ConnectionStateAxis : public StateAxis {};
+
+template<class Thread, class Socket>
 class RConnection : public Thread
-{ //TODO add states
+{
 public:
 
   const std::string universal_object_id;
@@ -27,7 +29,25 @@ public:
     delete socket;
   }
 
+  /* Connection states */
+  const static State2Idx newStates[];
+  const static StateTransition newTrans[];
+  typedef RState
+    <RConnection, ConnectionStateAxis, newStates, newTrans> State;
+  friend class RState
+    <RConnection, ConnectionStateAxis, newStates, newTrans>;
+
+  const static State closedState;
+  const static State establishedState;
+
+  void state (State& state) const
+  {
+	 state = currentState;
+  }
+
 protected:
+  typedef Logger<RConnection> log;
+
   // Usually it is called by ConnectionFactory
   // RConnection takes the socket ownership
   // and will destroy it.
@@ -47,10 +67,16 @@ protected:
     assert (socket);
   }
 
+  void set_state_internal (const State& state)
+  {
+    currentState = state;
+  }
+
   RConnectedSocket* socket;
   void* repository;
+
 private:
-  typedef Logger<RConnection> log;
+  State currentState;
 };
 
 #endif

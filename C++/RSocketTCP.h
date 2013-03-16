@@ -3,9 +3,8 @@
 #include "RClientSocketAddress.h"
 #include "StateMap.h"
 #include "Logging.h"
+#include "RConnection.h"
 #include <netdb.h>
-
-class ConnectionStateAxis : public StateAxis {};
 
 class RSocketTCP : public RSingleSocket
 {
