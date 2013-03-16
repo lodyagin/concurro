@@ -81,10 +81,10 @@ public:
   friend class RState<RThreadBase, ThreadStateAxis, allStates, allTrans>;
 
   // States
-  static ThreadState readyState;
-  static ThreadState workingState;
-  static ThreadState terminatedState;
-  static ThreadState destroyedState;
+  const static ThreadState readyState;
+  const static ThreadState workingState;
+  const static ThreadState terminatedState;
+  const static ThreadState destroyedState;
 
   void state (ThreadState& state) const;
 

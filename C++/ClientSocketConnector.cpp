@@ -12,7 +12,7 @@ RConnectedSocket* ClientSocketConnector::connect_first
       csa.begin ();
      cit != csa.end ();
      cit++)
-  {
+  { //FIXME close socket from previous iteration
     rSocketCheck 
       ((s = ::socket 
         (cit->ai_family, 

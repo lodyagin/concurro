@@ -7,10 +7,16 @@
 #  define closesocket close
 #endif
 
+RSingleSocket::RSingleSocket () 
+  : socket (INVALID_SOCKET), eventUsed (false), waitFdWrite (false)
+{
+  init ();
+}
+
 RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent) 
   : socket (s), eventUsed (_withEvent), waitFdWrite (false)
 {
-  init ();
+  init (); // TODO check this condition
 }
 
 RSingleSocket::~RSingleSocket ()
@@ -62,6 +68,13 @@ void RSingleSocket::set_blocking (bool blocking)
 	 opts |= O_NONBLOCK;
   rSocketCheck(fcntl(socket, F_SETFL, opts));
 #endif
+}
+
+bool RSingleSocket::is_blocking () const
+{
+  int opts = 0;
+  rSocketCheck(opts = fcntl(socket, F_GETFL));
+  return !(opts & O_NONBLOCK);
 }
 
 #ifndef NO_SOCKET_EVENTS

@@ -2,6 +2,7 @@
 #include "RInOutSocket.h"
 #include "RSingleprotoSocketAddress.h"
 
+/// This object is always created in "connected" state.
 class RConnectedSocket : public RInOutSocket
 {
 public:

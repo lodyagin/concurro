@@ -7,7 +7,10 @@
 #  define SOCKET int
 #  define NO_SOCKET_EVENTS //TODO implement it
 #endif
+#include "StateMap.h"
 
+/// A single socket (not a group).
+/// \see RSocketGroup
 class RSingleSocket : public RSocket
 {
 public:
@@ -29,7 +32,11 @@ public:
   bool wait_fd_write () const 
   { return waitFdWrite; }
 
+  bool is_blocking () const; /* overrides*/
+
 protected:
+  RSingleSocket ();
+
   // Take existing SOCKET object
   RSingleSocket (SOCKET s, bool _withEvent); 
 

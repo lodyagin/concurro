@@ -32,10 +32,10 @@ const StateTransition RThreadBase::allTrans[] =
 
 };
 
-RThreadBase::ThreadState RThreadBase::readyState("ready");
-RThreadBase::ThreadState RThreadBase::workingState("working");
-RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
-RThreadBase::ThreadState RThreadBase::destroyedState("destroyed");
+const RThreadBase::ThreadState RThreadBase::readyState("ready");
+const RThreadBase::ThreadState RThreadBase::workingState("working");
+const RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
+const RThreadBase::ThreadState RThreadBase::destroyedState("destroyed");
 
 RThreadBase::RThreadBase 
 (const std::string& id, 

@@ -23,6 +23,7 @@ set (concurrent_SOURCES
   RSocketAddress.cpp
 #  RSocket.cpp
 #  RSocketGroup.cpp
+  RSocketTCP.cpp
 #  SCheck.cpp
   SCommon.cpp
 #  SComplPort.cpp
