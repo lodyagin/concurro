@@ -16,7 +16,8 @@
 #include <cstdatomic>
 #include <thread>
 
-//class ThreadStateSpace {};
+/// An ancestor of all states of a thread.
+class ThreadStateAxis : public StateAxis {};
 
 /**
  * It is a base class for RThread. It contains the base
@@ -72,55 +73,12 @@ public:
     return stopEvent;
   }
 
-  // the state stuff
-  class ThreadState 
-    : protected UniversalState//, // TODO protected
-		//      public ThreadStateSpace
-  {
-    friend class RThreadBase;
-  public:
-    ThreadState (const char* name);
+  const static State2Idx allStates[];
+  const static StateTransition allTrans[];
 
-    // TODO base mechanics
-    template<class Object>
-    static void check_moving_to
-      (const Object& obj, const ThreadState& to)
-    {
-      ThreadState from = to;
-      obj.state (from);
-      obj.get_state_map (from) -> check_transition
-        (from, to);
-    }
-
-    // TODO base mechanics
-    template<class Object>
-    static void move_to
-      (Object& obj, const ThreadState& to)
-    {
-      check_moving_to (obj, to);
-      obj.set_state_internal (to);
-      // FIXME add logging
-    }
-
-    // TODO base mechanics
-    template<class Object>
-    static bool state_is
-      (const Object& obj, const ThreadState& st)
-    {
-      ThreadState current = st;
-      obj.state (current);
-      return current.state_idx == st.state_idx;
-    }
-
-    // TODO base mechanics
-    std::string name () const
-    {
-      return stateMap->get_state_name (*this);
-    }
-
-  protected:
-    static StateMap* stateMap;
-  };
+  typedef RState<RThreadBase, ThreadStateAxis, allStates, allTrans> 
+	  ThreadState;
+  friend class RState<RThreadBase, ThreadStateAxis, allStates, allTrans>;
 
   // States
   static ThreadState readyState;
@@ -168,16 +126,13 @@ protected:
   /// Somebody has requested a termination.
   std::atomic<bool> exitRequested; 
 
-  StateMap* get_state_map (ThreadState&) const
-  { return ThreadState::stateMap; }
+  /*StateMap* get_state_map (ThreadState&) const
+	 { return ThreadState::stateMap; }*/
 
 private:
   //int _id;
   static std::atomic<bool> mainThreadCreated;
   static std::atomic<int> counter;
-
-  static const State2Idx allStates[];
-  static const StateTransition allTrans[];
 
   // this class has a complex state:
   // (currentState, waitCnt, exitRequested)

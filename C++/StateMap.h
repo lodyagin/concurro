@@ -36,12 +36,12 @@ public:
     : state_map (0), state_idx (0) 
   {}
 
-  bool operator==
+  /*bool operator==
     (const UniversalState& state2) const
   {
     return state_map == state2.state_map
       && state_idx == state2.state_idx;
-  }
+		}*/
 
 protected:
   UniversalState (const StateMap* map, StateIdx idx)
@@ -174,26 +174,11 @@ private:
      int nTransitions);
 };
 
-
-template <class Object>
-class RStateBase : protected UniversalState
-{
-public:
-  /// Construct a state with the name.
-  RStateBase (const char* name);
-
-  /// Check permission of moving obj to the `to' state.
-  static void check_moving_to 
-	 (const Object& obj, const RStateBase& to);
-
-  /// Move obj to a new state
-  static void move_to
-	 (Object& obj, const RStateBase& to);
-
-};
-
-
-
+/// A state space axis abstract base. Real axises will be inherited.
+/// <NB> StateAxises can't be "extended". Like x, y, x in decart
+/// coordinates they are "finite". But on RState inheritance new
+/// states on the same axes can be added.
+class StateAxis {};
 
 /**
  * RState is a state value (think about it as an extended enum).
@@ -202,33 +187,54 @@ public:
  */
 template <
   class Object,
+  class ParentState,
   const State2Idx new_states[], 
   const StateTransition transitions[]
 >
-class RState : public RStateBase<Object>
+class RState : public ParentState, virtual protected UniversalState
 {
 public:
   /// Construct a state with the name.
   RState (const char* name);
 
+  bool operator==(const RState& st) const;
+
+  /// Check permission of moving obj to the `to' state.
+  static void check_moving_to 
+	 (const Object& obj, const RState& to);
+
+  /// Move obj to a new state
+  static void move_to
+	 (Object& obj, const RState& to);
+
+  static bool state_is
+	  (const Object& obj, const RState& st);
+
+  std::string name () const
+  {
+	  return this->stateMap->get_state_name (*this);
+  }
+
 protected:
   static StateMap* stateMap;
+  typedef Logger<RState> log;
 };
 
-
 template <
   class Object,
+  class ParentState,
   const State2Idx new_states[], 
   const StateTransition transitions[]
 >
-StateMap* RState<Object, new_states, transitions>::stateMap = 0;
+StateMap* RState<Object, ParentState, new_states, transitions>::stateMap = 0;
 
 template <
   class Object,
+  class ParentState,
   const State2Idx new_states[], 
   const StateTransition transitions[]
 >
-RState<Object, new_states, transitions>::RState (const char* name)
+RState<Object, ParentState, new_states, transitions>::RState (const char* name)
 {
   assert (name);
 
@@ -241,5 +247,77 @@ RState<Object, new_states, transitions>::RState (const char* name)
 
   *((UniversalState*) this) = stateMap->create_state (name);
 }
+
+template <
+  class Object,
+  class ParentState,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+bool RState<Object, ParentState, new_states, transitions>
+//
+::operator== (const RState& st) const
+{
+	if (this->stateMap != st.stateMap)
+		THROW_EXCEPTION(SException, 
+		 "concurro: Compare states from different maps is not implemented");
+
+	return this->state_idx == st.state_idx;
+}
+
+template <
+  class Object,
+  class ParentState,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+void RState<Object, ParentState, new_states, transitions>
+//
+::check_moving_to(const Object& obj, const RState& to)
+{
+	RState from = to;
+	obj.state(from);
+	from.stateMap->check_transition (from, to);
+}
+
+template <
+  class Object,
+  class ParentState,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+void RState<Object, ParentState, new_states, transitions>
+//
+::move_to(Object& obj, const RState& to)
+{
+	std::string fromName;
+	if (LOG4CXX_UNLIKELY(log::logger()->isDebugEnabled())) {
+		RState from = to;
+		obj.state(from);
+		fromName = from.name();
+	}
+
+	check_moving_to (obj, to);
+	obj.set_state_internal (to);
+
+	LOG_DEBUG(log, "Change state from [" << fromName << "] to [" 
+				 << to.name() << "]");
+}
+
+template <
+  class Object,
+  class ParentState,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+bool RState<Object, ParentState, new_states, transitions>
+//
+::state_is (const Object& obj, const RState& st)
+{
+	RState current = st;
+	obj.state (current);
+	return current == st;
+}
+
 
 #endif

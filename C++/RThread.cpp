@@ -32,19 +32,6 @@ const StateTransition RThreadBase::allTrans[] =
 
 };
 
-StateMap* RThreadBase::ThreadState::stateMap = 0;
-
-RThreadBase::ThreadState::ThreadState (const char* name)
-{
-  assert (name);
-
-  if (!stateMap)
-    stateMap = new StateMap(allStates, allTrans);
-
-  *((UniversalState*) this) = stateMap->create_state (name);
-}
-
-
 RThreadBase::ThreadState RThreadBase::readyState("ready");
 RThreadBase::ThreadState RThreadBase::workingState("working");
 RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
