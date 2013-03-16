@@ -1,10 +1,15 @@
-#pragma once
+#ifndef CONCURRO_STATEMAP_H_
+#define CONCURRO_STATEMAP_H_
+
 #include "SSingleton.h"
 #include "HasStringView.h"
 #include "Logging.h"
 #include "SException.h"
+#include <assert.h>
 #include <map>
 #include <vector>
+
+#define UNIMPL_STATES_INHERITANCE
 
 typedef unsigned int StateIdx;
 
@@ -168,3 +173,73 @@ private:
     (const StateTransition transitions[], 
      int nTransitions);
 };
+
+
+template <class Object>
+class RStateBase : protected UniversalState
+{
+public:
+  /// Construct a state with the name.
+  RStateBase (const char* name);
+
+  /// Check permission of moving obj to the `to' state.
+  static void check_moving_to 
+	 (const Object& obj, const RStateBase& to);
+
+  /// Move obj to a new state
+  static void move_to
+	 (Object& obj, const RStateBase& to);
+
+};
+
+
+
+
+/**
+ * RState is a state value (think about it as an extended enum).
+ * \tparam Object an object which holds the state.
+ * \tparam 
+ */
+template <
+  class Object,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+class RState : public RStateBase<Object>
+{
+public:
+  /// Construct a state with the name.
+  RState (const char* name);
+
+protected:
+  static StateMap* stateMap;
+};
+
+
+template <
+  class Object,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+StateMap* RState<Object, new_states, transitions>::stateMap = 0;
+
+template <
+  class Object,
+  const State2Idx new_states[], 
+  const StateTransition transitions[]
+>
+RState<Object, new_states, transitions>::RState (const char* name)
+{
+  assert (name);
+
+  if (!stateMap)
+#ifndef UNIMPL_STATES_INHERITANCE
+    stateMap = new StateMap(allStates, allTrans);
+#else
+    stateMap = new StateMap(new_states, transitions);
+#endif
+
+  *((UniversalState*) this) = stateMap->create_state (name);
+}
+
+#endif
