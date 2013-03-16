@@ -1,8 +1,9 @@
-*~
+*~*
 *.a
 *.cmake
 *.so
 *.so.*
+*.vpp.work*
 CMakeCache.txt
 Makefile
 CMakeFiles/
