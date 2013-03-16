@@ -10,5 +10,5 @@ protected:
   // set blocking mode
   virtual void set_blocking (bool blocking) = 0;
 
-  virtual bool is_blocking () const = 0;
+  virtual bool get_blocking () const = 0;
 };

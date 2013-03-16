@@ -32,7 +32,7 @@ public:
   bool wait_fd_write () const 
   { return waitFdWrite; }
 
-  bool is_blocking () const; /* overrides*/
+  bool get_blocking () const; /* overrides*/
 
 protected:
   RSingleSocket ();
