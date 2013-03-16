@@ -16,7 +16,7 @@
 #include <cstdatomic>
 #include <thread>
 
-class ThreadStateSpace {};
+//class ThreadStateSpace {};
 
 /**
  * It is a base class for RThread. It contains the base
@@ -27,7 +27,11 @@ class RThreadBase
     public HasStringView
 {
 public:
-	void _run ();
+  /// Contains a common thread execution code. It calls user-defined
+  /// run(). It should be protected but is public for access from a
+  /// derived RThread template.
+  void _run ();
+
   /// It is mandatory for any repository member. 
   // Is always > 0. As a special
   /// meaning the thread with 1 id is a main thread
@@ -70,8 +74,8 @@ public:
 
   // the state stuff
   class ThreadState 
-    : public UniversalState, // TODO protected
-      public ThreadStateSpace
+    : protected UniversalState//, // TODO protected
+		//      public ThreadStateSpace
   {
     friend class RThreadBase;
   public:
