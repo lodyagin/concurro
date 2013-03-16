@@ -217,7 +217,6 @@ public:
 
 protected:
   static StateMap* stateMap;
-  typedef Logger<RState> log;
 };
 
 template <
@@ -291,7 +290,7 @@ void RState<Object, ParentState, new_states, transitions>
 ::move_to(Object& obj, const RState& to)
 {
 	std::string fromName;
-	if (LOG4CXX_UNLIKELY(log::logger()->isDebugEnabled())) {
+	if (LOG4CXX_UNLIKELY(Object::log::logger()->isDebugEnabled())) {
 		RState from = to;
 		obj.state(from);
 		fromName = from.name();
@@ -300,7 +299,7 @@ void RState<Object, ParentState, new_states, transitions>
 	check_moving_to (obj, to);
 	obj.set_state_internal (to);
 
-	LOG_DEBUG(log, "Change state from [" << fromName << "] to [" 
+	LOG_DEBUG(Object::log, "Change state from [" << fromName << "] to [" 
 				 << to.name() << "]");
 }
 

@@ -2,6 +2,7 @@
 #include "RSingleSocket.h"
 #include "RClientSocketAddress.h"
 #include "StateMap.h"
+#include "Logging.h"
 
 class ConnectionStateAxis : public StateAxis {};
 
@@ -39,6 +40,8 @@ public:
   }
 
 protected:
+
+  typedef Logger<RSocketTCP> log;
 
   void set_state_internal (const State& state)
   {

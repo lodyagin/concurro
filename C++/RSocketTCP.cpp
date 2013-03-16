@@ -74,6 +74,7 @@ void RSocketTCP::connect_first (const RClientSocketAddress& addr)
 		(socket = ::socket(cit->ai_family, cit->ai_socktype, cit->ai_protocol)) 
 		!= INVALID_SOCKET
 		);
+    LOG_DEBUG(log, "Connecting to " << *cit);
 	 rSocketCheck(::connect(socket, cit->ai_addr, cit->ai_addrlen) == 0);
 	 break; // FIXME - continue with the next address
   }

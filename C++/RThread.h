@@ -90,7 +90,7 @@ public:
 
 protected:
 
-  typedef Logger<LOG::Thread> logger;
+  typedef Logger<LOG::Thread> log;
 
   /// Mutex for concurrent access to this object.
   RMutex cs;
