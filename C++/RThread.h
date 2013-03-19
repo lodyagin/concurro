@@ -12,6 +12,7 @@
 #include "RMutex.h"
 #include "REvent.h"
 #include "SCommon.h"
+#include "RObjectWithStates.h"
 #include <string>
 #include <cstdatomic>
 #include <thread>
@@ -25,7 +26,10 @@ class ThreadStateAxis : public StateAxis {};
  */
 class RThreadBase
   : public SNotCopyable,
-    public HasStringView
+    public HasStringView,
+    public RObjectWithStates<ThreadStateAxis>
+  // TODO this class should has a complex state:
+  // (currentState, waitCnt, exitRequested)
 {
 public:
   /// Contains a common thread execution code. It calls user-defined
@@ -62,7 +66,7 @@ public:
   bool is_running () const
   {
     RLOCK(cs);
-    return currentState == workingState;
+    return state_is(workingState);
   }
 
   // Overrides
@@ -86,7 +90,7 @@ public:
   const static ThreadState terminatedState;
   const static ThreadState destroyedState;
 
-  void state (ThreadState& state) const;
+  void state (ThreadState& state) const /* overrides */;
 
 protected:
 
@@ -95,10 +99,7 @@ protected:
   /// Mutex for concurrent access to this object.
   RMutex cs;
 
-  void set_state_internal (const ThreadState& state)
-  {
-    currentState = state;
-  }
+  void set_state_internal (const ThreadState& state) /* overrides */;
 
   void log_from_constructor ();
 
@@ -133,10 +134,6 @@ private:
   //int _id;
   static std::atomic<bool> mainThreadCreated;
   static std::atomic<int> counter;
-
-  // this class has a complex state:
-  // (currentState, waitCnt, exitRequested)
-  ThreadState currentState;
 
   //thread terminate its processing
   REvent isTerminatedEvent; 

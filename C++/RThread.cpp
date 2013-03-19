@@ -48,7 +48,7 @@ RThreadBase::RThreadBase
     stopEvent (true, false),
     waitCnt (0), 
     exitRequested (false),
-    currentState ("ready"),
+    RObjectWithStates<ThreadStateAxis> (readyState),
 	 externalTerminated (extTerminated),
 	 cs(SFORMAT("RThreadBase with id=["<<id<<"]"))
 {
@@ -65,8 +65,14 @@ RThreadBase::RThreadBase
 
 void RThreadBase::state (ThreadState& state) const
 {
-  RLOCK(cs);
-  state = currentState;
+  RLOCK(cs); // TODO: is it needed?
+  RObjectWithStates<ThreadStateAxis>::state (state);
+}
+
+void RThreadBase::set_state_internal (const ThreadState& state)
+{
+  RLOCK(cs); // TODO: is it needed?
+  RObjectWithStates<ThreadStateAxis>::set_state_internal (state);
 }
 
 void RThreadBase::start ()

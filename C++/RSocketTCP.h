@@ -1,11 +1,11 @@
 #pragma once
 #include "RSingleSocket.h"
 #include "RClientSocketAddress.h"
+#include "RAbstractConnection.h"
 #include "StateMap.h"
 
-class ConnectionStateAxis : public StateAxis {};
-
-class RSocketTCP : public RSingleSocket
+class RSocketTCP : public RSingleSocket //, public RAbstractConnection
+, public RObjectWithStates<ConnectionStateAxis>
 {
 public:
   RSocketTCP();
@@ -32,19 +32,4 @@ public:
   const static State closingState;
   const static State abortedState;
   const static State destroyedState;
-
-  void state (State& state) const
-  {
-	 state = currentState;
-  }
-
-protected:
-
-  void set_state_internal (const State& state)
-  {
-    currentState = state;
-  }
-
-private:
-  State currentState;
 };

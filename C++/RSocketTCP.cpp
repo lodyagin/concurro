@@ -29,7 +29,6 @@ const StateTransition RSocketTCP::allTrans[] =
   {"closed", "destroyed"},
   // TODO ::shutdown
   {0, 0}
-
 };
 
 const RSocketTCP::State RSocketTCP::closedState("closed");
@@ -41,7 +40,7 @@ const RSocketTCP::State RSocketTCP::abortedState("aborted");
 const RSocketTCP::State RSocketTCP::destroyedState("destroyed");
 
 RSocketTCP::RSocketTCP()
-  : currentState(closedState)
+  : RObjectWithStates<ConnectionStateAxis> (closedState)
 {
 }
 

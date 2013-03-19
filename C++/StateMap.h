@@ -5,6 +5,7 @@
 #include "HasStringView.h"
 #include "Logging.h"
 #include "SException.h"
+#include "SCheck.h"
 #include <assert.h>
 #include <map>
 #include <vector>
@@ -26,6 +27,29 @@ struct StateTransition
 };
 
 class StateMap;
+class UniversalState;
+
+/// A state space axis abstract base. Real axises will be inherited.
+/// <NB> StateAxises can't be "extended". Like x, y, x in decart
+/// coordinates they are "finite". But on RState inheritance new
+/// states on the same axes can be added.
+class StateAxis //: public UniversalState
+{
+public:
+
+ //virtual StateAxis& operator= (const UniversalState&) = 0;
+//  virtual StateAxis& operator= (const StateAxis&) = 0;
+
+  //virtual bool operator==(const StateAxis&) const = 0;
+
+  virtual operator UniversalState () const = 0;
+  virtual void set_by_universal (const UniversalState&) = 0;
+
+protected:
+  //StateAxis(StateMap* map_extension, const char* initial_state);
+
+  virtual StateMap* get_state_map() = 0;
+};
 
 class UniversalState
 {
@@ -35,21 +59,26 @@ public:
   UniversalState () 
     : state_map (0), state_idx (0) 
   {}
-
-  /*bool operator==
-    (const UniversalState& state2) const
+  
+  /*explicit UniversalState (const StateAxis& initial_state)
   {
-    return state_map == state2.state_map
-      && state_idx == state2.state_idx;
-		}*/
+	 *this = initial_state;
+	 }*/
+
+  //virtual ~UniversalState() {}
+
+  // NB not virutal
+  bool operator== (const UniversalState& state2) const;
+
+  std::string name() const;
+  
+  const StateMap* state_map;
+  StateIdx        state_idx;
 
 protected:
   UniversalState (const StateMap* map, StateIdx idx)
     : state_map (map), state_idx (idx)
   {}
-
-  const StateMap* state_map;
-  StateIdx        state_idx;
 };
 
 /* Exceptions */
@@ -174,12 +203,6 @@ private:
      int nTransitions);
 };
 
-/// A state space axis abstract base. Real axises will be inherited.
-/// <NB> StateAxises can't be "extended". Like x, y, x in decart
-/// coordinates they are "finite". But on RState inheritance new
-/// states on the same axes can be added.
-class StateAxis {};
-
 /**
  * RState is a state value (think about it as an extended enum).
  * \tparam Object an object which holds the state.
@@ -191,13 +214,28 @@ template <
   const State2Idx new_states[], 
   const StateTransition transitions[]
 >
-class RState : public ParentState, virtual protected UniversalState
+class RState 
+: public ParentState, 
+  virtual protected UniversalState
 {
 public:
   /// Construct a state with the name.
   RState (const char* name);
 
-  bool operator==(const RState& st) const;
+  // ParentState& operator= (const UniversalState& us)
+  void set_by_universal (const UniversalState& us)
+  {
+	 // Different maps are not implemented
+	 SCHECK(state_map == us.state_map);
+	 state_idx = us.state_idx;
+  }
+
+  /*ParentState& operator= (const ParentState& st)
+  {
+	 *this = UniversalState(st);
+	 }*/
+
+  //bool operator==(const StateAxis& st) const /* overrides */;
 
   /// Check permission of moving obj to the `to' state.
   static void check_moving_to 
@@ -215,9 +253,16 @@ public:
 	  return this->stateMap->get_state_name (*this);
   }
 
+  operator UniversalState () const /* overrides */
+  {
+	 return *this;
+  }
+
 protected:
   static StateMap* stateMap;
   typedef Logger<RState> log;
+
+  StateMap* get_state_map() { return stateMap; }
 };
 
 template <
@@ -246,23 +291,6 @@ RState<Object, ParentState, new_states, transitions>::RState (const char* name)
 #endif
 
   *((UniversalState*) this) = stateMap->create_state (name);
-}
-
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
-bool RState<Object, ParentState, new_states, transitions>
-//
-::operator== (const RState& st) const
-{
-	if (this->stateMap != st.stateMap)
-		THROW_EXCEPTION(SException, 
-		 "concurro: Compare states from different maps is not implemented");
-
-	return this->state_idx == st.state_idx;
 }
 
 template <
@@ -314,9 +342,13 @@ bool RState<Object, ParentState, new_states, transitions>
 //
 ::state_is (const Object& obj, const RState& st)
 {
+#if 0
 	RState current = st;
 	obj.state (current);
 	return current == st;
+#else
+	return obj.state_is(st);
+#endif
 }
 
 

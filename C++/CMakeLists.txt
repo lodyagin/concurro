@@ -12,6 +12,7 @@ set (concurrent_SOURCES
   IPv6SocketAddress.cpp
   Logging.cpp
 #  NamedPipe.cpp
+  RAbstractConnection.cpp
   RClientSocketAddress.cpp
   RConnectedSocket.cpp
   RInOutSocket.cpp

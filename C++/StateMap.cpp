@@ -243,3 +243,23 @@ void StateMap::outString (std::ostream& out) const
   }
 }
 
+bool UniversalState::operator== (const UniversalState& st) const
+{
+	if (this->state_map != st.state_map)
+		THROW_EXCEPTION(SException, 
+		 "concurro: Comparison of states "
+		 "from different maps is not implemented");
+
+	return this->state_idx == st.state_idx;
+}
+
+std::string UniversalState::name() const
+{
+  return state_map->get_state_name(*this);
+}
+
+
+/*StateAxis::StateAxis(StateMap* map_extension, const char* initial_state)
+  : UniversalState(map_extension->create_state(initial_state))
+{
+}*/
