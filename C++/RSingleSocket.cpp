@@ -61,16 +61,16 @@ void RSingleSocket::set_blocking (bool blocking)
   ioctlsocket(socket, FIONBIO, &mode);
 #else
   int opts = 0;
-  rSocketCheck(opts = fcntl(socket, F_GETFL));
+  rSocketCheck((opts = fcntl(socket, F_GETFL)) != -1);
   if (blocking)
 	 opts &= (~O_NONBLOCK);
   else
 	 opts |= O_NONBLOCK;
-  rSocketCheck(fcntl(socket, F_SETFL, opts));
+  rSocketCheck(fcntl(socket, F_SETFL, opts) != -1);
 #endif
 }
 
-bool RSingleSocket::is_blocking () const
+bool RSingleSocket::get_blocking () const
 {
   int opts = 0;
   rSocketCheck(opts = fcntl(socket, F_GETFL));

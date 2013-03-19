@@ -60,7 +60,7 @@ RThreadBase::RThreadBase
     if (main_was_created)
       throw SException (_T"Only one thread with id = 1 can exist");
   }
-  LOG_INFO (logger, "New " << *this);
+  LOG_INFO (log, "New " << *this);
 }
 
 void RThreadBase::state (ThreadState& state) const
@@ -187,14 +187,14 @@ RThreadBase::~RThreadBase()
     RLOCK(cs);
     ThreadState::move_to (*this, destroyedState);
   }
-  LOG_INFO(logger, "Destroy " << *this);
+  LOG_INFO(log, "Destroy " << *this);
 }
 
 
 void RThreadBase::_run()
 {
    //TODO check run from current thread
-  LOG_DEBUG(logger, *this << " started");
+  LOG_DEBUG(log, *this << " started");
   try
   {
     run();
@@ -205,12 +205,12 @@ void RThreadBase::_run()
   }
   catch ( std::exception & x )
   {
-	 LOG_DEBUG(logger, "Exception in thread: " 
+	 LOG_DEBUG(log, "Exception in thread: " 
 						 << x.what ());
   }
   catch ( ... )
   {
-    LOG_WARN(logger, 
+    LOG_WARN(log, 
 		"Unknown type of exception in the thread.");
   }
   {
@@ -219,7 +219,7 @@ void RThreadBase::_run()
     ThreadState::move_to (*this, terminatedState);
   }
 
-  LOG_DEBUG(logger, *this << " is finished.");
+  LOG_DEBUG(log, *this << " is finished.");
 
   if (externalTerminated) 
     externalTerminated->set ();
@@ -228,7 +228,7 @@ void RThreadBase::_run()
 
 void RThreadBase::log_from_constructor ()
 {
-  LOG_INFO(logger, "New " << *this);
+  LOG_INFO(log, "New " << *this);
 }
 
 #if 0

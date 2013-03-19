@@ -3,12 +3,17 @@
 #include "RClientSocketAddress.h"
 #include "RAbstractConnection.h"
 #include "StateMap.h"
+#include "Logging.h"
+#include <netdb.h>
 
 class RSocketTCP : public RSingleSocket //, public RAbstractConnection
 , public RObjectWithStates<ConnectionStateAxis>
 {
 public:
-  RSocketTCP();
+  /// Create a TCP socket in "closed" state.
+  /// \param close_wait_seconds how much wait a connection 
+  ///        termination on close()
+  RSocketTCP(int close_wait_seconds);
   ~RSocketTCP();
 
   // TODO declare these also in parents
@@ -32,4 +37,14 @@ public:
   const static State closingState;
   const static State abortedState;
   const static State destroyedState;
+protected:
+
+  typedef Logger<RSocketTCP> log;
+  
+  /// It is set in the constructor by ::getprotobyname("TCP") call
+  struct protoent* tcp_protoent;
+  
+  /// how much wait closing the socket
+  int close_wait_secs;
+
 };
