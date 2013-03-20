@@ -3,7 +3,7 @@
 #include "SEvent.h"
 #include "Repository.h"
 #include "ThreadRepository.h"
-#include "RConnectedSocket.h"
+//#include "RConnectedSocket.h"
 
 /*
 All decisions about connection creation
@@ -26,9 +26,6 @@ public:
     assert (threads);
   }
 
-  Connection* 
-    create_new_connection (RConnectedSocket* cs);
-
   void destroy_terminated_connections ();
 
   SEvent connectionTerminated;
@@ -42,6 +39,22 @@ protected:
       (RConnectedSocket* cs);
 
   ConnectionRepository* threads;
+};
+
+template<class Connection, class ConnectionPars>
+class ConnectionToClientFactory : public ConnectionFactory
+{
+  friend class RListeningSocket<ConnectionToClientFactory
+	 <Connection, ConnectionPars> >;
+protected:
+  /// It will be called from RListeningSocket after RConnectedSocket
+  /// creation to start the new connection thread
+  Connection* create_new_connection (RConnectedSocket* cs);
+};
+
+template<class Connection, class ConnectionPars>
+class ConnectionToServerFactory : public ConnectionFactory
+{
 };
 
 template<class Connection, class ConnectionPars>

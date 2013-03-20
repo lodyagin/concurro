@@ -6,17 +6,16 @@ It is a connection created by the socket.
 #define CONCURRO_RCONNECTION_H_
 
 #include "RThread.h"
-#include "RConnectedSocket.h"
 #include "Logging.h"
 
-template<class Thread>
+template<class Thread, class Socket>
 class RConnection : public Thread
-{ //TODO add states
+{
 public:
 
   const std::string universal_object_id;
   
-  RConnectedSocket* get_socket ()
+  Socket* get_socket ()
   {
     assert (socket);
     return socket;
@@ -33,7 +32,7 @@ protected:
   // and will destroy it.
   RConnection 
     (void* repo, 
-     RConnectedSocket* cs,
+     Socket* cs,
      const std::string& objId,
      const typename Thread::ConstrPar& par,
      REvent* connectionTerminated
@@ -47,7 +46,7 @@ protected:
     assert (socket);
   }
 
-  RConnectedSocket* socket;
+  Socket* socket;
   void* repository;
 private:
   typedef Logger<RConnection> log;
