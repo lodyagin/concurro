@@ -3,21 +3,17 @@
 
 // RSocket states  ========================================
 
-const State2Idx RSocketTCP::allStates[] =
-{
-  {1, "closed"},  
-  {2, "listen"},       // passive open
-  {3, "syn-sent"},
-//  {4, "syn-rcvd"},
-  {4, "established"},
-  {5, "closing"},      // fin-wait, time-wait, closing, close-wait, last-ack
-  {6, "aborted"},   // see RFC793, 3.8 Abort
-  {7, "destroyed"}, // to check a state in the destructor
-  {0, 0}
-};
-
-const StateTransition RSocketTCP::allTrans[] =
-{
+const StateMapPar RSocketTCP::new_states
+(  {"closed",  
+	 "listen",       // passive open
+	 "syn-sent",
+//   "syn-rcvd",
+	 "established",
+	 "closing",      // fin-wait, time-wait, closing, close-wait, last-ack
+	 "aborted",   // see RFC793, 3.8 Abort
+	 "destroyed" // to check a state in the destructor
+	 },
+  {
   {"closed", "listen"},      // listen()
   {"closed", "syn-sent"},    // our connect()
   {"listen", "established"}, // connect() from other side
@@ -26,10 +22,10 @@ const StateTransition RSocketTCP::allTrans[] =
   {"syn-sent", "closed"},     // close() or timeout 
   {"established", "closing"}, // our close() or FIN from other side
   {"closing", "closed"},
-  {"closed", "destroyed"},
+  {"closed", "destroyed"}
   // TODO ::shutdown
-  {0, 0}
-};
+  }
+  );
 
 const RSocketTCP::State RSocketTCP::closedState("closed");
 const RSocketTCP::State RSocketTCP::listenState("listen");

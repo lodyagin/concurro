@@ -6,17 +6,13 @@
 
 // RThread states  ========================================
 
-const State2Idx RThreadBase::allStates[] =
-{
-  {1, "ready"},         // after creation
-  {2, "working"},       // it works
-  {3, "terminated"},    
-  {4, "destroyed"},    // to check a state in the destructor
-  {0, 0}
-};
-
-const StateTransition RThreadBase::allTrans[] =
-{
+const StateMapPar RThreadBase::new_states
+({  "ready",         // after creation
+	 "working",       // it works
+	 "terminated",    
+	 "destroyed"    // to check a state in the destructor
+	 },
+  {
   {"ready", "working"},      // start ()
 
   // a) natural termination
@@ -25,12 +21,10 @@ const StateTransition RThreadBase::allTrans[] =
 
   {"terminated", "destroyed"},
 
-  {"ready", "destroyed"},
+  {"ready", "destroyed"}
   // can't be destroyed in other states
-
-  {0, 0}
-
-};
+  }
+  );
 
 const RThreadBase::ThreadState RThreadBase::readyState("ready");
 const RThreadBase::ThreadState RThreadBase::workingState("working");

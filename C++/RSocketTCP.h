@@ -25,10 +25,9 @@ public:
   // TODO add inform about event from tapi-sockets-tcp
 
   /* TCP states */
-  const static State2Idx allStates[];
-  const static StateTransition allTrans[];
-  typedef RState<RSocketTCP, ConnectionStateAxis, allStates, allTrans> State;
-  friend class RState<RSocketTCP, ConnectionStateAxis, allStates, allTrans>;
+  const static StateMapPar new_states;
+  typedef RState<RSocketTCP, ConnectionStateAxis, new_states> State;
+  friend class RState<RSocketTCP, ConnectionStateAxis, new_states>;
 
   const static State closedState;
   const static State listenState;

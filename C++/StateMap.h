@@ -7,14 +7,14 @@
 #include "SException.h"
 #include "SCheck.h"
 #include <assert.h>
-#include <map>
+#include <unordered_map>
 #include <vector>
-
-#define UNIMPL_STATES_INHERITANCE
+#include <initializer_list>
+#include <boost/multi_array.hpp>
 
 typedef unsigned int StateIdx;
 
-struct State2Idx
+/*struct State2Idx
 {
   StateIdx idx;
   const char* state;
@@ -24,7 +24,7 @@ struct StateTransition
 {
   const char* from;
   const char* to;
-};
+};*/
 
 class StateMap;
 class UniversalState;
@@ -48,7 +48,8 @@ public:
 protected:
   //StateAxis(StateMap* map_extension, const char* initial_state);
 
-  virtual StateMap* get_state_map() = 0;
+  /// Return an empty state map
+  static StateMap* get_state_map();
 };
 
 class UniversalState
@@ -118,6 +119,20 @@ public:
 
 /* StateMap class */
 
+struct StateMapPar
+{
+  StateMapPar (
+	 std::initializer_list<const char*> states_,
+	 std::initializer_list<std::pair<const char*, const char*>> transitions_
+	 )
+  : states(states_), transitions(transitions_) {}
+
+  std::initializer_list<const char*> states;
+  std::initializer_list<std::pair<const char*, const char*>> transitions;
+};
+
+std::ostream& operator<< (std::ostream& out, const StateMapPar& par);
+
 class StateMap : 
    public HasStringView 
    //FIXME pointer comparison
@@ -138,9 +153,7 @@ public:
 
   };
 
-  StateMap 
-    (const State2Idx new_states[], 
-     const StateTransition transitions[]);
+  StateMap(const StateMap* parent, const StateMapPar& new_states);
 
   // Return the number of states in the map.
   StateIdx size () const;
@@ -165,10 +178,23 @@ public:
   std::string get_state_name
     (const UniversalState& state) const;
 
+  StateIdx get_n_states() const
+  {
+	 return n_states;
+  }
+
+  virtual bool is_empty_map () const
+  {
+	 return false;
+  }
+
   // overrides
   void outString (std::ostream& out) const;
 
 protected:
+
+  /// Construct an empty state map
+  StateMap();
 
   struct IdxTransRec
   {
@@ -177,17 +203,23 @@ protected:
     StateIdx to;
   };
 
-  typedef std::map<std::string, StateIdx> 
-    Name2Idx;
+  typedef std::unordered_map<const char*, StateIdx>  Name2Idx;
+#if 0
   typedef std::map<StateIdx, std::string> Idx2Name;
+#else
+  typedef std::vector<const char*> Idx2Name;
+#endif
 
-  typedef std::vector< std::vector <int> > Trans2Number;
-  typedef std::vector<IdxTransRec> Number2Trans;
+  //typedef std::vector< std::vector <int> > Trans2Number;
+  //typedef std::vector<IdxTransRec> Number2Trans;
 
+  const StateIdx n_states;
   Name2Idx     name2idx;
   Idx2Name     idx2name;  
-  Trans2Number trans2number;
-  Number2Trans number2trans;
+  //Trans2Number trans2number;
+  //Number2Trans number2trans;
+  typedef boost::multi_array<bool, 2> Transitions;
+  Transitions transitions;
 
   int get_transition_id 
     (const UniversalState& from,
@@ -199,8 +231,18 @@ private:
   // Is used from constructor
   // Fills trans2number and number2trans
   void add_transitions 
-    (const StateTransition transitions[], 
-     int nTransitions);
+    (std::initializer_list<std::pair<const char*, const char*>> transitions);
+};
+
+class EmptyStateMap : public StateMap, public SAutoSingleton<EmptyStateMap>
+{
+public:
+  EmptyStateMap() {}
+
+  virtual bool is_empty_map () const
+  {
+	 return true;
+  }
 };
 
 /**
@@ -208,12 +250,7 @@ private:
  * \tparam Object an object which holds the state.
  * \tparam 
  */
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
+template <class Object, class ParentState, StateMapPar const& par>
 class RState 
 : public ParentState, 
   virtual protected UniversalState
@@ -262,44 +299,25 @@ protected:
   static StateMap* stateMap;
   typedef Logger<RState> log;
 
-  StateMap* get_state_map() { return stateMap; }
+  static StateMap* get_state_map() { return stateMap; }
 };
 
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
-StateMap* RState<Object, ParentState, new_states, transitions>::stateMap = 0;
+template <class Object, class ParentState, StateMapPar const& par>
+StateMap* RState<Object, ParentState, par>::stateMap = 0;
 
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
-RState<Object, ParentState, new_states, transitions>::RState (const char* name)
+template <class Object, class ParentState, StateMapPar const& par>
+RState<Object, ParentState, par>::RState (const char* name)
 {
   assert (name);
 
   if (!stateMap)
-#ifndef UNIMPL_STATES_INHERITANCE
-    stateMap = new StateMap(allStates, allTrans);
-#else
-    stateMap = new StateMap(new_states, transitions);
-#endif
+    stateMap = new StateMap(ParentState::get_state_map(), par);
 
   *((UniversalState*) this) = stateMap->create_state (name);
 }
 
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
-void RState<Object, ParentState, new_states, transitions>
+template <class Object, class ParentState, StateMapPar const& par>
+void RState<Object, ParentState, par>
 //
 ::check_moving_to(const Object& obj, const RState& to)
 {
@@ -308,13 +326,8 @@ void RState<Object, ParentState, new_states, transitions>
 	from.stateMap->check_transition (from, to);
 }
 
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
-void RState<Object, ParentState, new_states, transitions>
+template <class Object, class ParentState, StateMapPar const& par>
+void RState<Object, ParentState, par>
 //
 ::move_to(Object& obj, const RState& to)
 {
@@ -332,13 +345,8 @@ void RState<Object, ParentState, new_states, transitions>
 				 << to.name() << "]");
 }
 
-template <
-  class Object,
-  class ParentState,
-  const State2Idx new_states[], 
-  const StateTransition transitions[]
->
-bool RState<Object, ParentState, new_states, transitions>
+template <class Object, class ParentState, StateMapPar const& par>
+bool RState<Object, ParentState, par>
 //
 ::state_is (const Object& obj, const RState& st)
 {

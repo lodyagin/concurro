@@ -2,77 +2,94 @@
 #include "StateMap.h"
 #include <assert.h>
 
-StateMap::StateMap 
-    (const State2Idx new_states[], 
-     const StateTransition transitions[]
-    )
+StateMap* StateAxis::get_state_map()
 {
-  if (new_states == NULL || transitions == NULL)
-    throw BadParameters ("1");
-
-  StateIdx maxIdx = 0;
-  {
-    // the last element of new_states should have
-    // idx = 0
-    StateIdx i;
-    for (i = 0; new_states[i].idx != 0; i++)
-    {
-      name2idx[new_states[i].state] = new_states[i].idx;
-
-      if (new_states[i].idx < 1)
-        throw BadParameters ("2"); 
-
-      idx2name[new_states[i].idx] = new_states[i].state;
-
-      if (new_states[i].idx > maxIdx)
-        maxIdx = new_states[i].idx;
-    }
-    if (maxIdx != name2idx.size ())
-      throw BadParameters ("3"); 
-    
-    if (maxIdx != i)
-      throw BadParameters ("4"); 
-  }
-  const StateIdx nStates = maxIdx;
-
-  LOG_DEBUG(log, 
-	  "There are " << nStates << " states in the map.");
-
-  int nTransitions = 0;
-  {
-    // Count the number of transitions
-    // The last element of transitions should be NULL->NULL
-    // transition
-    int i;
-    for (i = 0; ; i++) 
-     {
-       if (transitions[i].from == NULL
-           || transitions[i].to == NULL)
-       {
-         if (transitions[i].from == NULL
-             && transitions[i].to == NULL)
-           break;
-         else throw BadParameters ("5");
-       }
-     }
-    nTransitions = i;
-  }
-
-  //initialize transitions
-  trans2number.resize (nStates);
-  for (Trans2Number::size_type i = 0; i < trans2number.size (); i++)
-  {
-      trans2number[i].resize (nStates, 0);
-  }
-
-  number2trans.resize (nTransitions + 1);
-
-  assert (nStates == idx2name.size ());
-  assert (nStates == name2idx.size ());
-
-  add_transitions (transitions, nTransitions);
+  return &EmptyStateMap::instance();
 }
 
+std::ostream& operator<< (std::ostream& out, const StateMapPar& par)
+{
+  bool first_state = true;
+  for (auto it = par.states.begin(); it != par.states.end(); it++)
+  {
+	 if (!first_state) out << ';'; else first_state = false;
+	 out << *it;
+  }
+  out << '|';
+  bool first_trans = true;
+  for (auto it = par.transitions.begin(); 
+		 it != par.transitions.end(); it++)
+  {
+	 if (!first_trans) out << ';'; else first_trans = false;
+	 out << it->first << "->" << it->second;
+  }
+}
+
+StateMap::StateMap()
+  : n_states(0)
+{
+}
+
+StateMap::StateMap(const StateMap* parent, const StateMapPar& new_states)
+  : n_states(new_states.states.size() + parent->get_n_states()),
+    idx2name(n_states+1),
+	 name2idx(n_states * 2 + 2),
+	 transitions(boost::extents[Transitions::extent_range(1,n_states+1)]
+					 [Transitions::extent_range(1,n_states+1)])
+{
+  const StateIdx n_parent_states = parent->get_n_states();
+
+  if (parent) {
+	 LOG_DEBUG(log, "Create a new map with the parent: "
+				  << *parent << "and new_states: "
+				  << new_states);
+  }
+  else {
+	 LOG_DEBUG(log, "Create a new top-level map with states: "
+				  << new_states);
+  }
+
+  // Merge the maps: copy old states first
+  idx2name[0] = NULL;
+  std::copy(parent->idx2name.begin(), parent->idx2name.end(),
+				idx2name.begin() + 1);
+  // append new states
+  std::copy(new_states.states.begin(), new_states.states.end(),
+				idx2name.begin() + 1 + n_parent_states);
+
+  // Fill name2idx and check repetitions
+  for (StateIdx k = 0; k < idx2name.size(); k++)
+  {
+	 const auto inserted = name2idx.insert
+		(std::pair<const char*, StateIdx>(idx2name[k], k));
+	 if (!inserted.second)
+		throw BadParameters("map states repetition");
+  }
+
+  LOG_DEBUG(log, 
+    "There are " << get_n_states() << " states in the map.");
+
+  // initialize the transitions array
+  std::fill(transitions.origin(), transitions.origin() + transitions.size(), false);
+  if (!parent-is_empty_map()) {
+	 // fill parent (nested) transitions 
+	 typedef Transitions::index_range range;
+	 Transitions::array_view<2>::type parent_transitions =
+		transitions[boost::indices[range(1,n_parent_states)]
+						[range(1,n_parent_states)]];
+	 parent_transitions = parent->transitions;
+  }
+  // add new transitions
+  // TODO add range checking and exception
+  // (now it asserts)
+  for (auto tit = new_states.transitions.begin();
+		 tit != new_states.transitions.end(); tit++)
+  {
+	 transitions[name2idx[tit->first]][name2idx[tit->second]] = true;
+  }
+}
+
+/*
 void StateMap::add_transitions 
   (const StateTransition transitions[], 
    int nTransitions)
@@ -122,6 +139,7 @@ void StateMap::add_transitions
         );
   }
 }
+*/
 
 UniversalState StateMap::create_state 
   (const char* name) const
@@ -148,9 +166,10 @@ inline bool StateMap::there_is_transition
   if (!is_compatible (from) || !is_compatible (to))
     throw IncompatibleMap ();
 
-  return get_transition_id (from, to) != 0;
+  return transitions[from.state_idx][to.state_idx];
 }
 
+/*
 inline int StateMap::get_transition_id 
   (const UniversalState& from,
    const UniversalState& to) const
@@ -162,6 +181,7 @@ inline int StateMap::get_transition_id
 
   return trans2number.at (from.state_idx-1).at (to.state_idx-1);
 }
+*/
 
 void StateMap::check_transition
   (const UniversalState& from,
@@ -205,9 +225,7 @@ std::string StateMap::get_state_name
     throw IncompatibleMap ();
 
   assert (state.state_idx >= 1);
-  Idx2Name::const_iterator it = idx2name.find 
-    (state.state_idx);
-  return it->second;
+  return idx2name.at(state.state_idx);
 }
 
 void StateMap::outString (std::ostream& out) const
@@ -224,10 +242,11 @@ void StateMap::outString (std::ostream& out) const
       else
         first = false;
   
-      out << it->second;
+      out << *it;
   }
   out << '|';
 
+#if 0 //FIXME
   //print transitions
   first = true;
   for (Number2Trans::size_type i = 1; i <= number2trans.size (); i++)
@@ -241,6 +260,7 @@ void StateMap::outString (std::ostream& out) const
           << "->"
           << idx2name.find (number2trans[i].to) -> second;
   }
+#endif
 }
 
 bool UniversalState::operator== (const UniversalState& st) const

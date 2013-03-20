@@ -77,12 +77,9 @@ public:
     return stopEvent;
   }
 
-  const static State2Idx allStates[];
-  const static StateTransition allTrans[];
-
-  typedef RState<RThreadBase, ThreadStateAxis, allStates, allTrans> 
-	  ThreadState;
-  friend class RState<RThreadBase, ThreadStateAxis, allStates, allTrans>;
+  const static StateMapPar new_states;
+  typedef RState<RThreadBase, ThreadStateAxis, new_states> ThreadState;
+  friend class RState<RThreadBase, ThreadStateAxis, new_states>;
 
   // States
   const static ThreadState readyState;

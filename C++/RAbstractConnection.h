@@ -20,10 +20,10 @@ public:
 
   virtual void close () = 0;
 
-  const static State2Idx allStates[];
-  const static StateTransition allTrans[];
-  typedef RState<RAbstractConnection, ConnectionStateAxis, allStates, allTrans> State;
-  friend class RState<RAbstractConnection, ConnectionStateAxis, allStates, allTrans>;
+  const static StateMapPar new_states;
+
+  typedef RState<RAbstractConnection, ConnectionStateAxis, new_states> State;
+  friend class RState<RAbstractConnection, ConnectionStateAxis, new_states>;
 
   const static State closedState;
   const static State establishedState;
