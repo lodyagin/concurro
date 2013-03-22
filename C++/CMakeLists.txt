@@ -12,9 +12,13 @@ set (concurrent_SOURCES
   IPv6SocketAddress.cpp
   Logging.cpp
 #  NamedPipe.cpp
-  RAbstractConnection.cpp
+  AbstractConnection.cpp
+#  SCheck.cpp
   RClientSocketAddress.cpp
+  SCommon.cpp
+#  SComplPort.cpp
   RConnectedSocket.cpp
+  REvent.cpp
   RInOutSocket.cpp
   RMultiprotoSocketAddress.cpp
   RMutex.cpp
@@ -25,18 +29,13 @@ set (concurrent_SOURCES
 #  RSocket.cpp
 #  RSocketGroup.cpp
   RSocketTCP.cpp
-#  SCheck.cpp
-  SCommon.cpp
-#  SComplPort.cpp
-  REvent.cpp
+  RThread.cpp
   SException.cpp
   SocketAddressFactory.cpp
   SShutdown.cpp
   StateMap.cpp
   StdAfx.cpp
-  RThread.cpp
 #  SWinCheck.cpp
-  ThreadRepository.cpp
 #  time_wce.cpp
 #  UnknownprotoSocketAddress.cpp 
 )

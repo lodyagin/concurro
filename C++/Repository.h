@@ -8,7 +8,7 @@
 #include "SException.h"
 #include "SShutdown.h"
 #include "REvent.h"
-#include "RThread.h"
+//#include "RThread.h"
 #include "StateMap.h"
 #include "Logging.h"
 #include <algorithm>
@@ -26,12 +26,28 @@ public:
   {}
 };
 
+class AbstractRepositoryBase 
+{
+public:
+  virtual ~AbstractRepositoryBase() {}
+};
+
+/// It is used for object creation as an argument to
+/// Par::create_derivation
+struct ObjectCreationInfo
+{
+  AbstractRepositoryBase* repository;
+  std::string objectId;
+};
+
+
+
 /**
  * A RepositoryBase contain not-specialized methods of
  * Repository, i.e., methods not dependent on the ObjMap.
  */
 template<class Obj, class Par, class ObjMap, class ObjId>
-class RepositoryBase
+class RepositoryBase : public AbstractRepositoryBase
 {
 public:
 
@@ -40,15 +56,18 @@ public:
   {
   public:
 	 NoSuchId (ObjId the_id) 
-		: id (the_id), SException (SFORMAT("No object with id [" << the_id << "] exists"))
+		: id (the_id), 
+		SException (SFORMAT("No object with id [" << the_id 
+								  << "] exists"))
 	 {}
 	 ~NoSuchId () throw () {}
 
 	 const ObjId id;
   };
 
-  /// It can be raised, for example, when the repository is based on
-  /// Par when calculating the new Id (i.e., unordered_map).
+  //! It can be raised, for example, when the repository
+  //! is based on Par when calculating the new Id (i.e.,
+  //! unordered_map).
   class IdIsAlreadyUsed : public SException
   {
   public:
@@ -66,8 +85,10 @@ public:
 
   virtual ~RepositoryBase ();
 
-  /// Create a new object in the repository by parameters Par.
-  /// \exception InvalidObjectParameters something is wrong with param. 
+  //! Create a new object in the repository by parameters
+  //! Par.
+  //! \exception InvalidObjectParameters something is
+  //! wrong with param. 
   virtual Obj* create_object (const Par& param);
 
   /// Delete obj from the repository. freeMemory means
@@ -104,13 +125,6 @@ public:
 
   template<class Op>
   void for_each (Op& f) const;
-
-  /// It is used for object creation as an argument to Par::create_derivation
-  struct ObjectCreationInfo
-  {
-    RepositoryBase* repository;
-	 std::string objectId;
-  };
 
   class Destroy 
     : public std::unary_function<int, void>
@@ -269,15 +283,20 @@ protected:
 };
 
 template<class Obj, class Par, class ObjMap, class ObjId>
-class Destructor<Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>> 
-  : public std::unary_function<std::pair<const ObjId, Obj*>, void>
+class Destructor<
+  Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>
+> 
+: public std::unary_function
+   <std::pair<const ObjId, Obj*>, void>
 {
 public:
-  Destructor (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
+  Destructor 
+	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
     : repo (_repo)
   {}
 
-  void operator () (const std::pair<const ObjId, Obj*>& pair)
+  void operator() 
+	 (const std::pair<const ObjId, Obj*>& pair)
   { 
     if (pair.second) 
       repo->delete_object (pair.second, true); 
@@ -328,7 +347,10 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     toString (objId, uniId);
     const ObjectCreationInfo cinfo = { this, uniId };
 
-    obj = param.create_derivation (cinfo);
+	 // dynamic cast for use with inherited parameters
+    obj = dynamic_cast<Obj*>
+		(param.create_derivation (cinfo));
+
     SCHECK (obj);
     insert_object (objId, obj);
   }
@@ -352,8 +374,11 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   }
 
   if (!obj) THROW_PROGRAM_ERROR;
+  //obj->freeze();
 
-  (*objects)[id] = param.transform_object (obj);
+  (*objects)[id] = dynamic_cast<Obj*>
+	 (param.transform_object (obj));
+
   SCHECK ((*objects)[id]);
 
   if ((*objects)[id] == obj)
@@ -371,7 +396,8 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 ::delete_object (Obj* obj, bool freeMemory)
 {
   assert (obj);
-  const ObjId objId = fromString<ObjId> (obj->universal_object_id);
+  const ObjId objId = fromString<ObjId> 
+	 (obj->universal_id());
 
   delete_object_by_id (objId, freeMemory);
 }
@@ -385,18 +411,17 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
   {
     RLOCK(objectsM);
 
-	 Obj* r = 0;
 	 try {
-		r = objects->at (id);
+		Obj*& r = objects->at (id);
+		ptr = r;
+		if (r == 0) THROW_PROGRAM_ERROR;
+		r = 0;
 	 }
 	 catch (const std::out_of_range&) {
 		THROW_EXCEPTION(NoSuchId, id);
 	 }
-
-    ptr = r;
-    if (r == 0) THROW_PROGRAM_ERROR;
-    r = 0;
   }
+  //ptr->freeze();
   if (freeMemory) delete ptr;
 }
 
