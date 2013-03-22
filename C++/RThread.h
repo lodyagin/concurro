@@ -241,7 +241,7 @@ public:
 
   RThread(const std::string& id, REvent* extTerminated = 0)
 	: RThreadBase(id, extTerminated) {}
-  ~RThread() { delete th; }
+  ~RThread() { wait(); delete th; }
 
 protected:
   /// It is for creation from ThreadRepository
@@ -249,7 +249,8 @@ protected:
 	 : RThreadBase(oi.objectId, par.extTerminated) {}
 
   void start_impl () {
-	 th = new std::thread(&RThreadBase::_run, this);
+	 th = new std::thread
+		(&RThread<std::thread>::_run, this);
   }
 
   std::thread* th;
