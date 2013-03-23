@@ -51,6 +51,8 @@ protected:
   RMutex() : name (":a mutex with an undefined name:") {}
   boost::recursive_mutex mx;
 
+  typedef Logger<RMutex> log;
+  
 private:
   std::string name;
 };
@@ -134,22 +136,22 @@ inline RMutex::~RMutex()
 
 inline void RMutex::acquire(const log4cxx::spi::LocationInfo& debug_location)
 {
-  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "try " << get_name() 
+  LOG_DEBUG_LOC(log, "try " << get_name() 
 					 << ".acquire {",
 					 debug_location);
   mx.lock();
-  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, 
+  LOG_DEBUG_LOC(log, 
 					 "} " << get_name() << ".acquire done",
 					 debug_location);
 }
 
 inline void RMutex::release(const log4cxx::spi::LocationInfo& debug_location)
 {
-  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "try " << get_name() 
+  LOG_DEBUG_LOC(log, "try " << get_name() 
 					 << ".release {",
 					 debug_location);
   mx.unlock();
-  LOG_DEBUG_LOC(Logger<LOG::Concurrency>, "} " << get_name() << ".release done",
+  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
 					 debug_location);
 }
 
