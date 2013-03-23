@@ -8,11 +8,11 @@
 #include "SException.h"
 #include "SShutdown.h"
 #include "REvent.h"
-//#include "RThread.h"
 #include "StateMap.h"
 #include "Logging.h"
 #include <algorithm>
 #include <utility>
+#include <map>
 #include <unordered_map>
 #include <assert.h>
 
@@ -210,8 +210,8 @@ protected:
 };
 
 /**
- * This is implementation of Repository for hash-like
- * objects. 
+ * This is specialization of Repository for
+ * std::unordered_map.
  */
 template<class Obj, class Par, class ObjId>
 class Repository<Obj, Par, std::unordered_map<ObjId, Obj*>, ObjId>
@@ -232,6 +232,52 @@ public:
 	 : Parent (repository_name)
   {
 	 this->objects = new ObjMap (initial_value);
+  }
+protected:
+  /// This specialization takes the key value from pars.
+  ObjId get_object_id (const Par& param)
+  {
+	 RLOCK(this->objectsM);
+
+	 ObjId id = param.get_id ();
+
+	 if (this->objects->find(id) != this->objects->end()) {
+		throw typename Parent::IdIsAlreadyUsed (id);
+	 }
+	 
+	 return id;
+  }
+
+  void insert_object (ObjId id, Obj* obj)
+  {
+	 RLOCK(this->objectsM);
+	 // will be add new element if id doesn't exists
+	 (*this->objects)[id] = obj;
+  }
+};
+
+/**
+ * This is specialization of Repository for std::map.
+ */
+template<class Obj, class Par, class ObjId>
+class Repository<Obj, Par, std::map<ObjId, Obj*>, ObjId>
+  : public RepositoryBase<Obj, Par, std::map<ObjId, Obj*>, ObjId>,
+  public SNotCopyable
+{
+public:
+  typedef RepositoryBase<Obj, Par, std::map<ObjId, Obj*>,
+	 ObjId> Parent;
+  using Parent::NoSuchId;
+  using Parent::IdIsAlreadyUsed;
+
+  typedef std::map<ObjId, Obj*> ObjMap;
+  /// Create the repo. initial_value means initial size
+  /// for vector and size for hash tables.
+  Repository 
+	 (const std::string& repository_name, size_t initial_value)
+	 : Parent (repository_name)
+  {
+	 this->objects = new ObjMap ();
   }
 protected:
   /// This specialization takes the key value from pars.
