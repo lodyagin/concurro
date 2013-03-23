@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include "REvent.h"
 //#include "concurrent/C++/REvent.h"
 //#include <boost/thread/thread.hpp>
 
@@ -14,12 +15,14 @@ void test_same_thread_acquire();
 void test_same_thread_overrelease();
 void test_2_threads_try_acquire();
 void test_local_thread_variable();
-
+void test_event();
 CU_TestInfo RMutexTests[] = {
+	{"thread wait while event not set",
+		test_event},
 	{"RMutex can be acquired by the same thread several times",
 	 test_same_thread_acquire },
 	{"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
-	 	 test_2_threads_try_acquire },
+	 	test_2_threads_try_acquire },
 	{"we can't leave from local region while thread is run",
 		test_local_thread_variable },
 	{"RMutex more releases than acquire in the same thread",
@@ -114,7 +117,31 @@ void local(volatile bool *b){
 	thread1.start();
 }
 void test_local_thread_variable(){
-	volatile bool * b = false;
+	volatile bool * b = new bool;
+	*b = false;
 	local(b);
-	if(b)CU_PASS(*b) else CU_FAIL(*b);
+	if(*b)CU_PASS(*b) else CU_FAIL(*b);
+}
+
+class TestThreadevent : public RThread<std::thread> {
+public:
+	TestThreadevent(const std::string& id,  volatile bool*flg, REvent * ev)
+   :RThread<std::thread>(id), flag(flg), event(ev){}
+protected:
+	void run(){
+		sleep(3);
+		*flag = true;
+		event->set();
+  }
+	volatile bool * flag;
+	REvent *event;
+};
+void test_event(){
+	volatile bool * b = new bool;
+	*b = false;
+	REvent * event = new REvent(true, false);
+	TestThreadevent thread1(std::string("11622"),b, event);
+	thread1.start();
+	event->wait();
+	if(*b)CU_PASS(*b) else CU_FAIL(*b);
 }
