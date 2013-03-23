@@ -7,7 +7,7 @@
 #include "Logging.h"
 #include <netdb.h>
 
-class RSocketTCP : public RSingleSocket //, public RAbstractConnection
+class RSocketTCP : public RSingleSocket
 , public RObjectWithStates<ConnectionStateAxis>
 {
 public:

@@ -1,5 +1,7 @@
-#pragma once
-#include "rsocket.h"
+#ifndef CONCURRO_RSOCKETGROUP_H_
+#define CONCURRO_RSOCKETGROUP_H_
+
+#include "RSocket.h"
 #include <vector>
 
 class RSocketGroup :
@@ -20,3 +22,5 @@ protected:
 
   Group sockets;
 };
+
+#endif

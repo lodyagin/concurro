@@ -1,5 +1,7 @@
-#ifndef REVENT_H
-#define REVENT_H
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+#ifndef CONCURRO_REVENT_H
+#define CONCURRO_REVENT_H
 
 #ifndef _WIN32
 #define WFMO
@@ -10,10 +12,17 @@ typedef neosmart::neosmart_event_t HANDLE;
 class REvtBase
 {
 public:
-  void wait();
-  bool wait( int time );  // false on timeout; time in millisecs
+  //! Wait for event.
+  virtual void wait();
+  //! Wait for event or time in msecs. 
+  //! \return false on a timeout.
+  virtual bool wait( int time );  
   virtual ~REvtBase();
-  HANDLE evt()  { return h; }
+
+  // Direct access not allowed due to combined event logic
+  // possibility (i.e. atomic set the event and additional
+  // info). 
+  //HANDLE evt()  { return h; }
 
 protected:
 
@@ -31,10 +40,13 @@ public:
 
   typedef REvtBase Parent;
 
-  explicit REvent( bool manual, bool init = false );
+  explicit REvent
+	 (bool manual, //! manual reset
+	  bool init = false //! initial state
+		);
   ~REvent(){}
-  void set();
-  void reset();
+  virtual void set();
+  virtual void reset();
 
 };
 
@@ -47,7 +59,7 @@ public:
 
   explicit SSemaphore( int maxCount, int initCount = 0 );
 
-  void release( int count = 1 );
+  virtual void release( int count = 1 );
 
 };
 */

@@ -98,6 +98,8 @@ protected:
   /* overrided */
   void run();
 
+  //void process_input(
+
   // FIXME need use smart ptr, coz when client side it is
   // created, but when server side it is inherited
   RSocketTCP* socket;
@@ -119,24 +121,12 @@ std::ostream& operator<<
 
 template<class Thread>
 TCPConnection<Thread>::TCPConnection
-#if 0
-( const std::string& objId,
-  REvent* connectionTerminated,
-  ThreadRepository* repo,
-  const RThreadBase::Par& thread_par,
-  RSocketTCP* cs)
-: AbstractConnection(connectionTerminated),
-  thread (0),
-  socket (cs), 
-  universal_object_id (objId)
-#else
   (const ObjectCreationInfo& oi, const ServerSidePar& par)
 : AbstractConnection
     (oi.objectId, par.connectionTerminated),
   Thread(oi, par),
   socket(par.socket),
   client_socket_address(0)
-#endif
 {
   assert (socket);
 }
@@ -159,21 +149,14 @@ TCPConnection<Thread>::ClientSidePar
 //
 ::create_derivation(const ObjectCreationInfo& oi) const
 {
-  return new TCPConnection<Thread>
-#if 0
-	 (oi.repository,
-	  oi.objectId,
-	  new RSocketTCP(close_wait_seconds),
-	  this->connectionTerminated);
-#else
-  (oi, *this);
-#endif
+  return new TCPConnection<Thread>(oi, *this);
 }
 
 template<class Thread>
 void TCPConnection<Thread>::run()
 {
   socket->connect_first(*client_socket_address);
+  sleep(10); //TODO
 }
 
 #endif

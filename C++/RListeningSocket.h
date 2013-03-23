@@ -1,14 +1,15 @@
 #pragma once
 #include "RSocketGroup.h"
 #include "RServerSocketAddress.h"
-#include "ConnectionFactory.h"
-#include "SThread.h"
+#include "RThread.h"
+#ifdef _WIN32
 #include <winsock2.h>
+#include <Ws2tcpip.h>
+#include "SWinCheck.h"
+#endif
 #include "Logging.h"
 #include "RListeningSocket.h"
 #include "RConnectedSocket.h"
-#include <Ws2tcpip.h>
-#include "SWinCheck.h"
 #include <algorithm>
 
 
@@ -32,10 +33,10 @@ protected:
   void bind (const RServerSocketAddress& addr,
              unsigned int backlog);
 
-  WSAEVENT *events;
+  REvent** events;
 
 private:
-  static Logging log;
+  static Logger<RListeningSocket> log;
 };
 
 template<class ConnectionFactory>

@@ -37,6 +37,7 @@ const RSocketTCP::State RSocketTCP::destroyedState("destroyed");
 
 RSocketTCP::RSocketTCP(int close_wait_seconds)
   : RObjectWithStates<ConnectionStateAxis> (closedState),
+	 RSingleSocket(-1, true),
     tcp_protoent(NULL), 
     close_wait_secs(close_wait_seconds)
 {

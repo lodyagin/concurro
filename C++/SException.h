@@ -41,6 +41,9 @@ protected:
 #define THROW_PROGRAM_ERROR \
   THROW_EXCEPTION(SException, "Program Error")
 
+#define THROW_NOT_IMPLEMENTED \
+  THROW_EXCEPTION(SException, "Not implemented")
+
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException
 {
