@@ -3,6 +3,7 @@
 #include "SMutex.h"
 #include "SEvent.h"
 #include <algorithm> // for swap
+#include <cstdatomic>
 
 #undef DEBUG_TRANSFER
 
@@ -43,8 +44,8 @@ protected:
 
   Buffer* readBuf;
   Buffer* writeBuf;
-  volatile int nWriteBufMsgs; // atomic
-  volatile int nReadBufMsgs; // atomic
+  std::atomic<int> nWriteBufMsgs;
+  std::atomic<int> nReadBufMsgs;
 
   int nWriteConsumed; //atomic, flow control: 
     // consumed by reader (2 sides)
@@ -218,6 +219,7 @@ void BusyThreadWriteBuffer<Buffer>::swap ()
   SMutex::Lock lock (swapM);
 
   // swap read and write buffers
+  // TODO check the correctness due to std::atomic values
   std::swap (readBuf, writeBuf);
   std::swap (nReadBufMsgs, nWriteBufMsgs);
   std::swap (nReadConsumed, nWriteConsumed);
