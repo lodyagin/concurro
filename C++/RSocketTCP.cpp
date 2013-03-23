@@ -72,6 +72,7 @@ void RSocketTCP::close()
     != -1);
   set_blocking(saved_state);
   const int close_ret = ::close(socket);
+  socketCreated.reset();
   State::move_to(*this, dest);
   if (close_ret == EWOULDBLOCK)
     ; // not all data was sent
@@ -99,6 +100,8 @@ void RSocketTCP::connect_first (const RClientSocketAddress& addr)
        (cit->ai_family, cit->ai_socktype, cit->ai_protocol)) 
 		!= INVALID_SOCKET
 		);
+	 socketCreated.set();
+
     LOG_DEBUG(log, "Connecting to " << *cit);
 	 rSocketCheck(::connect(socket, cit->ai_addr, cit->ai_addrlen) == 0);
 	 break; // FIXME - continue with the next address

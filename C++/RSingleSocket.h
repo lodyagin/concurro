@@ -74,6 +74,9 @@ public:
 
   bool get_blocking () const; /* overrides*/
 
+  // Overrides
+  void set_blocking (bool blocking);
+
 protected:
   RSingleSocket ();
 
@@ -145,6 +148,7 @@ protected:
   };
 
   SocketEvent* socketEvent;
+  REvent socketCreated;
 #endif
 #endif
   // FD_WRITE is generated in 2 cases:
@@ -152,9 +156,6 @@ protected:
   // 2) last send returns WSAWOULDBLOCK but now we can
   // send a new data
   bool waitFdWrite; 
-
-  // Overrides
-  void set_blocking (bool blocking);
 
   typedef ThreadRepository<
 	 SocketEvent, 

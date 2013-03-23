@@ -17,13 +17,17 @@ RSingleSocket::eventRepo("SocketEventRepository", 50);
 RSingleSocket::RSingleSocket () 
   : socket (INVALID_SOCKET), 
 	 eventUsed (false), 
-	 waitFdWrite (false)
+	 waitFdWrite (false),
+	 socketCreated(true, false)
 {
   init ();
 }
 
 RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent) 
-  : socket (s), eventUsed (_withEvent), waitFdWrite (false)
+  : socket (s), 
+	 eventUsed (_withEvent), 
+	 waitFdWrite(false),
+	 socketCreated(true, true)
 {
   init (); // TODO check this condition
 }
@@ -177,7 +181,13 @@ void RSingleSocket::SocketEvent::run()
   fd_set rfds, wfds, efds;
   FD_ZERO(&rfds); FD_ZERO(&wfds); FD_ZERO(&efds);
 
+  // wait the actual socket->socket creation
+  socket->socketCreated.wait(); 
+
   const int fd = socket->socket;
+  SCHECK(fd >= 0);
+
+  //sleep(2);
   
   for(;;) {
 	 FD_SET(fd, &rfds);
@@ -219,12 +229,17 @@ void RSingleSocket::SocketEvent::run()
 		new_events |= FD_OOB;
 	 }
 
+	 LOG_DEBUG(log, "Events before: " << events_before 
+				  << ", new events: " << new_events);
+
 	 // Signal only new events to be compatible with
 	 // Windows.
 	 if ((~events_before) & new_events)
 	 {
 		// <NB> bits in events are set only here
 		events |= new_events; 
+		LOG_DEBUG(Logger<LOG::Concurrency>,
+					 "Parent::set()");
 		Parent::set();
 	 }
   }

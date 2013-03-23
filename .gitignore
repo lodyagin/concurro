@@ -1,6 +1,7 @@
 *~*
 *.a
 *.cmake
+*.log
 *.so
 *.so.*
 *.vpp.work*

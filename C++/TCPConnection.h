@@ -85,6 +85,8 @@ public:
   }
 
 protected:
+  typedef Logger<TCPConnection> log;
+
   TCPConnection
 	 (const ObjectCreationInfo&, const ServerSidePar&);
   TCPConnection
@@ -156,7 +158,18 @@ template<class Thread>
 void TCPConnection<Thread>::run()
 {
   socket->connect_first(*client_socket_address);
-  sleep(10); //TODO
+  
+  socket->set_blocking(false);
+  REvent* socketEvent = socket->get_event_object();
+//  sleep(2);
+  for (;;)
+  {
+	 LOG_DEBUG(Logger<LOG::Concurrency>,
+				  "socketEvent->wait()");
+	 socketEvent->wait();
+	 int32_t events = socket->get_events(true);
+	 LOG_DEBUG(log, "Socket events: " << events);
+  }
 }
 
 #endif
