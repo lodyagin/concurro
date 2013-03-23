@@ -1,3 +1,5 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 #ifndef CONCURRO_THREADREPOSITORY_H_
 #define CONCURRO_THREADREPOSITORY_H_
 
@@ -49,41 +51,70 @@ public:
   }
 };
 
-struct ThreadStopper 
- : std::unary_function<RThreadBase*, void>
+template<class Val>
+struct ThreadStopper
+ : std::unary_function<Val, void>
 {
-  void operator () (RThreadBase* th)
+  void operator () (Val th)
   {
     if (th && th->is_running ()) th->stop ();
   }
 };
 
-struct ThreadWaiter 
- : std::unary_function<RThreadBase*, void>
+// std::pair version
+template<class Key, class Val>
+struct ThreadStopper<std::pair<Key, Val>>
+ : std::unary_function<std::pair<Key, Val>&, void>
 {
-  void operator () (RThreadBase* th)
+  void operator () (std::pair<Key, Val>& p)
+  {
+    if (p.second && p.second->is_running ()) 
+		p.second->stop ();
+  }
+};
+
+template<class Val>
+struct ThreadWaiter
+ : std::unary_function<Val, void>
+{
+  void operator () (Val th)
   {
     if (th) th->wait ();
   }
 };
 
+template<class Key, class Val>
+struct ThreadWaiter<std::pair<Key, Val>>
+ : std::unary_function<std::pair<Key, Val>&, void>
+{
+  void operator () (std::pair<Key, Val>& p)
+  {
+    if (p.second) 
+		p.second->RThreadBase::wait ();
+  }
+};
+
 template<class Thread, class Map, class ObjectId>
-void ThreadRepository<Thread, Map, ObjectId>::stop_subthreads ()
+void ThreadRepository<Thread, Map, ObjectId>
+//
+::stop_subthreads ()
 {
   std::for_each (
     this->objects->begin (),
     this->objects->end (),
-    ThreadStopper ()
+    ThreadStopper<typename Map::value_type> ()
     );
 }
 
 template<class Thread, class Map, class ObjectId>
-void ThreadRepository<Thread, Map, ObjectId>::wait_subthreads ()
+void ThreadRepository<Thread, Map, ObjectId>
+//
+::wait_subthreads ()
 {
   std::for_each (
     this->objects->begin (),
     this->objects->end (),
-    ThreadWaiter ()
+    ThreadWaiter<typename Map::value_type> ()
     );
 }
 
