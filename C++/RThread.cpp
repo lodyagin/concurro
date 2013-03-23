@@ -57,6 +57,30 @@ RThreadBase::RThreadBase
   LOG_INFO (log, "New " << *this);
 }
 
+RThreadBase::RThreadBase
+  (const ObjectCreationInfo& oi, const Par& p)
+: 
+    universal_object_id (oi.objectId),
+	 num_id (fromString<size_t>(oi.objectId)),
+    isTerminatedEvent (false),
+    stopEvent (true, false),
+    waitCnt (0), 
+    exitRequested (false),
+    RObjectWithStates<ThreadStateAxis> (readyState),
+	 externalTerminated (p.extTerminated),
+	 cs(SFORMAT("RThreadBase with id=["<<oi.objectId<<"]"))
+{
+  if (num_id == 0) {
+	 THROW_PROGRAM_ERROR;
+  }
+  else if (num_id == 1) {
+    bool main_was_created = mainThreadCreated.exchange (true);
+    if (main_was_created)
+      throw SException (_T"Only one thread with id = 1 can exist");
+  }
+  LOG_INFO (log, "New " << *this);
+}
+
 void RThreadBase::state (ThreadState& state) const
 {
   RLOCK(cs); // TODO: is it needed?

@@ -1,7 +1,8 @@
 #pragma once
 #include "RSingleSocket.h"
 #include "RClientSocketAddress.h"
-#include "RAbstractConnection.h"
+#include "AbstractConnection.h"
+#include "RObjectWithStates.h"
 #include "StateMap.h"
 #include "Logging.h"
 #include <netdb.h>
@@ -11,7 +12,7 @@ class RSocketTCP : public RSingleSocket //, public RAbstractConnection
 {
 public:
   /// Create a TCP socket in "closed" state.
-  /// \param close_wait_seconds how much wait a connection 
+  /// \param close_wait_seconds how much to wait a connection 
   ///        termination on close()
   RSocketTCP(int close_wait_seconds);
   ~RSocketTCP();
@@ -19,7 +20,10 @@ public:
   // TODO declare these also in parents
   virtual void close ();
 
-  /// connect the first available address in addr
+  //! Connect the first available address in addr. States
+  //! transitions are, for get_blocking() == true:
+  //! ->syn_sent, for get_blocking() == false: 
+  //! ->syn_sent[->established]
   virtual void connect_first (const RClientSocketAddress& addr);
 
   // TODO add inform about event from tapi-sockets-tcp

@@ -1,115 +1,164 @@
-#pragma once
+#ifndef CONCURRO_CONNECTIONFACTORY_H_
+#define CONCURRO_CONNECTIONFACTORY_H_
+
 #include "SSingleton.h"
 #include "SEvent.h"
 #include "Repository.h"
 #include "ThreadRepository.h"
-//#include "RConnectedSocket.h"
+#include "RConnectedSocket.h"
 
-/*
-All decisions about connection creation
-are made by this class.
-*/
-
-// ConnectionFactory delegates all calls to
-// ThreadRepository (threads)
-
+/**
+ * An abstract thread-processed connection. It not depends
+ * on sockets.  It is abstract base for
+ * ClientSideConnectionFactory and
+ * ServerSideConnectionFactory. All decisions about
+ * connection creation are made by those classes.
+ */
 template<class Connection, class ConnectionPars>
 class ConnectionFactory :
   public SSingleton
     <ConnectionFactory<Connection, ConnectionPars>>
 {
 public:
-  ConnectionFactory(ThreadRepository<Connection, ConnectionPars>* _threads)
+  typedef ThreadRepository<Connection, ConnectionPars> 
+	 ThreadRepo;
+
+  ConnectionFactory(ThreadRepo* _threads)
     : threads (_threads),
       connectionTerminated (false) // automatic reset
   {
     assert (threads);
   }
+  virtual ~ConnectionFactory() = 0;
 
   void destroy_terminated_connections ();
 
-  SEvent connectionTerminated;
-
-  typedef ThreadRepository<Connection, ConnectionPars> 
-    ConnectionRepository;
+  REvent connectionTerminated;
 
 protected:
-  virtual ConnectionPars*
-    create_connection_pars 
-      (RConnectedSocket* cs);
-
-  ConnectionRepository* threads;
+  ThreadRepo* threads;
 };
 
+/// It produces connection on server side.
 template<class Connection, class ConnectionPars>
-class ConnectionToClientFactory : public ConnectionFactory
+class ServerSideConnectionFactory 
+  : public ConnectionFactory<Connection, ConnectionPars>
 {
-  friend class RListeningSocket<ConnectionToClientFactory
-	 <Connection, ConnectionPars> >;
-protected:
-  /// It will be called from RListeningSocket after RConnectedSocket
-  /// creation to start the new connection thread
+public:
+  ServerSideConnectionFactory
+	 (ThreadRepository<Connection, ConnectionPars>* threads)
+	: ConnectionFactory<Connection, ConnectionPars>(threads)
+  {}
+
+  /// Create a server side connection.
+  /// It will be called from RListeningSocket after
+  /// RConnectedSocket creation to start the new
+  /// connection thread
   Connection* create_new_connection (RConnectedSocket* cs);
+
+protected:
+  /// A connection pars for a server side connection
+  virtual ConnectionPars* create_connection_pars 
+	 (RConnectedSocket* cs);
+};
+
+/**
+ * It produces connection on a server side.
+ */
+template<class Connection, class ConnectionPars>
+class ClientSideConnectionFactory 
+  : public ConnectionFactory<Connection, ConnectionPars>
+{
+public:
+  ClientSideConnectionFactory
+	 (ThreadRepository<Connection, ConnectionPars>* threads)
+	: ConnectionFactory<Connection, ConnectionPars>(threads)
+  {}
+
+  Connection* create_new_connection
+	 (RClientSocketAddress* addr);
+
+protected:
+  virtual ConnectionPars* create_connection_pars
+	 (RClientSocketAddress*);
 };
 
 template<class Connection, class ConnectionPars>
-class ConnectionToServerFactory : public ConnectionFactory
-{
-};
-
-template<class Connection, class ConnectionPars>
-Connection* 
-ConnectionFactory<Connection, ConnectionPars>::create_new_connection
-  (RConnectedSocket* cs)
-{
-  assert (cs);
-  const RSingleprotoSocketAddress& rsa = cs
-    -> get_peer_address ();
-
-  LOG4STRM_INFO
-    (Logging::Root (),
-    oss_ << "New connection from: "
-         << rsa.get_ip () << ':'
-         << rsa.get_port ()
-     );
-
-  Connection* rc = NULL;
-  ConnectionPars* cp = create_connection_pars(cs);
-  rc = threads->create_object (*cp);
-  delete cp; //!
-  rc->start ();
-
-  LOG4CXX_DEBUG 
-    (Logging::Root (), 
-    "New connection is started");
-  return rc;
-}
-
-template<class Connection, class ConnectionPars>
-ConnectionPars* 
-ConnectionFactory<Connection, ConnectionPars>::create_connection_pars 
-  (RConnectedSocket* cs)
-{
-  assert (cs);
-  ConnectionPars* cp = 
-    new ConnectionPars;
-  //FIXME check object creation
-  cp->socket = cs;
-  cp->connectionTerminated = &connectionTerminated;
-  return cp;
-}
-
-template<class Connection, class ConnectionPars>
-void ConnectionFactory<Connection, ConnectionPars>::
-  destroy_terminated_connections ()
+void ConnectionFactory<Connection, ConnectionPars>
+//
+::destroy_terminated_connections ()
 {
     // Found and destroy the terminated thread
     std::list<int> terminated;
     threads->get_object_ids_by_state
       (std::back_inserter (terminated),
-       SThread::terminatedState
+       RThreadBase::terminatedState
        );
     std::for_each 
       (terminated.begin (), terminated.end (),
-      ConnectionRepository::Destroy (*threads));
+      ThreadRepo::Destroy (*threads));
 }
+
+template<class Connection, class ConnectionPars>
+Connection* ServerSideConnectionFactory<Connection, ConnectionPars>
+//
+::create_new_connection(RConnectedSocket* cs)
+{
+  assert (cs);
+  const RSingleprotoSocketAddress& rsa = cs
+    -> get_peer_address ();
+
+  LOG_INFO(Logger<LOG::Root>, "New connection from: "
+			  << rsa.get_ip () << ':' << rsa.get_port ());
+
+  Connection* rc = NULL;
+  ConnectionPars* cp = create_connection_pars(cs);
+  rc = this->threads->create_object (*cp);
+  delete cp; //!
+  rc->start ();
+
+  LOG_DEBUG(Logger<LOG::Root>, "New server side connection is started");
+  return rc;
+}
+
+template<class Connection, class ConnectionPars>
+Connection* ClientSideConnectionFactory<Connection, ConnectionPars>
+//
+::create_new_connection(RClientSocketAddress* addr)
+{
+  LOG_INFO(Logger<LOG::Root>, "Try connect to: " << addr);
+
+  Connection* rc = NULL;
+  ConnectionPars* cp = create_connection_pars(addr);
+  rc = this->threads->create_object (*cp);
+  delete cp; //!
+  rc->start ();
+
+  LOG_DEBUG(Logger<LOG::Root>, "New client side connection is started");
+  return rc;
+}
+
+template<class Connection, class ConnectionPars>
+ConnectionPars* ServerSideConnectionFactory<Connection, ConnectionPars>
+//
+::create_connection_pars(RConnectedSocket* cs)
+{
+  assert (cs);
+  ConnectionPars* cp = new ConnectionPars;
+  cp->server_socket = cs;
+  cp->connectionTerminated = &this->connectionTerminated;
+  return cp;
+}
+
+template<class Connection, class ConnectionPars>
+ConnectionPars* ClientSideConnectionFactory<Connection, ConnectionPars>
+//
+::create_connection_pars(RClientSocketAddress* addr)
+{
+  ConnectionPars* cp = new ConnectionPars;
+  cp->client_socket_address = addr;
+  cp->connectionTerminated = &this->connectionTerminated;
+  return cp;
+}
+
+#endif

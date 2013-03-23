@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "RConnectedSocket.h"
 #include "SocketAddressFactory.h"
-#include "RConnection.h"
 #include "RClientSocketAddress.h"
 
 RConnectedSocket::RConnectedSocket 

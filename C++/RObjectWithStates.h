@@ -1,13 +1,35 @@
 #ifndef CONCURRO_ROBJECTWITHSTATES_H_
 #define CONCURRO_ROBJECTWITHSTATES_H_
 
+/// An interface which should be implemented in each
+/// state-aware class.
 template<class StateAxis>
-class RObjectWithStates
+class ObjectWithStatesInterface
 {
 public:
-  //RObjectWithStates() {}
-  //RObjectWithStates(const char* initial_state);
+  virtual ~ObjectWithStatesInterface() {}
 
+  /// set state to the current state of the object
+  virtual void state(StateAxis& state) const = 0;
+
+  /// return bool if the object state is state
+  virtual bool state_is(const StateAxis& state) const = 0;
+
+protected:
+
+  /// Set the object state without transition cheking (do
+  /// not use directly).
+  //virtual void set_state_internal 
+  // (const StateAxis& state) = 0;
+};
+
+/// It can be used as a parent of an object which
+/// introduces new state axis.
+template<class StateAxis>
+class RObjectWithStates 
+  : public ObjectWithStatesInterface<StateAxis>
+{
+public:
   RObjectWithStates(const StateAxis& initial_state)
 	 : currentState(initial_state) 
   {}
@@ -36,18 +58,33 @@ protected:
 };
 
 #if 0
-template<class StateAxis>
-RObjectWithStates<StateAxis>::RObjectWithStates(const char* initial_state)
+/// You can inherit from this class to delegate your
+/// object state to the StateParent class (which should
+/// also be a parent of your class).
+template<class StateAxis, class StateParent>
+class StatesDelegator 
+  : public ObjectWithStatesInterface<StateAxis>,
+    virtual public StateParent
 {
-  StateAxis templ;
-  currentState = templ.get_state_map()
-}
+public:
+  /// set state to the current state of the object
+  virtual void state(StateAxis& state) const
+  {
+	 this->StateParent::state(state);
+  }
 
-template<class StateAxis>
-RObjectWithStates<StateAxis>::~RObjectWithStates()
-{
-  delete currentState;
-}
+  virtual bool state_is(const StateAxis& state) const
+  {
+	 StateParent::state_is(state);
+  }
+
+protected:
+
+  virtual void set_state_internal (const StateAxis& state)
+  {
+	 StateParent::set_state_internal(state);
+  }
+};
 #endif
 
 #endif

@@ -1,3 +1,4 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 /**
  * @file
  * An unified wrapper over different type of threads (i.e., QThread, posix thread etc.).
@@ -13,6 +14,7 @@
 #include "REvent.h"
 #include "SCommon.h"
 #include "RObjectWithStates.h"
+#include "Repository.h"
 #include <string>
 #include <cstdatomic>
 #include <thread>
@@ -32,6 +34,19 @@ class RThreadBase
   // (currentState, waitCnt, exitRequested)
 {
 public:
+
+  struct Par
+  {
+	 REvent* extTerminated;
+
+    Par() : extTerminated(0) {}
+	 virtual ~Par() {}
+	 virtual RThreadBase* create_derivation
+	   (const ObjectCreationInfo&) const = 0;
+	 virtual RThreadBase* transform_object
+	   (const RThreadBase*) const = 0;
+  };
+
   /// Contains a common thread execution code. It calls user-defined
   /// run(). It should be protected but is public for access from a
   /// derived RThread template.
@@ -53,6 +68,12 @@ public:
 	  );
 
   virtual ~RThreadBase ();
+
+  std::string universal_id() const
+  {
+	 return universal_object_id;
+  }
+
   size_t id () const { return num_id; }
 
   /* 
@@ -90,6 +111,8 @@ public:
   void state (ThreadState& state) const /* overrides */;
 
 protected:
+
+  RThreadBase(const ObjectCreationInfo&, const Par&);
 
   typedef Logger<LOG::Thread> log;
 
@@ -196,18 +219,42 @@ template<>
 class RThread<std::thread> : public RThreadBase
 {
 public:
-	RThread(const std::string& id, REvent* extTerminated = 0)
-	: RThreadBase(id, extTerminated) {}
+  struct Par : public RThreadBase::Par
+  {
+#if 0
+	 RThreadBase* create_derivation
+	   (const ObjectCreationInfo& oi) const
+	 {
+		return new RThread<std::thread>(oi, *this);
+	 }
 
+	 RThreadBase* transform_object
+	   (const RThreadBase*) const
+	 {
+		THROW_EXCEPTION
+		  (SException, 
+			"transform_object is not realised for threads."
+			 );
+	 }
+#endif
+  };
+
+  RThread(const std::string& id, REvent* extTerminated = 0)
+	: RThreadBase(id, extTerminated) {}
+  ~RThread() { wait(); delete th; }
 
 protected:
-	void start_impl () {
-		th = new std::thread(&RThreadBase::_run, this);
-	}
+  /// It is for creation from ThreadRepository
+  RThread(const ObjectCreationInfo& oi, const Par& par)
+	 : RThreadBase(oi.objectId, par.extTerminated) {}
 
-	std::thread* th;
+  void start_impl () {
+	 th = new std::thread
+		(&RThread<std::thread>::_run, this);
+  }
+
+  std::thread* th;
 };
-
 
 void sSleep( int ms );
 
