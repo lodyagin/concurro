@@ -17,17 +17,17 @@ void test_2_threads_try_acquire();
 void test_local_thread_variable();
 void test_event();
 CU_TestInfo RMutexTests[] = {
-	{"thread wait while event not set",
-		test_event},
-	{"RMutex can be acquired by the same thread several times",
-	 test_same_thread_acquire },
-	{"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
-	 	test_2_threads_try_acquire },
-	{"we can't leave from local region while thread is run",
-		test_local_thread_variable },
-	{"RMutex more releases than acquire in the same thread",
-	 		 test_same_thread_overrelease },
-	CU_TEST_INFO_NULL
+  {"thread wait while event not set",
+   test_event},
+  {"RMutex can be acquired by the same thread several times",
+   test_same_thread_acquire },
+  {"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
+   test_2_threads_try_acquire },
+  {"we can't leave from local region while thread is run",
+   test_local_thread_variable },
+  {"RMutex more releases than acquire in the same thread",
+   test_same_thread_overrelease },
+  CU_TEST_INFO_NULL
 };
 
 // init the test suite
@@ -65,83 +65,90 @@ void test_same_thread_overrelease()
 
 class TestThread : public RThread<std::thread> {
 public:
-	TestThread(const std::string& id,
-					   RMutex& mutex, int sleep_time)
-   :RThread<std::thread>(id), mx(mutex), sleept(sleep_time)
-{}
-	int getResuilt(){return arg;}
+  TestThread(const std::string& id,
+             RMutex& mutex, int sleep_time)
+    :RThread<std::thread>(id), mx(mutex), sleept(sleep_time)
+    {}
+  int getResuilt(){return arg;}
 protected:
-	void run(){
-		static volatile int test=0;
-		MUTEX_ACQUIRE(mx);
-		sleep(sleept);
-		arg = ++test;
-		MUTEX_RELEASE(mx);
+  void run(){
+    static volatile int test=0;
+    MUTEX_ACQUIRE(mx);
+    sleep(sleept);
+    arg = ++test;
+    MUTEX_RELEASE(mx);
   }
-	volatile int sleept;
-	volatile int arg;
-	RMutex& mx;
+  volatile int sleept;
+  volatile int arg;
+  RMutex& mx;
 };
 
 void test_2_threads_try_acquire(){
   RMutex mx("mx");
-	int id1 = 2, id2 = 0;
-	std::string s = "11111";
-	std::string s1 = "22222";
-	TestThread thread1(s, mx, id1);
-	thread1.start();
-	sleep(1);
-	TestThread thread2(s1, mx, id2);
-	thread2.start();
-	sleep(3);
-	if (thread1.getResuilt() == 1 && thread2.getResuilt() == 2)
-		CU_PASS(id1 == 1)
-	else
+  int id1 = 2, id2 = 0;
+  std::string s = "11111";
+  std::string s1 = "22222";
+  TestThread thread1(s, mx, id1);
+  thread1.start();
+  sleep(1);
+  TestThread thread2(s1, mx, id2);
+  thread2.start();
+  sleep(3);
+  if (thread1.getResuilt() == 1 && thread2.getResuilt() == 2)
+    CU_PASS(id1 == 1)
+    else
 		CU_FAIL(id1! = 1);
 }
 
 
 class TestThread1 : public RThread<std::thread> {
 public:
-	TestThread1(const std::string& id,  volatile bool*flg)
-   :RThread<std::thread>(id), flag(flg){}
+  TestThread1(const std::string& id,  volatile bool*flg)
+    :RThread<std::thread>(id), flag(flg){}
 protected:
-	void run(){
-		sleep(3);
-		*flag = true;
+  void run(){
+    sleep(3);
+    *flag = true;
   }
-	volatile bool * flag;
+  volatile bool * flag;
 };
 void local(volatile bool *b){
-	TestThread1 thread1(std::string("111122"),b);
-	thread1.start();
+  TestThread1 thread1(std::string("111122"),b);
+  thread1.start();
 }
 void test_local_thread_variable(){
-	volatile bool * b = new bool;
-	*b = false;
-	local(b);
-	if(*b)CU_PASS(*b) else CU_FAIL(*b);
+  volatile bool * b = new bool;
+  *b = false;
+  local(b);
+  if(*b)CU_PASS(*b) else CU_FAIL(*b);
 }
 
-class TestThreadevent : public RThread<std::thread> {
+class TestThreadevent : public RThread<std::thread> 
+{
 public:
-	TestThreadevent(const std::string& id,  volatile bool*flg, REvent * ev)
-   :RThread<std::thread>(id), flag(flg), event(ev){}
+  TestThreadevent
+    (const std::string& id, std::atomic<bool>* flg, REvent * ev)
+    :RThread<std::thread>(id), flag(flg), event(ev){}
+
 protected:
-	void run(){
-		sleep(3);
-		*flag = true;
-		event->set();
+  void run()
+  {
+    sleep(3);
+    *flag = true;
+    event->set();
   }
-	volatile bool * flag;
-	REvent *event;
+
+  std::atomic<bool>* flag;
+  REvent *event;
 };
-void test_event(){
-	volatile bool * b = new bool;
-	*b = false;
-	REvent * event = new REvent(true, false);
-	TestThreadevent thread1(std::string("11622"),b, event);
-	thread1.start();
-	event->wait();
-	if(*b)CU_PASS(*b) else CU_FAIL(*b);
+
+void test_event()
+{
+  std::atomic<bool> *b = new std::atomic<bool>;
+  *b = false;
+  REvent * event = new REvent(true, false);
+  TestThreadevent thread1(std::string("11622"), b, event);
+  thread1.start();
+  event->wait();
+  if(*b) CU_PASS(*b) else CU_FAIL(*b);
 }
