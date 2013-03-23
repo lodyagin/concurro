@@ -1,11 +1,13 @@
-#pragma once
+#ifndef CONCURRO_RSINGLESOCKET_H_
+#define CONCURRO_RSINGLESOCKET_H_
 
 #include "RSocket.h"
 #ifdef _WIN32
 #  include <winsock2.h>
 #else
 #  define SOCKET int
-#  define NO_SOCKET_EVENTS //TODO implement it
+#  define NO_SOCKET_EVENTS
+//#  include "REvent.h"
 #endif
 #include "StateMap.h"
 
@@ -24,9 +26,13 @@ public:
   }
 
 #ifndef NO_SOCKET_EVENTS
+#ifdef _WIN32
   WSAEVENT get_event_object ();
 
   DWORD get_events (bool reset_event_object = false);
+#else
+  REvent* get_event_object();
+#endif
 #endif
 
   bool wait_fd_write () const 
@@ -45,7 +51,11 @@ protected:
   SOCKET socket;
   
 #ifndef NO_SOCKET_EVENTS
+#ifdef _WIN32
   WSAEVENT socketEvent;
+#else
+  REvent socketEvent;
+#endif
 #endif
   // FD_WRITE is generated in 2 cases:
   // 1) after connect
@@ -57,3 +67,5 @@ protected:
   void set_blocking (bool blocking);
 
 };
+
+#endif
