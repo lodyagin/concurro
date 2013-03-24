@@ -37,7 +37,6 @@ RThreadBase::RThreadBase
 )
   : 
     universal_object_id (id),
-	 num_id (fromString<size_t>(id)),
     isTerminatedEvent (false),
     stopEvent (true, false),
     waitCnt (0), 
@@ -46,14 +45,6 @@ RThreadBase::RThreadBase
 	 externalTerminated (extTerminated),
 	 cs(SFORMAT("RThreadBase with id=["<<id<<"]"))
 {
-  if (num_id == 0) {
-	 THROW_PROGRAM_ERROR;
-  }
-  else if (num_id == 1) {
-    bool main_was_created = mainThreadCreated.exchange (true);
-    if (main_was_created)
-      throw SException (_T"Only one thread with id = 1 can exist");
-  }
   LOG_INFO (log, "New " << *this);
 }
 
@@ -61,7 +52,6 @@ RThreadBase::RThreadBase
   (const ObjectCreationInfo& oi, const Par& p)
 : 
     universal_object_id (oi.objectId),
-	 num_id (fromString<size_t>(oi.objectId)),
     isTerminatedEvent (false),
     stopEvent (true, false),
     waitCnt (0), 
@@ -70,14 +60,6 @@ RThreadBase::RThreadBase
 	 externalTerminated (p.extTerminated),
 	 cs(SFORMAT("RThreadBase with id=["<<oi.objectId<<"]"))
 {
-  if (num_id == 0) {
-	 THROW_PROGRAM_ERROR;
-  }
-  else if (num_id == 1) {
-    bool main_was_created = mainThreadCreated.exchange (true);
-    if (main_was_created)
-      throw SException (_T"Only one thread with id = 1 can exist");
-  }
   LOG_INFO (log, "New " << *this);
 }
 
@@ -166,9 +148,9 @@ unsigned int __stdcall RThread::_helper( void * p )
 void RThreadBase::outString (std::ostream& out) const
 {
   RLOCK(cs);
-  out << "RThread(id = "  
-      << id ()
-      << ", this = " 
+  out << "RThread(id = ["  
+      << universal_object_id
+      << "], this = " 
       << std::hex << (void *) this << std::dec
       << ", currentState = " 
       << currentState.name ()
@@ -176,7 +158,6 @@ void RThreadBase::outString (std::ostream& out) const
 }
 
 std::atomic<int> RThreadBase::counter (0);
-std::atomic<bool> RThreadBase::mainThreadCreated (false);
  
 
 // For proper destroying in concurrent environment

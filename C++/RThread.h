@@ -52,19 +52,14 @@ public:
   /// derived RThread template.
   void _run ();
 
-  /// It is mandatory for any repository member. 
-  // Is always > 0. As a special
-  /// meaning the thread with 1 id is a main thread
   const std::string universal_object_id;
-  const size_t num_id;
+  //const size_t num_id;
 
   RThreadBase 
 	 (const std::string& id,
-	  ///< it comes from Repository::create_object. id == 1
-	  /// for the main thread
 	  REvent* extTerminated = 0
-	  ///< If not null the thread will set this event at the exit of
-     /// the run() method
+	  //!< If not null the thread will set this event at the exit of
+     //! the run() method
 	  );
 
   virtual ~RThreadBase ();
@@ -74,7 +69,7 @@ public:
 	 return universal_object_id;
   }
 
-  size_t id () const { return num_id; }
+  //size_t id () const { return num_id; }
 
   /* 
   It is a group of functions 
@@ -147,12 +142,7 @@ protected:
   /// Somebody has requested a termination.
   std::atomic<bool> exitRequested; 
 
-  /*StateMap* get_state_map (ThreadState&) const
-	 { return ThreadState::stateMap; }*/
-
 private:
-  //int _id;
-  static std::atomic<bool> mainThreadCreated;
   static std::atomic<int> counter;
 
   //thread terminate its processing
@@ -173,47 +163,7 @@ private:
  * Any kind thread-wrapper object. Thread is the real thread
  * class. Each RThread object must be member of a ThreadRepository.
  */
-template<class Thread>
-class RThread
-  : public RThreadBase,
-    protected Thread
-{
-#if 0
-	public:
-
-  /// Create a new thread. main == true will crate the main
-  /// thread. One and only one main thread can be created.
-//  static RThread* create (bool main = false) {
-//    return new RThread (main);
-//  }
-
-  /// Return the pointer to the RThread object
-  /// for the current thread.
-  // TODO UT on thread not created by RThread.
-  static RThread<Thread>& current();
-
-  // Overrides
-  void outString (std::ostream& out) const;
-
-protected:
-  
-  /// Create a new thread. main == true will crate the main
-  /// thread. One and only one main thread can be created.
-  // !! set _current if it is needed
-  explicit RThread (
-	 const std::string& id,
-	 REvent* extTerminated = 0) 
-	 : RThreadBase (id, extTerminated) {}
-
-  /* Access inside the thread */
-  // Override it for a real thread job
-  // but leave protected. It should not be called
-  // directly!
-  virtual void run() {}
-  //!! release _current if it is needed
-  virtual ~RThread();
-#endif
-};
+template<class Thread> class RThread {};
 
 template<>
 class RThread<std::thread> : public RThreadBase
@@ -241,7 +191,13 @@ public:
 
   RThread(const std::string& id, REvent* extTerminated = 0)
 	: RThreadBase(id, extTerminated) {}
-  ~RThread() { wait(); delete th; }
+
+  ~RThread() 
+  { 
+    wait(); 
+    th->join(); 
+    delete th; 
+  }
 
 protected:
   /// It is for creation from ThreadRepository
