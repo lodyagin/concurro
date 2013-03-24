@@ -169,8 +169,15 @@ void test_event_2threads()
   struct W: public RT { W() : RT("T2") {} void run() { e.wait(); } } w1;
   W w2;
   
-  //s1.start(); // <- uncomment it to get an error
   w1.start();
   w2.start();
+  usleep(100000);
+  CU_ASSERT_TRUE_FATAL(w1.is_running());
+  CU_ASSERT_TRUE_FATAL(w2.is_running());
+  CU_ASSERT_FALSE_FATAL(s1.is_running());
   s1.start();
+  usleep(100000);
+  CU_ASSERT_FALSE_FATAL(w1.is_running());
+  CU_ASSERT_FALSE_FATAL(w2.is_running());
+  CU_ASSERT_FALSE_FATAL(s1.is_running());
 }
