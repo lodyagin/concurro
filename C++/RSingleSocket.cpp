@@ -14,9 +14,9 @@
 RSingleSocket::SocketEventRepository 
 RSingleSocket::eventRepo("SocketEventRepository", 50);
 
-RSingleSocket::RSingleSocket () 
+RSingleSocket::RSingleSocket (bool _withEvent) 
   : socket (INVALID_SOCKET), 
-	 eventUsed (false), 
+	 eventUsed (_withEvent), 
 	 waitFdWrite (false),
 	 socketCreated(true, false)
 {
@@ -29,6 +29,7 @@ RSingleSocket::RSingleSocket (SOCKET s, bool _withEvent)
 	 waitFdWrite(false),
 	 socketCreated(true, true)
 {
+  SCHECK(s != INVALID_SOCKET);
   init (); // TODO check this condition
 }
 

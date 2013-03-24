@@ -78,7 +78,7 @@ public:
   void set_blocking (bool blocking);
 
 protected:
-  RSingleSocket ();
+  RSingleSocket (bool _withEvent = false);
 
   // Take existing SOCKET object
   RSingleSocket (SOCKET s, bool _withEvent); 
