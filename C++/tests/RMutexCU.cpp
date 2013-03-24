@@ -16,15 +16,21 @@ void test_same_thread_overrelease();
 void test_2_threads_try_acquire();
 void test_local_thread_variable();
 void test_event();
+void test_event_2threads();
+
 CU_TestInfo RMutexTests[] = {
   {"thread wait while event not set",
    test_event},
+  {"2 threads wait while event not set",
+   test_event_2threads},
   {"RMutex can be acquired by the same thread several times",
    test_same_thread_acquire },
   {"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
    test_2_threads_try_acquire },
+#if 0
   {"we can't leave from local region while thread is run",
    test_local_thread_variable },
+#endif
   {"RMutex more releases than acquire in the same thread",
    test_same_thread_overrelease },
   CU_TEST_INFO_NULL
@@ -133,7 +139,7 @@ public:
 protected:
   void run()
   {
-    sleep(3);
+    //sleep(3);
     *flag = true;
     event->set();
   }
@@ -151,4 +157,20 @@ void test_event()
   thread1.start();
   event->wait();
   if(*b) CU_PASS(*b) else CU_FAIL(*b);
+}
+
+typedef RThread<std::thread> RT;
+
+void test_event_2threads()
+{
+  static REvent e(true, false);
+
+  struct S: public RT { S() : RT("T1") {} void run() { e.set(); } } s1;
+  struct W: public RT { W() : RT("T2") {} void run() { e.wait(); } } w1;
+  W w2;
+  
+  //s1.start(); // <- uncomment it to get an error
+  w1.start();
+  w2.start();
+  s1.start();
 }
