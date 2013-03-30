@@ -11,7 +11,7 @@ set (concurrent_SOURCES
   IPv6SocketAddress.cpp
   Logging.cpp
 #  NamedPipe.cpp
-  AbstractConnection.cpp
+#  AbstractConnection.cpp
 #  SCheck.cpp
   RClientSocketAddress.cpp
   SCommon.cpp
