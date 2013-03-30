@@ -29,8 +29,14 @@ RState<Axis>::RState (const StateMapPar<Axis>& par,
 template<class Axis>
 RState<Axis>::RState(const UniversalState& us)
   : UniversalState(us)
-{
-}
+{}
+
+template<class Axis>
+RState<Axis>
+//
+::RState(const ObjectWithStatesInterface<Axis>& obj)
+  : UniversalState(obj.current_state())
+{}
 
 
 template<class Axis>

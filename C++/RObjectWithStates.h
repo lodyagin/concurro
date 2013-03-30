@@ -43,6 +43,11 @@ protected:
 
   virtual void set_state_internal (const State& state);
 
+/*  const UniversalState& current_state() const
+  {
+	 return currentState;
+  }
+*/
   UniversalState currentState;
 };
 
@@ -55,13 +60,18 @@ class RObjectWithEvents
 {
   friend class REvent<Axis>;
 public:
+  typedef RObjectWithStates<Axis> Parent;
+  typedef typename Parent::State State;
+
   RObjectWithEvents
 	 (const typename RObjectWithStates<Axis>::State& 
 	    initial_state)
-	 : RObjectWithStates<Axis>(initial_state)
+	 : Parent(initial_state)
   { }
 
 protected:
+  void set_state_internal (const State& state);
+
   //! Query an event object by transition id. Also create
   //! one if it doesn't exists.
   Event* get_event(TransitionId);

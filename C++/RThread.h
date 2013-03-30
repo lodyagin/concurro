@@ -101,11 +101,11 @@ public:
 
   void state (ThreadState& state) const /* overrides */;
 
+  DEFAULT_LOGGER(RThreadBase)
+
 protected:
 
   RThreadBase(const ObjectCreationInfo&, const Par&);
-
-  typedef Logger<LOG::Thread> log;
 
   /// Mutex for concurrent access to this object.
   RMutex cs;

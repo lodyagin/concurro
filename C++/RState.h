@@ -37,6 +37,8 @@ public:
 
   RState(const UniversalState&);
 
+  RState(const ObjectWithStatesInterface<Axis>&);
+
   // ParentState& operator= (const UniversalState& us)
   void set_by_universal (const UniversalState& us)
   {
