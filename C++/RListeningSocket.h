@@ -13,21 +13,27 @@
 #include <algorithm>
 
 
-template<class ConnectionFactory>
-class RListeningSocket : public RSocketGroup
+class RListeningSocket : public RServerSideSocket
 {
 public:
-  // Create and bind the server socket
-  RListeningSocket 
-    (const RServerSocketAddress& addr,
-     unsigned int backlog);
+
+  struct Par : public RServerSideSocket::Par
+  {
+	 //! To create connected sockets here.
+	 SocketRepository* repo;
+  };
 
   ~RListeningSocket ();
 
   // Listen and generate new connections
-  void listen (ConnectionFactory& cf);
+  //void listen (ConnectionFactory& cf);
 
 protected:
+
+  // Create and bind the server socket
+  RListeningSocket 
+    (const RServerSocketAddress& addr,
+     unsigned int backlog);
 
   // Called by constructor
   void bind (const RServerSocketAddress& addr,

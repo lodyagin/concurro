@@ -1,38 +1,82 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 #include "StdAfx.h"
 #include "RSocket.h"
 
-// RSocket states  ========================================
+DEFINE_STATES(InSocket, State)
+({
+  {   "new_data",  // new data or an error
+		"empty",
+		"closed"      },
+  { {"new_data", "empty"},
+	 {"empty", "new_data"},
+	 {"new_data", "closed"},
+	 {"empty", "closed"} }
+});
 
-const State2Idx RThreadBase::allStates[] =
+DEFINE_STATE_CONST(InSocket, State, new_data);
+DEFINE_STATE_CONST(InSocket, State, empty);
+DEFINE_STATE_CONST(InSocket, State, closed);
+
+
+DEFINE_STATES(OutSocket, State)
+({
+  {   "wait_you",  // write buf watermark or an error
+		"busy",
+		"closed"      },
+  { {"wait_you", "busy"},
+	 {"busy", "wait_you"},
+	 {"wait_you", "closed"},
+	 {"busy", "closed"} }
+});
+
+DEFINE_STATE_CONST(OutSocket, State, new_data);
+DEFINE_STATE_CONST(OutSocket, State, busy);
+DEFINE_STATE_CONST(OutSocket, State, closed);
+
+InSocket::InSocket
+(const ObjectCreationInfo& oi, const Par& p)
 {
-  {1, "initialized"},  // after creation
-  {2, "listen"},       // passive open
-  {3, "terminated"},    
-  {4, "destroyed"},    // to check a state in the destructor
-  {0, 0}
-};
+  socklen_t m = sizeof(socket_rd_buf_size);
+  getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
+				 &socket_rd_buf_size, &m);
+  rd_buf_size++; // to allow catch an overflow error
+  LOG_DEBUG(log, "socket_rd_buf_size = " << rd_buf_size);
+}
 
-const StateTransition RThreadBase::allTrans[] =
+void InSocket::Thread::run()
 {
-  {"ready", "working"},      // start ()
+  fd_set rfds;
+  FD_ZERO(&rfds);
 
-  // a) natural termination
-  // b) termination by request
-  {"working", "terminated"},      
+  const int fd = socket->socket;
+  SCHECK(fd >= 0);
 
-  {"terminated", "destroyed"},
+  for(;;) {
+	 if (socket->state_is(socket->closedState))
+		return;
 
-  {"ready", "destroyed"},
-  // can't be destroyed in other states
+	 InSocket::State::check_moving_to
+		(*socket, new_dataState);
 
-  {0, 0}
+	 // Wait for new data
+	 FD_SET(fr, &rfds);
+	 rSocketCheck(
+		::select(fd+1, &rfds, NULL, NULL, NULL) > 0);
 
-};
+	 InSocket::State::move_to(*socket, new_dataState);
 
-RThreadBase::ThreadState RThreadBase::readyState("ready");
-RThreadBase::ThreadState RThreadBase::workingState("working");
-RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
-RThreadBase::ThreadState RThreadBase::destroyedState("destroyed");
+	 ssize_t red;
+	 rSocketCheck(
+		(red = ::read(fd, msg.data(), msg.reserved())));
+	 msg.size(red);
 
+	 SCHECK(red < socket_rd_buf_size); 
+    // to make sure we always read all (rd_buf_size =
+    // internal socket rcv buffer + 1)
+
+	 msg.discharged.wait();
+  }
+}
 
 

@@ -11,6 +11,7 @@
 #define __stdcall
 #define INVALID_SOCKET (-1)
 #define BOOL bool
+#define SOCKET int
 #endif
 
 #include <sstream>

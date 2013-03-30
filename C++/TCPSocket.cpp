@@ -1,9 +1,9 @@
 #include "StdAfx.h"
-#include "RSocketTCP.h"
+#include "TCPSocket.h"
 
 // RSocket states  ========================================
 
-const StateMapPar RSocketTCP::new_states
+DEFINE_STATES(TCPSocket, TCPStateAxis, State)
 (  {"closed",  
 	 "listen",       // passive open
 	 "syn-sent",
@@ -27,36 +27,36 @@ const StateMapPar RSocketTCP::new_states
   }
   );
 
-const RSocketTCP::State RSocketTCP::closedState("closed");
-const RSocketTCP::State RSocketTCP::listenState("listen");
-const RSocketTCP::State RSocketTCP::syn_sentState("syn-sent");
-const RSocketTCP::State RSocketTCP::establishedState("established");
-const RSocketTCP::State RSocketTCP::closingState("closing");
-const RSocketTCP::State RSocketTCP::abortedState("aborted");
-const RSocketTCP::State RSocketTCP::destroyedState("destroyed");
+DEFINE_STATE_CONST(TCPSocket, State, closed);
+DEFINE_STATE_CONST(TCPSocket, State, listen);
+DEFINE_STATE_CONST(TCPSocket, State, syn_sent);
+DEFINE_STATE_CONST(TCPSocket, State, established);
+DEFINE_STATE_CONST(TCPSocket, State, closing);
+DEFINE_STATE_CONST(TCPSocket, State, aborted);
+DEFINE_STATE_CONST(TCPSocket, State, destroyed);
 
-RSocketTCP::RSocketTCP(int close_wait_seconds)
-  : RObjectWithStates<ConnectionStateAxis> (closedState),
-	 RSingleSocket(true),
+TCPSocket::TCPSocket(int close_wait_seconds)
+  : RObjectWithStates<TCPStateAxis> (closedState),
     tcp_protoent(NULL), 
     close_wait_secs(close_wait_seconds)
 {
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) != NULL);
   
-  // RSocketTCP semantic doesn't allow reset connection, 
+  // TCPSocket semantic doesn't allow reset connection, 
   // please use another class for it
   SCHECK(close_wait_secs > 0);
 }
 
-RSocketTCP::~RSocketTCP()
+TCPSocket::~TCPSocket()
 {
   close();
   State::move_to(*this, destroyedState);
 }
 
-void RSocketTCP::close()
+void TCPSocket::close()
 {
-  const State dest = (State::state_is(*this, syn_sentState))
+  const State dest = 
+	 (State::state_is(*this, syn_sentState))
 	 ? closedState : closingState;
   State::check_moving_to(*this, dest);
 
@@ -72,7 +72,7 @@ void RSocketTCP::close()
     != -1);
   set_blocking(saved_state);
   const int close_ret = ::close(socket);
-  socketCreated.reset();
+  //socketCreated.reset();
   State::move_to(*this, dest);
   if (close_ret == EWOULDBLOCK)
     ; // not all data was sent
@@ -86,7 +86,8 @@ void RSocketTCP::close()
     State::move_to(*this, closedState);
 }
 
-void RSocketTCP::connect_first (const RClientSocketAddress& addr)
+#if 0
+void TCPSocket::connect_first (const RClientSocketAddress& addr)
 {
   State::check_moving_to(*this, syn_sentState);
 
@@ -94,13 +95,16 @@ void RSocketTCP::connect_first (const RClientSocketAddress& addr)
   {
 	 if (socket != INVALID_SOCKET)
 		rSocketCheck(::close(socket) == 0);
-
+#if 1
+	 socket
+#else
 	 rSocketCheck(
 		(socket = ::socket
        (cit->ai_family, cit->ai_socktype, cit->ai_protocol)) 
 		!= INVALID_SOCKET
 		);
-	 socketCreated.set();
+#endif
+	 //socketCreated.set();
 
     LOG_DEBUG(log, "Connecting to " << *cit);
 	 rSocketCheck(::connect(socket, cit->ai_addr, cit->ai_addrlen) == 0);
@@ -115,6 +119,6 @@ void RSocketTCP::connect_first (const RClientSocketAddress& addr)
 	 State::move_to(*this, syn_sentState);
   }
 }
-
+#endif
 
 

@@ -6,7 +6,7 @@
 
 // RThread states  ========================================
 
-const StateMapPar RThreadBase::new_states
+DEFINE_STATES(RThreadBase, ThreadStateAxis, ThreadState)
 ({  "ready",         // after creation
 	 "working",       // it works
 	 "terminated",    
@@ -26,14 +26,16 @@ const StateMapPar RThreadBase::new_states
   }
   );
 
-const RThreadBase::ThreadState RThreadBase::readyState("ready");
-const RThreadBase::ThreadState RThreadBase::workingState("working");
-const RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
-const RThreadBase::ThreadState RThreadBase::destroyedState("destroyed");
+DEFINE_STATE_CONST(RThreadBase, ThreadState, ready);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, working);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, 
+						 terminated);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, 
+						 destroyed);
 
 RThreadBase::RThreadBase 
 (const std::string& id, 
- REvent* extTerminated
+ Event* extTerminated
 )
   : 
     universal_object_id (id),

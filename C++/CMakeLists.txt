@@ -6,7 +6,6 @@ add_subdirectory(tests)
 
 project (concurrent)
 set (concurrent_SOURCES 
-  ClientSocketConnector.cpp
   HasStringView.cpp
   IPv4SocketAddress.cpp
   IPv6SocketAddress.cpp
@@ -17,21 +16,20 @@ set (concurrent_SOURCES
   RClientSocketAddress.cpp
   SCommon.cpp
 #  SComplPort.cpp
-  RConnectedSocket.cpp
+#  RConnectedSocket.cpp
   REvent.cpp
-  RInOutSocket.cpp
+#  RInOutSocket.cpp
   RMultiprotoSocketAddress.cpp
   RMutex.cpp
 #  RPath.cpp
 #  RServerSocketAddress.cpp
-  RSingleSocket.cpp
+#  RSingleSocket.cpp
   RSocketAddress.cpp
 #  RSocket.cpp
 #  RSocketGroup.cpp
-  RSocketTCP.cpp
   RThread.cpp
   SException.cpp
-  SocketAddressFactory.cpp
+##  TCPSocket.cpp
   SShutdown.cpp
   StateMap.cpp
   StdAfx.cpp

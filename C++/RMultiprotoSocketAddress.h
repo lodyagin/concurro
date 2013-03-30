@@ -1,7 +1,6 @@
 #pragma once
 #include "RSocketAddress.h"
 #include "RSingleprotoSocketAddress.h"
-#include "SocketAddressFactory.h"
 #include "SNotCopyable.h"
 #include <iostream>
 #ifdef _WIN32
@@ -14,11 +13,11 @@
 std::ostream& operator << 
   (std::ostream& out, const addrinfo& ai);
 
-/*
-  The STL style wrapper over addrinfo.
-  It is immutable.
-  After creation it takes ownership over addrinfo.
-  */
+/**
+ * STL style wrapper over addrinfo.
+ * It is immutable.
+ * After creation it takes ownership over addrinfo.
+ */
 class AddrinfoWrapper : public SNotCopyable
 {
 public:
@@ -115,7 +114,7 @@ protected:
   Can be iterated as STL-like container 
   of RSingleprotoSocketAddress.
   */
-#define VIEW_AS_ADDRINFO
+//#define VIEW_AS_ADDRINFO
 
 class RMultiprotoSocketAddress 
   : public RSocketAddress,
@@ -124,7 +123,7 @@ class RMultiprotoSocketAddress
 protected:
 
 #ifndef VIEW_AS_ADDRINFO
-  typedef std::vector<RSingleprotoSocketAddress*> AddrList;
+  typedef std::vector<RSingleprotoSocketAddress> AddrList;
 #else
   typedef AddrinfoWrapper AddrList;
 #endif
@@ -182,7 +181,9 @@ public:
 
 protected:
   RMultiprotoSocketAddress ()
-    : aiw (0)
+#ifdef VIEW_AS_ADDRINFO
+  : aiw (0)
+#endif
   {}
 
   void init
@@ -191,9 +192,10 @@ protected:
      const addrinfo& hints
      );
 
-  AddrinfoWrapper* aiw;
-  SocketAddressFactory saf;
+//  SocketAddressFactory saf;
 #ifndef VIEW_AS_ADDRINFO
   AddrList al;
+#else
+  AddrinfoWrapper* aiw;
 #endif
 };

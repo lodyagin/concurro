@@ -1,11 +1,21 @@
-#pragma once
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_RSOCKETADDRESS_H_
+#define CONCURRO_RSOCKETADDRESS_H_
+
 #include "HasStringView.h"
 #include <string>
 
 class RSocketAddress : public HasStringView
 {
 public:
-  virtual ~RSocketAddress (void);
+  virtual ~RSocketAddress (void) = 0;
 
   // sockaddr pretty print
   static void outString 
@@ -25,6 +35,7 @@ public:
      const struct in6_addr* ia
      );
 
+protected:
   // Copy socket address
   // The size of information copied is defined by 
   // the 'in' structure type.
@@ -45,4 +56,4 @@ public:
     (const struct sockaddr* sa);
 };
 
-
+#endif

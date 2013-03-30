@@ -9,7 +9,7 @@ using namespace neosmart;
 #endif
 // REvtBase  =========================================================
 
-REvtBase::REvtBase( HANDLE _h ) :
+EvtBase::EvtBase( HANDLE _h ) :
   h(_h)
 {
 #ifdef _WIN32
@@ -22,7 +22,7 @@ REvtBase::REvtBase( HANDLE _h ) :
 #endif
 }
 
-REvtBase::~REvtBase()
+EvtBase::~EvtBase()
 {
 #ifdef _WIN32
   LOG4STRM_DEBUG 
@@ -37,7 +37,7 @@ REvtBase::~REvtBase()
   h = 0; 
 }
 
-void REvtBase::wait()
+void EvtBase::wait()
 {
 #ifdef _WIN32
   LOG4STRM_DEBUG 
@@ -61,7 +61,7 @@ void REvtBase::wait()
 #endif
 }
 
-bool REvtBase::wait( int time )
+bool EvtBase::wait( int time )
 {
 #ifdef _WIN32
   LOG4STRM_DEBUG 
@@ -90,17 +90,17 @@ bool REvtBase::wait( int time )
 }
 
 
-// REvent  ===========================================================
-REvent::REvent( bool manual, bool init ) :
+// Event  ===========================================================
+Event::Event( bool manual, bool init ) :
 #ifdef _WIN32
   Parent(CreateEvent(0, manual, init, 0))
 #else
-  REvtBase(CreateEvent(manual, init))
+  EvtBase(CreateEvent(manual, init))
 #endif
 {
 }
 
-void REvent::set()
+void Event::set()
 {
 #ifdef _WIN32
   LOG4STRM_DEBUG 
@@ -117,7 +117,7 @@ void REvent::set()
 #endif
 }
 
-void REvent::reset()
+void Event::reset()
 {
 #ifdef _WIN32
   LOG4STRM_DEBUG 

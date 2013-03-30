@@ -8,10 +8,6 @@
 #  include <arpa/inet.h>
 #endif
 
-RSocketAddress::~RSocketAddress (void)
-{
-}
-
 void RSocketAddress::outString 
   (std::ostream& out, const struct sockaddr* sa)
 {

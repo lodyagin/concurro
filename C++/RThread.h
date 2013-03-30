@@ -4,14 +4,14 @@
  * An unified wrapper over different type of threads (i.e., QThread, posix thread etc.).
  */
 
-#ifndef RTHREADWRAPPER_H_
-#define RTHREADWRAPPER_H_
+#ifndef CONCURRO_RTHREAD_H_
+#define CONCURRO_RTHREAD_H_
 
 #include "SNotCopyable.h"
-#include "StateMap.h"
 #include "RThread.h"
 #include "RMutex.h"
 #include "REvent.h"
+#include "RState.h"
 #include "SCommon.h"
 #include "RObjectWithStates.h"
 #include "Repository.h"
@@ -37,7 +37,7 @@ public:
 
   struct Par
   {
-	 REvent* extTerminated;
+	 Event* extTerminated;
 
     Par() : extTerminated(0) {}
 	 virtual ~Par() {}
@@ -57,7 +57,7 @@ public:
 
   RThreadBase 
 	 (const std::string& id,
-	  REvent* extTerminated = 0
+	  Event* extTerminated = 0
 	  //!< If not null the thread will set this event at the exit of
      //! the run() method
 	  );
@@ -88,20 +88,16 @@ public:
   // Overrides
   void outString (std::ostream& out) const;
 
-  REvent& get_stop_event ()
+  Event& get_stop_event ()
   {
     return stopEvent;
   }
 
-  const static StateMapPar new_states;
-  typedef RState<RThreadBase, ThreadStateAxis, new_states> ThreadState;
-  friend class RState<RThreadBase, ThreadStateAxis, new_states>;
-
-  // States
-  const static ThreadState readyState;
-  const static ThreadState workingState;
-  const static ThreadState terminatedState;
-  const static ThreadState destroyedState;
+  DECLARE_STATES(ThreadStateAxis, ThreadState);
+  DECLARE_STATE_CONST(ThreadState, ready);
+  DECLARE_STATE_CONST(ThreadState, working);
+  DECLARE_STATE_CONST(ThreadState, terminated);
+  DECLARE_STATE_CONST(ThreadState, destroyed);
 
   void state (ThreadState& state) const /* overrides */;
 
@@ -133,7 +129,7 @@ protected:
   virtual void start_impl () = 0;
 
 
-  REvent stopEvent; //stop is requested
+  Event stopEvent; //stop is requested
 
   /// A number of threads waiting termination
   /// of this thread.
@@ -146,8 +142,8 @@ private:
   static std::atomic<int> counter;
 
   //thread terminate its processing
-  REvent isTerminatedEvent; 
-  REvent* externalTerminated;
+  Event isTerminatedEvent; 
+  Event* externalTerminated;
 
   // called from Windows
   // (Access inside the thread)
@@ -189,7 +185,7 @@ public:
 #endif
   };
 
-  RThread(const std::string& id, REvent* extTerminated = 0)
+  RThread(const std::string& id, Event* extTerminated = 0)
 	: RThreadBase(id, extTerminated) {}
 
   ~RThread() 
@@ -198,6 +194,8 @@ public:
     th->join(); 
     delete th; 
   }
+
+  DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
   /// It is for creation from ThreadRepository

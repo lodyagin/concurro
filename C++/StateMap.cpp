@@ -1,13 +1,41 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 #include "StdAfx.h"
 #include "StateMap.h"
 #include <assert.h>
+#include <cstdatomic>
+
+// a global
+//static std::atomic<TransitionId> max_transition_id = 0;
+
+StateMap* StateMapParBase::create_derivation
+  (const ObjectCreationInfo& oi) const
+{
+  return new StateMap(oi, *this);
+}
+
+StateMap* EmptyStateMapPar::create_derivation
+  (const ObjectCreationInfo& oi) const
+{
+  return new EmptyStateMap();
+}
 
 StateMap* StateAxis::get_state_map()
 {
   return &EmptyStateMap::instance();
 }
 
-std::ostream& operator<< (std::ostream& out, const StateMapPar& par)
+/*
+std::ostream&
+operator<< (std::ostream& out, const StateMapId& id)
+{
+  out << '(' << id.first << ", " << id.second << ')';
+  return out;
+}
+*/
+
+std::ostream& operator<< 
+(std::ostream& out, const StateMapParBase& par)
 {
   bool first_state = true;
   for (auto it = par.states.begin(); it != par.states.end(); it++)
@@ -26,17 +54,28 @@ std::ostream& operator<< (std::ostream& out, const StateMapPar& par)
 }
 
 StateMap::StateMap()
-  : n_states(0)
+  : n_states(0),
+	 universal_object_id("<empty map>")
 {
 }
 
-StateMap::StateMap(const StateMap* parent, const StateMapPar& new_states)
-  : n_states(new_states.states.size() + parent->get_n_states()),
+StateMap::StateMap(const ObjectCreationInfo& oi,
+						 const StateMapParBase& par)
+  : n_states(par.states.size()
+#ifdef PARENT_MAP
+				 + parent->get_n_states()
+#endif
+				 ),
+	 universal_object_id(oi.objectId),
     idx2name(n_states+1),
 	 name2idx(n_states * 2 + 2),
-	 transitions(boost::extents[Transitions::extent_range(1,n_states+1)]
-					 [Transitions::extent_range(1,n_states+1)])
+	 transitions(boost::extents
+					 [Transitions::extent_range(1,n_states+1)]
+					 [Transitions::extent_range(1,n_states+1)]),
+	 //max_transition_id(0),
+	 repo(dynamic_cast<StateMapRepository*>(oi.repository))
 {
+#ifdef PARENT_MAP
   const StateIdx n_parent_states = parent->get_n_states();
 
   if (parent) {
@@ -45,17 +84,28 @@ StateMap::StateMap(const StateMap* parent, const StateMapPar& new_states)
 				  << new_states);
   }
   else {
+#endif
 	 LOG_DEBUG(log, "Create a new top-level map with states: "
-				  << new_states);
+				  << par);
+#ifdef PARENT_MAP
   }
+#endif
 
   // Merge the maps: copy old states first
   idx2name[0] = NULL;
-  std::copy(parent->idx2name.begin(), parent->idx2name.end(),
+#ifdef PARENT_MAP
+  std::copy(parent->idx2name.begin(), 
+				parent->idx2name.end(),
 				idx2name.begin() + 1);
+#endif
   // append new states
-  std::copy(new_states.states.begin(), new_states.states.end(),
-				idx2name.begin() + 1 + n_parent_states);
+  std::copy(par.states.begin(), 
+				par.states.end(),
+				idx2name.begin() + 1 
+#ifdef PARENT_MAP
+				+ n_parent_states
+#endif
+);
 
   // Fill name2idx and check repetitions
   for (StateIdx k = 0; k < idx2name.size(); k++)
@@ -67,25 +117,36 @@ StateMap::StateMap(const StateMap* parent, const StateMapPar& new_states)
   }
 
   LOG_DEBUG(log, 
-    "There are " << get_n_states() << " states in the map.");
+    "There are " << get_n_states() 
+				<< " states in the map.");
 
   // initialize the transitions array
-  std::fill(transitions.origin(), transitions.origin() + transitions.size(), false);
-  if (!parent-is_empty_map()) {
+  std::fill(transitions.origin(), 
+				transitions.origin() + transitions.size(), 
+				0);
+#ifdef PARENT_MAP
+  if (!parent->is_empty_map()) {
 	 // fill parent (nested) transitions 
 	 typedef Transitions::index_range range;
 	 Transitions::array_view<2>::type parent_transitions =
 		transitions[boost::indices[range(1,n_parent_states)]
 						[range(1,n_parent_states)]];
 	 parent_transitions = parent->transitions;
+	 max_transition_id = parent->max_transition_id();
   }
+#endif
   // add new transitions
   // TODO add range checking and exception
   // (now it asserts)
-  for (auto tit = new_states.transitions.begin();
-		 tit != new_states.transitions.end(); tit++)
+  for (auto tit = par.transitions.begin();
+		 tit != par.transitions.end(); tit++)
   {
-	 transitions[name2idx[tit->first]][name2idx[tit->second]] = true;
+	 TransitionId& old = transitions
+		[name2idx[tit->first]][name2idx[tit->second]];
+
+	 if (!old)
+		// count only new transitions
+		old = ++(repo->max_trans_id);
   }
 }
 
@@ -141,6 +202,7 @@ void StateMap::add_transitions
 }
 */
 
+#if 1
 UniversalState StateMap::create_state 
   (const char* name) const
 {
@@ -153,6 +215,7 @@ UniversalState StateMap::create_state
   else 
     throw NoStateWithTheName ();
 }
+#endif
 
 unsigned int StateMap::size () const
 {
@@ -163,25 +226,25 @@ inline bool StateMap::there_is_transition
   (const UniversalState& from,
    const UniversalState& to) const
 {
+  return get_transition_id(from, to) != 0;
+}
+
+TransitionId StateMap::get_transition_id 
+  (const char* from, const char* to) const
+{
+  return get_transition_id
+	 (create_state(from), create_state(to));
+}
+
+TransitionId StateMap::get_transition_id 
+  (const UniversalState& from,
+   const UniversalState& to) const
+{
   if (!is_compatible (from) || !is_compatible (to))
     throw IncompatibleMap ();
 
   return transitions[from.state_idx][to.state_idx];
 }
-
-/*
-inline int StateMap::get_transition_id 
-  (const UniversalState& from,
-   const UniversalState& to) const
-{
-  assert (from.state_idx > 0);
-  assert (from.state_idx <= size ());
-  assert (to.state_idx > 0);
-  assert (to.state_idx <= size ());
-
-  return trans2number.at (from.state_idx-1).at (to.state_idx-1);
-}
-*/
 
 void StateMap::check_transition
   (const UniversalState& from,
@@ -215,7 +278,7 @@ bool StateMap::is_compatible
   assert (state.state_idx <= size ());
 
   return state.state_map == this;
-  //for inherited carts some code should be added
+  //FIXME for inherited carts some code should be added
 }
 
 std::string StateMap::get_state_name

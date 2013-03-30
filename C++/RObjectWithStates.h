@@ -1,91 +1,77 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #ifndef CONCURRO_ROBJECTWITHSTATES_H_
 #define CONCURRO_ROBJECTWITHSTATES_H_
 
-/// An interface which should be implemented in each
-/// state-aware class.
-template<class StateAxis>
-class ObjectWithStatesInterface
-{
-public:
-  virtual ~ObjectWithStatesInterface() {}
+#include "Event.h"
+#include "ObjectWithStatesInterface.h"
 
-  /// set state to the current state of the object
-  virtual void state(StateAxis& state) const = 0;
-
-  /// return bool if the object state is state
-  virtual bool state_is(const StateAxis& state) const = 0;
-
-protected:
-
-  /// Set the object state without transition cheking (do
-  /// not use directly).
-  //virtual void set_state_internal 
-  // (const StateAxis& state) = 0;
-};
-
-/// It can be used as a parent of an object which
-/// introduces new state axis.
-template<class StateAxis>
+//! It can be used as a parent of an object which
+//! introduces new state axis.
+template<class Axis>
 class RObjectWithStates 
-  : public ObjectWithStatesInterface<StateAxis>
+  : public ObjectWithStatesInterface<Axis>
 {
 public:
-  RObjectWithStates(const StateAxis& initial_state)
+  typedef typename ObjectWithStatesInterface<Axis>
+	 ::State State;
+
+  RObjectWithStates(const State& initial_state)
 	 : currentState(initial_state) 
   {}
 
   virtual ~RObjectWithStates() {}
 
   /// set state to the current state of the object
-  virtual void state(StateAxis& state) const
+  virtual void state(State& state) const
   {
 	 state.set_by_universal (currentState);
   }
 
-  virtual bool state_is(const StateAxis& state) const
+  virtual bool state_is(const State& state) const
   {
-	 return currentState == state;
+	 return currentState == (UniversalState) state;
   }
 
 protected:
 
-  virtual void set_state_internal (const StateAxis& state)
-  {
-    currentState = state;
-  }
+  virtual void set_state_internal (const State& state);
 
   UniversalState currentState;
 };
 
-#if 0
-/// You can inherit from this class to delegate your
-/// object state to the StateParent class (which should
-/// also be a parent of your class).
-template<class StateAxis, class StateParent>
-class StatesDelegator 
-  : public ObjectWithStatesInterface<StateAxis>,
-    virtual public StateParent
-{
-public:
-  /// set state to the current state of the object
-  virtual void state(StateAxis& state) const
-  {
-	 this->StateParent::state(state);
-  }
+template<class Axis>
+class REvent;
 
-  virtual bool state_is(const StateAxis& state) const
-  {
-	 StateParent::state_is(state);
-  }
+template<class Axis>
+class RObjectWithEvents
+  : public RObjectWithStates<Axis>
+{
+  friend class REvent<Axis>;
+public:
+  RObjectWithEvents
+	 (const typename RObjectWithStates<Axis>::State& 
+	    initial_state)
+	 : RObjectWithStates<Axis>(initial_state)
+  { }
 
 protected:
+  //! Query an event object by transition id. Also create
+  //! one if it doesn't exists.
+  Event* get_event(TransitionId);
 
-  virtual void set_state_internal (const StateAxis& state)
-  {
-	 StateParent::set_state_internal(state);
-  }
+  typedef std::map<TransitionId, Event*> EventMap;
+
+  EventMap events;
 };
-#endif
+
+#include "RObjectWithStates.hpp"
 
 #endif
 

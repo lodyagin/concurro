@@ -13,34 +13,24 @@
 #  include "RThread.h"
 #  include "ThreadRepository.h"
 #  include <cstdatomic>
-
-// it is copied form WinSock2.h
-#  define FD_READ_BIT      0
-#  define FD_READ          (1 << FD_READ_BIT)
-
-#  define FD_WRITE_BIT     1
-#  define FD_WRITE         (1 << FD_WRITE_BIT)
-
-#  define FD_OOB_BIT       2
-#  define FD_OOB           (1 << FD_OOB_BIT)
-
 #endif
 #include "StateMap.h"
 
-/// A single socket (not a group).
-/// \see RSocketGroup
-class RSingleSocket : public RSocket
+/**
+ * A single socket (not a group).
+ * \see RSocketGroup
+ */
+class RSingleSocket : virtual public RSocket
 {
 public:
-  const bool eventUsed;
-
   ~RSingleSocket ();
 
-  /// Return the underlying socket (file) descriptor.
-  SOCKET get_socket () const
+  // Return the underlying socket (file) descriptor.
+  /* disabled due to double-buffering in Linux
+	 SOCKET get_socket () const
   {
     return socket;
-  }
+	 }*/ 
 
 #ifndef NO_SOCKET_EVENTS
 #ifdef _WIN32
@@ -48,19 +38,8 @@ public:
 
   DWORD get_events (bool reset_event_object = false);
 #else
-  //! Return the REvent associated with the socket. It
-  //! will be signalled on new FD_XXX events available
-  //! after the last call to get_events. NB the event
-  //! object allow combine socket events with another type
-  //! of events in WaitForMultipleEvents
-  //! \see get_events.
   REvent* get_event_object();
 
-  //! Get (and clear) the socket events triggered after
-  //! the last call to this function.
-  //! \par reset_event_object Reset the associated REvent.
-  //! \return An or-ed set of FD_XXX constants.
-  //! \see get_event_object()
   int32_t get_events (bool reset_event_object = false)
   { 
 	 if (!eventUsed) THROW_PROGRAM_ERROR; 
@@ -69,6 +48,8 @@ public:
 #endif
 #endif
 
+  //! Return waitFdWrite flag.
+  //! \see waitFdWrite
   bool wait_fd_write () const 
   { return waitFdWrite; }
 
@@ -76,6 +57,11 @@ public:
 
   // Overrides
   void set_blocking (bool blocking);
+
+  virtual int send (void* data, int len, int* error);
+
+  // ensure all of data on socket comes through
+  virtual size_t atomicio_send (void* data, size_t n);
 
 protected:
   RSingleSocket (bool _withEvent = false);
@@ -85,8 +71,6 @@ protected:
 
   void init ();
 
-  SOCKET socket;
-  
 #ifndef NO_SOCKET_EVENTS
 #ifdef _WIN32
   WSAEVENT socketEvent;
@@ -151,11 +135,12 @@ protected:
   REvent socketCreated;
 #endif
 #endif
-  // FD_WRITE is generated in 2 cases:
-  // 1) after connect
-  // 2) last send returns WSAWOULDBLOCK but now we can
-  // send a new data
-  bool waitFdWrite; 
+  //! FD_WRITE is generated in 2 cases:
+  //! 1) after connect
+  //! 2) last send returns WSAWOULDBLOCK but now we can
+  //! send a new data (NB it is set by send and cleared by
+  //! get_events. 
+  std::atomic<bool> waitFdWrite; 
 
   typedef ThreadRepository<
 	 SocketEvent, 
@@ -164,6 +149,12 @@ protected:
 	 > SocketEventRepository;
 
   static SocketEventRepository eventRepo;
+
+private:
+  //! We implement double-buffering on reading to allow
+  //! clear already reported socket events.
+  char* rd_buf;
+  size_t rd_buf_size;
 };
 
 #endif

@@ -1,73 +1,60 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #ifndef CONCURRO_REVENT_H
 #define CONCURRO_REVENT_H
 
-#ifndef _WIN32
-#define WFMO
-#include "pevents.h"
-typedef neosmart::neosmart_event_t HANDLE;
-#endif
+#include "StateMap.h"
+#include "RObjectWithStates.h"
+#include "Event.h"
 
-class REvtBase
+class UniversalEvent
 {
 public:
-  //! Wait for event.
-  virtual void wait();
-  //! Wait for event or time in msecs. 
-  //! \return false on a timeout.
-  virtual bool wait( int time );  
-  virtual ~REvtBase();
-
-  // Direct access not allowed due to combined event logic
-  // possibility (i.e. atomic set the event and additional
-  // info). 
-  //HANDLE evt()  { return h; }
-
+  //const StateMap* state_map;
+  TransitionId    transition_id;
 protected:
-
-  REvtBase( HANDLE );
-
-  HANDLE h;
-
+  UniversalEvent(TransitionId trans_id)
+	 : transition_id(trans_id) {}
 };
 
-
-// windows event wrapper
-class REvent : public REvtBase
+template<
+//class Object, 
+  class Axis
+  >
+class REvent 
+: public Axis, 
+  virtual protected UniversalEvent
+  //public SAutoSingleton<REvent<Object, Axis>>
 {
 public:
-
-  typedef REvtBase Parent;
-
-  explicit REvent
-	 (bool manual, //! manual reset
-	  bool init = false //! initial state
-		);
-  ~REvent(){}
-  virtual void set();
-  virtual void reset();
-
+  //! Create a from->to event for Object in Axis.
+  REvent(const char* from, const char* to);
+  bool wait(RObjectWithEvents<Axis>&, int time 
+				= std::numeric_limits<uint64_t>::max());  
 };
 
-/*
-class SSemaphore : public REvtBase
-{
-public:
+//! Create an event of moving Obj from `before' state to
+//! `after' state.
+const UniversalEvent& operator / 
+  (const UniversalState& before, 
+	const UniversalState& after);
 
-  typedef REvtBase Parent;
+//! Change a state according to an event
+const UniversalState& operator + 
+  (const UniversalState& state, 
+	const UniversalEvent& event);
 
-  explicit SSemaphore( int maxCount, int initCount = 0 );
-
-  virtual void release( int count = 1 );
-
-};
-*/
-
-size_t waitMultiple( HANDLE *, size_t count );
+//size_t waitMultiple( HANDLE *, size_t count );
 
 // include shutdown event also
 //size_t waitMultipleSD( HANDLE *, size_t count );
 
+#include "REvent.hpp"
 
 #endif 

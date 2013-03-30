@@ -1,4 +1,5 @@
 set(TestsSrc
+  REventCU.cpp
   RMutexCU.cpp
   tests.cpp
 )

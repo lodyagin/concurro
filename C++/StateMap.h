@@ -1,3 +1,5 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 #ifndef CONCURRO_STATEMAP_H_
 #define CONCURRO_STATEMAP_H_
 
@@ -6,6 +8,7 @@
 #include "Logging.h"
 #include "SException.h"
 #include "SCheck.h"
+#include "Repository.h"
 #include <assert.h>
 #include <unordered_map>
 #include <vector>
@@ -14,25 +17,17 @@
 
 typedef unsigned int StateIdx;
 
-/*struct State2Idx
-{
-  StateIdx idx;
-  const char* state;
-};
-
-struct StateTransition
-{
-  const char* from;
-  const char* to;
-};*/
+typedef uint16_t TransitionId;
 
 class StateMap;
+class EmptyStateMap;
 class UniversalState;
 
-/// A state space axis abstract base. Real axises will be inherited.
-/// <NB> StateAxises can't be "extended". Like x, y, x in decart
-/// coordinates they are "finite". But on RState inheritance new
-/// states on the same axes can be added.
+//! A state space axis abstract base. Real axises will be
+//! inherited. <NB> StateAxises can't be "extended". Like
+//! x, y, x in decart coordinates they are "finite". But
+//! on RState inheritance new states on the same axes can
+//! be added.
 class StateAxis //: public UniversalState
 {
 public:
@@ -41,14 +36,21 @@ public:
 //  virtual StateAxis& operator= (const StateAxis&) = 0;
 
   //virtual bool operator==(const StateAxis&) const = 0;
+  
+#if 0
+  static const std::type_info& axis()
+  {
+	 return typeid(StateAxis);
+  }
 
   virtual operator UniversalState () const = 0;
   virtual void set_by_universal (const UniversalState&) = 0;
+#endif
 
 protected:
   //StateAxis(StateMap* map_extension, const char* initial_state);
 
-  /// Return an empty state map
+  //! Return an empty state map
   static StateMap* get_state_map();
 };
 
@@ -119,24 +121,86 @@ public:
 
 /* StateMap class */
 
-struct StateMapPar
-{
-  StateMapPar (
-	 std::initializer_list<const char*> states_,
-	 std::initializer_list<std::pair<const char*, const char*>> transitions_
-	 )
-  : states(states_), transitions(transitions_) {}
+#if 0
+//! StateMap is identified by Object and Axis.
+typedef std::pair<
+  const std::type_info&, 
+  const std::type_info&
+  > StateMapId;
 
+class StateMapId
+{
+public:
+  StateMapId(const std::type_info& ti)
+	 : name(ti.name()) {}
+protected:
+  std::string name;
+};
+#else
+typedef std::string StateMapId;
+#endif
+
+//bool operator< (const std::type_info&, const std::type_info&);
+
+//std::ostream&
+//operator<< (std::ostream&, const StateMapId&);
+
+struct StateMapParBase// : public GeneralizedPar<StateMap>
+{
   std::initializer_list<const char*> states;
-  std::initializer_list<std::pair<const char*, const char*>> transitions;
+  std::initializer_list<
+    std::pair<const char*, const char*>> transitions;
+
+  StateMapParBase (
+	 std::initializer_list<const char*> states_,
+	 std::initializer_list<
+	   std::pair<const char*, const char*>> transitions_
+	 )
+	 : states(states_), transitions(transitions_) {}
+
+  virtual StateMap* create_derivation
+    (const ObjectCreationInfo& oi) const;
+
+  virtual StateMap* transform_object
+    (const StateMap*) const
+  { THROW_NOT_IMPLEMENTED; }
+
+  virtual StateMapId get_id() const = 0;
 };
 
-std::ostream& operator<< (std::ostream& out, const StateMapPar& par);
-
-class StateMap : 
-   public HasStringView 
-   //FIXME pointer comparison
+template<class Axis>
+class StateMapPar : public StateMapParBase
 {
+public:
+  // TODO add complex states (with severas axises).
+  StateMapPar (
+	 std::initializer_list<const char*> states,
+	 std::initializer_list<
+	   std::pair<const char*, const char*>> transitions
+	 )
+	 : StateMapParBase(states, transitions) {}
+
+  StateMapId get_id() const
+  {
+	 return typeid(Axis).name();
+  }
+};
+
+struct EmptyStateMapPar : public StateMapParBase
+{
+  StateMap* create_derivation
+    (const ObjectCreationInfo& oi) const;
+};
+
+std::ostream& operator<< 
+(std::ostream& out, const StateMapParBase& par);
+
+class StateMapRepository;
+
+class StateMap : public HasStringView,
+  public SNotCopyable
+{
+  friend class StateMapParBase;
 public:
   class BadParameters : public SException
   {
@@ -152,8 +216,6 @@ public:
     {}
 
   };
-
-  StateMap(const StateMap* parent, const StateMapPar& new_states);
 
   // Return the number of states in the map.
   StateIdx size () const;
@@ -191,50 +253,56 @@ public:
   // overrides
   void outString (std::ostream& out) const;
 
+  const std::string& universal_id() const
+  {
+	 return universal_object_id;
+  }
+
+  TransitionId get_transition_id 
+    (const UniversalState& from,
+	  const UniversalState& to) const;
+
+  TransitionId get_transition_id 
+    (const char* from,
+     const char* to) const;
+
 protected:
 
-  /// Construct an empty state map
-  StateMap();
+  const std::string universal_object_id;
 
-  struct IdxTransRec
-  {
-    IdxTransRec () : from (0), to (0) {}
-    StateIdx from;
-    StateIdx to;
-  };
-
-  typedef std::unordered_map<const char*, StateIdx>  Name2Idx;
-#if 0
-  typedef std::map<StateIdx, std::string> Idx2Name;
-#else
+  typedef std::unordered_map<const char*, StateIdx>  
+	 Name2Idx;
   typedef std::vector<const char*> Idx2Name;
-#endif
-
-  //typedef std::vector< std::vector <int> > Trans2Number;
-  //typedef std::vector<IdxTransRec> Number2Trans;
 
   const StateIdx n_states;
   Name2Idx     name2idx;
   Idx2Name     idx2name;  
-  //Trans2Number trans2number;
-  //Number2Trans number2trans;
-  typedef boost::multi_array<bool, 2> Transitions;
+  typedef boost::multi_array<TransitionId, 2> Transitions;
   Transitions transitions;
+  StateMapRepository* repo;
 
-  int get_transition_id 
-    (const UniversalState& from,
-     const UniversalState& to) const;
+  //! Construct an empty state map
+  StateMap();
+
+  /*StateMap(const StateMap* parent, 
+	 const StateMapPar& new_states);*/
+
+  StateMap(const ObjectCreationInfo& oi,
+			  const StateMapParBase& par);
+
+  /*struct IdxTransRec
+  {
+    IdxTransRec () : from (0), to (0) {}
+    StateIdx from;
+    StateIdx to;
+	 };*/
 
 private:
   typedef Logger<LOG::States> log;
-
-  // Is used from constructor
-  // Fills trans2number and number2trans
-  void add_transitions 
-    (std::initializer_list<std::pair<const char*, const char*>> transitions);
 };
 
-class EmptyStateMap : public StateMap, public SAutoSingleton<EmptyStateMap>
+class EmptyStateMap 
+ : public StateMap, public SAutoSingleton<EmptyStateMap>
 {
 public:
   EmptyStateMap() {}
@@ -246,118 +314,37 @@ public:
 };
 
 /**
- * RState is a state value (think about it as an extended enum).
- * \tparam Object an object which holds the state.
- * \tparam 
+ * A repository for state maps. It also maintains
+ * additional global data.
  */
-template <class Object, class ParentState, StateMapPar const& par>
-class RState 
-: public ParentState, 
-  virtual protected UniversalState
+class StateMapRepository 
+: public Repository<
+  StateMap, 
+  StateMapParBase, 
+  std::unordered_map<StateMapId, StateMap*>,
+  StateMapId
+  >,
+  public SAutoSingleton<StateMapRepository>
 {
+  friend class StateMap;
 public:
-  /// Construct a state with the name.
-  RState (const char* name);
+  typedef Repository< 
+	 StateMap, 
+	 StateMapParBase, 
+	 std::unordered_map<StateMapId, StateMap*>, 
+	 StateMapId > Parent;
 
-  // ParentState& operator= (const UniversalState& us)
-  void set_by_universal (const UniversalState& us)
-  {
-	 // Different maps are not implemented
-	 SCHECK(state_map == us.state_map);
-	 state_idx = us.state_idx;
-  }
+  StateMapRepository() 
+	 : Parent("StateMapRepository", 50), 
+	 max_trans_id(0) {}
 
-  /*ParentState& operator= (const ParentState& st)
-  {
-	 *this = UniversalState(st);
-	 }*/
-
-  //bool operator==(const StateAxis& st) const /* overrides */;
-
-  /// Check permission of moving obj to the `to' state.
-  static void check_moving_to 
-	 (const Object& obj, const RState& to);
-
-  /// Move obj to a new state
-  static void move_to
-	 (Object& obj, const RState& to);
-
-  static bool state_is
-	  (const Object& obj, const RState& st);
-
-  std::string name () const
-  {
-	  return this->stateMap->get_state_name (*this);
-  }
-
-  operator UniversalState () const /* overrides */
-  {
-	 return *this;
-  }
+  //! Return max used transition id
+  TransitionId max_transition_id() const
+  { return max_trans_id; }
 
 protected:
-  static StateMap* stateMap;
-  typedef Logger<RState> log;
-
-  static StateMap* get_state_map() { return stateMap; }
+  //! It is incremented in a StateMap constructor.
+  std::atomic<TransitionId> max_trans_id;
 };
-
-template <class Object, class ParentState, StateMapPar const& par>
-StateMap* RState<Object, ParentState, par>::stateMap = 0;
-
-template <class Object, class ParentState, StateMapPar const& par>
-RState<Object, ParentState, par>::RState (const char* name)
-{
-  assert (name);
-
-  if (!stateMap)
-    stateMap = new StateMap(ParentState::get_state_map(), par);
-
-  *((UniversalState*) this) = stateMap->create_state (name);
-}
-
-template <class Object, class ParentState, StateMapPar const& par>
-void RState<Object, ParentState, par>
-//
-::check_moving_to(const Object& obj, const RState& to)
-{
-	RState from = to;
-	obj.state(from);
-	from.stateMap->check_transition (from, to);
-}
-
-template <class Object, class ParentState, StateMapPar const& par>
-void RState<Object, ParentState, par>
-//
-::move_to(Object& obj, const RState& to)
-{
-	std::string fromName;
-	if (LOG4CXX_UNLIKELY(Object::log::logger()->isDebugEnabled())) {
-		RState from = to;
-		obj.state(from);
-		fromName = from.name();
-	}
-
-	check_moving_to (obj, to);
-	obj.set_state_internal (to);
-
-	LOG_DEBUG(Object::log, "Change state from [" << fromName << "] to [" 
-				 << to.name() << "]");
-}
-
-template <class Object, class ParentState, StateMapPar const& par>
-bool RState<Object, ParentState, par>
-//
-::state_is (const Object& obj, const RState& st)
-{
-#if 0
-	RState current = st;
-	obj.state (current);
-	return current == st;
-#else
-	return obj.state_is(st);
-#endif
-}
-
 
 #endif

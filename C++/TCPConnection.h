@@ -2,7 +2,7 @@
 #define CONCURRO_TCPCONNECTION_H_
 
 #include "AbstractConnection.h"
-#include "RSocketTCP.h"
+#include "TCPSocket.h"
 #include "RObjectWithStates.h"
 #include "ConnectionRepository.h"
 #include "ThreadRepository.h"

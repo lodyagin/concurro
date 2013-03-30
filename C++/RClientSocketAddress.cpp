@@ -10,7 +10,7 @@ RClientSocketAddress::RClientSocketAddress
   struct addrinfo hints = {0};
 
   hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
+  //hints.ai_socktype = SOCK_STREAM;
 
   init (hostname, port, hints);
 

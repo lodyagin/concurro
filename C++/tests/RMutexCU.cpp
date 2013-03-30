@@ -1,7 +1,7 @@
 #include "RMutex.h"
 #include "CUnit.h"
 #include "RThread.h"
-#include <iostream>
+//#include <iostream>
 #include <string>
 #include <thread>
 #include "REvent.h"
@@ -133,7 +133,7 @@ class TestThreadevent : public RThread<std::thread>
 {
 public:
   TestThreadevent
-    (const std::string& id, std::atomic<bool>* flg, REvent * ev)
+    (const std::string& id, std::atomic<bool>* flg, Event * ev)
     :RThread<std::thread>(id), flag(flg), event(ev){}
 
 protected:
@@ -145,14 +145,14 @@ protected:
   }
 
   std::atomic<bool>* flag;
-  REvent *event;
+  Event *event;
 };
 
 void test_event()
 {
   std::atomic<bool> *b = new std::atomic<bool>;
   *b = false;
-  REvent * event = new REvent(true, false);
+  Event * event = new Event(true, false);
   TestThreadevent thread1(std::string("11622"), b, event);
   thread1.start();
   event->wait();
@@ -163,7 +163,7 @@ typedef RThread<std::thread> RT;
 
 void test_event_2threads()
 {
-  static REvent e(true, false);
+  static Event e(true, false);
 
   struct S: public RT { S() : RT("T1") {} void run() { e.set(); } } s1;
   struct W: public RT { W() : RT("T2") {} void run() { e.wait(); } } w1;
