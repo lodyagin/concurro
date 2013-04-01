@@ -131,8 +131,8 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 				<< " states in the map.");
 
   // initialize the transitions array
-  std::fill(transitions.origin(), 
-				transitions.origin() + transitions.size(), 
+  std::fill(transitions.data(), 
+				transitions.data() + transitions.size(), 
 				0);
 #ifdef PARENT_MAP
   if (!parent->is_empty_map()) {
