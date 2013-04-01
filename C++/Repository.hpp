@@ -49,7 +49,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     SCHECK (obj);
     insert_object (objId, obj);
   }
-  LOG_TRACE(log, "Object " << *obj << " is created.");
+  //  LOG_TRACE(log, "Object " << *obj << " is created.");
   return obj;
 }
 

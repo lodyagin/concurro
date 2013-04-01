@@ -174,7 +174,7 @@ public:
 
 protected:
   StateMapId get_map_id(const ObjectCreationInfo&,
-								const StateAxis&) const;
+			const std::type_info&) const;
 };
 
 template<class Axis>
@@ -347,13 +347,13 @@ public:
   { return max_trans_id; }
 
   //! Return a state map by a state axis
-  StateMap* get_map_for_axis(const StateAxis& axis);
+  StateMap* get_map_for_axis(const std::type_info& axis);
 
 protected:
   //! Return a map id by an axis type.
   //! It creates new StateMapId 
   //! if it is new (unregistered) axis.
-  StateMapId get_map_id(const StateAxis& axis);
+  StateMapId get_map_id(const std::type_info& axis);
 
   //! It is incremented in a StateMap constructor.
   std::atomic<TransitionId> max_trans_id;
@@ -368,7 +368,7 @@ StateMapId StateMapPar<Axis>
 //
 ::get_id(const ObjectCreationInfo& oi) const
 {
-  return StateMapParBase::get_map_id(oi, Axis());
+  return StateMapParBase::get_map_id(oi, typeid(Axis));
 }
 
 

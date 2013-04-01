@@ -198,13 +198,13 @@ T fromString (const std::string& s)
 
 #define SMAKE_THROW_FN_DECL(name, XClass)  \
 void name( const wchar_t * fmt, ... ); void name(const std::wstring& msg); 
-//void name( const char * fmt, ... ); void name(const std::string& msg); \
+//void name( const char * fmt, ... ); void name(const std::string& msg); 
 
 SMAKE_THROW_FN_DECL(sThrow,SException)
 
 #define SMAKE_THROW_MEMBER_DECL(name, XClass)  \
 static void name( const wchar_t * fmt, ... );
-//static void name( const char * fmt, ... ); \
+//static void name( const char * fmt, ... ); 
 
 
 #define SMAKE_THROW_FN_IMPL(name, XClass)  \

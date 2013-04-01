@@ -13,7 +13,7 @@ StateMap* StateMapParBase::create_derivation
 
 StateMapId StateMapParBase::get_map_id
 (const ObjectCreationInfo& oi,
- const StateAxis& axis) const
+ const std::type_info& axis) const
 {
   return dynamic_cast<StateMapRepository*>
 	 (oi.repository)->get_map_id(axis);
@@ -329,17 +329,17 @@ void StateMap::outString (std::ostream& out) const
 }
 
 StateMap* StateMapRepository::get_map_for_axis
-  (const StateAxis& axis)
+  (const std::type_info& axis)
 {
   RLOCK(objectsM);
-  get_object_by_id(get_map_id(axis));
+  return get_object_by_id(get_map_id(axis));
 }
 
 
 StateMapId StateMapRepository::get_map_id
-  (const StateAxis& axis)
+  (const std::type_info& axis)
 {
-  const std::string& name = typeid(axis).name();
+  const std::string& name = axis.name();
   auto it = axis2map_id.find(name);
   if (it == axis2map_id.end()) {
 	 axis2map_id.insert

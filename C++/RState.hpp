@@ -16,7 +16,7 @@ RState<Axis>::RState (const StateMapPar<Axis>& par,
   if (!stateMap) {
 	 try {
 		stateMap = StateMapRepository::instance()
-		  . get_map_for_axis(Axis());
+		  . get_map_for_axis(typeid(Axis));
 	 }
 	 catch(const StateMapRepository::NoSuchId&)
 	 {

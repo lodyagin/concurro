@@ -15,7 +15,7 @@ template<class Axis>
 REvent<Axis>::REvent(const char* to)
   : UniversalEvent
   	   (StateMapRepository::instance()
-		 . get_map_for_axis(Axis())
+	    . get_map_for_axis(typeid(Axis))
 	      -> create_state(to)
 		  )
 {}

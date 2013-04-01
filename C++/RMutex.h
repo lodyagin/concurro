@@ -136,23 +136,27 @@ inline RMutex::~RMutex()
 
 inline void RMutex::acquire(const log4cxx::spi::LocationInfo& debug_location)
 {
-  LOG_DEBUG_LOC(log, "try " << get_name() 
+  /*  LOG_DEBUG_LOC(log, "try " << get_name() 
 					 << ".acquire {",
 					 debug_location);
+  */
   mx.lock();
-  LOG_DEBUG_LOC(log, 
+  /*  LOG_DEBUG_LOC(log, 
 					 "} " << get_name() << ".acquire done",
 					 debug_location);
+  */
 }
 
 inline void RMutex::release(const log4cxx::spi::LocationInfo& debug_location)
 {
-  LOG_DEBUG_LOC(log, "try " << get_name() 
+  /*  LOG_DEBUG_LOC(log, "try " << get_name() 
 					 << ".release {",
 					 debug_location);
+  */
   mx.unlock();
-  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
+  /*  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
 					 debug_location);
+  */
 }
 
 // RMutex::Lock  =====================================================
@@ -161,8 +165,10 @@ inline RMutex::Lock::Lock
 (const RMutex & m,
  bool lock,
  const log4cxx::spi::LocationInfo& debug_location
-) : mutex(const_cast<RMutex &>(m)), locked(lock),
-  location (debug_location)
+) 
+:   location (debug_location),
+    mutex(const_cast<RMutex &>(m)), 
+    locked(lock)
 {
   if ( lock ) {
 	 /*if (wait)
@@ -199,8 +205,9 @@ inline void RMutex::Lock::release()
 inline RMutex::Unlock::Unlock
 (const RMutex & m, bool,
  const log4cxx::spi::LocationInfo& debug_location
-  ) : mutex(const_cast<RMutex &>(m)),
-  location(debug_location) 
+  ) 
+: location(debug_location),
+  mutex(const_cast<RMutex &>(m))
 {
   mutex.release(location);
 }
