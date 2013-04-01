@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6.4)
 
-set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x")
+set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x -Wall")
 
 add_subdirectory(tests)
 

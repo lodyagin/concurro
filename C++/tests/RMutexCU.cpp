@@ -73,8 +73,11 @@ class TestThread : public RThread<std::thread> {
 public:
   TestThread(const std::string& id,
              RMutex& mutex, int sleep_time)
-    :RThread<std::thread>(id), mx(mutex), sleept(sleep_time)
-    {}
+    :
+	  RThread<std::thread>(id), 
+	  sleept(sleep_time),
+	  mx(mutex) {}
+
   int getResuilt(){return arg;}
 protected:
   void run(){

@@ -14,6 +14,8 @@
 #include "pevents.h"
 typedef neosmart::neosmart_event_t HANDLE;
 #endif
+#include <cstdatomic>
+#include "SCheck.h"
 
 class EvtBase
 {

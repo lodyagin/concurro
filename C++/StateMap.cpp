@@ -53,6 +53,7 @@ std::ostream& operator<<
 	 else first_trans = false;
 	 out << it->first << "->" << it->second;
   }
+  return out;
 }
 
 /*
@@ -66,15 +67,16 @@ StateMap::StateMap()
 
 StateMap::StateMap(const ObjectCreationInfo& oi,
 						 const StateMapParBase& par)
-  : n_states(par.states.size()
+  : 
+	 universal_object_id(oi.objectId),
+	 numeric_id(fromString<int16_t>(oi.objectId)),
+    n_states(par.states.size()
 #ifdef PARENT_MAP
 				 + parent->get_n_states()
 #endif
 				 ),
-	 universal_object_id(oi.objectId),
-	 numeric_id(fromString<int16_t>(oi.objectId)),
-    idx2name(n_states+1),
 	 name2idx(n_states * 2 + 2),
+    idx2name(n_states+1),
 	 transitions(boost::extents
 					 [Transitions::extent_range(1,n_states+1)]
 					 [Transitions::extent_range(1,n_states+1)]),
@@ -281,7 +283,7 @@ bool StateMap::is_equal(uint32_t a, uint32_t b) const
 
 bool StateMap::is_compatible(uint32_t state) const
 {
-  return STATE_MAP(state) == numeric_id;
+  return STATE_MAP(state) == (uint32_t) numeric_id;
 }
 
 std::string StateMap::get_state_name

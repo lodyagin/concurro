@@ -58,7 +58,7 @@ void EvtBase::wait()
   if ( code != WAIT_OBJECT_0 + 1 )
     sWinErrorCode(code, L"waiting for an event");
 #else
-  int code = WaitForMultipleEvents(evts, 1, false, (uint64_t) -1);
+  WaitForMultipleEvents(evts, 1, false, (uint64_t) -1);
 #endif
 }
 
@@ -85,7 +85,7 @@ bool EvtBase::wait( int time )
   if ( code != WAIT_OBJECT_0 + 1 ) 
     sWinErrorCode(code, L"waiting for an event");
 #else
-  int code = WaitForMultipleEvents(evts, 1, false, time);
+  WaitForMultipleEvents(evts, 1, false, time);
 #endif
   return true;
 }

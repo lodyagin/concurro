@@ -62,10 +62,11 @@ public:
   {
   public:
 	 NoSuchId (ObjId the_id) 
-		: id (the_id), 
-		SException (SFORMAT("No object with id [" << the_id 
-								  << "] exists"))
-	 {}
+		: SException (SFORMAT("No object with id [" 
+									 << the_id 
+									 << "] exists")),
+		id (the_id) {}
+
 	 ~NoSuchId () throw () {}
 
 	 const ObjId id;
@@ -78,9 +79,10 @@ public:
   {
   public:
 	 IdIsAlreadyUsed (const ObjId& the_id) 
-		: id (the_id), 
-		SException (SFORMAT("The object id [" << the_id << "] is used already."))
-	 {}
+		: SException (SFORMAT("The object id [" 
+			 << the_id << "] is used already.")),
+		  id (the_id)	 {}
+
 	 ~IdIsAlreadyUsed () throw () {}
 
 	 const ObjId id;

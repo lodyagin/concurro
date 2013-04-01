@@ -47,13 +47,13 @@ RThreadBase::RThreadBase
  Event* extTerminated
 )
   : 
-    universal_object_id (id),
-    isTerminatedEvent (false),
-    //stopEvent (true, false),
-    waitCnt (0), 
-    //exitRequested (false),
     RObjectWithEvents<ThreadStateAxis> (readyState),
+    universal_object_id (id),
+    waitCnt (0), 
+    isTerminatedEvent (false),
 	 externalTerminated (extTerminated)
+    //stopEvent (true, false),
+    //exitRequested (false),
 {
   LOG_INFO (log, "New " << *this);
 }
@@ -61,12 +61,12 @@ RThreadBase::RThreadBase
 RThreadBase::RThreadBase
   (const ObjectCreationInfo& oi, const Par& p)
 : 
+    RObjectWithEvents<ThreadStateAxis> (readyState),
     universal_object_id (oi.objectId),
+    waitCnt (0), 
     isTerminatedEvent (false),
     //stopEvent (true, false),
-    waitCnt (0), 
     //exitRequested (false),
-    RObjectWithEvents<ThreadStateAxis> (readyState),
 	 externalTerminated (p.extTerminated)
 {
   LOG_INFO (log, "New " << *this);

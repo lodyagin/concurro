@@ -275,11 +275,10 @@ public:
     (const char* from,
      const char* to) const;
 
+  const std::string universal_object_id;
   const int16_t numeric_id;
 
 protected:
-
-  const std::string universal_object_id;
 
   typedef std::unordered_map<const char*, StateIdx>  
 	 Name2Idx;
