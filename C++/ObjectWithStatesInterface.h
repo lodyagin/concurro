@@ -25,20 +25,26 @@ public:
 
   virtual ~ObjectWithStatesInterface() {}
 
+#if 0
   /// set state to the current state of the object
   virtual void state(State& state) const = 0;
 
   /// return bool if the object state is state
   virtual bool state_is(const State& state) const = 0;
+#endif
 
   virtual log4cxx::LoggerPtr logger() const = 0;
 
 protected:
 
+  virtual std::atomic<uint32_t>& current_state() = 0;
+
+#if 0
   /// Set the object state without transition cheking (do
   /// not use directly).
   virtual void set_state_internal 
 	 (const State& state) = 0;
+#endif
 };
 
 #endif

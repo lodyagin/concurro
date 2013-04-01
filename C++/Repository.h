@@ -153,7 +153,9 @@ protected:
 
   /// Calculate an id for a new object, possible based on Par
   /// (depending of the Repository type)
-  virtual ObjId get_object_id (const Par&) = 0;
+  virtual ObjId get_object_id 
+	 (const ObjectCreationInfo& oi,
+	  const Par&) = 0;
 
   /// Insert new object into objects
   virtual void insert_object (ObjId, Obj*) = 0;
@@ -189,7 +191,8 @@ public:
 protected:
   /// This specialization takes the first unused (numeric)
   /// id and ignores Par
-  ObjId get_object_id (const Par&)
+  ObjId get_object_id (const ObjectCreationInfo&,
+							  const Par&)
   {
 	 RLOCK(this->objectsM);
 
@@ -199,9 +202,11 @@ protected:
 		if (!(*this->objects)[id]) return id;
 	 }
 
-	 if (this->objects->size () == this->objects->capacity ())
-		this->objects->reserve (this->objects->size () 
-										+ this->objects->size () * 0.2);
+	 if (this->objects->size () 
+		  == this->objects->capacity ())
+		this->objects->reserve 
+		  (this->objects->size () 
+			+ this->objects->size () * 0.2);
 	 // TODO check the stepping
 
 	 this->objects->push_back (0);
@@ -241,11 +246,12 @@ public:
   }
 protected:
   /// This specialization takes the key value from pars.
-  ObjId get_object_id (const Par& param)
+  ObjId get_object_id (const ObjectCreationInfo& oi,
+							  const Par& param)
   {
 	 RLOCK(this->objectsM);
 
-	 ObjId id = param.get_id ();
+	 ObjId id = param.get_id(oi);
 
 	 if (this->objects->find(id) != this->objects->end()) {
 		throw typename Parent::IdIsAlreadyUsed (id);

@@ -15,13 +15,13 @@
 #include <initializer_list>
 #include <boost/multi_array.hpp>
 
-typedef unsigned int StateIdx;
-
+// <NB> the same size (see UniversalEvent)
+typedef uint16_t StateIdx;
 typedef uint16_t TransitionId;
 
 class StateMap;
-class EmptyStateMap;
-class UniversalState;
+//class EmptyStateMap;
+//class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited. <NB> StateAxises can't be "extended". Like
@@ -30,59 +30,80 @@ class UniversalState;
 //! be added.
 class StateAxis //: public UniversalState
 {
-public:
-
- //virtual StateAxis& operator= (const UniversalState&) = 0;
-//  virtual StateAxis& operator= (const StateAxis&) = 0;
-
-  //virtual bool operator==(const StateAxis&) const = 0;
-  
-#if 0
-  static const std::type_info& axis()
-  {
-	 return typeid(StateAxis);
-  }
-
-  virtual operator UniversalState () const = 0;
-  virtual void set_by_universal (const UniversalState&) = 0;
-#endif
-
 protected:
-  //StateAxis(StateMap* map_extension, const char* initial_state);
-
   //! Return an empty state map
-  static StateMap* get_state_map();
+  //static StateMap* get_state_map();
 };
 
-class UniversalState
+#define STATE_MAP_MASK 0x7fff0000
+#define STATE_MAP_SHIFT 16
+#define STATE_IDX_MASK 0xffff
+#define STATE_MAP(state) ((state) & STATE_MAP_MASK)
+#define STATE_IDX(state) ((state) & STATE_IDX_MASK)
+
+#if 0
+class StateCoder
 {
   friend class StateMap;
 
 public:
-  UniversalState () 
+/*  UniversalState () 
     : state_map (0), state_idx (0) 
-  {}
-  
-  /*explicit UniversalState (const StateAxis& initial_state)
+	 {}*/
+
+  //StateCoder(uint32_t coded);
+
+  operator uint32_t() const
   {
-	 *this = initial_state;
-	 }*/
-
-  //virtual ~UniversalState() {}
-
-  // NB not virutal
-  bool operator== (const UniversalState& state2) const;
-
-  std::string name() const;
+	 return state;
+  }
   
-  const StateMap* state_map;
-  StateIdx        state_idx;
+  // NB not virutal
+  //bool operator== (const UniversalState& state2) const;
+  //bool operator!= (const UniversalState& state2) const;
+
+  //std::string name() const;
+  
+  uint32_t        state;
+  //const StateMap* state_map;
+  //StateIdx        state_idx;
 
 protected:
-  UniversalState (const StateMap* map, StateIdx idx)
-    : state_map (map), state_idx (idx)
-  {}
+  StateCoder (const StateMap* map, StateIdx idx);
 };
+#endif
+
+#define MIXED_EVENT
+
+class UniversalEvent
+{
+public:
+  uint16_t   id;
+
+  enum { Mask = 0x8000 };
+
+#if 0
+  enum class Type {Transition, Destination};
+
+  Type type() const
+  {
+	 return (id & Mask) ? Type::Destination
+		: Type::Transition;
+  }
+#endif
+
+protected:
+  UniversalEvent(TransitionId trans_id)
+ 	 : id(trans_id) {}
+#ifdef MIXED_EVENT
+UniversalEvent(uint32_t state, bool) 
+    : id(state | Mask) {}
+#endif
+};
+
+/*std::ostream& 
+operator<< (std::ostream&, const UniversalState&);
+*/
 
 /* Exceptions */
 
@@ -122,31 +143,14 @@ public:
 /* StateMap class */
 
 #if 0
-//! StateMap is identified by Object and Axis.
-typedef std::pair<
-  const std::type_info&, 
-  const std::type_info&
-  > StateMapId;
-
-class StateMapId
-{
-public:
-  StateMapId(const std::type_info& ti)
-	 : name(ti.name()) {}
-protected:
-  std::string name;
-};
-#else
 typedef std::string StateMapId;
+#else
+typedef int16_t StateMapId;
 #endif
 
-//bool operator< (const std::type_info&, const std::type_info&);
-
-//std::ostream&
-//operator<< (std::ostream&, const StateMapId&);
-
-struct StateMapParBase// : public GeneralizedPar<StateMap>
+class StateMapParBase
 {
+public:
   std::initializer_list<const char*> states;
   std::initializer_list<
     std::pair<const char*, const char*>> transitions;
@@ -165,7 +169,12 @@ struct StateMapParBase// : public GeneralizedPar<StateMap>
     (const StateMap*) const
   { THROW_NOT_IMPLEMENTED; }
 
-  virtual StateMapId get_id() const = 0;
+  virtual StateMapId get_id
+  (const ObjectCreationInfo& oi) const = 0;
+
+protected:
+  StateMapId get_map_id(const ObjectCreationInfo&,
+								const StateAxis&) const;
 };
 
 template<class Axis>
@@ -180,17 +189,16 @@ public:
 	 )
 	 : StateMapParBase(states, transitions) {}
 
-  StateMapId get_id() const
-  {
-	 return typeid(Axis).name();
-  }
+  StateMapId get_id(const ObjectCreationInfo& oi) const;
 };
 
+#if 0
 struct EmptyStateMapPar : public StateMapParBase
 {
   StateMap* create_derivation
     (const ObjectCreationInfo& oi) const;
 };
+#endif
 
 std::ostream& operator<< 
 (std::ostream& out, const StateMapParBase& par);
@@ -214,31 +222,32 @@ public:
       (std::string ("Bad initialization parameters: ")
        + str)
     {}
-
   };
 
   // Return the number of states in the map.
   StateIdx size () const;
 
-  UniversalState create_state (const char* name) const;
+  uint32_t create_state (const char* name) const;
 
   bool there_is_transition 
-    (const UniversalState& from,
-     const UniversalState& to) const;
+    (uint32_t from,
+     uint32_t to) const;
 
   void check_transition
-    (const UniversalState& from,
-     const UniversalState& to) const;
+    (uint32_t from,
+     uint32_t to) const;
 
+  /* use ==
   bool is_equal
-    (const UniversalState& a,
-     const UniversalState& b) const;
+    (uint32_t a,
+     uint32_t b) const;
+  */
   
-  bool is_compatible 
-    (const UniversalState& state) const;
+  //! Whether the state is compatible with the map.
+  bool is_compatible(uint32_t state) const;
 
   std::string get_state_name
-    (const UniversalState& state) const;
+    (uint32_t state) const;
 
   StateIdx get_n_states() const
   {
@@ -259,12 +268,14 @@ public:
   }
 
   TransitionId get_transition_id 
-    (const UniversalState& from,
-	  const UniversalState& to) const;
+    (uint32_t from,
+	  uint32_t to) const;
 
   TransitionId get_transition_id 
     (const char* from,
      const char* to) const;
+
+  const int16_t numeric_id;
 
 protected:
 
@@ -282,25 +293,16 @@ protected:
   StateMapRepository* repo;
 
   //! Construct an empty state map
-  StateMap();
-
-  /*StateMap(const StateMap* parent, 
-	 const StateMapPar& new_states);*/
+  //StateMap();
 
   StateMap(const ObjectCreationInfo& oi,
 			  const StateMapParBase& par);
-
-  /*struct IdxTransRec
-  {
-    IdxTransRec () : from (0), to (0) {}
-    StateIdx from;
-    StateIdx to;
-	 };*/
 
 private:
   typedef Logger<LOG::States> log;
 };
 
+#if 0
 class EmptyStateMap 
  : public StateMap, public SAutoSingleton<EmptyStateMap>
 {
@@ -312,6 +314,7 @@ public:
 	 return true;
   }
 };
+#endif
 
 /**
  * A repository for state maps. It also maintains
@@ -327,6 +330,7 @@ class StateMapRepository
   public SAutoSingleton<StateMapRepository>
 {
   friend class StateMap;
+  friend class StateMapParBase;
 public:
   typedef Repository< 
 	 StateMap, 
@@ -336,15 +340,36 @@ public:
 
   StateMapRepository() 
 	 : Parent("StateMapRepository", 50), 
-	 max_trans_id(0) {}
+	 max_trans_id(0), last_map_id(0) {}
 
   //! Return max used transition id
   TransitionId max_transition_id() const
   { return max_trans_id; }
 
+  //! Return a state map by a state axis
+  StateMap* get_map_for_axis(const StateAxis& axis);
+
 protected:
+  //! Return a map id by an axis type.
+  //! It creates new StateMapId 
+  //! if it is new (unregistered) axis.
+  StateMapId get_map_id(const StateAxis& axis);
+
   //! It is incremented in a StateMap constructor.
   std::atomic<TransitionId> max_trans_id;
+
+  StateMapId last_map_id;
+  std::map<std::string, StateMapId> axis2map_id;
 };
+
+
+template<class Axis>
+StateMapId StateMapPar<Axis>
+//
+::get_id(const ObjectCreationInfo& oi) const
+{
+  return StateMapParBase::get_map_id(oi, Axis());
+}
+
 
 #endif

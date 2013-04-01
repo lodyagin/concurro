@@ -1,5 +1,6 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+#if 0
 template<class Axis>
 void RObjectWithStates<Axis>
 //
@@ -19,18 +20,19 @@ void RObjectWithStates<Axis>
 				 "Change state from [" << fromName 
 				 << "] to [" << currentState.name() << "]");
 }
+#endif
 
 template<class Axis>
 Event* RObjectWithEvents<Axis>
 //
-::get_event(TransitionId trans_id)
+::get_event(const UniversalEvent& ue)
 {
   Event* ev = 0;
-  const auto it = events.find(trans_id);
+  const auto it = events.find(ue.id);
   if (it == events.end()) {
 	 ev = new Event(true); // <NB> manual reset
 	 events.insert
-		(std::pair<TransitionId, Event*>(trans_id, ev));
+		(std::pair<TransitionId, Event*>(ue.id, ev));
   }
   else 
 	 ev = it->second;
@@ -38,6 +40,7 @@ Event* RObjectWithEvents<Axis>
   return ev;
 }
 
+#if 0
 template<class Axis>
 void RObjectWithEvents<Axis>
 //
@@ -52,3 +55,4 @@ void RObjectWithEvents<Axis>
   if (it != events.end())
 	 it->second->set();
 }
+#endif

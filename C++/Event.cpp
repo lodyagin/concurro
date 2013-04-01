@@ -7,7 +7,8 @@
 #else
 using namespace neosmart;
 #endif
-// REvtBase  =========================================================
+
+// EvtBase  ===============================================
 
 EvtBase::EvtBase( HANDLE _h ) :
   h(_h)
@@ -95,7 +96,8 @@ Event::Event( bool manual, bool init ) :
 #ifdef _WIN32
   Parent(CreateEvent(0, manual, init, 0))
 #else
-  EvtBase(CreateEvent(manual, init))
+  EvtBase(CreateEvent(manual, init)),
+  is_signalled(false), is_manual(manual)
 #endif
 {
 }
@@ -114,6 +116,7 @@ void Event::set()
      );
 #else
   SetEvent(h);
+  is_signalled = true;
 #endif
 }
 
@@ -130,6 +133,7 @@ void Event::reset()
      SFORMAT (L"resetting event, handle = " << h).c_str ()
      );
 #else
+  is_signalled = false;
   ResetEvent(h);
 #endif
 }

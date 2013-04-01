@@ -5,15 +5,22 @@
 #include <assert.h>
 #include <cstdatomic>
 
-// a global
-//static std::atomic<TransitionId> max_transition_id = 0;
-
 StateMap* StateMapParBase::create_derivation
   (const ObjectCreationInfo& oi) const
 {
   return new StateMap(oi, *this);
 }
 
+StateMapId StateMapParBase::get_map_id
+(const ObjectCreationInfo& oi,
+ const StateAxis& axis) const
+{
+  return dynamic_cast<StateMapRepository*>
+	 (oi.repository)->get_map_id(axis);
+}
+
+
+#if 0
 StateMap* EmptyStateMapPar::create_derivation
   (const ObjectCreationInfo& oi) const
 {
@@ -24,23 +31,17 @@ StateMap* StateAxis::get_state_map()
 {
   return &EmptyStateMap::instance();
 }
-
-/*
-std::ostream&
-operator<< (std::ostream& out, const StateMapId& id)
-{
-  out << '(' << id.first << ", " << id.second << ')';
-  return out;
-}
-*/
+#endif
 
 std::ostream& operator<< 
 (std::ostream& out, const StateMapParBase& par)
 {
   bool first_state = true;
-  for (auto it = par.states.begin(); it != par.states.end(); it++)
+  for (auto it = par.states.begin(); 
+		 it != par.states.end(); it++)
   {
-	 if (!first_state) out << ';'; else first_state = false;
+	 if (!first_state) out << ';'; 
+	 else first_state = false;
 	 out << *it;
   }
   out << '|';
@@ -48,16 +49,20 @@ std::ostream& operator<<
   for (auto it = par.transitions.begin(); 
 		 it != par.transitions.end(); it++)
   {
-	 if (!first_trans) out << ';'; else first_trans = false;
+	 if (!first_trans) out << ';'; 
+	 else first_trans = false;
 	 out << it->first << "->" << it->second;
   }
 }
 
+/*
 StateMap::StateMap()
   : n_states(0),
-	 universal_object_id("<empty map>")
+	 universal_object_id("<empty map>"),
+	 numeric_id(?)
 {
 }
+*/
 
 StateMap::StateMap(const ObjectCreationInfo& oi,
 						 const StateMapParBase& par)
@@ -67,6 +72,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 #endif
 				 ),
 	 universal_object_id(oi.objectId),
+	 numeric_id(fromString<int16_t>(oi.objectId)),
     idx2name(n_states+1),
 	 name2idx(n_states * 2 + 2),
 	 transitions(boost::extents
@@ -75,6 +81,8 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 	 //max_transition_id(0),
 	 repo(dynamic_cast<StateMapRepository*>(oi.repository))
 {
+  // TODO check numeric_id overflow
+
 #ifdef PARENT_MAP
   const StateIdx n_parent_states = parent->get_n_states();
 
@@ -202,29 +210,27 @@ void StateMap::add_transitions
 }
 */
 
-#if 1
-UniversalState StateMap::create_state 
-  (const char* name) const
+uint32_t StateMap::create_state (const char* name) const
 {
   assert (name);
 
   Name2Idx::const_iterator cit = name2idx.find (name);
   if (cit != name2idx.end ()) {
-    return UniversalState (this, cit->second);
+    return (numeric_id << STATE_MAP_SHIFT) 
+		| STATE_IDX(cit->second);
   }
   else 
     throw NoStateWithTheName ();
 }
-#endif
 
-unsigned int StateMap::size () const
+StateIdx StateMap::size () const
 {
   return name2idx.size ();
 }
 
 inline bool StateMap::there_is_transition 
-  (const UniversalState& from,
-   const UniversalState& to) const
+  (uint32_t from,
+   uint32_t to) const
 {
   return get_transition_id(from, to) != 0;
 }
@@ -237,18 +243,21 @@ TransitionId StateMap::get_transition_id
 }
 
 TransitionId StateMap::get_transition_id 
-  (const UniversalState& from,
-   const UniversalState& to) const
+  (uint32_t from,
+   uint32_t to) const
 {
   if (!is_compatible (from) || !is_compatible (to))
     throw IncompatibleMap ();
 
-  return transitions[from.state_idx][to.state_idx];
+  const StateIdx from_idx = STATE_IDX(from);
+  const StateIdx to_idx = STATE_IDX(to);
+
+  return transitions[from_idx][to_idx];
 }
 
 void StateMap::check_transition
-  (const UniversalState& from,
-   const UniversalState& to) const
+  (uint32_t from,
+   uint32_t to) const
 {
   if (!there_is_transition (from, to))
     throw InvalidStateTransition 
@@ -257,9 +266,8 @@ void StateMap::check_transition
        );
 }
 
-bool StateMap::is_equal
-  (const UniversalState& a,
-   const UniversalState& b) const
+#if 0
+bool StateMap::is_equal(uint32_t a, uint32_t b) const
 {
   if (!is_compatible (a) || !is_compatible (b))
     throw IncompatibleMap ();
@@ -269,26 +277,20 @@ bool StateMap::is_equal
 
   return a.state_idx == b.state_idx;
 } 
+#endif
 
-bool StateMap::is_compatible 
-  (const UniversalState& state) const
+bool StateMap::is_compatible(uint32_t state) const
 {
-  assert (state.state_map);
-  assert (state.state_idx > 0);
-  assert (state.state_idx <= size ());
-
-  return state.state_map == this;
-  //FIXME for inherited carts some code should be added
+  return STATE_MAP(state) == numeric_id;
 }
 
 std::string StateMap::get_state_name
-  (const UniversalState& state) const
+  (uint32_t state) const
 {
   if (!is_compatible (state))
     throw IncompatibleMap ();
 
-  assert (state.state_idx >= 1);
-  return idx2name.at(state.state_idx);
+  return idx2name.at(STATE_IDX(state));
 }
 
 void StateMap::outString (std::ostream& out) const
@@ -326,7 +328,32 @@ void StateMap::outString (std::ostream& out) const
 #endif
 }
 
-bool UniversalState::operator== (const UniversalState& st) const
+StateMap* StateMapRepository::get_map_for_axis
+  (const StateAxis& axis)
+{
+  RLOCK(objectsM);
+  get_object_by_id(get_map_id(axis));
+}
+
+
+StateMapId StateMapRepository::get_map_id
+  (const StateAxis& axis)
+{
+  const std::string& name = typeid(axis).name();
+  auto it = axis2map_id.find(name);
+  if (it == axis2map_id.end()) {
+	 axis2map_id.insert
+		(std::pair<std::string, StateMapId>
+		 (name, ++last_map_id));
+	 return last_map_id;
+  }
+  else return it->second;
+}
+
+
+#if 0
+bool UniversalState::operator== 
+  (uint32_t st) const
 {
 	if (this->state_map != st.state_map)
 		THROW_EXCEPTION(SException, 
@@ -336,10 +363,22 @@ bool UniversalState::operator== (const UniversalState& st) const
 	return this->state_idx == st.state_idx;
 }
 
+bool UniversalState::operator!= 
+  (uint32_t st) const
+{
+	if (this->state_map != st.state_map)
+		THROW_EXCEPTION(SException, 
+		 "concurro: Comparison of states "
+		 "from different maps is not implemented");
+
+	return this->state_idx != st.state_idx;
+}
+
 std::string UniversalState::name() const
 {
   return state_map->get_state_name(*this);
 }
+#endif
 
 
 /*StateAxis::StateAxis(StateMap* map_extension, const char* initial_state)

@@ -35,13 +35,14 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   { 
     RLOCK (objectsM);
 
-    const ObjId objId = get_object_id(param);
-
-    std::string uniId;
-    toString (objId, uniId);
-    const ObjectCreationInfo cinfo = { this, uniId };
+	 // <NB> uniId is empty at the first call to param
+	 ObjectCreationInfo cinfo = { this, std::string() };
+    const ObjId objId = get_object_id(cinfo, param);
+    toString (objId, cinfo.objectId);
 
 	 // dynamic cast for use with inherited parameters
+	 // <NB> this must be called inside the lock to allow
+	 // query repo data structures from create_derivation
     obj = dynamic_cast<Obj*>
 		(param.create_derivation (cinfo));
 

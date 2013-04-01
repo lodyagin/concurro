@@ -186,6 +186,7 @@ void toString (const T& object, std::string & s)
   s += os.str();
 }
 
+// FIXME raise exception when the string is not a number
 template <class T>
 T fromString (const std::string& s)
 {

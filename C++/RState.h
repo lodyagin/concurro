@@ -12,6 +12,21 @@
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 
+class RaceConditionInStates
+  : public SException
+{
+public:
+  RaceConditionInStates
+    (uint32_t old, 
+	  uint32_t from, 
+     uint32_t to)
+    : SException 
+    (SFORMAT("Somebody had time to change "
+				 << to << "->" << old
+				 << " while we incorrectly set " << to))
+  {}
+};
+
 /**
  * RState is a state value (think about it as an extended
  * enum).
@@ -19,67 +34,86 @@
  * \tparam Object an object which holds the state.
  * \tparam Axis a state axis.
  */
-template<
-//  class Object, 
-  class Axis
-#ifdef PARENT_MAP
-  ,StateMapPar<Axis> const& par
-#endif
->
-class RState 
-: public Axis, 
-  virtual public UniversalState
+template<class Axis>
+class RState : public Axis
 {
 public:
   //! Construct a state with the name.
   //! \param par states and transitions.
-  RState (const StateMapPar<Axis>& par, const char* name);
+  RState (const StateMapPar<Axis>& par, 
+			 const char* name);
 
-  RState(const UniversalState&);
+  RState(uint32_t);
 
   RState(const ObjectWithStatesInterface<Axis>&);
 
   // ParentState& operator= (const UniversalState& us)
-  void set_by_universal (const UniversalState& us)
-  {
-	 // Different maps are not implemented
-	 SCHECK(state_map == us.state_map);
-	 state_idx = us.state_idx;
-  }
+  void set_by_universal (uint32_t us);
 
-  /*ParentState& operator= (const ParentState& st)
-  {
-	 *this = UniversalState(st);
-	 }*/
-
-  //bool operator==(const StateAxis& st) const /* overrides */;
+#ifndef STATE_LOCKING //lock_state and then check on the
+                      // universal state?
 
   /// Check permission of moving obj to the `to' state.
   static void check_moving_to 
-	 (const ObjectWithStatesInterface<Axis>& obj, const RState& to);
+	 (const ObjectWithStatesInterface<Axis>& obj, 
+	  const RState& to);
 
-  /// Move obj to a new state
+#endif
+
+  /// Atomiv move obj to a new state
   static void move_to
-	 (ObjectWithStatesInterface<Axis>& obj, const RState& to);
+	 (ObjectWithStatesInterface<Axis>& obj, 
+	  const RState& to);
 
+#if 0
+  /// Atomic move obj to a `to' state if it is not `to'
+  static void move_if_not_already
+	 (ObjectWithStatesInterface<Axis>& obj, 
+	  const RState& to);
+#endif
+
+#ifdef STATE_LOCKING
+  //! Return the current state and prohibit further state
+  //! changes by acquiring a mutex till unlock_state
+  //! call.
+  static const UniversalState& lock_state
+	 (const ObjectWithStatesInterface<Axis>& obj);
+#else
+  static uint32_t state
+	 (const ObjectWithStatesInterface<Axis>& obj);
+#endif
+
+  //! Atomic check the object state
   static bool state_is
-	  (const ObjectWithStatesInterface<Axis>& obj, const RState& st);
+	  (const ObjectWithStatesInterface<Axis>& obj, 
+		const RState& st);
+
+  //! Atomic check the obj state is in the set
+  static bool state_in
+	  (const ObjectWithStatesInterface<Axis>& obj, 
+		const std::initializer_list<RState>& set);
 
   std::string name () const
   {
 	  return this->stateMap->get_state_name (*this);
   }
 
-  operator UniversalState () const /* overrides */
+  operator uint32_t() const
   {
-	 return *this;
+	 return the_state;
   }
 
 protected:
-  static StateMap* stateMap;
   typedef Logger<RState> log;
 
+  uint32_t the_state;
+
+#if 1
+  static StateMap* stateMap;
   static StateMap* get_state_map() { return stateMap; }
+#else
+  StateMap* get_state_map() { return state_map; }
+#endif
 };
 
 #define DECLARE_STATES(/*class_,*/ axis, state_class)	\

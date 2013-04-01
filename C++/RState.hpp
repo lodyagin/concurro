@@ -1,6 +1,7 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
 #include "Repository.h"
+#include <cstdatomic>
 
 template<class Axis>
 StateMap* RState<Axis>::stateMap = 0;
@@ -8,13 +9,14 @@ StateMap* RState<Axis>::stateMap = 0;
 template<class Axis>
 RState<Axis>::RState (const StateMapPar<Axis>& par,
 							 const char* name)
+  : the_state(0)
 {
   assert (name);
 
   if (!stateMap) {
 	 try {
 		stateMap = StateMapRepository::instance()
-		  . get_object_by_id(typeid(Axis).name());
+		  . get_map_for_axis(Axis());
 	 }
 	 catch(const StateMapRepository::NoSuchId&)
 	 {
@@ -23,51 +25,127 @@ RState<Axis>::RState (const StateMapPar<Axis>& par,
 	 }
   }
 
-  *((UniversalState*) this) = stateMap->create_state(name);
+  the_state = stateMap->create_state(name);
 }
 
 template<class Axis>
-RState<Axis>::RState(const UniversalState& us)
-  : UniversalState(us)
-{}
+RState<Axis>::RState(uint32_t us)
+  : the_state(0)
+{
+  set_by_universal(us);
+}
 
 template<class Axis>
 RState<Axis>
 //
 ::RState(const ObjectWithStatesInterface<Axis>& obj)
-  : UniversalState(obj.current_state())
-{}
-
-
-template<class Axis>
-void RState<Axis>
-//
-::check_moving_to(const ObjectWithStatesInterface<Axis>& obj, const RState& to)
+  : the_state(0)
 {
-	RState from = to;
-	obj.state(from);
-	from.stateMap->check_transition (from, to);
+  const uint32_t us = 
+	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	 . current_state();
+  set_by_universal(us);
 }
 
 template<class Axis>
 void RState<Axis>
 //
-::move_to(ObjectWithStatesInterface<Axis>& obj, const RState& to)
+::set_by_universal (uint32_t us)
 {
-	check_moving_to (obj, to);
-	obj.set_state_internal (to);
+  assert(stateMap);
+  if (!stateMap->is_compatible(us))
+	 throw IncompatibleMap();
+
+  the_state = us;
+}
+
+template<class Axis>
+void RState<Axis>
+//
+::check_moving_to(
+  const ObjectWithStatesInterface<Axis>& obj, 
+  const RState& to)
+{
+  const uint32_t from = 
+	 const_cast<ObjectWithStatesInterface<Axis>&> (obj)
+	 . current_state().load();
+  stateMap->check_transition (from, to);
+}
+
+template<class Axis>
+void RState<Axis>
+//
+::move_to(ObjectWithStatesInterface<Axis>& obj, 
+			 const RState& to)
+{
+  if (!stateMap->is_compatible(to))
+	 throw IncompatibleMap();
+
+#ifdef STATE_LOCKING
+  auto& current = obj.current_state();
+  const auto from = current;
+  {
+	 RLOCK(lock);
+	 from.state_map->check_transition(current, to);
+	 current = to;
+  }
+#else
+  auto& current = obj.current_state();
+  stateMap->check_transition(current, to);
+  const auto from = current.exchange(to);
+  try {
+	 stateMap->check_transition(from, to);
+  }
+  catch (const InvalidStateTransition&) {
+	 const auto old = current.exchange(from);
+	 if (old != from)
+		throw RaceConditionInStates(old, from, to);
+	 //throw;
+  }
+#endif
+  LOGGER_DEBUG(obj.logger(), 
+					"State changed from [" << from
+					<< "] to [" << to << "]");
 }
 
 template<class Axis>
 bool RState<Axis>
 //
-::state_is (const ObjectWithStatesInterface<Axis>& obj, const RState& st)
+::state_is (const ObjectWithStatesInterface<Axis>& obj, 
+				const RState& st)
 {
-#if 0
-	RState current = st;
-	obj.state (current);
-	return current == st;
-#else
-	return obj.state_is(st);
-#endif
+  return
+	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	 . current_state().load() == /*(UniversalState)*/ st;
 }
+
+template<class Axis>
+bool RState<Axis>
+//
+::state_in(
+  const ObjectWithStatesInterface<Axis>& obj, 
+  const std::initializer_list<RState>& set )
+{
+  const auto current = 
+	 const_cast<ObjectWithStatesInterface<Axis>&> (obj)
+	 . current_state() . load();
+  for (auto it = set.begin(); it != set.end(); it++)
+  {
+	 if (current == *it)
+		return true;
+  }
+  return false;
+}
+
+template<class Axis>
+uint32_t RState<Axis>
+//
+::state(const ObjectWithStatesInterface<Axis>& obj)
+{
+  uint32_t us =
+	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	 . current_state().load();
+  //assert(STATE_MAP(us) == STATE_MAP(the_state));
+  return us;
+}
+

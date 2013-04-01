@@ -53,6 +53,15 @@ public:
   virtual void set();
   virtual void reset();
 
+  bool signalled() const
+  {
+	 SCHECK(is_manual);
+	 return is_signalled;
+  }
+
+protected:
+  std::atomic<bool> is_signalled;
+  const bool is_manual;
 };
 
 #endif

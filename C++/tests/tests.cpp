@@ -13,8 +13,10 @@ int REventCUInit(void);
 int REventCUClean(void);
 
 CU_SuiteInfo suites[] = {	
+#if 0
   { "RMutex", RMutexCUInit, RMutexCUClean, 0, 0,
 	  RMutexTests },
+#endif
   { "REvent", REventCUInit, REventCUClean, 0, 0,
 	  REventTests },
 	CU_SUITE_INFO_NULL

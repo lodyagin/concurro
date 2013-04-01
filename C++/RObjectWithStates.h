@@ -11,6 +11,28 @@
 
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
+#include <cstdatomic>
+
+#if 0
+template<class Axis>
+class RObjectState
+{
+  friend class RState<Axis>;
+public:
+  RObjectState(const UniversalState& initial)
+	 : currentState(initial) {} //, state_locked(false) {}
+  virtual ~RObjectState() {}
+
+protected:
+  std::atomic<UniversalState> currentState;
+
+#ifdef STATE_LOCKING
+  //! Disable to change the state.
+  RMutex lock;
+#endif
+};
+
+#else
 
 //! It can be used as a parent of an object which
 //! introduces new state axis.
@@ -28,6 +50,7 @@ public:
 
   virtual ~RObjectWithStates() {}
 
+#if 0
   /// set state to the current state of the object
   virtual void state(State& state) const
   {
@@ -38,18 +61,24 @@ public:
   {
 	 return currentState == (UniversalState) state;
   }
+#endif
+#endif
+
 
 protected:
 
-  virtual void set_state_internal (const State& state);
+//  virtual void set_state_internal (const State& state);
 
-/*  const UniversalState& current_state() const
+  std::atomic<uint32_t>& current_state()
   {
 	 return currentState;
   }
-*/
-  UniversalState currentState;
+
+  std::atomic<uint32_t> currentState;
+//  RMutex mutex;
 };
+
+class UniversalEvent;
 
 template<class Axis>
 class REvent;
@@ -70,11 +99,11 @@ public:
   { }
 
 protected:
-  void set_state_internal (const State& state);
+//  void set_state_internal (const State& state);
 
-  //! Query an event object by transition id. Also create
-  //! one if it doesn't exists.
-  Event* get_event(TransitionId);
+  //! Query an event object by UniversalEvent. 
+  //! Also create new event object if it doesn't exists.
+  Event* get_event(const UniversalEvent&);
 
   typedef std::map<TransitionId, Event*> EventMap;
 

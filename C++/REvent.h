@@ -13,32 +13,46 @@
 #include "RObjectWithStates.h"
 #include "Event.h"
 
-class UniversalEvent
+#if 0
+class ToEvent
 {
 public:
-  //const StateMap* state_map;
-  TransitionId    transition_id;
-protected:
-  UniversalEvent(TransitionId trans_id)
-	 : transition_id(trans_id) {}
-};
+  StateIdx state_idx;
 
-template<
-//class Object, 
-  class Axis
-  >
-class REvent 
-: public Axis, 
-  virtual protected UniversalEvent
+protected:
+  ToEvent(StateIdx state)
+	 : state_idx(state) {}
+};
+#endif
+
+template<class Axis>
+class REvent
+: public Axis,
+  protected UniversalEvent
   //public SAutoSingleton<REvent<Object, Axis>>
 {
 public:
-  //! Create a from->to event for Object in Axis.
+  //! Create a from->to event
   REvent(const char* from, const char* to);
-  bool wait(RObjectWithEvents<Axis>&, int time 
-				= std::numeric_limits<uint64_t>::max());  
+  //! Create a *->to event
+  REvent(const char* to);
+
+  Event& event(RObjectWithEvents<Axis>&);
+
+  bool wait(RObjectWithEvents<Axis>& obj, int time 
+				= std::numeric_limits<uint64_t>::max())
+  {
+	 return event(obj).wait(time);
+  }
+
+  bool signalled(RObjectWithEvents<Axis>& obj) const
+  {
+	 return const_cast<REvent<Axis>*>(this)
+		-> event(obj).signalled();
+  }
 };
 
+#if 0
 //! Create an event of moving Obj from `before' state to
 //! `after' state.
 const UniversalEvent& operator / 
@@ -49,6 +63,7 @@ const UniversalEvent& operator /
 const UniversalState& operator + 
   (const UniversalState& state, 
 	const UniversalEvent& event);
+#endif
 
 //size_t waitMultiple( HANDLE *, size_t count );
 

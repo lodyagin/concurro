@@ -29,7 +29,7 @@ class ThreadStateAxis : public StateAxis {};
 class RThreadBase
   : public SNotCopyable,
     public HasStringView,
-    public RObjectWithStates<ThreadStateAxis>
+    public RObjectWithEvents<ThreadStateAxis>
   // TODO this class should has a complex state:
   // (currentState, waitCnt, exitRequested)
 {
@@ -75,27 +75,34 @@ public:
   It is a group of functions 
   for access from a calling thread 
   */
+
+  // TODO add std::call_once conditions. (? Also to dtr).
+
   void start();
   void wait();  // wait while thread finished
   virtual void stop (); ///< try to stop implicitly
 
   bool is_running () const
   {
-    RLOCK(cs);
-    return state_is(workingState);
+//    RLOCK(cs);
+    return RState<ThreadStateAxis>::state_is
+		(*this, workingState);
   }
 
   // Overrides
   void outString (std::ostream& out) const;
 
+#if 0
   Event& get_stop_event ()
   {
     return stopEvent;
   }
+#endif
 
   DECLARE_STATES(ThreadStateAxis, ThreadState);
   DECLARE_STATE_CONST(ThreadState, ready);
   DECLARE_STATE_CONST(ThreadState, working);
+  DECLARE_STATE_CONST(ThreadState, stop_requested);
   DECLARE_STATE_CONST(ThreadState, terminated);
   DECLARE_STATE_CONST(ThreadState, destroyed);
 
@@ -108,7 +115,7 @@ protected:
   RThreadBase(const ObjectCreationInfo&, const Par&);
 
   /// Mutex for concurrent access to this object.
-  RMutex cs;
+//  RMutex cs;
 
   void set_state_internal (const ThreadState& state) /* overrides */;
 
@@ -129,14 +136,15 @@ protected:
   virtual void start_impl () = 0;
 
 
-  Event stopEvent; //stop is requested
+//  Event stopEvent; //stop is requested
 
   /// A number of threads waiting termination
   /// of this thread.
   std::atomic<int> waitCnt; 
 
-  /// Somebody has requested a termination.
-  std::atomic<bool> exitRequested; 
+  //! Somebody has requested termination. It is for
+  //! checking from user-implemented run() method.
+//  std::atomic<bool> exitRequested; 
 
 private:
   static std::atomic<int> counter;
@@ -151,13 +159,14 @@ private:
 };
 
 /*
-  It can be started and stoped only once, like Java thread.
-  SException will be raised if we try to start several times.
-*/
+  It can be started and stoped only once, like Java
+  thread.  SException will be raised if we try to start
+  several times.  */
 
 /**
- * Any kind thread-wrapper object. Thread is the real thread
- * class. Each RThread object must be member of a ThreadRepository.
+ * Any kind thread-wrapper object. Thread is the real
+ * thread class. Each RThread object must be member of a
+ * ThreadRepository.
  */
 template<class Thread> class RThread {};
 
