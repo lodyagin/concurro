@@ -38,7 +38,9 @@ protected:
 #define STATE_MAP_MASK 0x7fff0000
 #define STATE_MAP_SHIFT 16
 #define STATE_IDX_MASK 0xffff
-#define STATE_MAP(state) ((state) & STATE_MAP_MASK)
+//! Return a state map id by a state.
+#define STATE_MAP(state) \
+  (((state) & STATE_MAP_MASK) >> STATE_MAP_SHIFT)
 #define STATE_IDX(state) ((state) & STATE_IDX_MASK)
 
 #if 0
