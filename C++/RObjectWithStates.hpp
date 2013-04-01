@@ -27,10 +27,12 @@ Event* RObjectWithEvents<Axis>
 {
   const auto it = events.find(trans_id);
   if (it == events.end()) {
+	 Event* ev = new Event(true);
 	 events.insert
-		(std::pair<TransitionId, Event*>
-		   (trans_id, new Event(true))); 
+		(std::pair<TransitionId, Event*>(trans_id, ev)); 
       //<NB> manual reset
+	 return ev;
   }
+  else return it->second;
 }
 

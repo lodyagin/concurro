@@ -51,6 +51,7 @@ std::ostream& operator<<
 	 if (!first_trans) out << ';'; else first_trans = false;
 	 out << it->first << "->" << it->second;
   }
+  return out;
 }
 
 StateMap::StateMap()

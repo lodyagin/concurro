@@ -22,6 +22,6 @@ bool REvent<Axis>
 //
 ::wait(RObjectWithEvents<Axis>& obj, int time)
 {
-  obj.get_event
+  return obj.get_event
 	 (this->transition_id ) -> wait(time);
 }
