@@ -5,8 +5,7 @@ REvent<Axis>::REvent(const char* from,
 							const char* to)
   : UniversalEvent
   	   (StateMapRepository::instance()
-	      . get_object_by_id(
-		     StateMapId(typeid(Axis).name()))
+		 . get_map_for_axis(typeid(Axis))
 		 -> get_transition_id(from, to)
 		  )
 {}
