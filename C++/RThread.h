@@ -130,8 +130,11 @@ protected:
   /// Start the thread procedure (called from _helper)
 
 
-  /// It will be overrided with real thread procedure.
-  virtual void run() = 0;
+  //! It will be overrided with real thread procedure.
+  //! It is not pure virtual to prevent situation of fast
+  //! creation and destruction of an RThread object prior
+  //! to _run() calls run().
+  virtual void run() {};
 
   virtual void start_impl () = 0;
 
