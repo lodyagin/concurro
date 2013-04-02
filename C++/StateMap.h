@@ -85,9 +85,8 @@ public:
 class NoStateWithTheName : public SException
 {
 public:
-  NoStateWithTheName ()
-    : SException ("No state with the name")
-  {}
+  NoStateWithTheName(const std::string& name, 
+							const StateMap* map);
 };
 
 class IncompatibleMap : public SException
@@ -219,9 +218,9 @@ public:
 
 protected:
 
-  typedef std::unordered_map<const char*, StateIdx>  
+  typedef std::unordered_map<std::string, StateIdx>  
 	 Name2Idx;
-  typedef std::vector<const char*> Idx2Name;
+  typedef std::vector<std::string> Idx2Name;
 
   const StateIdx n_states;
   Name2Idx     name2idx;

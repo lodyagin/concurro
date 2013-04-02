@@ -49,13 +49,13 @@ bool EvtBase::wait( int time )
 {
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
-	 LOG_DEBUG(log, "Thread " << "<todo>"
+	 LOG_TRACE(log, "Thread " << "<todo>"
 				  << " waits for the event " << *this
 				  << " for " << time << " msecs"
 		);
   }
   else {
-	 LOG_DEBUG(log, "Thread " << "<todo>"
+	 LOG_TRACE(log, "Thread " << "<todo>"
 				  << " waits for the event " << *this
 				  << " w/o timeout"
 		);
@@ -100,7 +100,7 @@ Event::Event(const std::string& id, bool manual, bool init )
 
 void Event::set()
 {
-  LOG_DEBUG(log, "Thread " << "<todo>"
+  LOG_TRACE(log, "Thread " << "<todo>"
 				<< " is setting the " << *this << " event");
 #ifdef _WIN32
   sWinCheck
@@ -115,7 +115,7 @@ void Event::set()
 
 void Event::reset()
 {
-  LOG_DEBUG(log, "Thread " << "<todo>"
+  LOG_TRACE(log, "Thread " << "<todo>"
 				<< " is resetting the " << *this << " event");
 #ifdef _WIN32
   sWinCheck

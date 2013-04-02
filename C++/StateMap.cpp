@@ -23,6 +23,15 @@ InvalidStateTransition::InvalidStateTransition
 					 << UniversalState(to) << "]."))
 {}
 
+NoStateWithTheName::NoStateWithTheName
+  (const std::string& name, 
+	const StateMap* map)
+  : 
+	 SException (SFORMAT(
+				 "No state with the name [" << name << "]"
+				 << " in the map " << (*map)))
+{}
+
 StateMap* StateMapParBase::create_derivation
   (const ObjectCreationInfo& oi) const
 {
@@ -120,7 +129,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 #endif
 
   // Merge the maps: copy old states first
-  idx2name[0] = NULL;
+  idx2name[0] = std::string();
 #ifdef PARENT_MAP
   std::copy(parent->idx2name.begin(), 
 				parent->idx2name.end(),
@@ -139,7 +148,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   for (StateIdx k = 0; k < idx2name.size(); k++)
   {
 	 const auto inserted = name2idx.insert
-		(std::pair<const char*, StateIdx>(idx2name[k], k));
+		(std::pair<std::string, StateIdx>(idx2name[k], k));
 	 if (!inserted.second)
 		throw BadParameters("map states repetition");
   }
@@ -240,7 +249,7 @@ uint32_t StateMap::create_state (const char* name) const
 		| STATE_IDX(cit->second);
   }
   else 
-    throw NoStateWithTheName ();
+    throw NoStateWithTheName(name, this);
 }
 
 StateIdx StateMap::size () const
@@ -304,8 +313,9 @@ void StateMap::outString (std::ostream& out) const
 {
   // print states
   bool first = true;
-  for (Idx2Name::const_iterator it = idx2name.begin ();
-       it != idx2name.end ();
+  for (Idx2Name::const_iterator it 
+			= idx2name.begin() + 1; //skip a "null" state
+       it != idx2name.end();
        it++
        )
   {
