@@ -6,5 +6,6 @@
 *.so.*
 *.vpp.work*
 CMakeCache.txt
+log4cxx.properties
 Makefile
 CMakeFiles/

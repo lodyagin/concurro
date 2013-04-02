@@ -27,7 +27,7 @@ CU_TestInfo RMutexTests[] = {
    test_same_thread_acquire },
   {"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
    test_2_threads_try_acquire },
-#if 0
+#if 1
   {"we can't leave from local region while thread is run",
    test_local_thread_variable },
 #endif
