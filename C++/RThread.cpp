@@ -50,7 +50,7 @@ RThreadBase::RThreadBase
     RObjectWithEvents<ThreadStateAxis> (readyState),
     universal_object_id (id),
     waitCnt (0), 
-    isTerminatedEvent (false),
+    //isTerminatedEvent (false),
 	 externalTerminated (extTerminated)
     //stopEvent (true, false),
     //exitRequested (false),
@@ -64,7 +64,7 @@ RThreadBase::RThreadBase
     RObjectWithEvents<ThreadStateAxis> (readyState),
     universal_object_id (oi.objectId),
     waitCnt (0), 
-    isTerminatedEvent (false),
+    //isTerminatedEvent (false),
     //stopEvent (true, false),
     //exitRequested (false),
 	 externalTerminated (p.extTerminated)

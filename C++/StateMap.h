@@ -20,92 +20,51 @@ typedef uint16_t StateIdx;
 typedef uint16_t TransitionId;
 
 class StateMap;
-//class EmptyStateMap;
-//class UniversalState;
+class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited. <NB> StateAxises can't be "extended". Like
 //! x, y, x in decart coordinates they are "finite". But
 //! on RState inheritance new states on the same axes can
 //! be added.
-class StateAxis //: public UniversalState
-{
-protected:
-  //! Return an empty state map
-  //static StateMap* get_state_map();
-};
+class StateAxis {};
 
 #define STATE_MAP_MASK 0x7fff0000
 #define STATE_MAP_SHIFT 16
-#define STATE_IDX_MASK 0xffff
+#define STATE_IDX_MASK 0x7fff
 //! Return a state map id by a state.
 #define STATE_MAP(state) \
   (((state) & STATE_MAP_MASK) >> STATE_MAP_SHIFT)
 #define STATE_IDX(state) ((state) & STATE_IDX_MASK)
-
-#if 0
-class StateCoder
-{
-  friend class StateMap;
-
-public:
-/*  UniversalState () 
-    : state_map (0), state_idx (0) 
-	 {}*/
-
-  //StateCoder(uint32_t coded);
-
-  operator uint32_t() const
-  {
-	 return state;
-  }
-  
-  // NB not virutal
-  //bool operator== (const UniversalState& state2) const;
-  //bool operator!= (const UniversalState& state2) const;
-
-  //std::string name() const;
-  
-  uint32_t        state;
-  //const StateMap* state_map;
-  //StateIdx        state_idx;
-
-protected:
-  StateCoder (const StateMap* map, StateIdx idx);
-};
-#endif
-
-#define MIXED_EVENT
 
 class UniversalEvent
 {
 public:
   uint16_t   id;
 
+  //! arrival events have this bit set
   enum { Mask = 0x8000 };
-
-#if 0
-  enum class Type {Transition, Destination};
-
-  Type type() const
+  class NeedArrivalType: public SException
   {
-	 return (id & Mask) ? Type::Destination
-		: Type::Transition;
-  }
-#endif
+  public:
+    NeedArrivalType()
+	 : SException
+		("Need an arrival event type here") {}
+  };
 
-protected:
-  UniversalEvent(TransitionId trans_id)
- 	 : id(trans_id) {}
-#ifdef MIXED_EVENT
-UniversalEvent(uint32_t state, bool) 
-    : id(state | Mask) {}
-#endif
+  //! Whether this event is of an 'arrival' and not
+  //! 'transitional' type.
+  bool is_arrival_event() const { return (id & Mask); }
+
+  //! Transform arrival events to a state. Can throw
+  //! NeedArrivalType. 
+  operator UniversalState() const;
+
+  //! Construct a `transitional' type of event
+  UniversalEvent(TransitionId trans_id) : id(trans_id) {}
+  //! Construct an `arrival' type of event
+  UniversalEvent(uint32_t state, bool) : id(state|Mask) {}
 };
-
-/*std::ostream& 
-operator<< (std::ostream&, const UniversalState&);
-*/
 
 /* Exceptions */
 
@@ -118,12 +77,9 @@ public:
      const std::string& to)
     : SException 
     (std::string ("Invalid state transition from [")
-    + from
-    + "] to ["
-    + to
-    + "]."
-    )
-  {}
+    + from + "] to [" + to + "].") {}
+
+  InvalidStateTransition(uint32_t from, uint32_t to);
 };
 
 class NoStateWithTheName : public SException
@@ -144,11 +100,7 @@ public:
 
 /* StateMap class */
 
-#if 0
-typedef std::string StateMapId;
-#else
 typedef int16_t StateMapId;
-#endif
 
 class StateMapParBase
 {
@@ -194,16 +146,8 @@ public:
   StateMapId get_id(const ObjectCreationInfo& oi) const;
 };
 
-#if 0
-struct EmptyStateMapPar : public StateMapParBase
-{
-  StateMap* create_derivation
-    (const ObjectCreationInfo& oi) const;
-};
-#endif
-
 std::ostream& operator<< 
-(std::ostream& out, const StateMapParBase& par);
+  (std::ostream& out, const StateMapParBase& par);
 
 class StateMapRepository;
 
@@ -286,29 +230,12 @@ protected:
   Transitions transitions;
   StateMapRepository* repo;
 
-  //! Construct an empty state map
-  //StateMap();
-
   StateMap(const ObjectCreationInfo& oi,
 			  const StateMapParBase& par);
 
 private:
   typedef Logger<LOG::States> log;
 };
-
-#if 0
-class EmptyStateMap 
- : public StateMap, public SAutoSingleton<EmptyStateMap>
-{
-public:
-  EmptyStateMap() {}
-
-  virtual bool is_empty_map () const
-  {
-	 return true;
-  }
-};
-#endif
 
 /**
  * A repository for state maps. It also maintains
@@ -342,6 +269,8 @@ public:
 
   //! Return a state map by a state axis
   StateMap* get_map_for_axis(const std::type_info& axis);
+
+  std::string get_state_name(uint32_t state) const;
 
 protected:
   //! Return a map id by an axis type.

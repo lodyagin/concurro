@@ -78,28 +78,31 @@ void RState<Axis>
   if (!stateMap->is_compatible(to))
 	 throw IncompatibleMap();
 
-#ifdef STATE_LOCKING
   auto& current = obj.current_state();
-  const auto from = current;
-  {
-	 RLOCK(lock);
-	 from.state_map->check_transition(current, to);
-	 current = to;
-  }
-#else
-  auto& current = obj.current_state();
-  stateMap->check_transition(current, to);
-  const auto from = current.exchange(to);
-  try {
-	 stateMap->check_transition(from, to);
-  }
-  catch (const InvalidStateTransition&) {
+  stateMap->check_transition(current, to); // A
+  const auto from = current.exchange(to);  // B
+
+  const TransitionId trans_id = 
+	 stateMap->get_transition_id(from, to);
+
+  if (trans_id == 0) {
+	 // somebody changed state between A and B and a new
+	 // state has not transition to a desired value. Make
+	 // undo.
 	 const auto old = current.exchange(from);
 	 if (old != from)
+		// unable to undo, sombody changed it again
 		throw RaceConditionInStates(old, from, to);
-	 //throw;
+	 else
+		throw InvalidStateTransition(from, to);
   }
-#endif
+
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
+		(&obj)) {
+	 assert(trans_id > 0);
+	 p->update_events(trans_id, to);
+  }
+
   LOGGER_DEBUG(obj.logger(), 
 					"State changed from [" 
 					<< stateMap->get_state_name(from)
@@ -147,6 +150,14 @@ uint32_t RState<Axis>
 	 . current_state().load();
   //assert(STATE_MAP(us) == STATE_MAP(the_state));
   return us;
+}
+
+inline std::ostream&
+operator<< (std::ostream& out, const UniversalState& st)
+{
+  out << StateMapRepository::instance()
+	 . get_state_name(st.the_state);
+  return out;
 }
 
 template<class Axis>

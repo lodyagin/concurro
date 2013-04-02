@@ -11,8 +11,8 @@
 
 #include <log4cxx/logger.h>
 
-template<class Axis>
-class RState;
+template<class Axis> class RState;
+template<class Axis> class REvent;
 
 /// An interface which should be implemented in each
 /// state-aware class.
@@ -20,6 +20,7 @@ template<class Axis>
 class ObjectWithStatesInterface
 {
   friend class RState<Axis>;
+  friend class REvent<Axis>;
 public:
   typedef RState<Axis> State;
 

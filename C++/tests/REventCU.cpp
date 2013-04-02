@@ -38,12 +38,12 @@ public:
 
   void run()
   {
-#if 0
+	 //Event wait_forever("Test::run::wait_forever",true);
+	 //wait_forever.wait();
 	 usleep(100000);
 	 State::move_to(*this, chargedState);
 	 usleep(100000);
 	 State::move_to(*this, dischargedState);
-#endif
   }
 
   DEFAULT_LOGGER(Test)
@@ -57,18 +57,30 @@ DEFINE_STATES(Test, CDAxis, State)
 DEFINE_STATE_CONST(Test, State, charged);
 DEFINE_STATE_CONST(Test, State, discharged);
 
+#define TEST_OBJ_STATE(obj, axis, state)			\
+  { \
+	 RState<axis> st(obj); \
+	 CU_ASSERT_EQUAL_FATAL(st, state); \
+  } while(0)
+
 void test_simplest_event()
 {
   Test obj;
+  bool wt;
 
   obj.start();
-#if 0
-  REvent<CDAxis>("discharged","charged").wait(obj);
-  RState<CDAxis> state(obj);
-  CU_ASSERT_EQUAL_FATAL(state, Test::dischargedState);
 
-  REvent<CDAxis>("charged","discharged").wait(obj);
-//  CU_ASSERT_TRUE_FATAL(obj.state_is
-//							  (Test::dischargedState));
-#endif
+  wt= REvent<CDAxis>("discharged","charged").wait(obj, 1);
+  CU_ASSERT_FALSE_FATAL(wt);
+  TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
+  wt = REvent<CDAxis>("discharged","charged").wait(obj);
+  CU_ASSERT_TRUE_FATAL(wt);
+  TEST_OBJ_STATE(obj, CDAxis, Test::chargedState);
+
+  wt= REvent<CDAxis>("charged","discharged").wait(obj, 1);
+  CU_ASSERT_FALSE_FATAL(wt);
+  TEST_OBJ_STATE(obj, CDAxis, Test::chargedState);
+  wt = REvent<CDAxis>("charged","discharged").wait(obj);
+  CU_ASSERT_TRUE_FATAL(wt);
+  TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
 }

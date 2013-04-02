@@ -9,13 +9,15 @@
 #ifndef CONCURRO_EVENT_H
 #define CONCURRO_EVENT_H
 
+#include "SCheck.h"
+#include "Logging.h"
 #ifndef _WIN32
 #define WFMO
 #include "pevents.h"
 typedef neosmart::neosmart_event_t HANDLE;
 #endif
 #include <cstdatomic>
-#include "SCheck.h"
+#include <ostream>
 
 class EvtBase
 {
@@ -23,22 +25,21 @@ public:
   //! Wait for event.
   virtual void wait();
   //! Wait for event or time in msecs. 
-  //! \return false on a timeout.
+  //! \return false on timeout.
   virtual bool wait( int time );  
   virtual ~EvtBase();
 
-  // Direct access not allowed due to combined event logic
-  // possibility (i.e. atomic set the event and additional
-  // info). 
-  //HANDLE evt()  { return h; }
-
+  const std::string universal_object_id;
 protected:
+  typedef Logger<EvtBase> log;
 
-  EvtBase( HANDLE );
+  EvtBase(const std::string& id, HANDLE);
 
   HANDLE h;
-
 };
+
+std::ostream&
+operator<< (std::ostream&, const EvtBase&);
 
 //! A windows-like event class.
 class Event : public EvtBase
@@ -48,7 +49,8 @@ public:
   typedef EvtBase Parent;
 
   explicit Event
-	 (bool manual, //! manual reset
+	 (const std::string& id, 
+     bool manual, //! manual reset
 	  bool init = false //! initial state
 		);
   ~Event(){}

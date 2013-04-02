@@ -13,23 +13,10 @@
 #include "RObjectWithStates.h"
 #include "Event.h"
 
-#if 0
-class ToEvent
-{
-public:
-  StateIdx state_idx;
-
-protected:
-  ToEvent(StateIdx state)
-	 : state_idx(state) {}
-};
-#endif
-
 template<class Axis>
 class REvent
 : public Axis,
   protected UniversalEvent
-  //public SAutoSingleton<REvent<Object, Axis>>
 {
 public:
   //! Create a from->to event
@@ -39,11 +26,9 @@ public:
 
   Event& event(RObjectWithEvents<Axis>&);
 
-  bool wait(RObjectWithEvents<Axis>& obj, int time 
-				= std::numeric_limits<uint64_t>::max())
-  {
-	 return event(obj).wait(time);
-  }
+  //! Wait for the event on obj for max time msecs.
+  //! \return false on timeout.
+  bool wait(RObjectWithEvents<Axis>& obj, int time = -1);
 
   bool signalled(RObjectWithEvents<Axis>& obj) const
   {

@@ -10,27 +10,24 @@ using namespace neosmart;
 
 // EvtBase  ===============================================
 
-EvtBase::EvtBase( HANDLE _h ) :
-  h(_h)
+EvtBase::EvtBase(const std::string& id, HANDLE h_ ) :
+  universal_object_id(id), h(h_)
 {
+  LOG_DEBUG(log, "Thread " << "<todo>"
+				<< " creates the event ["
+				<< universal_object_id << "]");
 #ifdef _WIN32
-  LOG4STRM_DEBUG 
-    (Logging::Thread (),
-    oss_ << "Thread " << SThread::current ().id()
-     << " creates the event handle " << h
-     );
   sWinCheck(h != 0, L"creating an event");
 #endif
 }
 
 EvtBase::~EvtBase()
 {
+  LOG_DEBUG(log, "Thread " << "<todo>"
+				<< " closes the event handle [" 
+				<< universal_object_id << "]");
+
 #ifdef _WIN32
-  LOG4STRM_DEBUG 
-    (Logging::Thread (),
-    oss_ << "Thread " << SThread::current ().id()
-     << " closes the event handle " << h
-     );
   if (!h) CloseHandle(h);
 #else
   if (h) DestroyEvent(h);
@@ -41,37 +38,29 @@ EvtBase::~EvtBase()
 void EvtBase::wait()
 {
 #ifdef _WIN32
-  LOG4STRM_DEBUG 
-    (Logging::Thread (),
-    oss_ << "Thread " << SThread::current ().id()
-     << " waits on handle " << h
-     );
-#endif
-  HANDLE evts[] = {
-#ifndef SHUTDOWN_UNIMPL
-    SShutdown::instance().event(),
-#endif
-  h };
-#ifdef _WIN32
-  DWORD code = WaitForMultipleObjects(2, evts, false, INFINITE);
-  if ( code == WAIT_OBJECT_0 ) xShuttingDown(L"REvent.wait");
-  if ( code != WAIT_OBJECT_0 + 1 )
-    sWinErrorCode(code, L"waiting for an event");
+  wait(INFINITE);
 #else
-  WaitForMultipleEvents(evts, 1, false, (uint64_t) -1);
+  //wait(std::numeric_limits<uint64_t>::max());
+  wait(-1);
 #endif
 }
 
 bool EvtBase::wait( int time )
 {
-#ifdef _WIN32
-  LOG4STRM_DEBUG 
-    (Logging::Thread (),
-    oss_ << "Thread " << SThread::current ().id()
-     << " waits of handle " << h
-     << " for " << time << "msecs"
-     );
-#endif
+//  if (time != std::numeric_limits<uint64_t>::max()) {
+  if (time != -1) {
+	 LOG_DEBUG(log, "Thread " << "<todo>"
+				  << " waits for the event " << *this
+				  << " for " << time << " msecs"
+		);
+  }
+  else {
+	 LOG_DEBUG(log, "Thread " << "<todo>"
+				  << " waits for the event " << *this
+				  << " w/o timeout"
+		);
+  }
+
   HANDLE evts[] = {
 #ifndef SHUTDOWN_UNIMPL
   SShutdown::instance().event(),
@@ -79,24 +68,31 @@ bool EvtBase::wait( int time )
   h };
 #ifdef _WIN32
   DWORD code = WaitForMultipleObjects(2, evts, false, time);
-  
   if ( code == WAIT_OBJECT_0 ) xShuttingDown(L"REvent.wait");
   if ( code == WAIT_TIMEOUT ) return false;
   if ( code != WAIT_OBJECT_0 + 1 ) 
     sWinErrorCode(code, L"waiting for an event");
 #else
-  WaitForMultipleEvents(evts, 1, false, time);
+  int code = WaitForEvent(evts[0], time);
+  if (code == ETIMEDOUT) return false;
 #endif
   return true;
 }
 
+std::ostream&
+operator<< (std::ostream& out, const EvtBase& evt)
+{
+  out << '[' << evt.universal_object_id << ']';
+  return out;
+}
 
 // Event  ===========================================================
-Event::Event( bool manual, bool init ) :
+Event::Event(const std::string& id, bool manual, bool init )
+  :
 #ifdef _WIN32
-  Parent(CreateEvent(0, manual, init, 0))
+  Parent(id, CreateEvent(0, manual, init, 0))
 #else
-  EvtBase(CreateEvent(manual, init)),
+  Parent(id, CreateEvent(manual, init)),
   is_signalled(false), is_manual(manual)
 #endif
 {
@@ -104,12 +100,9 @@ Event::Event( bool manual, bool init ) :
 
 void Event::set()
 {
+  LOG_DEBUG(log, "Thread " << "<todo>"
+				<< " is setting the " << *this << " event");
 #ifdef _WIN32
-  LOG4STRM_DEBUG 
-    (Logging::Thread (),
-    oss_ << "Thread " << SThread::current ().id()
-     << " set event on handle " << h
-     );
   sWinCheck
     (SetEvent(h) != 0, 
      SFORMAT (L"setting event, handle = " << h).c_str ()
@@ -122,12 +115,9 @@ void Event::set()
 
 void Event::reset()
 {
+  LOG_DEBUG(log, "Thread " << "<todo>"
+				<< " is resetting the " << *this << " event");
 #ifdef _WIN32
-  LOG4STRM_DEBUG 
-    (Logging::Thread (),
-    oss_ << "Thread " << SThread::current ().id()
-     << " reset event on handle " << h
-     );
   sWinCheck
     (ResetEvent(h) != 0, 
      SFORMAT (L"resetting event, handle = " << h).c_str ()

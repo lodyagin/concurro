@@ -150,7 +150,7 @@ private:
   static std::atomic<int> counter;
 
   //thread terminate its processing
-  Event isTerminatedEvent; 
+  //Event isTerminatedEvent; 
   Event* externalTerminated;
 
   // called from Windows

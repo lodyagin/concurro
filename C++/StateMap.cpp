@@ -2,8 +2,26 @@
 
 #include "StdAfx.h"
 #include "StateMap.h"
+#include "RState.h"
 #include <assert.h>
 #include <cstdatomic>
+
+UniversalEvent::operator UniversalState() const
+{
+  if (!is_arrival_event())
+	 throw NeedArrivalType();
+  return UniversalState(STATE_IDX(id));
+}
+
+InvalidStateTransition::InvalidStateTransition
+  (uint32_t from, uint32_t to)
+: 
+	 SException(SFORMAT
+					("Invalid state transition from ["
+					 << UniversalState(from)
+					 << "] to [" 
+					 << UniversalState(to) << "]."))
+{}
 
 StateMap* StateMapParBase::create_derivation
   (const ObjectCreationInfo& oi) const
@@ -268,19 +286,6 @@ void StateMap::check_transition
        );
 }
 
-#if 0
-bool StateMap::is_equal(uint32_t a, uint32_t b) const
-{
-  if (!is_compatible (a) || !is_compatible (b))
-    throw IncompatibleMap ();
-
-  assert (a.state_idx >= 1);
-  assert (b.state_idx >= 1);
-
-  return a.state_idx == b.state_idx;
-} 
-#endif
-
 bool StateMap::is_compatible(uint32_t state) const
 {
   return STATE_MAP(state) == (uint32_t) numeric_id;
@@ -337,6 +342,13 @@ StateMap* StateMapRepository::get_map_for_axis
   return get_object_by_id(get_map_id(axis));
 }
 
+std::string StateMapRepository
+//
+::get_state_name(uint32_t state) const
+{
+  return get_object_by_id(STATE_MAP(state))
+	 -> get_state_name(state);
+}
 
 StateMapId StateMapRepository::get_map_id
   (const std::type_info& axis)
@@ -383,7 +395,3 @@ std::string UniversalState::name() const
 #endif
 
 
-/*StateAxis::StateAxis(StateMap* map_extension, const char* initial_state)
-  : UniversalState(map_extension->create_state(initial_state))
-{
-}*/

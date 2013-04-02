@@ -155,7 +155,7 @@ void test_event()
 {
   std::atomic<bool> *b = new std::atomic<bool>;
   *b = false;
-  Event * event = new Event(true, false);
+  Event * event = new Event("test_event::event", true, false);
   TestThreadevent thread1(std::string("11622"), b, event);
   thread1.start();
   event->wait();
@@ -166,7 +166,7 @@ typedef RThread<std::thread> RT;
 
 void test_event_2threads()
 {
-  static Event e(true, false);
+  static Event e("test_event_2threads::e", true, false);
 
   struct S: public RT { S() : RT("T1") {} void run() { e.set(); } } s1;
   struct W: public RT { W() : RT("T2") {} void run() { e.wait(); } } w1;

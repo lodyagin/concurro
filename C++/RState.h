@@ -31,9 +31,14 @@ class UniversalState
 {
 public:
   UniversalState() : the_state(0) {}
-  //UniversalState(uint32_t st) : the_state(st) {}
+  UniversalState(uint32_t st) : the_state(st) {}
+  operator uint32_t() const { return the_state; }
   uint32_t the_state;
 };
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalState& st);
+
 
 /**
  * RState is a state value (think about it as an extended
@@ -114,12 +119,8 @@ public:
 protected:
   typedef Logger<RState> log;
 
-#if 1
   static StateMap* stateMap;
   static StateMap* get_state_map() { return stateMap; }
-#else
-  StateMap* get_state_map() { return state_map; }
-#endif
 };
 
 template<class Axis>
