@@ -9,7 +9,6 @@ StateMap* RState<Axis>::stateMap = 0;
 template<class Axis>
 RState<Axis>::RState (const StateMapPar<Axis>& par,
 							 const char* name)
-  : the_state(0)
 {
   assert (name);
 
@@ -30,7 +29,6 @@ RState<Axis>::RState (const StateMapPar<Axis>& par,
 
 template<class Axis>
 RState<Axis>::RState(uint32_t us)
-  : the_state(0)
 {
   set_by_universal(us);
 }
@@ -39,7 +37,6 @@ template<class Axis>
 RState<Axis>
 //
 ::RState(const ObjectWithStatesInterface<Axis>& obj)
-  : the_state(0)
 {
   const uint32_t us = 
 	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
@@ -104,8 +101,11 @@ void RState<Axis>
   }
 #endif
   LOGGER_DEBUG(obj.logger(), 
-					"State changed from [" << from
-					<< "] to [" << to << "]");
+					"State changed from [" 
+					<< stateMap->get_state_name(from)
+					<< "] to [" 
+					<< stateMap->get_state_name(to)
+					<< "]");
 }
 
 template<class Axis>
@@ -149,3 +149,10 @@ uint32_t RState<Axis>
   return us;
 }
 
+template<class Axis>
+std::ostream&
+operator<< (std::ostream& out, const RState<Axis>& st)
+{
+  out << st.name();
+  return out;
+}

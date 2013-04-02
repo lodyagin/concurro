@@ -27,6 +27,14 @@ public:
   {}
 };
 
+class UniversalState
+{
+public:
+  UniversalState() : the_state(0) {}
+  //UniversalState(uint32_t st) : the_state(st) {}
+  uint32_t the_state;
+};
+
 /**
  * RState is a state value (think about it as an extended
  * enum).
@@ -35,7 +43,7 @@ public:
  * \tparam Axis a state axis.
  */
 template<class Axis>
-class RState : public Axis
+class RState : public Axis, protected UniversalState
 {
 public:
   //! Construct a state with the name.
@@ -106,8 +114,6 @@ public:
 protected:
   typedef Logger<RState> log;
 
-  uint32_t the_state;
-
 #if 1
   static StateMap* stateMap;
   static StateMap* get_state_map() { return stateMap; }
@@ -115,6 +121,10 @@ protected:
   StateMap* get_state_map() { return state_map; }
 #endif
 };
+
+template<class Axis>
+std::ostream&
+operator<< (std::ostream&, const RState<Axis>&);
 
 #define DECLARE_STATES(/*class_,*/ axis, state_class)	\
   const static StateMapPar<axis>				\

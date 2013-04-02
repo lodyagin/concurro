@@ -239,17 +239,10 @@ public:
     (uint32_t from,
      uint32_t to) const;
 
-  /* use ==
-  bool is_equal
-    (uint32_t a,
-     uint32_t b) const;
-  */
-  
   //! Whether the state is compatible with the map.
   bool is_compatible(uint32_t state) const;
 
-  std::string get_state_name
-    (uint32_t state) const;
+  std::string get_state_name(uint32_t state) const;
 
   StateIdx get_n_states() const
   {
