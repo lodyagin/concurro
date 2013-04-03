@@ -13,15 +13,12 @@ UniversalEvent::operator UniversalState() const
   return UniversalState(STATE_IDX(id));
 }
 
-InvalidStateTransition::InvalidStateTransition
-  (uint32_t from, uint32_t to)
-: 
-	 SException(SFORMAT
-					("Invalid state transition from ["
-					 << UniversalState(from)
-					 << "] to [" 
-					 << UniversalState(to) << "]."))
-{}
+InvalidState::InvalidState(UniversalState current,
+									UniversalState expected)
+  : SException
+	 (SFORMAT("Invalid state [" << current
+				 << "] when expected [" << expected << "]"))
+  {}
 
 NoStateWithTheName::NoStateWithTheName
   (const std::string& name, 
@@ -289,10 +286,7 @@ void StateMap::check_transition
    uint32_t to) const
 {
   if (!there_is_transition (from, to))
-    throw InvalidStateTransition 
-      (get_state_name (from),
-       get_state_name (to)
-       );
+    throw InvalidStateTransition(from, to);
 }
 
 bool StateMap::is_compatible(uint32_t state) const

@@ -25,9 +25,12 @@ class RBuffer
 {
 public:
   DECLARE_STATES(DataBufferStateAxis, State);
+  DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
   DECLARE_STATE_CONST(State, destroyed);
+
+  static REvent<DataBufferStateAxis> is_discharged;
 
   RBuffer() 
   : RObjectWithEvents<DataBufferStateAxis>
@@ -36,6 +39,10 @@ public:
   //! Move the buffer.
   //RBuffer(RBuffer&& b);
   virtual ~RBuffer();
+
+  //! Prepare the buffer to charging.
+  virtual void start_charging() = 0;
+  virtual void clear() = 0;
 
   // to make this class abstract
   //virtual void dummy() = 0;
@@ -48,9 +55,9 @@ public:
 class RSingleBuffer : public RBuffer
 {
 public:
-  DEF_EXCEPTION(ResizeOverCapacity, 
-					 "Can't resize RSingleBuffer "
-					 "over its initial capacity");
+  DEFINE_EXCEPTION(ResizeOverCapacity, 
+						 "Can't resize RSingleBuffer "
+						 "over its initial capacity");
 
   RSingleBuffer() = delete;
   //! Construct a buffer with maximal size res.
@@ -65,21 +72,26 @@ public:
   //! Get available size of the buffer
   size_t capacity() const { return reserved_; }
   //! Resize the buffer.
-  //void reserve(size_t res);
-  //! Return the buffer data
-  void* data() { return buf; }
+  void reserve(size_t res);
+  //! Return the buffer data. Imply start_charging().
+  void* data();
+  //! Return the buffer data as a constant. Not imply
+  //! start_charging().
+  const void* cdata() { return buf; }
   //! Return used buffer size
   size_t size() const { return size_; }
   //! Mark the buffer as holding data. Also set filled.
   //! \throw ResizeOverCapacity
   void resize(size_t sz);
+  void clear() { resize(0); }
+  void start_charging();
 
   DEFAULT_LOGGER(RSingleBuffer)
 
 protected:
   char* buf;
   size_t size_;
-  const size_t reserved_;
+  size_t reserved_;
 };
 
 class RMultipleBuffer : public RBuffer

@@ -142,6 +142,22 @@ bool RState<Axis>
 }
 
 template<class Axis>
+void RState<Axis>
+//
+::ensure_state
+  (const ObjectWithStatesInterface<Axis>& obj, 
+	const RState& expected)
+{
+  if (!state_is(obj, expected)) {
+	 const auto current = 
+		const_cast<ObjectWithStatesInterface<Axis>&> (obj)
+		. current_state() . load();
+
+	 throw InvalidState(current, expected);
+  }
+}
+
+template<class Axis>
 uint32_t RState<Axis>
 //
 ::state(const ObjectWithStatesInterface<Axis>& obj)

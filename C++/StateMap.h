@@ -19,8 +19,21 @@
 typedef uint16_t StateIdx;
 typedef uint16_t TransitionId;
 
+class UniversalState
+{
+public:
+  UniversalState() : the_state(0) {}
+  UniversalState(uint32_t st) : the_state(st) {}
+  operator uint32_t() const { return the_state; }
+  uint32_t the_state;
+};
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalState& st);
+
+
 class StateMap;
-class UniversalState;
+//class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited. <NB> StateAxises can't be "extended". Like
@@ -68,18 +81,29 @@ public:
 
 /* Exceptions */
 
+class InvalidState : public SException
+{
+public:
+  InvalidState(UniversalState current,
+					UniversalState expected);
+  InvalidState(const std::string& msg)
+	 : SException(msg) {}
+};
+
 class InvalidStateTransition 
-  : public SException
+  : public InvalidState
 {
 public:
   InvalidStateTransition 
-    (const std::string& from, 
-     const std::string& to)
-    : SException 
-    (std::string ("Invalid state transition from [")
-    + from + "] to [" + to + "].") {}
+    (UniversalState from_, 
+     UniversalState to_)
+    : InvalidState
+    (SFORMAT("Invalid state transition from ["
+				 << from_ << "] to [" << to_ << "].")) ,
+	 from(from_), to(to_)
+  {}
 
-  InvalidStateTransition(uint32_t from, uint32_t to);
+  UniversalState from, to;
 };
 
 class NoStateWithTheName : public SException

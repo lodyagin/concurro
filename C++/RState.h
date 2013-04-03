@@ -27,18 +27,6 @@ public:
   {}
 };
 
-class UniversalState
-{
-public:
-  UniversalState() : the_state(0) {}
-  UniversalState(uint32_t st) : the_state(st) {}
-  operator uint32_t() const { return the_state; }
-  uint32_t the_state;
-};
-
-std::ostream&
-operator<< (std::ostream& out, const UniversalState& st);
-
 
 /**
  * RState is a state value (think about it as an extended
@@ -105,6 +93,11 @@ public:
   static bool state_in
 	  (const ObjectWithStatesInterface<Axis>& obj, 
 		const std::initializer_list<RState>& set);
+
+  //! Raise InvalidState when a state is not expected.
+  static void ensure_state
+	  (const ObjectWithStatesInterface<Axis>& obj, 
+		const RState& expected);
 
   std::string name () const
   {
