@@ -36,10 +36,30 @@ public:
 	 //! An address to determine a socket type
 	 const RSocketAddress& addr;
 
-    Par(const RSocketAddress& a) : addr(a) {}
+	 // ::socket(domain, type, protocol)
+	 int domain;
+	 int type;
+	 int protocol;
+
+    Par(const RSocketAddress& a) 
+	 : addr(a), domain(0), type(0), protocol(0) {}
+
+	 /*RSocketBase* create_derivation
+	   (const ObjectCreationInfo& oi) const
+	 {
+		return addr.create_socket_pars(oi, *this)
+		  .create_derivation(oi);
+		  }*/
+
+	 RSocketBase* transform_object
+	   (const RSocketBase*) const
+	 { THROW_NOT_IMPLEMENTED; }
   };
 
-  //RSocket(bool event_used) : eventUsed(event_used) {}
+  struct IPv4Par : public Par
+  {
+	 
+  };
 
   virtual ~RSocketBase () {}
 
@@ -76,8 +96,12 @@ public:
 
 protected:
   //! A socket file descriptor.
-  SOCKET socket;
+  SOCKET fd;
   
+  /*RSocketBase(const ObjectCreationInfo& oi,
+	 const Par& par);*/
+  //RSocketBase(SOCKET socket) : fd(socket) {}
+
   //! set blocking mode
   virtual void set_blocking (bool blocking) = 0;
 
@@ -116,7 +140,7 @@ protected:
 class InSocketStateAxis : public StateAxis {};
 
 class InSocket
-: public RObjectWithStates<InSocketStateAxis>,
+: public RObjectWithEvents<InSocketStateAxis>,
   virtual public RSocketBase
 {
 public:
@@ -125,6 +149,8 @@ public:
   DECLARE_STATE_CONST(State, empty);
   DECLARE_STATE_CONST(State, closed); // a reading side
                                       // was closed
+
+//  RBuffer* 
 
 protected:
   typedef Logger<InSocket> log;
@@ -136,29 +162,25 @@ protected:
   //! Doing ::select and signalling new_data.
   class Thread;
 
-#if 0
-  Thread thread;
+  class Thread : public SocketThread
+  {
+  public:
+	 void run(); 
+
+  protected:
+    Thread(const ObjectCreationInfo& oi, const Par& p) 
+	 : SocketThread(oi, p), 
+		socket(dynamic_cast<InSocket*>(p.socket)) 
+		{ assert(socket); }
+
+	 InSocket* socket;
+  };
 
   //! The last received data
-  RBuffer msg;
-#endif
+  RSingleBuffer* msg;
 
   //! Actual size of a socket internal read buffer + 1.
   size_t socket_rd_buf_size;
-};
-
-class InSocket::Thread : public SocketThread
-{
-public:
-  void run(); 
-
-protected:
-  Thread(const ObjectCreationInfo& oi, const Par& p) 
-  : SocketThread(oi, p), 
-	 socket(dynamic_cast<InSocket*>(p.socket)) 
-  { assert(socket); }
-
-  InSocket* socket;
 };
 
 class OutSocketStateAxis : public StateAxis {};

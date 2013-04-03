@@ -1,6 +1,7 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
 #include "Repository.h"
+#include "RObjectWithStates.h"
 #include <cstdatomic>
 
 template<class Axis>

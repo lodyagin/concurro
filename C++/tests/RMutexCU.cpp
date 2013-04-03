@@ -27,12 +27,12 @@ CU_TestInfo RMutexTests[] = {
    test_same_thread_acquire },
   {"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
    test_2_threads_try_acquire },
-#if 1
   {"we can't leave from local region while thread is run",
    test_local_thread_variable },
-#endif
+#if 0
   {"RMutex more releases than acquire in the same thread",
    test_same_thread_overrelease },
+#endif
   CU_TEST_INFO_NULL
 };
 
@@ -99,10 +99,10 @@ void test_2_threads_try_acquire(){
   std::string s1 = "22222";
   TestThread thread1(s, mx, id1);
   thread1.start();
-  sleep(1);
+  usleep(100000);
   TestThread thread2(s1, mx, id2);
   thread2.start();
-  sleep(3);
+  usleep(300000);
   if (thread1.getResuilt() == 1 && thread2.getResuilt() == 2)
     CU_PASS(id1 == 1)
     else
@@ -116,7 +116,7 @@ public:
     :RThread<std::thread>(id), flag(flg){}
 protected:
   void run(){
-    sleep(3);
+    usleep(300000);
     *flag = true;
   }
   volatile bool * flag;

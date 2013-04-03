@@ -60,3 +60,10 @@ public:
 SMAKE_THROW_FN_DECL(sUserError, SUserError)
 
 std::ostream& operator<< (std::ostream&, const SException& exc);
+
+#define DEF_EXCEPTION(class_, msg) \
+class class_ : public SException \
+{ \
+public: \
+  class_() : SException(msg) {} \
+};

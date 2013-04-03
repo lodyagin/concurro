@@ -14,6 +14,7 @@ set (concurrent_SOURCES
 #  NamedPipe.cpp
 #  AbstractConnection.cpp
 #  SCheck.cpp
+  RBuffer.cpp
   RClientSocketAddress.cpp
   SCommon.cpp
 #  SComplPort.cpp
@@ -25,7 +26,7 @@ set (concurrent_SOURCES
 #  RServerSocketAddress.cpp
 #  RSingleSocket.cpp
   RSocketAddress.cpp
-#  RSocket.cpp
+  RSocket.cpp
 #  RSocketGroup.cpp
   RThread.cpp
   SException.cpp

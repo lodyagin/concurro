@@ -10,12 +10,16 @@
 #define CONCURRO_RSOCKETADDRESS_H_
 
 #include "HasStringView.h"
+//#include "Repository.h"
 #include <string>
 
 class RSocketAddress : public HasStringView
 {
 public:
-  virtual ~RSocketAddress (void) = 0;
+  //RSocketAddress() = delete;
+  //RSocketAddress(const std::string& host, uint16_t port);
+  //RSocketAddress(struct addrinfo*);
+  virtual ~RSocketAddress (void);
 
   // sockaddr pretty print
   static void outString 
@@ -34,6 +38,10 @@ public:
     (std::ostream& out, 
      const struct in6_addr* ia
      );
+
+  /*virtual RSocketBase::Par& create_socket_pars
+	 (const ObjectCreationInfo& oi,
+	 const RSocketBase::Par& par) const = 0;*/
 
 protected:
   // Copy socket address
@@ -54,6 +62,8 @@ protected:
   // Return 0 if the address family is unsupported
   static int get_sockaddr_len 
     (const struct sockaddr* sa);
+
+  struct addrinfo* ai;
 };
 
 #endif
