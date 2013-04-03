@@ -85,7 +85,7 @@ public:
   bool is_running () const
   {
 //    RLOCK(cs);
-    return RState<ThreadStateAxis>::state_is
+    return RAxis<ThreadStateAxis>::state_is
 		(*this, workingState);
   }
 
@@ -179,7 +179,6 @@ class RThread<std::thread> : public RThreadBase
 public:
   struct Par : public RThreadBase::Par
   {
-#if 0
 	 RThreadBase* create_derivation
 	   (const ObjectCreationInfo& oi) const
 	 {
@@ -188,13 +187,7 @@ public:
 
 	 RThreadBase* transform_object
 	   (const RThreadBase*) const
-	 {
-		THROW_EXCEPTION
-		  (SException, 
-			"transform_object is not realised for threads."
-			 );
-	 }
-#endif
+	 { THROW_NOT_IMPLEMENTED; }
   };
 
   RThread(const std::string& id, Event* extTerminated = 0)

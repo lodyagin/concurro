@@ -22,11 +22,14 @@ class RObjectWithStates
 public:
   typedef typename ObjectWithStatesInterface<Axis>
 	 ::State State;
-
+  
   RObjectWithStates(const State& initial_state)
 	 : currentState(initial_state) {}
+  RObjectWithStates(const RObjectWithStates&);
 
   virtual ~RObjectWithStates() {}
+
+  RObjectWithStates& operator=(const RObjectWithStates&);
 
 protected:
 
@@ -49,6 +52,7 @@ class RObjectWithEvents
 {
   friend class REvent<Axis>;
   friend class RState<Axis>;
+  friend class RAxis<Axis>;
 public:
   typedef RObjectWithStates<Axis> Parent;
   typedef typename Parent::State State;

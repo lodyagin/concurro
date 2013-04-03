@@ -6,7 +6,9 @@
 
 // RThread states  ========================================
 
-DEFINE_STATES(RThreadBase, ThreadStateAxis, ThreadState)
+//DEFINE_STATES(RThreadBase, ThreadStateAxis, ThreadState)
+RAxis<ThreadStateAxis> thread_state_axis
+(StateMapPar<ThreadStateAxis>
 ({  "ready",         // after creation
 	 "working",       // it works
 	 "stop_requested", // somebody called stop()
@@ -31,7 +33,7 @@ DEFINE_STATES(RThreadBase, ThreadStateAxis, ThreadState)
   {"ready", "destroyed"}
   // can't be destroyed in other states
   }
-  );
+  ));
 
 DEFINE_STATE_CONST(RThreadBase, ThreadState, ready);
 DEFINE_STATE_CONST(RThreadBase, ThreadState, working);

@@ -11,7 +11,8 @@
   
 }*/
 
-DEFINE_STATES(InSocket, InSocketStateAxis, State)
+ //DEFINE_STATES(InSocket, InSocketStateAxis, State)
+RAxis<InSocketStateAxis> in_socket_state_axis
 ({
   {   "new_data",  // new data or an error
 		"empty",
@@ -27,7 +28,8 @@ DEFINE_STATE_CONST(InSocket, State, empty);
 DEFINE_STATE_CONST(InSocket, State, closed);
 
 
-DEFINE_STATES(OutSocket, OutSocketStateAxis, State)
+//DEFINE_STATES(OutSocket, OutSocketStateAxis, State)
+RAxis<OutSocketStateAxis> out_socket_state_axis
 ({
   {   "wait_you",  // write buf watermark or an error
 		"busy",

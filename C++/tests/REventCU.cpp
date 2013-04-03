@@ -49,7 +49,8 @@ public:
   DEFAULT_LOGGER(Test)
 };
 
-DEFINE_STATES(Test, CDAxis, State)
+//DEFINE_STATES(Test, CDAxis, State)
+RAxis<CDAxis> cd_axis
 ({ {"charged", "discharged"},
   {{"charged", "discharged"}, {"discharged", "charged"}}
 });

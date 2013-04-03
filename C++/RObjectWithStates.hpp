@@ -3,6 +3,23 @@
 #include <algorithm>
 
 template<class Axis>
+RObjectWithStates<Axis>
+//
+::RObjectWithStates(const RObjectWithStates& obj)
+{
+  currentState = obj.currentState.load();
+}
+
+template<class Axis>
+RObjectWithStates<Axis>& RObjectWithStates<Axis>
+//
+::operator=(const RObjectWithStates& obj)
+{
+  currentState = obj.currentState.load();
+  return *this;
+}
+
+template<class Axis>
 Event* RObjectWithEvents<Axis>
 //
 ::get_event(const UniversalEvent& ue)

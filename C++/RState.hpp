@@ -5,14 +5,11 @@
 #include <cstdatomic>
 
 template<class Axis>
-StateMap* RState<Axis>::stateMap = 0;
+StateMap* RAxis<Axis>::stateMap = 0;
 
 template<class Axis>
-RState<Axis>::RState (const StateMapPar<Axis>& par,
-							 const char* name)
+RAxis<Axis>::RAxis(const StateMapPar<Axis>& par)
 {
-  assert (name);
-
   if (!stateMap) {
 	 try {
 		stateMap = StateMapRepository::instance()
@@ -24,45 +21,37 @@ RState<Axis>::RState (const StateMapPar<Axis>& par,
 		  . create_object(par);
 	 }
   }
-
-  the_state = stateMap->create_state(name);
 }
 
+#if 0
 template<class Axis>
-RState<Axis>::RState(uint32_t us)
+RAxis<Axis>::RAxis
+  (std::initializer_list<const char*> states,
+	std::initializer_list<
+	  std::pair<const char*, const char*>> transitions
+  )
 {
-  set_by_universal(us);
+  StateMapPar<Axis> par(states, transitions);
+  if (!stateMap) {
+	 try {
+		stateMap = StateMapRepository::instance()
+		  . get_map_for_axis(typeid(Axis));
+	 }
+	 catch(const StateMapRepository::NoSuchId&)
+	 {
+		stateMap = StateMapRepository::instance()
+		  . create_object(par);
+	 }
+  }
 }
+#endif
 
 template<class Axis>
-RState<Axis>
-//
-::RState(const ObjectWithStatesInterface<Axis>& obj)
-{
-  const uint32_t us = 
-	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
-	 . current_state();
-  set_by_universal(us);
-}
-
-template<class Axis>
-void RState<Axis>
-//
-::set_by_universal (uint32_t us)
-{
-  assert(stateMap);
-  if (!stateMap->is_compatible(us))
-	 throw IncompatibleMap();
-
-  the_state = us;
-}
-
-template<class Axis>
-void RState<Axis>
+void RAxis<Axis>
 //
 ::check_moving_to(
   const ObjectWithStatesInterface<Axis>& obj, 
-  const RState& to)
+  const RState<Axis>& to)
 {
   const uint32_t from = 
 	 const_cast<ObjectWithStatesInterface<Axis>&> (obj)
@@ -71,10 +60,10 @@ void RState<Axis>
 }
 
 template<class Axis>
-void RState<Axis>
+void RAxis<Axis>
 //
 ::move_to(ObjectWithStatesInterface<Axis>& obj, 
-			 const RState& to)
+			 const RState<Axis>& to)
 {
   if (!stateMap->is_compatible(to))
 	 throw IncompatibleMap();
@@ -113,10 +102,22 @@ void RState<Axis>
 }
 
 template<class Axis>
-bool RState<Axis>
+uint32_t RAxis<Axis>
+//
+::state(const ObjectWithStatesInterface<Axis>& obj)
+{
+  uint32_t us =
+	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	 . current_state().load();
+  //assert(STATE_MAP(us) == STATE_MAP(the_state));
+  return us;
+}
+
+template<class Axis>
+bool RAxis<Axis>
 //
 ::state_is (const ObjectWithStatesInterface<Axis>& obj, 
-				const RState& st)
+				const RState<Axis>& st)
 {
   return
 	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
@@ -124,11 +125,11 @@ bool RState<Axis>
 }
 
 template<class Axis>
-bool RState<Axis>
+bool RAxis<Axis>
 //
 ::state_in(
   const ObjectWithStatesInterface<Axis>& obj, 
-  const std::initializer_list<RState>& set )
+  const std::initializer_list<RState<Axis>>& set )
 {
   const auto current = 
 	 const_cast<ObjectWithStatesInterface<Axis>&> (obj)
@@ -142,11 +143,11 @@ bool RState<Axis>
 }
 
 template<class Axis>
-void RState<Axis>
+void RAxis<Axis>
 //
 ::ensure_state
   (const ObjectWithStatesInterface<Axis>& obj, 
-	const RState& expected)
+	const RState<Axis>& expected)
 {
   if (!state_is(obj, expected)) {
 	 const auto current = 
@@ -158,23 +159,34 @@ void RState<Axis>
 }
 
 template<class Axis>
-uint32_t RState<Axis>
-//
-::state(const ObjectWithStatesInterface<Axis>& obj)
+RState<Axis>::RState (const char* name)
+  : UniversalState
+	 (RAxis<Axis>::instance().state_map()
+	  . create_state(name))
+{}
+
+template<class Axis>
+RState<Axis>::RState(uint32_t us)
+  : UniversalState(us)
 {
-  uint32_t us =
-	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
-	 . current_state().load();
-  //assert(STATE_MAP(us) == STATE_MAP(the_state));
-  return us;
+  // ensure the new state is from Axis
+  RAxis<Axis>::instance().state_map().is_compatible(us);
 }
 
-inline std::ostream&
-operator<< (std::ostream& out, const UniversalState& st)
+template<class Axis>
+RState<Axis>
+//
+::RState(const ObjectWithStatesInterface<Axis>& obj)
+  : UniversalState
+  (const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	. current_state())
+{}
+
+template<class Axis>
+std::string RState<Axis>::name () const
 {
-  out << StateMapRepository::instance()
-	 . get_state_name(st.the_state);
-  return out;
+  return RAxis<Axis>::instance().state_map()
+	 .get_state_name(*this);
 }
 
 template<class Axis>

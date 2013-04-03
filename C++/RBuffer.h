@@ -25,10 +25,19 @@ class RBuffer
 {
 public:
   DECLARE_STATES(DataBufferStateAxis, State);
+#if 0
+  static const RState<DataBufferStateAxis> chargingState;
+  static const RState<DataBufferStateAxis> chargedState;
+  static const RState<DataBufferStateAxis> dischargedState;
+  static const RState<DataBufferStateAxis> destroyedState;
+  static const RState<DataBufferStateAxis> weldedState;
+#else
   DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
   DECLARE_STATE_CONST(State, destroyed);
+  DECLARE_STATE_CONST(State, welded);
+#endif
 
   static REvent<DataBufferStateAxis> is_discharged;
 
@@ -59,15 +68,17 @@ public:
 						 "Can't resize RSingleBuffer "
 						 "over its initial capacity");
 
-  RSingleBuffer() = delete;
+  RSingleBuffer();
   //! Construct a buffer with maximal size res.
   explicit RSingleBuffer(size_t res);
+  RSingleBuffer(const RSingleBuffer& b) = delete;
   //! Move the buffer.
   RSingleBuffer(RSingleBuffer&& b);
   virtual ~RSingleBuffer();
  
+  RSingleBuffer& operator=(const RSingleBuffer&) = delete;
   //! Move the buffer.
-  RBuffer& operator=(RBuffer&&);
+  RSingleBuffer& operator=(RSingleBuffer&&);
 
   //! Get available size of the buffer
   size_t capacity() const { return reserved_; }

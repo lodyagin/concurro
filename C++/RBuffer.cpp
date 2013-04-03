@@ -3,17 +3,22 @@
 #include "StdAfx.h"
 #include "RBuffer.h"
 
-DEFINE_STATES(RBuffer, DataBufferStateAxis, State)
+//DEFINE_STATES(RBuffer, DataBufferStateAxis, State)
+RAxis<DataBufferStateAxis> data_buffer_state_axis
 ({
   {   "charging", // is locked for filling
       "charged", // has data
 		"discharged", // data was red (moved)
-		"destroyed" // for disable destroying buffers with
+		"destroyed",// for disable destroying buffers with
 						// data 
+		"welded"  // own a buffer together with another
+					 // RBuffer
 		},
   { {"discharged", "charging"},
 	 {"charging", "charged"},
-	 {"charging", "discharged"},
+	 {"discharged", "welded"},
+	 {"welded", "discharged"},
+	 {"welded", "charged"},
     {"charged", "discharged"},
 	 {"discharged", "destroyed"}}
 });
@@ -22,6 +27,7 @@ DEFINE_STATE_CONST(RBuffer, State, charged);
 DEFINE_STATE_CONST(RBuffer, State, charging);
 DEFINE_STATE_CONST(RBuffer, State, discharged);
 DEFINE_STATE_CONST(RBuffer, State, destroyed);
+DEFINE_STATE_CONST(RBuffer, State, welded);
 
 REvent<DataBufferStateAxis> RBuffer
 //
@@ -34,37 +40,47 @@ RBuffer::~RBuffer()
   State::ensure_state(*this, destroyedState);
 }
 
+RSingleBuffer::RSingleBuffer()
+  : buf(0), size_(0), reserved_(0) 
+{}
+
 RSingleBuffer::RSingleBuffer(size_t res)
   : buf(0), size_(0), reserved_(res) 
 {}
 
 RSingleBuffer::RSingleBuffer(RSingleBuffer&& b)
 {
-  reserved_ = b.reserved_;
-  buf = b.buf;
-  size_ = b.size_;
-  State::move_to(b, dischargedState);
-  b.buf = 0;
-  b.size_ = 0;
-  State::move_to(*this, chargedState);
+  *this = std::move(b);
 }
 
 RSingleBuffer::~RSingleBuffer()
 {
-#if 0
-  try {
-	 State::move_to(*this, destroyedState);
-  }
-  catch(const InvalidStateTransition& trans) 
-  {
-	 // switch on trans.from
-  }
-#else
   is_discharged.wait(*this);
   State::move_to(*this, destroyedState);
-#endif
-
   delete[] buf;
+}
+
+RSingleBuffer& RSingleBuffer
+//
+::operator= (RSingleBuffer&& b)
+{
+  State::move_to(*this, weldedState);
+  const size_t old_reserved = reserved_;
+  reserved_ = b.reserved_;
+  buf = b.buf; size_ = b.size_;
+  try {
+	 State::move_to(b, dischargedState);
+  }
+  catch (const InvalidStateTransition&)
+  {
+	 reserved_ = old_reserved;
+	 buf = 0; size_ = 0;
+	 State::move_to(*this, dischargedState);
+	 throw;
+  }
+  b.buf = 0; b.size_ = 0;
+  State::move_to(*this, chargedState);
+  return *this;
 }
 
 void RSingleBuffer::reserve(size_t res)
@@ -108,5 +124,3 @@ void RSingleBuffer::start_charging()
 	 buf = new char[reserved_];
   State::move_to(*this, chargingState);
 }
-
-

@@ -391,11 +391,19 @@ bool UniversalState::operator!=
 
 	return this->state_idx != st.state_idx;
 }
+#endif
 
 std::string UniversalState::name() const
 {
-  return state_map->get_state_name(*this);
+  return StateMapRepository::instance()
+	 . get_state_name(the_state);
 }
-#endif
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalState& st)
+{
+  out << st.name();
+  return out;
+}
 
 

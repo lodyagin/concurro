@@ -28,122 +28,94 @@ public:
 };
 
 
-/**
- * RState is a state value (think about it as an extended
- * enum).
- *
- * \tparam Object an object which holds the state.
- * \tparam Axis a state axis.
- */
 template<class Axis>
-class RState : public Axis, protected UniversalState
+class RState : public UniversalState
 {
 public:
+  typedef Axis axis;
+
   //! Construct a state with the name.
-  //! \param par states and transitions.
-  RState (const StateMapPar<Axis>& par, 
-			 const char* name);
-
+  RState (const char* name);
   RState(uint32_t);
-
-  RState(const ObjectWithStatesInterface<Axis>&);
-
-  // ParentState& operator= (const UniversalState& us)
-  void set_by_universal (uint32_t us);
-
-#ifndef STATE_LOCKING //lock_state and then check on the
-                      // universal state?
-
-  /// Check permission of moving obj to the `to' state.
-  static void check_moving_to 
-	 (const ObjectWithStatesInterface<Axis>& obj, 
-	  const RState& to);
-
-#endif
-
-  /// Atomiv move obj to a new state
-  static void move_to
-	 (ObjectWithStatesInterface<Axis>& obj, 
-	  const RState& to);
-
-#if 0
-  /// Atomic move obj to a `to' state if it is not `to'
-  static void move_if_not_already
-	 (ObjectWithStatesInterface<Axis>& obj, 
-	  const RState& to);
-#endif
-
-#ifdef STATE_LOCKING
-  //! Return the current state and prohibit further state
-  //! changes by acquiring a mutex till unlock_state
-  //! call.
-  static const UniversalState& lock_state
-	 (const ObjectWithStatesInterface<Axis>& obj);
-#else
-  static uint32_t state
-	 (const ObjectWithStatesInterface<Axis>& obj);
-#endif
-
-  //! Atomic check the object state
-  static bool state_is
-	  (const ObjectWithStatesInterface<Axis>& obj, 
-		const RState& st);
-
-  //! Atomic check the obj state is in the set
-  static bool state_in
-	  (const ObjectWithStatesInterface<Axis>& obj, 
-		const std::initializer_list<RState>& set);
-
-  //! Raise InvalidState when a state is not expected.
-  static void ensure_state
-	  (const ObjectWithStatesInterface<Axis>& obj, 
-		const RState& expected);
-
-  std::string name () const
-  {
-	  return this->stateMap->get_state_name (*this);
-  }
-
-  operator uint32_t() const
-  {
-	 return the_state;
-  }
-
-protected:
-  typedef Logger<RState> log;
-
-  static StateMap* stateMap;
-  static StateMap* get_state_map() { return stateMap; }
+  RState(const ObjectWithStatesInterface<Axis>& obj);
+  std::string name () const;
 };
 
 template<class Axis>
 std::ostream&
 operator<< (std::ostream&, const RState<Axis>&);
 
-#define DECLARE_STATES(/*class_,*/ axis, state_class)	\
-  const static StateMapPar<axis>				\
-    new_states__ ## state_class;				 \
-  \
-  typedef RState \
-  </*class_,*/ axis/*, new_states__ ## state_class*/>	\
-      state_class; \
-  \
-  friend class RState<axis>;
-//  <class_, axis, new_states__ ## state_class>;
+template<class Axis>
+class RAxis : public Axis, public SSingleton<RAxis<Axis>>
+{
+public:
+  typedef Axis axis;
+
+  RAxis(const StateMapPar<Axis>& par);
+#if 0
+  RAxis(std::initializer_list<const char*> states,
+		  std::initializer_list<
+	   std::pair<const char*, const char*>> transitions
+	 );
+#endif
+
+  /// Check permission of moving obj to the `to' state.
+  static void check_moving_to 
+	 (const ObjectWithStatesInterface<Axis>& obj, 
+	  const RState<Axis>& to);
+
+  /// Atomic move obj to a new state
+  static void move_to
+	 (ObjectWithStatesInterface<Axis>& obj, 
+	  const RState<Axis>& to);
+
+  static uint32_t state
+	 (const ObjectWithStatesInterface<Axis>& obj);
+
+  //! Atomic check the object state
+  static bool state_is
+	  (const ObjectWithStatesInterface<Axis>& obj, 
+		const RState<Axis>& st);
+
+  //! Atomic check the obj state is in the set
+  static bool state_in
+	  (const ObjectWithStatesInterface<Axis>& obj, 
+		const std::initializer_list<RState<Axis>>& set);
+
+  //! Raise InvalidState when a state is not expected.
+  static void ensure_state
+	  (const ObjectWithStatesInterface<Axis>& obj, 
+		const RState<Axis>& expected);
+
+  static const StateMap& state_map() 
+  { 
+	 return *stateMap; 
+  }
+protected:
+  typedef Logger<RAxis<Axis>> log;
+
+  static StateMap* stateMap;
+};
+
+#define DECLARE_STATES(axis, state_class)	\
+  typedef RAxis<axis> state_class; \
+  friend class RAxis<axis>;
 
 
+#if 0
 #define DEFINE_STATES(class_, axis, state_class)	\
   const StateMapPar<axis> \
 	 class_::new_states__ ## state_class
+#endif
 
 
 #define DECLARE_STATE_CONST(state_class, state)	\
-  static const state_class state ## State;
+  static const RState<state_class::axis> state ## State;
 
 
 #define DEFINE_STATE_CONST(class_, state_class, state)	\
-  const class_::state_class class_::state ## State \
-    (class_::new_states__ ## state_class, #state);
+  const RState<class_::state_class::axis>					\
+    class_::state ## State(#state);
 
 #include "RState.hpp"
 

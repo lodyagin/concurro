@@ -1,12 +1,12 @@
 #include "RBuffer.h"
 #include "CUnit.h"
 
-//void test_move_rbuffer();
+void test_move_rbuffer();
 void test_resize_rbuffer();
 
 CU_TestInfo RBufferTests[] = {
-//  {"move RBuffer", test_move_rbuffer},
   {"resize RBuffer", test_resize_rbuffer},
+  {"move RBuffer", test_move_rbuffer},
   CU_TEST_INFO_NULL
 };
 
@@ -22,15 +22,47 @@ int RBufferCUClean()
   return 0;
 }
 
-#if 0
-static void discharge(RSingleBuffer& b)
+void test_move_rbuffer()
 {
-  b.resize(0);
-  CU_ASSERT_TRUE_FATAL
-	 (RBuffer::State::state_is
-	  (b, RBuffer::dischargedState));
+  char c[] = "12345678901";
+  RSingleBuffer a, b;
+  a.reserve(11);
+  memcpy(a.data(), c, a.capacity());
+  try {
+	 b = std::move(a);
+	 CU_FAIL_FATAL("InvalidState exception wanted");
+  }
+  catch(const InvalidStateTransition& ex) {
+	 CU_ASSERT_EQUAL_FATAL
+		(ex.from, RBuffer::chargingState);
+	 CU_ASSERT_EQUAL_FATAL
+		(ex.to, RBuffer::dischargedState);
+  }
+  CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
+							   (a, RBuffer::chargingState));
+  CU_ASSERT_EQUAL_FATAL(a.size(), 0);
+  CU_ASSERT_EQUAL_FATAL(a.capacity(), 11);
+  CU_ASSERT_PTR_NOT_NULL_FATAL(a.cdata());
+  CU_ASSERT_NSTRING_EQUAL_FATAL(a.cdata(), c, 11);
+  CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
+							   (b, RBuffer::dischargedState));
+  CU_ASSERT_EQUAL_FATAL(b.size(), 0);
+  CU_ASSERT_EQUAL_FATAL(b.capacity(), 0);
+  CU_ASSERT_PTR_NULL_FATAL(b.cdata());
+  a.resize(10);
+  b = std::move(a);
+  CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
+							  (a, RBuffer::dischargedState));
+  CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
+							  (a, RBuffer::chargedState));
+  CU_ASSERT_EQUAL_FATAL(b.size(), 10);
+  CU_ASSERT_EQUAL_FATAL(b.capacity(), 11);
+  CU_ASSERT_EQUAL_FATAL(a.size(), 0);
+  CU_ASSERT_PTR_NULL_FATAL(a.cdata());
+  CU_ASSERT_EQUAL_FATAL(a.capacity(), 11);
+  CU_ASSERT_NSTRING_EQUAL_FATAL(b.cdata(), c, 10);
+  b.clear();
 }
-#endif
 
 void test_resize_rbuffer()
 {
@@ -62,6 +94,7 @@ void test_resize_rbuffer()
 
   try {
 	 b->reserve(9);
+	 CU_FAIL_FATAL("InvalidState exception wanted");
   } catch (const InvalidState&) {}
 
   b->resize(0);

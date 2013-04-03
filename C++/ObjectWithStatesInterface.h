@@ -11,6 +11,7 @@
 
 #include <log4cxx/logger.h>
 
+template<class Axis> class RAxis;
 template<class Axis> class RState;
 template<class Axis> class REvent;
 
@@ -19,6 +20,7 @@ template<class Axis> class REvent;
 template<class Axis>
 class ObjectWithStatesInterface
 {
+  friend class RAxis<Axis>;
   friend class RState<Axis>;
   friend class REvent<Axis>;
 public:

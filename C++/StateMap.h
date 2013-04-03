@@ -21,11 +21,18 @@ typedef uint16_t TransitionId;
 
 class UniversalState
 {
+  friend std::ostream& 
+  operator<< (std::ostream& out, const UniversalState& st);
+
 public:
   UniversalState() : the_state(0) {}
   UniversalState(uint32_t st) : the_state(st) {}
   operator uint32_t() const { return the_state; }
+
+protected:
   uint32_t the_state;
+
+  std::string name() const; 
 };
 
 std::ostream&
