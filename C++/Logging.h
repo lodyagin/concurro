@@ -138,80 +138,130 @@ inline LogBase* Logger<LOG::States>::init_base
 
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOG_DEBUG_LOC(log, stream_expr, loc) {										\
-	 if (LOG4CXX_UNLIKELY(log::logger()->isDebugEnabled())) {				\
+#define LOGGER_DEBUG_LOC(log, stream_expr, loc) {										\
+	 if (LOG4CXX_UNLIKELY((log)->isDebugEnabled())) {							\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); }} while (0)
+		(log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG_DEBUG_LOC(log, message, loc)
+#define LOGGER_DEBUG_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
-#define LOG_TRACE_LOC(log, stream_expr, loc) {										\
-	 if (LOG4CXX_UNLIKELY(log::logger()->isTraceEnabled())) {						\
+#define LOGGER_TRACE_LOC(log, stream_expr, loc) {										\
+	 if (LOG4CXX_UNLIKELY((log)->isTraceEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), loc); }} while (0)
+		(log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG_TRACE_LOC(log, message, loc)
+#define LOGGER_TRACE_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
-#define LOG_INFO_LOC(log, stream_expr, loc) {											\
-	 if (LOG4CXX_UNLIKELY(log::logger()->isInfoEnabled())) {						\
+#define LOGGER_INFO_LOC(log, stream_expr, loc) {											\
+	 if (LOG4CXX_UNLIKELY((log)->isInfoEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), loc); }} while (0)
+		(log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG_INFO_LOC(log, message, loc)
+#define LOGGER_INFO_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
-#define LOG_WARN_LOC(log, stream_expr, loc) {											\
-	 if (LOG4CXX_UNLIKELY(log::logger()->isWarnEnabled())) {						\
+#define LOGGER_WARN_LOC(log, stream_expr, loc) {											\
+	 if (LOG4CXX_UNLIKELY((log)->isWarnEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), loc); }} while (0)
+		(log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG_WARN_LOC(log, message, loc)
+#define LOGGER_WARN_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
-#define LOG_ERROR_LOC(log, stream_expr, loc) {										\
-	 if (LOG4CXX_UNLIKELY(log::logger()->isErrorEnabled())) {						\
+#define LOGGER_ERROR_LOC(log, stream_expr, loc) {										\
+	 if (LOG4CXX_UNLIKELY((log)->isErrorEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), loc); }} while (0)
+		(log)->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG_ERROR_LOC(log, message, loc)
+#define LOGGER_ERROR_LOC(log, message, loc)
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
-#define LOG_FATAL_LOC(log, stream_expr, loc) {										\
-	 if (LOG4CXX_UNLIKELY(log::logger()->isFatalEnabled())) {						\
+#define LOGGER_FATAL_LOC(log, stream_expr, loc) {										\
+	 if (LOG4CXX_UNLIKELY((log)->isFatalEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
-		log::logger()->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), loc); }} while (0)
+		(log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), loc); }} while (0)
 #else
-#define LOG_FATAL_LOC(logger, message, loc)
+#define LOGGER_FATAL_LOC(logger, message, loc)
 #endif
 
-#define LOG_TRACE(logger, message) \
-  LOG_TRACE_LOC(logger, message, LOG4CXX_LOCATION)
-#define LOG_DEBUG(logger, message) \
-  LOG_DEBUG_LOC(logger, message, LOG4CXX_LOCATION)
-#define LOG_INFO(logger, message) \
-  LOG_INFO_LOC(logger, message, LOG4CXX_LOCATION)
-#define LOG_WARN(logger, message) \
-  LOG_WARN_LOC(logger, message, LOG4CXX_LOCATION)
-#define LOG_ERROR(logger, message) \
-  LOG_ERROR_LOC(logger, message, LOG4CXX_LOCATION)
-#define LOG_FATAL(logger, message) \
-  LOG_FATAL_LOC(logger, message, LOG4CXX_LOCATION)
+#define LOG_TRACE_LOC(log, message, loc)		 \
+  LOGGER_TRACE_LOC(log::logger(), message, loc)
+#define LOG_DEBUG_LOC(log, message, loc)		 \
+  LOGGER_DEBUG_LOC(log::logger(), message, loc)
+#define LOG_INFO_LOC(log, message, loc)			\
+  LOGGER_INFO_LOC(log::logger(), message, loc)
+#define LOG_WARN_LOC(log, message, loc)			\
+  LOGGER_WARN_LOC(log::logger(), message, loc)
+#define LOG_ERROR_LOC(log, message, loc)		 \
+  LOGGER_ERROR_LOC(log::logger(), message, loc)
+#define LOG_FATAL_LOC(log, message, loc)		 \
+  LOGGER_FATAL_LOC(log::logger(), message, loc)
+
+#define LOGGER_TRACE(log, message) \
+  LOGGER_TRACE_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_DEBUG(log, message) \
+  LOGGER_DEBUG_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_INFO(log, message) \
+  LOGGER_INFO_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_WARN(log, message) \
+  LOGGER_WARN_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_ERROR(log, message) \
+  LOGGER_ERROR_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_FATAL(log, message) \
+  LOGGER_FATAL_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+
+#define LOG_TRACE(log, message) \
+  LOGGER_TRACE_LOC(log::logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_DEBUG(log, message) \
+  LOGGER_DEBUG_LOC(log::logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_INFO(log, message) \
+  LOGGER_INFO_LOC(log::logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_WARN(log, message) \
+  LOGGER_WARN_LOC(log::logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_ERROR(log, message) \
+  LOGGER_ERROR_LOC(log::logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_FATAL(log, message) \
+  LOGGER_FATAL_LOC(log::logger(), message, \
+                   LOG4CXX_LOCATION)
 
 // the aliases
+#define LOGGER_WARNING LOGGER_WARN
+#define LOGGER_WARNING_LOC LOGGER_WARN
 #define LOG_WARNING LOG_WARN
 #define LOG_WARNING_LOC LOG_WARN
+
+//! Add this to a class declaration for implement logging
+//! in the class
+#define DEFAULT_LOGGER(class_) \
+  typedef Logger<class_> log; \
+  \
+  log4cxx::LoggerPtr logger() const \
+  { \
+	 return log::logger(); \
+  }
 
 #endif

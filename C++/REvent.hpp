@@ -1,0 +1,47 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+template<class Axis>
+REvent<Axis>::REvent(const char* from, 
+							const char* to)
+  : UniversalEvent
+  	   (StateMapRepository::instance()
+		 . get_map_for_axis(typeid(Axis))
+		 -> get_transition_id(from, to)
+		  )
+{}
+
+template<class Axis>
+REvent<Axis>::REvent(const char* to)
+  : UniversalEvent
+  	   (StateMapRepository::instance()
+	    . get_map_for_axis(typeid(Axis))
+		 -> create_state(to), true
+		  )
+{}
+
+template<class Axis>
+Event& REvent<Axis>
+//
+::event(RObjectWithEvents<Axis>& obj)
+{
+  return *obj.get_event(*this);
+}
+
+template<class Axis>
+bool REvent<Axis>
+//
+::wait(RObjectWithEvents<Axis>& obj, int time)
+{
+  if (is_arrival_event()) {
+	 const uint32_t obj_state = obj.current_state();
+	 const uint32_t arrival_state = UniversalState(*this);
+
+	 // TODO they should store state both with or w/o map
+	 // id (no STATE_IDX is actually needed)
+	 if (STATE_IDX(obj_state) == STATE_IDX(arrival_state))
+		return true; // the object is already in that state
+  }
+  // wait untill it be
+  return event(obj).wait(time);
+}
+

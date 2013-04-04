@@ -1,29 +1,34 @@
-#pragma once
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+#ifndef CONCURRO_THREADREPOSITORY_H_
+#define CONCURRO_THREADREPOSITORY_H_
+
 #include "Repository.h"
+#include "RThread.h"
 #include <list>
 #include <algorithm>
 #include <vector>
 
-template<class Thread, class Parameter>
+template<class Thread, class Map, class ObjectId>
 class ThreadRepository :
   public Repository<
-	 Thread, 
-	 Parameter, 
-	 std::vector<Thread*>,
-	 typename std::vector<Thread*>::size_type>
+#if 0
+	 RThreadBase, 
+	 RThreadBase::Par, 
+#else
+	 Thread, typename Thread::Par,
+#endif
+	 Map, ObjectId
+	 >
 {
 public:
-  typedef typename std::vector<Thread*>::size_type ObjectId;
-
-  typedef Repository<
-	 Thread, 
-	 Parameter, 
-	 std::vector<Thread*>, 
-	 ObjectId> Parent;
+  typedef Repository
+	 <Thread, typename Thread::Par, Map, ObjectId> Parent;
 
   ThreadRepository
-	 (const std::string& repository_name, size_t initial_value) 
-	 : Parent(repository_name, initial_value) {}
+	 (const std::string& repository_name, 
+	  size_t reserved_size) 
+	 : Parent(repository_name, reserved_size) {}
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
@@ -33,9 +38,9 @@ public:
     (ObjectId id, bool freeMemory);
 
   // Overrides
-  Thread* replace_object 
+  RThreadBase* replace_object 
     (ObjectId id, 
-     const Parameter& param,
+     const RThreadBase::Par& param,
      bool freeMemory
      )
   {
@@ -46,49 +51,79 @@ public:
   }
 };
 
-template<class Thread>
-struct ThreadStopper : std::unary_function<Thread*, void>
+template<class Val>
+struct ThreadStopper
+ : std::unary_function<Val, void>
 {
-  void operator () (Thread* th)
+  void operator () (Val th)
   {
     if (th && th->is_running ()) th->stop ();
   }
 };
 
-template<class Thread>
-struct ThreadWaiter : std::unary_function<Thread*, void>
+// std::pair version
+template<class Key, class Val>
+struct ThreadStopper<std::pair<Key, Val>>
+ : std::unary_function<std::pair<Key, Val>&, void>
 {
-  void operator () (Thread* th)
+  void operator () (std::pair<Key, Val>& p)
+  {
+    if (p.second && p.second->is_running ()) 
+		p.second->stop ();
+  }
+};
+
+template<class Val>
+struct ThreadWaiter
+ : std::unary_function<Val, void>
+{
+  void operator () (Val th)
   {
     if (th) th->wait ();
   }
 };
 
-template<class Thread, class Parameter>
-void ThreadRepository<Thread,Parameter>::stop_subthreads ()
+template<class Key, class Val>
+struct ThreadWaiter<std::pair<Key, Val>>
+ : std::unary_function<std::pair<Key, Val>&, void>
+{
+  void operator () (std::pair<Key, Val>& p)
+  {
+    if (p.second) 
+		p.second->RThreadBase::wait ();
+  }
+};
+
+template<class Thread, class Map, class ObjectId>
+void ThreadRepository<Thread, Map, ObjectId>
+//
+::stop_subthreads ()
 {
   std::for_each (
     this->objects->begin (),
     this->objects->end (),
-    ThreadStopper<Thread> ()
+    ThreadStopper<typename Map::value_type> ()
     );
 }
 
-template<class Thread, class Parameter>
-void ThreadRepository<Thread,Parameter>::wait_subthreads ()
+template<class Thread, class Map, class ObjectId>
+void ThreadRepository<Thread, Map, ObjectId>
+//
+::wait_subthreads ()
 {
   std::for_each (
     this->objects->begin (),
     this->objects->end (),
-    ThreadWaiter<Thread> ()
+    ThreadWaiter<typename Map::value_type> ()
     );
 }
 
-template<class Thread, class Parameter>
-void ThreadRepository<Thread,Parameter>::
-  delete_object_by_id (ObjectId id, bool freeMemory)
+template<class Thread, class Map, class ObjectId>
+void ThreadRepository<Thread, Map, ObjectId>
+//
+::delete_object_by_id (ObjectId id, bool freeMemory)
 {
-  Thread* th = get_object_by_id (id);
+  RThreadBase* th = get_object_by_id (id);
   if (th) 
   {
     th->stop ();
@@ -96,4 +131,6 @@ void ThreadRepository<Thread,Parameter>::
     Parent::delete_object_by_id (id, freeMemory);
   }
 }
+
+#endif
 

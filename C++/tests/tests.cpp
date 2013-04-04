@@ -5,12 +5,23 @@
 #include <string>
 
 extern CU_TestInfo RMutexTests[];
+extern CU_TestInfo REventTests[];
+extern CU_TestInfo RBufferTests[];
+
 int RMutexCUInit(void);
 int RMutexCUClean(void);
+int REventCUInit(void);
+int REventCUClean(void);
+int RBufferCUInit(void);
+int RBufferCUClean(void);
 
 CU_SuiteInfo suites[] = {	
   { "RMutex", RMutexCUInit, RMutexCUClean, 0, 0,
 	  RMutexTests },
+  { "REvent", REventCUInit, REventCUClean, 0, 0,
+	  REventTests },
+  { "RBuffer", RBufferCUInit, RBufferCUClean, 0, 0,
+	  RBufferTests },
 	CU_SUITE_INFO_NULL
 };
 

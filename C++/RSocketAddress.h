@@ -1,10 +1,24 @@
-#pragma once
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_RSOCKETADDRESS_H_
+#define CONCURRO_RSOCKETADDRESS_H_
+
 #include "HasStringView.h"
+//#include "Repository.h"
 #include <string>
 
 class RSocketAddress : public HasStringView
 {
 public:
+  //RSocketAddress() = delete;
+  //RSocketAddress(const std::string& host, uint16_t port);
+  //RSocketAddress(struct addrinfo*);
   virtual ~RSocketAddress (void);
 
   // sockaddr pretty print
@@ -25,6 +39,11 @@ public:
      const struct in6_addr* ia
      );
 
+  /*virtual RSocketBase::Par& create_socket_pars
+	 (const ObjectCreationInfo& oi,
+	 const RSocketBase::Par& par) const = 0;*/
+
+protected:
   // Copy socket address
   // The size of information copied is defined by 
   // the 'in' structure type.
@@ -43,6 +62,8 @@ public:
   // Return 0 if the address family is unsupported
   static int get_sockaddr_len 
     (const struct sockaddr* sa);
+
+  struct addrinfo* ai;
 };
 
-
+#endif

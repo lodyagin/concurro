@@ -3,6 +3,7 @@
 #include "SMutex.h"
 #include "SEvent.h"
 #include <algorithm> // for swap
+#include <cstdatomic>
 
 template<class Buffer>
 class BusyThreadReadBuffer
@@ -34,8 +35,8 @@ protected:
 
   Buffer* readBuf;
   Buffer* writeBuf;
-  volatile int nWriteBufMsgs; // atomic
-  volatile int nReadBufMsgs; // atomic
+  std::atomic<int> nWriteBufMsgs; // atomic
+  std::atomic<int> nReadBufMsgs; // atomic
   SMutex swapM; // a swap guard
 };
 
@@ -149,6 +150,7 @@ template<class Buffer>
 void BusyThreadReadBuffer<Buffer>::swap2 ()
 {
   // swap read and write buffers
+  // TODO check the correctness due to std::atomic values
   std::swap (readBuf, writeBuf);
   std::swap (nReadBufMsgs, nWriteBufMsgs);
 }

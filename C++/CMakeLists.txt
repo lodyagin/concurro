@@ -1,41 +1,40 @@
 cmake_minimum_required(VERSION 2.6.4)
 
-set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x")
+set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x -Wall")
 
 add_subdirectory(tests)
 
 project (concurrent)
 set (concurrent_SOURCES 
-  ClientSocketConnector.cpp
+  Event.cpp
   HasStringView.cpp
   IPv4SocketAddress.cpp
   IPv6SocketAddress.cpp
   Logging.cpp
 #  NamedPipe.cpp
+#  AbstractConnection.cpp
+#  SCheck.cpp
+  RBuffer.cpp
   RClientSocketAddress.cpp
-  RConnectedSocket.cpp
-  RInOutSocket.cpp
+  SCommon.cpp
+#  SComplPort.cpp
+#  RConnectedSocket.cpp
+#  RInOutSocket.cpp
   RMultiprotoSocketAddress.cpp
   RMutex.cpp
 #  RPath.cpp
 #  RServerSocketAddress.cpp
-  RSingleSocket.cpp
+#  RSingleSocket.cpp
   RSocketAddress.cpp
-#  RSocket.cpp
+  RSocket.cpp
 #  RSocketGroup.cpp
-  RSocketTCP.cpp
-#  SCheck.cpp
-  SCommon.cpp
-#  SComplPort.cpp
-  REvent.cpp
+  RThread.cpp
   SException.cpp
-  SocketAddressFactory.cpp
+##  TCPSocket.cpp
   SShutdown.cpp
   StateMap.cpp
   StdAfx.cpp
-  RThread.cpp
 #  SWinCheck.cpp
-  ThreadRepository.cpp
 #  time_wce.cpp
 #  UnknownprotoSocketAddress.cpp 
 )

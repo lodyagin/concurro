@@ -1,41 +1,48 @@
 #pragma once
 #include "RSocketGroup.h"
 #include "RServerSocketAddress.h"
-#include "ConnectionFactory.h"
-#include "SThread.h"
+#include "RThread.h"
+#ifdef _WIN32
 #include <winsock2.h>
+#include <Ws2tcpip.h>
+#include "SWinCheck.h"
+#endif
 #include "Logging.h"
 #include "RListeningSocket.h"
 #include "RConnectedSocket.h"
-#include <Ws2tcpip.h>
-#include "SWinCheck.h"
 #include <algorithm>
 
 
-template<class ConnectionFactory>
-class RListeningSocket : public RSocketGroup
+class RListeningSocket : public RServerSideSocket
 {
 public:
+
+  struct Par : public RServerSideSocket::Par
+  {
+	 //! To create connected sockets here.
+	 SocketRepository* repo;
+  };
+
+  ~RListeningSocket ();
+
+  // Listen and generate new connections
+  //void listen (ConnectionFactory& cf);
+
+protected:
+
   // Create and bind the server socket
   RListeningSocket 
     (const RServerSocketAddress& addr,
      unsigned int backlog);
 
-  ~RListeningSocket ();
-
-  // Listen and generate new connections
-  void listen (ConnectionFactory& cf);
-
-protected:
-
   // Called by constructor
   void bind (const RServerSocketAddress& addr,
              unsigned int backlog);
 
-  WSAEVENT *events;
+  REvent** events;
 
 private:
-  static Logging log;
+  static Logger<RListeningSocket> log;
 };
 
 template<class ConnectionFactory>

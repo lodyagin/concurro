@@ -1,5 +1,7 @@
-#pragma once
-#include "sthread.h"
+#ifndef CONCURRO_THREADWITHSUBTHREADS_H_
+#define CONCURRO_THREADWITHSUBTHREADS_H_
+
+#include "RThread.h"
 #include "ThreadRepository.h"
 #include "Logging.h"
 #include <algorithm>
@@ -7,10 +9,10 @@
 // SubthreadParameter is a parameter
 // for subthread creation
 
-template<class Subthread, class SubthreadParameter>
+template<class Thread, class ThreadParameter>
 class ThreadWithSubthreads 
-  : public SThread,
-    public ThreadRepository<Subthread, SubthreadParameter>
+  : public Thread,
+    public ThreadRepository<Thread, ThreadParameter>
 {
 public:
 
@@ -22,11 +24,11 @@ public:
   static ThreadWithSubthreads& current ()
   { 
     return reinterpret_cast<ThreadWithSubthreads&>
-      (SThread::current ());
+      (Thread::current ());
   }
 
-  virtual Subthread* create_subthread
-    (const SubthreadParameter& pars)
+  virtual Thread* create_subthread
+    (const ThreadParameter& pars)
   {
     return create_object (pars);
   }
@@ -35,16 +37,16 @@ public:
   // Wait termination of all subthreads
   void wait () 
   { 
-    wait_subthreads(); 
-    SThread::wait (); 
+    this->wait_subthreads(); 
+    Thread::wait (); 
   }
 
   // Overrides
   // Request stop all subthreads and this thread
   void stop () 
   { 
-    stop_subthreads(); 
-    SThread::stop (); 
+    this->stop_subthreads(); 
+    Thread::stop (); 
   }
 
   // Overrides
@@ -52,25 +54,25 @@ public:
 
 protected:
   ThreadWithSubthreads 
-    (SEvent* connectionTerminated,
-     unsigned nSubthreadsMax
+    (const std::string& id,
+	  REvent* connectionTerminated,
+     unsigned nThreadsMax
      ) 
-    : SThread (connectionTerminated),
-      ThreadRepository
-        <Subthread, SubthreadParameter> 
-          (nSubthreadsMax)
+    : Thread (id, connectionTerminated),
+      ThreadRepository <Thread, ThreadParameter> 
+	 (id + "_subthreads_rep", nThreadsMax)
   {
-    log_from_constructor ();
+    this->log_from_constructor ();
   }
 };
 
-template<class Subthread>
+template<class Thread>
 class OutThread 
-  : public std::unary_function<const Subthread&, void>
+  : public std::unary_function<const Thread&, void>
 {
 public:
   OutThread (std::ostream& _out) : out (_out) {}
-  void operator () (const Subthread& thread)
+  void operator () (const Thread& thread)
   {
     out << '\t';
     thread.outString (out);
@@ -80,11 +82,17 @@ protected:
   std::ostream& out;
 };
 
-template<class Subthread, class SubthreadParameter>
-void ThreadWithSubthreads<Subthread, SubthreadParameter>::
+template<class Thread, class ThreadParameter>
+void ThreadWithSubthreads<Thread, ThreadParameter>::
   outString (std::ostream& out) const
 {
   out << "ThreadWithSubthreads (";
-  for_each (OutThread<Subthread> (out));
+#if 0
+  this->for_each (OutThread<Thread> (out));
+#else
+  out << "FIXME"; //FIXME
+#endif
   out << ")\n";
 }
+
+#endif

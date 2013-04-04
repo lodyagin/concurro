@@ -6,72 +6,91 @@
 
 // RThread states  ========================================
 
-const State2Idx RThreadBase::allStates[] =
-{
-  {1, "ready"},         // after creation
-  {2, "working"},       // it works
-  {3, "terminated"},    
-  {4, "destroyed"},    // to check a state in the destructor
-  {0, 0}
-};
-
-const StateTransition RThreadBase::allTrans[] =
-{
+//DEFINE_STATES(RThreadBase, ThreadStateAxis, ThreadState)
+RAxis<ThreadStateAxis> thread_state_axis
+(StateMapPar<ThreadStateAxis>
+({  "ready",         // after creation
+	 "working",       // it works
+	 "stop_requested", // somebody called stop()
+	 "terminated",    
+	 "destroyed"    // to check a state in the destructor
+	 },
+  {
   {"ready", "working"},      // start ()
 
-  // a) natural termination
-  // b) termination by request
-  {"working", "terminated"},      
+  // natural termination only
+  {"working", "terminated"}, 
+
+  // termination by a request
+  {"working", "stop_requested"},
+  {"stop_requested", "terminated"},
+
+  // simultaneous stop requests are ignored
+  {"stop_requested", "stop_requested"},
 
   {"terminated", "destroyed"},
 
-  {"ready", "destroyed"},
+  {"ready", "destroyed"}
   // can't be destroyed in other states
+  }
+  ));
 
-  {0, 0}
-
-};
-
-const RThreadBase::ThreadState RThreadBase::readyState("ready");
-const RThreadBase::ThreadState RThreadBase::workingState("working");
-const RThreadBase::ThreadState RThreadBase::terminatedState("terminated");
-const RThreadBase::ThreadState RThreadBase::destroyedState("destroyed");
+DEFINE_STATE_CONST(RThreadBase, ThreadState, ready);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, working);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, 
+						 stop_requested);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, 
+						 terminated);
+DEFINE_STATE_CONST(RThreadBase, ThreadState, 
+						 destroyed);
 
 RThreadBase::RThreadBase 
 (const std::string& id, 
- REvent* extTerminated
+ Event* extTerminated
 )
   : 
+    RObjectWithEvents<ThreadStateAxis> (readyState),
     universal_object_id (id),
-	 num_id (fromString<size_t>(id)),
-    isTerminatedEvent (false),
-    stopEvent (true, false),
     waitCnt (0), 
-    exitRequested (false),
-    currentState ("ready"),
-	 externalTerminated (extTerminated),
-	 cs(SFORMAT("RThreadBase with id=["<<id<<"]"))
+    //isTerminatedEvent (false),
+	 externalTerminated (extTerminated)
+    //stopEvent (true, false),
+    //exitRequested (false),
 {
-  if (num_id == 0) {
-	 THROW_PROGRAM_ERROR;
-  }
-  else if (num_id == 1) {
-    bool main_was_created = mainThreadCreated.exchange (true);
-    if (main_was_created)
-      throw SException (_T"Only one thread with id = 1 can exist");
-  }
   LOG_INFO (log, "New " << *this);
 }
 
+RThreadBase::RThreadBase
+  (const ObjectCreationInfo& oi, const Par& p)
+: 
+    RObjectWithEvents<ThreadStateAxis> (readyState),
+    universal_object_id (oi.objectId),
+    waitCnt (0), 
+    //isTerminatedEvent (false),
+    //stopEvent (true, false),
+    //exitRequested (false),
+	 externalTerminated (p.extTerminated)
+{
+  LOG_INFO (log, "New " << *this);
+}
+
+#if 0
 void RThreadBase::state (ThreadState& state) const
 {
-  RLOCK(cs);
-  state = currentState;
+  RObjectWithStates<ThreadStateAxis>::state (state);
 }
+
+void RThreadBase::set_state_internal (const ThreadState& state)
+{
+  RLOCK(cs); // TODO: is it needed?
+  RObjectWithStates<ThreadStateAxis>::set_state_internal 
+	 (state);
+}
+#endif
 
 void RThreadBase::start ()
 {
-  RLOCK(cs);
+//  RLOCK(cs);
   ThreadState::check_moving_to (*this, workingState);
 
   start_impl ();
@@ -85,17 +104,13 @@ void RThreadBase::wait()
   bool cntIncremented = false;
   try
   {
-    { RLOCK(cs);
-
-      if (ThreadState::state_is (*this, terminatedState)
-          || ThreadState::state_is (*this, readyState) // <NB>
-        )
-        // Shouldn't wait, it is already terminated
-        return; 
-
-      waitCnt++;
-      cntIncremented = true;
-    }
+	 if (ThreadState::state_in
+		  (*this, {terminatedState, readyState}))
+		// We shouldn't wait, it is already terminated
+		return; 
+	 
+	 waitCnt++;
+	 cntIncremented = true;
 
     LOG_DEBUG
       (Logger<LOG::Thread>,
@@ -106,22 +121,25 @@ void RThreadBase::wait()
 #endif
        );
 
-    isTerminatedEvent.wait ();
+	 REvent<ThreadStateAxis>("terminated").wait(*this);
+    //isTerminatedEvent.wait ();
     waitCnt--;
   }
   catch (...)
   {
      if (cntIncremented) waitCnt--;
 
-     LOG_ERROR(Logger<LOG::Root>, "Unknown exception in RThread::wait");
+     LOG_ERROR(Logger<LOG::Root>, 
+					"Unknown exception in RThread::wait");
   }
 }
 
-void RThreadBase::stop ()
+void RThreadBase::stop()
 {
-  RLOCK(cs);
+  ThreadState::move_to(*this, stop_requestedState);
+/*  RLOCK(cs);
   stopEvent.set ();
-  exitRequested = true;
+  exitRequested = true;*/
 }
 
 #if 0
@@ -141,18 +159,16 @@ unsigned int __stdcall RThread::_helper( void * p )
 
 void RThreadBase::outString (std::ostream& out) const
 {
-  RLOCK(cs);
-  out << "RThread(id = "  
-      << id ()
-      << ", this = " 
+//  RLOCK(cs);
+  out << "RThread(id = ["  
+      << universal_object_id
+      << "], this = " 
       << std::hex << (void *) this << std::dec
       << ", currentState = " 
-      << currentState.name ()
-      << ')';
+		<< RState<ThreadStateAxis>(*this) << ')';
 }
 
 std::atomic<int> RThreadBase::counter (0);
-std::atomic<bool> RThreadBase::mainThreadCreated (false);
  
 
 // For proper destroying in concurrent environment
@@ -164,11 +180,14 @@ RThreadBase::~RThreadBase()
   bool needWait = true;
   bool needStop = true;
   { 
-    RLOCK(cs);
-    SCHECK(!ThreadState::state_is(*this, destroyedState));
-    needStop = ThreadState::state_is (*this, workingState)
-      && !exitRequested;
-    needWait = needStop || exitRequested;
+#ifdef STATE_LOCKING
+	 auto st = ThreadState::lock_state(*this);
+#else
+	 auto st = ThreadState::state(*this);
+#endif
+	 SCHECK(st != destroyedState);
+    needStop = st == workingState;
+    needWait = needStop || st == stop_requestedState;
   }
 
   if (needStop)
@@ -177,10 +196,8 @@ RThreadBase::~RThreadBase()
   if (needWait) 
     wait ();
 
-  { 
-    RLOCK(cs);
-    ThreadState::move_to (*this, destroyedState);
-  }
+  ThreadState::move_to (*this, destroyedState);
+
   LOG_INFO(log, "Destroy " << *this);
 }
 
@@ -207,17 +224,14 @@ void RThreadBase::_run()
     LOG_WARN(log, 
 		"Unknown type of exception in the thread.");
   }
-  {
-    RLOCK(cs);
-    
-    ThreadState::move_to (*this, terminatedState);
-  }
+
+  ThreadState::move_to (*this, terminatedState);
 
   LOG_DEBUG(log, *this << " is finished.");
 
   if (externalTerminated) 
     externalTerminated->set ();
-  isTerminatedEvent.set ();
+  //isTerminatedEvent.set ();
 }
 
 void RThreadBase::log_from_constructor ()

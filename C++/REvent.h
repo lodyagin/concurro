@@ -1,61 +1,60 @@
-#ifndef REVENT_H
-#define REVENT_H
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
-#ifndef _WIN32
-#define WFMO
-#include "pevents.h"
-typedef neosmart::neosmart_event_t HANDLE;
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_REVENT_H
+#define CONCURRO_REVENT_H
+
+#include "StateMap.h"
+#include "RObjectWithStates.h"
+#include "Event.h"
+
+template<class Axis>
+class REvent
+: public Axis,
+  protected UniversalEvent
+{
+public:
+  //! Create a from->to event
+  REvent(const char* from, const char* to);
+  //! Create a *->to event
+  REvent(const char* to);
+
+  Event& event(RObjectWithEvents<Axis>&);
+
+  //! Wait for the event on obj for max time msecs.
+  //! \return false on timeout.
+  bool wait(RObjectWithEvents<Axis>& obj, int time = -1);
+
+  bool signalled(RObjectWithEvents<Axis>& obj) const
+  {
+	 return const_cast<REvent<Axis>*>(this)
+		-> event(obj).signalled();
+  }
+};
+
+#if 0
+//! Create an event of moving Obj from `before' state to
+//! `after' state.
+const UniversalEvent& operator / 
+  (const UniversalState& before, 
+	const UniversalState& after);
+
+//! Change a state according to an event
+const UniversalState& operator + 
+  (const UniversalState& state, 
+	const UniversalEvent& event);
 #endif
 
-class REvtBase
-{
-public:
-  void wait();
-  bool wait( int time );  // false on timeout; time in millisecs
-  virtual ~REvtBase();
-  HANDLE evt()  { return h; }
-
-protected:
-
-  REvtBase( HANDLE );
-
-  HANDLE h;
-
-};
-
-
-// windows event wrapper
-class REvent : public REvtBase
-{
-public:
-
-  typedef REvtBase Parent;
-
-  explicit REvent( bool manual, bool init = false );
-  ~REvent(){}
-  void set();
-  void reset();
-
-};
-
-/*
-class SSemaphore : public REvtBase
-{
-public:
-
-  typedef REvtBase Parent;
-
-  explicit SSemaphore( int maxCount, int initCount = 0 );
-
-  void release( int count = 1 );
-
-};
-*/
-
-size_t waitMultiple( HANDLE *, size_t count );
+//size_t waitMultiple( HANDLE *, size_t count );
 
 // include shutdown event also
 //size_t waitMultipleSD( HANDLE *, size_t count );
 
+#include "REvent.hpp"
 
 #endif 

@@ -1,9 +1,13 @@
-#pragma once
-#include "rsocket.h"
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+#ifndef CONCURRO_RSOCKETGROUP_H_
+#define CONCURRO_RSOCKETGROUP_H_
+
+#include "RSocket.h"
 #include <vector>
 
 class RSocketGroup :
-  public RSocket
+  virtual public RSocket
 {
 public:
   typedef std::vector<SOCKET> Group;
@@ -20,3 +24,5 @@ protected:
 
   Group sockets;
 };
+
+#endif

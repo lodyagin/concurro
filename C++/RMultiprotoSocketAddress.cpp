@@ -33,7 +33,9 @@ AddrinfoWrapper::~AddrinfoWrapper ()
 
 RMultiprotoSocketAddress::~RMultiprotoSocketAddress ()
 {
+#ifdef VIEW_AS_ADDRINFO
   delete aiw;
+#endif
 }
 
 void RMultiprotoSocketAddress::init
@@ -55,13 +57,16 @@ void RMultiprotoSocketAddress::init
   rSocketCheck
     (::getaddrinfo (hostname, service, &hints, &res)
      == 0);
+#ifdef VIEW_AS_ADDRINFO
   aiw = new AddrinfoWrapper (res); // FIXME check alloc
+#endif
 }
 
 void RMultiprotoSocketAddress::outString 
   (std::ostream& out) const
 {
-  std::ostream_iterator<addrinfo> os (out);
+  std::ostream_iterator<RSingleprotoSocketAddress> 
+	 os (out);
 
   std::copy (begin (), end (), os);
 }

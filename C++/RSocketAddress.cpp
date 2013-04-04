@@ -8,10 +8,6 @@
 #  include <arpa/inet.h>
 #endif
 
-RSocketAddress::~RSocketAddress (void)
-{
-}
-
 void RSocketAddress::outString 
   (std::ostream& out, const struct sockaddr* sa)
 {
@@ -140,3 +136,31 @@ int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
     return 0;
   }
 }
+
+#if 0
+RSocketBase::Par& RSocketAddress::create_socket_pars
+  (const ObjectCreationInfo& oi,
+   const RSocketBase::Par& par) const
+{
+  RSocketBase::Par* par = 0;
+ 
+  // TODO RSocketAddress(addrinfo) -> RMultiprotoSocketAddress *-
+  // RSingleprotoSocketAddress(sockaddr)
+  // boost::asio?
+
+  // socket types
+  // ai->ai_flags == AI_PASSIVE -> RClientSideSocket
+  // ai->ai_family == AF_INET -> par.domain
+  // ai->ai_socktype -> par.type== SOCK_STREAM -> TCPSocket
+  // ai->ai_protocol -> par.protocol
+
+  switch (sa_in) 
+  {
+  RSocketBase::Par ipv4_par(par);
+  }
+  
+  par->domain = sa_in.ai_family;
+  //par.type = todo get for example from TCPSocket
+  //par.protocol = ??
+}
+#endif
