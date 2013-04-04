@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <utility>
 #include <map>
+#include <list>
 #include <unordered_map>
 #include <assert.h>
 
@@ -368,6 +369,31 @@ protected:
   RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
 };
 
+
+/**
+ * A repository which replase create_object with
+ * create_several_object function.  
+ */
+template<class Obj, class Par, class ObjMap, class ObjId,
+  template<class...> class List = std::list>
+class SparkRepository
+  : public Repository<Obj, Par, ObjMap, ObjId>
+{
+ public:
+  SparkRepository
+    (const std::string& repo_name, size_t init_capacity)
+ : Repository<Obj, Par, ObjMap, ObjId>
+      (repo_name, init_capacity) {}
+
+  Obj* create_object (const Par& param);
+
+  //! Some kind of params cause creation more than one
+  //object.
+  virtual List<Obj*> create_several_objects
+    (const Par& param);
+};
+
+
 #if 0
 /**
  * A repository parameter general template.
@@ -388,6 +414,22 @@ public:
 
 };
 #endif
+
+/**
+ * A repository member with default universal id
+ * implementation. 
+ */
+class StdIdMember
+{
+public:
+  const std::string universal_object_id;
+
+  StdIdMember(const std::string& id)
+    : universal_object_id(id) {}
+
+  std::string universal_id() const
+  { return universal_object_id; }
+};
 
 #include "Repository.hpp"
 

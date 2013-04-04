@@ -1,36 +1,6 @@
 #include "StdAfx.h"
 #include "RMultiprotoSocketAddress.h"
 
-std::ostream& operator << 
-  (std::ostream& out, const addrinfo& ai)
-{
-  out << "addrinfo ("
-      << "ai_flags: "  << ai.ai_flags
-      << " ai_family: " << ai.ai_family
-      << " ai_socktype: " << ai.ai_socktype
-      << " ai_protocol: " << ai.ai_protocol
-      << " ai_canonname: [" 
-      << ((ai.ai_canonname) ? ai.ai_canonname : "<null>")
-      << "] ai_addr: ";
-  RSocketAddress::outString (out, ai.ai_addr);
-  out << ")\n";
-  return out;
-}
-
-AddrinfoWrapper::AddrinfoWrapper (addrinfo* _ai)
-  : ai (_ai), theSize (0)
-{
-  // Count the size
-  for (addrinfo* ail = ai; ail != 0; ail = ail->ai_next)
-    theSize++;
-}
-
-AddrinfoWrapper::~AddrinfoWrapper ()
-{
-  if (ai)
-    ::freeaddrinfo (ai);
-}
-
 RMultiprotoSocketAddress::~RMultiprotoSocketAddress ()
 {
 #ifdef VIEW_AS_ADDRINFO

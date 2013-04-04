@@ -15,7 +15,7 @@
 #include "Repository.h"
 #include "RBuffer.h"
 #include "RSocketAddress.h"
-#include "RClientSocketAddress.h"
+//#include "RClientSocketAddress.h"
 #include "RThread.h"
 #include "RState.h"
 #ifndef _WIN32
@@ -33,42 +33,44 @@ public:
 
   struct Par
   {
-	 //! An address to determine a socket type
-	 const RSocketAddress& addr;
+  //! An address to determine a socket type
+  const RSocketAddress& addr;
 
-	 // ::socket(domain, type, protocol)
-	 int domain;
-	 int type;
-	 int protocol;
+  // ::socket(domain, type, protocol)
+  int domain;
+  int type;
+  int protocol;
 
     Par(const RSocketAddress& a) 
-	 : addr(a), domain(0), type(0), protocol(0) {}
+  : addr(a), domain(0), type(0), protocol(0) {}
 
-	 /*RSocketBase* create_derivation
-	   (const ObjectCreationInfo& oi) const
-	 {
-		return addr.create_socket_pars(oi, *this)
-		  .create_derivation(oi);
-		  }*/
+  /*RSocketBase* create_derivation
+    (const ObjectCreationInfo& oi) const
+  {
+  return addr.create_socket_pars(oi, *this)
+    .create_derivation(oi);
+    }*/
 
-	 RSocketBase* transform_object
-	   (const RSocketBase*) const
-	 { THROW_NOT_IMPLEMENTED; }
+  RSocketBase* transform_object
+    (const RSocketBase*) const
+  { THROW_NOT_IMPLEMENTED; }
   };
 
   struct IPv4Par : public Par
   {
-	 
+  
   };
 
   virtual ~RSocketBase () {}
 
+#if 0
   //! Connect the first available address in addr. States
   //! transitions are, for get_blocking() == true:
   //! ->syn_sent, for get_blocking() == false: 
   //! ->syn_sent[->established]
   virtual void connect_first 
-	 (const RClientSocketAddress& addr) = 0;
+  (const RClientSocketAddress& addr) = 0;
+#endif
 
   virtual void close() = 0;
 
@@ -87,7 +89,7 @@ public:
   //! \return An or-ed set of FD_XXX constants.
   //! \see get_event_object()
   virtual int32_t get_events 
-	 (bool reset_event_object = false) = 0; 
+  (bool reset_event_object = false) = 0; 
 #endif
 
   //! It is true if get_event_object, get_events are
@@ -99,7 +101,7 @@ protected:
   SOCKET fd;
   
   /*RSocketBase(const ObjectCreationInfo& oi,
-	 const Par& par);*/
+  const Par& par);*/
   //RSocketBase(SOCKET socket) : fd(socket) {}
 
   //! set blocking mode
@@ -119,68 +121,22 @@ class SocketThread: public RThread<std::thread>
 public:
   struct Par : public RThread<std::thread>::Par
   {
-	 RSocketBase* socket;
+  RSocketBase* socket;
 
-	 RThreadBase* create_derivation
-		(const ObjectCreationInfo&) const;
+  RThreadBase* create_derivation
+  (const ObjectCreationInfo&) const;
 
-	 RThreadBase* transform_object
-		(const RThreadBase*) const
-	 { THROW_NOT_IMPLEMENTED; }
+  RThreadBase* transform_object
+  (const RThreadBase*) const
+  { THROW_NOT_IMPLEMENTED; }
 
-	 //SocketId get_id() const
-	 //{ return socket->socket; }
+  //SocketId get_id() const
+  //{ return socket->socket; }
   };
 
 protected:
   SocketThread(const ObjectCreationInfo& oi, const Par& p) 
   : RThread<std::thread>(oi, p) {}
-};
-
-class InSocketStateAxis : public StateAxis {};
-
-class InSocket
-: public RObjectWithEvents<InSocketStateAxis>,
-  virtual public RSocketBase
-{
-public:
-  DECLARE_STATES(InSocketStateAxis, State);
-  DECLARE_STATE_CONST(State, new_data);
-  DECLARE_STATE_CONST(State, empty);
-  DECLARE_STATE_CONST(State, closed); // a reading side
-                                      // was closed
-
-//  RBuffer* 
-
-protected:
-  typedef Logger<InSocket> log;
-
-  InSocket(const ObjectCreationInfo& oi, 
-			  const /*RSocketBase::*/Par& p);
-  ~InSocket();
-  
-  //! Doing ::select and signalling new_data.
-  class Thread;
-
-  class Thread : public SocketThread
-  {
-  public:
-	 void run(); 
-
-  protected:
-    Thread(const ObjectCreationInfo& oi, const Par& p) 
-	 : SocketThread(oi, p), 
-		socket(dynamic_cast<InSocket*>(p.socket)) 
-		{ assert(socket); }
-
-	 InSocket* socket;
-  };
-
-  //! The last received data
-  RSingleBuffer* msg;
-
-  //! Actual size of a socket internal read buffer + 1.
-  size_t socket_rd_buf_size;
 };
 
 class OutSocketStateAxis : public StateAxis {};
@@ -198,7 +154,7 @@ public:
   void run();
 };
 
-class InOutSocket : public InSocket, public OutSocket {};
+//class InOutSocket : public InSocket, public OutSocket {};
 
 /**
  * A real socket, for example

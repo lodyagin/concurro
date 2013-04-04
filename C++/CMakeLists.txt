@@ -8,25 +8,26 @@ project (concurrent)
 set (concurrent_SOURCES 
   Event.cpp
   HasStringView.cpp
-  IPv4SocketAddress.cpp
-  IPv6SocketAddress.cpp
+#  IPv4SocketAddress.cpp
+#  IPv6SocketAddress.cpp
   Logging.cpp
 #  NamedPipe.cpp
 #  AbstractConnection.cpp
 #  SCheck.cpp
   RBuffer.cpp
-  RClientSocketAddress.cpp
+#  RClientSocketAddress.cpp
   SCommon.cpp
 #  SComplPort.cpp
 #  RConnectedSocket.cpp
 #  RInOutSocket.cpp
-  RMultiprotoSocketAddress.cpp
+#  RMultiprotoSocketAddress.cpp
   RMutex.cpp
 #  RPath.cpp
 #  RServerSocketAddress.cpp
 #  RSingleSocket.cpp
   RSocketAddress.cpp
-  RSocket.cpp
+#  RSocket.cpp
+  InSocket.cpp
 #  RSocketGroup.cpp
   RThread.cpp
   SException.cpp

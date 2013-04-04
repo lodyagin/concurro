@@ -7,6 +7,7 @@
 extern CU_TestInfo RMutexTests[];
 extern CU_TestInfo REventTests[];
 extern CU_TestInfo RBufferTests[];
+extern CU_TestInfo RSocketTests[];
 
 int RMutexCUInit(void);
 int RMutexCUClean(void);
@@ -14,6 +15,8 @@ int REventCUInit(void);
 int REventCUClean(void);
 int RBufferCUInit(void);
 int RBufferCUClean(void);
+int RSocketCUInit(void);
+int RSocketCUClean(void);
 
 CU_SuiteInfo suites[] = {	
   { "RMutex", RMutexCUInit, RMutexCUClean, 0, 0,
@@ -22,6 +25,8 @@ CU_SuiteInfo suites[] = {
 	  REventTests },
   { "RBuffer", RBufferCUInit, RBufferCUClean, 0, 0,
 	  RBufferTests },
+  { "RSocket", RSocketCUInit, RSocketCUClean, 0, 0,
+	  RSocketTests },
 	CU_SUITE_INFO_NULL
 };
 

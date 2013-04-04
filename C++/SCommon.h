@@ -186,6 +186,14 @@ void toString (const T& object, std::string & s)
   s += os.str();
 }
 
+template <class T>
+std::string&& toString (const T& object)
+{
+  std::ostringstream os;
+  os << object;
+  return std::move(os.str());
+}
+
 // FIXME raise exception when the string is not a number
 template <class T>
 T fromString (const std::string& s)
