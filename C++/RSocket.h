@@ -15,7 +15,6 @@
 #include "Repository.h"
 #include "RBuffer.h"
 #include "RSocketAddress.h"
-//#include "RClientSocketAddress.h"
 #include "RThread.h"
 #include "RState.h"
 #ifndef _WIN32
@@ -27,79 +26,30 @@
  * each separate RSocket is connected to one an
  *
  */
-class RSocketBase : public SNotCopyable
+class RSocketBase 
+: public SNotCopyable, public StdIdMember
 {
+  friend class RSocketAddress;
+  friend std::ostream&
+	 operator<< (std::ostream&, const RSocketBase&);
+
 public:
-
-  struct Par
-  {
-  //! An address to determine a socket type
-  const RSocketAddress& addr;
-
-  // ::socket(domain, type, protocol)
-  int domain;
-  int type;
-  int protocol;
-
-    Par(const RSocketAddress& a) 
-  : addr(a), domain(0), type(0), protocol(0) {}
-
-  /*RSocketBase* create_derivation
-    (const ObjectCreationInfo& oi) const
-  {
-  return addr.create_socket_pars(oi, *this)
-    .create_derivation(oi);
-    }*/
-
-  RSocketBase* transform_object
-    (const RSocketBase*) const
-  { THROW_NOT_IMPLEMENTED; }
-  };
-
-  struct IPv4Par : public Par
-  {
-  
-  };
-
   virtual ~RSocketBase () {}
 
-#if 0
-  //! Connect the first available address in addr. States
-  //! transitions are, for get_blocking() == true:
-  //! ->syn_sent, for get_blocking() == false: 
-  //! ->syn_sent[->established]
-  virtual void connect_first 
-  (const RClientSocketAddress& addr) = 0;
-#endif
-
   virtual void close() = 0;
-
-#if 0
-  //! Return the REvent associated with the socket. It
-  //! will be signalled on new FD_XXX events available
-  //! after the last call to get_events. NB the event
-  //! object allow combine socket events with another type
-  //! of events in WaitForMultipleEvents
-  //! \see get_events.
-  virtual REvent* get_event_object() = 0;
-
-  //! Get (and clear) the socket events triggered after
-  //! the last call to this function.
-  //! \par reset_event_object Reset the associated REvent.
-  //! \return An or-ed set of FD_XXX constants.
-  //! \see get_event_object()
-  virtual int32_t get_events 
-  (bool reset_event_object = false) = 0; 
-#endif
-
-  //! It is true if get_event_object, get_events are
-  //! working.
-  //const bool eventUsed;
 
 protected:
   //! A socket file descriptor.
   SOCKET fd;
-  
+
+  //! This type is only for repository creation
+  RSocketBase(SOCKET fd_) 
+	 : StdIdMember(SFORMAT(fd_)),
+	 fd(fd_)
+  {
+	 assert(fd >= 0);
+  }
+
   /*RSocketBase(const ObjectCreationInfo& oi,
   const Par& par);*/
   //RSocketBase(SOCKET socket) : fd(socket) {}
@@ -109,6 +59,9 @@ protected:
 
   virtual bool get_blocking () const = 0;
 };
+
+std::ostream&
+operator<< (std::ostream&, const RSocketBase&);
 
 class ClientSideSocket : virtual public RSocketBase 
 {};
@@ -156,6 +109,11 @@ public:
 
 //class InOutSocket : public InSocket, public OutSocket {};
 
+
+/*=============================*/
+/*========== RSocket ==========*/
+/*=============================*/
+
 /**
  * A real socket, for example
  * RSocket<ClientSideSocket, InOutSocket, TCPSocket>
@@ -166,12 +124,46 @@ class RSocket : public Bases...
   struct Par : public Bases::Par... {};
 };
 
-template<template<class...> class Map, class Id>
+//=================================================
+// Classes to make an appropriate RSocket type by
+// parameters 
+
+class ClientSocket;
+class ServerSocket;
+class InSocket;
+class OutSocket;
+class TCPSocket;
+
+//! {Client,Server}Socket
+template<SocketSide> class SocketBySocketSide {};
+
+template<> class SocketBySocketSide<SocketSide::Client>
+{ public: typedef ClientSocket SocketType; };
+
+template<> class SocketBySocketSide<SocketSide::Server>
+{ public: typedef ServerSocket SocketType; };
+
+template<SocketSide, NetworkProtocol, IPVer>
+class SocketMaker {};
+
+template<SocketSide side, IPVer ver> 
+class SocketMaker<side, NetworkProtocol::TCP, ver>
+{ 
+public:
+  typedef RSocket<
+	 typename SocketBySocketSide<side>::SocketType,
+	 TCPSocket,
+	 InSocket, OutSocket> SocketType;
+};
+
+
 class SocketRepository
-  : public Repository<RSocketBase, RSocketAddress, Map, Id>
+: public Repository
+    <RSocketBase, RSocketAddress, std::map, SOCKET>
 {
 public:
-  typedef Repository<RSocketBase, RSocketAddress, Map, Id>
+  typedef Repository
+	 <RSocketBase, RSocketAddress, std::map, SOCKET>
 	 Parent;
 
   SocketRepository()

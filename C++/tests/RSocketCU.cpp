@@ -1,5 +1,6 @@
 #include "RSocketAddress.h"
 #include "RSocket.h"
+#include "InSocket.h"
 #include "CUnit.h"
 #include <list>
 
@@ -52,9 +53,10 @@ void test_localhost_socket_address()
 void test_insocket()
 {
   SocketRepository<std::vector, size_t> sr;
-  InSocket* in_sock = sr.create_object
-	 (*SocketAddressRepository()
-	  . create_addresses(<NetworkProtocol::TCP, IPVer::v4>)
-	  . begin());
+  InSocket* in_sock = dynamic_cast<InSocket*>
+	 (sr.create_object
+	  (*SocketAddressRepository()
+		. create_addresses<NetworkProtocol::TCP, IPVer::v4>
+		("localhost", 5555) . front()));
 }
 

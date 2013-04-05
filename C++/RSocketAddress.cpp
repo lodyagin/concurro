@@ -7,7 +7,8 @@
  */
 
 #include "StdAfx.h"
-#include "RSocketAddress.h"
+#include "RSocketAddress.hpp"
+#include "RSocket.h"
 #ifdef _WIN32
 #  include <winsock2.h>
 #  include <Ws2tcpip.h>
@@ -35,17 +36,49 @@ std::ostream& operator <<
   return out;
 }
 
+/*==================================*/
+/*========== HintsBuilder ==========*/
+/*==================================*/
+
+NetworkProtocolHints<NetworkProtocol::TCP>
+//
+::NetworkProtocolHints()
+{
+  struct protoent buf, *pent;
+
+  hints.ai_socktype = SOCK_STREAM;
+  rCheck
+	 (getprotobyname_r("TCP", &buf, sizeof(buf), &pent)==0);
+  assert(pent = &buf);
+  hints.ai_protocol = pent->p_proto;
+}
+
 size_t AddressRequestBase
 //
 ::n_objects(const ObjectCreationInfo& oi)
 {
   addrinfo* ai_;
 
+  // NULL is a special "wildcard" value for AI_PASSIVE, 
+  // see man getaddrinfo
+  const char *const node = 
+	 (host.empty()) ? NULL : host.c_str();
+
+
+  /* check the address consistency */
+
+  // AI_PASSIVE will be ignored if node != NULL
+  // see getaddrinfo(3)
+  SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
+							node == NULL));
+
+
   rSocketCheck(
     getaddrinfo(host.c_str(),
                 SFORMAT(port).c_str(), 
                 &hints, &ai_) 
     == 0);
+
   aw_ptr = std::make_shared<AddrinfoWrapper>(ai_);
   next_obj = aw_ptr->begin();
   return aw_ptr->size();
@@ -72,16 +105,68 @@ AddrinfoWrapper::~AddrinfoWrapper ()
     ::freeaddrinfo (ai);
 }
 
+
+/*====================================*/
+/*========== RSocketAddress ==========*/
+/*====================================*/
+
 RSocketAddress::RSocketAddress
   (const ObjectCreationInfo& oi,
    const std::shared_ptr<AddrinfoWrapper>& ptr,
 	const addrinfo* ai_)
 :   StdIdMember(oi.objectId),
     ai(ai_),
-	 aw_ptr(ptr)
+	 aw_ptr(ptr),
+	 fd(-1)
 {
   assert(ai);
 }
+
+RSocketBase* RSocketAddress::create_derivation
+  (const ObjectCreationInfo& oi) const
+{
+  assert(fd >= 0);
+  
+  /* Define the basic socket parameters */
+  NetworkProtocol protocol;
+  IPVer ver;
+  SocketSide side;
+
+  struct protoent buf, *pent;
+
+  switch (ai->ai_family) 
+  {
+  case AF_INET:   ver = IPVer::v4; break;
+  case AF_INET6:  ver = IPVer::v6; break;
+  case AF_UNSPEC: THROW_PROGRAM_ERROR;
+  default:        THROW_NOT_IMPLEMENTED;
+  }
+
+  side = (ai->ai_flags & AI_PASSIVE) 
+	 ? SocketSide::Server : SocketSide::Client;
+
+  rCheck
+	 (::getprotobynumber_r(ai->ai_protocol, 
+								  &buf, sizeof(buf), &pent) == 0);
+  assert(&buf == pent);
+  if (strcmp(pent->p_name, "TCP") == 0) {
+	 protocol = NetworkProtocol::TCP;
+  }
+  else THROW_NOT_IMPLEMENTED;
+
+  return new typename SocketMaker<side, protocol, ver>
+	 ::SocketType(fd);
+}
+
+SOCKET RSocketAddress::get_id() const
+{
+  assert(ai);
+  rSocketCheck
+	 ((fd = ::socket(ai->ai_family, 
+						  ai->ai_socktype,
+						  ai->ai_protocol)) >= 0);
+}
+
 
 void RSocketAddress::outString 
   (std::ostream& out, const struct sockaddr* sa)

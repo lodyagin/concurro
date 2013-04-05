@@ -253,4 +253,7 @@ Out copy_if (In first, In last, Out res, Pred p)
  */
 char* string2char_ptr (const std::string& str);
 
+//! Calculate the logic implication: a -> b
+#define IMPLICATION(a, b) ((b) || (!(a)))
+
 #endif

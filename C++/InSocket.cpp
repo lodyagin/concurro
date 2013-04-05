@@ -5,14 +5,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-// RSocketBase ===========================================
-
-/*RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
-         const Par& par)
-{
-  
-}*/
-
 RAxis<InSocketStateAxis> in_socket_state_axis
 ({
   {   "new_data",  // new data or an error
@@ -23,36 +15,20 @@ RAxis<InSocketStateAxis> in_socket_state_axis
   {"new_data", "closed"},
   {"empty", "closed"} }
 });
-
 DEFINE_STATE_CONST(InSocket, State, new_data);
 DEFINE_STATE_CONST(InSocket, State, empty);
 DEFINE_STATE_CONST(InSocket, State, closed);
 
 
-RAxis<OutSocketStateAxis> out_socket_state_axis
-({
-  {   "wait_you",  // write buf watermark or an error
-  "busy",
-  "closed"      },
-  { {"wait_you", "busy"},
-  {"busy", "wait_you"},
-  {"wait_you", "closed"},
-  {"busy", "closed"} }
-});
-
-DEFINE_STATE_CONST(OutSocket, State, wait_you);
-DEFINE_STATE_CONST(OutSocket, State, busy);
-DEFINE_STATE_CONST(OutSocket, State, closed);
-
-InSocket::InSocket
-(const ObjectCreationInfo& oi, const Par& p)
+InSocket::InSocket()
   : RObjectWithEvents<InSocketStateAxis>(emptyState)
 {
   socklen_t m = sizeof(socket_rd_buf_size);
   getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
      &socket_rd_buf_size, &m);
   socket_rd_buf_size++; // to allow catch an overflow error
-  LOG_DEBUG(log, "socket_rd_buf_size = " << socket_rd_buf_size);
+  LOG_DEBUG(log, "socket_rd_buf_size = " 
+				<< socket_rd_buf_size);
   msg.reserve(socket_rd_buf_size);
 }
 

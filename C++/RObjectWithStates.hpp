@@ -1,5 +1,15 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_ROBJECTWITHSTATES_HPP_
+#define CONCURRO_ROBJECTWITHSTATES_HPP_
+
+#include "RObjectWithStates.h"
 #include <algorithm>
 
 template<class Axis>
@@ -73,4 +83,4 @@ void RObjectWithEvents<Axis>
   }
 }
 
-
+#endif

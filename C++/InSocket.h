@@ -30,8 +30,6 @@ public:
 protected:
   typedef Logger<InSocket> log;
 
-  InSocket(const ObjectCreationInfo& oi, 
-     const /*RSocketBase::*/Par& p);
   ~InSocket();
   
   //! Doing ::select and signalling new_data.
@@ -54,6 +52,10 @@ protected:
 
   //! Actual size of a socket internal read buffer + 1.
   size_t socket_rd_buf_size;
+
+protected:
+  //! This type can be used only as a base
+  InSocket() {}
 };
 
 #endif

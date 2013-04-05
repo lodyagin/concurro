@@ -21,11 +21,9 @@
 #include "SCommon.h"
 #ifdef _WIN32
 #include "SWinCheck.h"
-#include "SEvent.h"
-#include "SMutex.h"
 #endif
 #include "RMutex.h"
-#include "REvent.h"
+#include "REvent.hpp"
 #include "SShutdown.h"
 #include "SCheck.h"
 

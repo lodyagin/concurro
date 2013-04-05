@@ -6,21 +6,48 @@
  * @author Sergei Lodyagin
  */
 
+#ifndef CONCURRO_RSOCKETADDRESS_HPP_
+#define CONCURRO_RSOCKETADDRESS_HPP_
 
-template<>
-class HintsBuilder<NetworkProtocol::TCP, IPVer::v4>
+#include "RSocketAddress.h"
+#include "SException.h"
+
+
+/*==================================*/
+/*========== HintsBuilder ==========*/
+/*==================================*/
+
+template<IPVer ver> 
+IPVerHints<ver>
+//
+::IPVerHints()
 {
-public:
-  HintsBuilder() : hints({0})
+  switch(ver)
   {
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_INET;
+  case IPVer::v4: 
+	 hints.ai_family = AF_INET;
+	 break;
+  case IPVer::v6: 
+	 hints.ai_family = AF_INET6;
+	 break;
+  case IPVer::any:
+	 hints.ai_family = AF_UNSPEC;
+	 break;
+  default: THROW_NOT_IMPLEMENTED;
   }
-  operator addrinfo&& () 
-  { return hints; }
-protected:
-  addrinfo hints;  
-};
+}
+
+template<SocketSide side> 
+SocketSideHints<side>
+//
+::SocketSideHints()
+{
+  if (side == SocketSide::Server)
+	 hints.ai_flags |= AI_PASSIVE;
+}
+
+
+
 
 template<
   enum NetworkProtocol protocol, 
@@ -34,3 +61,4 @@ std::list<RSocketAddress*> SocketAddressRepository
   return create_several_objects(par);
 }
 
+#endif

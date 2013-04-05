@@ -1,15 +1,27 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ * Socket types.
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
 #include "RSocket.h"
 
-// RSocketBase ===========================================
 
-/*RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
-								 const Par& par)
+/*=================================*/
+/*========== RSocketBase ==========*/
+/*=================================*/
+
+std::ostream&
+operator<< (std::ostream& out, const RSocketBase& s)
 {
-  
-}*/
+  out << "socket(" << s.fd << ')';
+  return out;
+}
+
 
  //DEFINE_STATES(InSocket, InSocketStateAxis, State)
 RAxis<InSocketStateAxis> in_socket_state_axis

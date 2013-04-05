@@ -6,11 +6,11 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_REVENT_H
-#define CONCURRO_REVENT_H
+#ifndef CONCURRO_REVENT_H_
+#define CONCURRO_REVENT_H_
 
 #include "StateMap.h"
-#include "RObjectWithStates.h"
+#include "RObjectWithStates.hpp"
 #include "Event.h"
 
 template<class Axis>

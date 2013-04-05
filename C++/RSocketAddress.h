@@ -26,12 +26,114 @@ typedef struct addrinfo addrinfo;
 std::ostream& operator<< 
   (std::ostream& out, const addrinfo& ai);
 
-//#define USE_ADDRINFO_ID
-
 class AddressRequestBase;
 
+/*==================================*/
+/*========== HintsBuilder ==========*/
+/*==================================*/
+
 enum class NetworkProtocol { TCP, UDP };
-enum class IPVer { v4, v6 };
+enum class IPVer { v4, v6, any };
+enum class SocketSide { Client, Server };
+
+class AddrinfoHints
+{
+public:
+  addrinfo hints;
+  AddrinfoHints() : hints({0}) {}
+};
+
+template<NetworkProtocol> 
+class NetworkProtocolHints : public virtual AddrinfoHints
+{ 
+public: 
+  NetworkProtocolHints() 
+  { 
+	 // must use sepcializations
+	 THROW_NOT_IMPLEMENTED;
+  }
+};
+
+template<IPVer> 
+class IPVerHints : public virtual AddrinfoHints
+{ public: IPVerHints(); };
+
+template<SocketSide> 
+class SocketSideHints : public virtual AddrinfoHints
+{ public: SocketSideHints(); };
+
+
+//====================
+// specializations
+
+template<> 
+class NetworkProtocolHints<NetworkProtocol::TCP>
+  : public virtual AddrinfoHints
+{ public: NetworkProtocolHints(); };
+
+//====================
+// a compound class
+
+/**
+ * Make getaddrinfo(3) hints based on template parameters.
+ */
+#if 1
+template<class... Bases> 
+class HintsBuilder : public virtual AddrinfoHints,
+  public Bases...
+{
+public:
+  HintsBuilder() 
+	 : AddrinfoHints(), // it is default,just for make sure
+	 Bases()... {}
+
+  operator addrinfo&& () { return std::move(hints); }
+};
+
+#else
+template<SocketSide, NetworkProtocol, IPVer>
+class HintsBuilder
+{
+ public:
+HintsBuilder() : 
+  {
+    // it is only compiled if there is not a valid
+    // specialization
+    THROW_NOT_IMPLEMENTED;
+  }
+  operator addrinfo&& () { return std::move(hints); }
+ protected:
+  addrinfo hints;  
+};
+
+// a TCP specialization
+template<SocketSide, IPVer>
+class HintsBuilder<SocketSide, NetworkProtocol::TCP, IPVer>
+{
+public:
+  HintsBuilder();
+  operator addrinfo&& () { return hints; }
+protected:
+  addrinfo hints;  
+};
+
+#if 0
+template<>
+class HintsBuilder<NetworkProtocol::TCP, IPVer::v4>
+{
+public:
+  HintsBuilder() : hints({0})
+  {
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = AF_INET;
+  }
+  operator addrinfo&& () 
+  { return hints; }
+protected:
+  addrinfo hints;  
+};
+#endif
+#endif
 
 /**
  * STL style wrapper over addrinfo.
@@ -124,26 +226,9 @@ public:
     return theSize == 0;
   }
 
-#if 0
-  operator const addrinfo&() const;
-
-  std::string universal_id() const
-  { return universal_object_id; }
-
-  AddrinfoWrapper* create_derivation
-    (const ObjectCreationInfo& oi) const;
-
-  AddrinfoWrapper* transform_object
-    (const AddrinfoWrapper*) const;
-#endif
-
 protected:
   addrinfo* ai;
   size_t theSize;
-
-  /*AddrinfoWrapper
-    (const ObjectCreationInfo& oi,
-	 const AddressRequestBase& par);*/
 };
 
 class RSocketAddress;
@@ -179,21 +264,6 @@ protected:
   AddrinfoWrapper::const_iterator next_obj;
 };
 
-template<enum NetworkProtocol, enum IPVer>
-class HintsBuilder
-{
- public:
-  HintsBuilder()
-  {
-    // it is only compiled if there is not a valid
-    // specialization
-    THROW_NOT_IMPLEMENTED;
-  }
-  operator addrinfo&& () 
-  { return std::move(hints); }
- protected:
-  addrinfo hints;  
-};
 
 template<
   enum NetworkProtocol protocol, 
@@ -205,39 +275,50 @@ public:
   AddressRequest(const std::string& host_, 
                  uint16_t port_)
   : AddressRequestBase
-    (host_, port_, HintsBuilder<protocol, ip_version>())
+    (host_, port_, 
+	  HintsBuilder<NetworkProtocolHints<protocol>, 
+	               IPVerHints<ip_version>
+	  >())
   {}
 };
 
 class RSocketBase;
 
 class RSocketAddress 
-: public StdIdMember,
-  public GeneralizedPar<RSocketAddress, RSocketBase>
+: public StdIdMember
 {
   friend class AddressRequestBase;
 public:
+  RSocketBase* create_derivation
+    (const ObjectCreationInfo& oi) const;
+
+  RSocketBase* transform_object
+    (const RSocketBase*) const
+  { THROW_NOT_IMPLEMENTED; }
+
+  SOCKET get_id() const;
+
   virtual ~RSocketAddress() {}
 
-  // sockaddr pretty print
+  //! sockaddr pretty print
   static void outString 
     (std::ostream& out, 
      const struct sockaddr* sa
      );
 
-  // in_addr pretty print
+  //! in_addr pretty print
   static void outString 
     (std::ostream& out, 
      const struct in_addr* ia
      );
 
-  // in6_addr pretty print
+  //! in6_addr pretty print
   static void outString 
     (std::ostream& out, 
      const struct in6_addr* ia
      );
 
-  // addrinfo pretty print
+  //! addrinfo pretty print
   static void outString 
     (std::ostream& out, 
      const struct addrinfo* ai
@@ -250,13 +331,13 @@ protected:
 	              const std::shared_ptr<AddrinfoWrapper>&,
 					  const addrinfo* ai_);
 
-  // Copy socket address
-  // The size of information copied is defined by 
-  // the 'in' structure type.
-  // It throws an exception if sockaddr_out_size is
-  // less than copied size (and do not copy in this case).
-  // If sockaddr_in_size != NULL set it the the
-  // size of the structure copied.
+  //! Copy socket address
+  //! The size of information copied is defined by 
+  //! the 'in' structure type.
+  //! It throws an exception if sockaddr_out_size is
+  //! less than copied size (and do not copy in this case).
+  //! If sockaddr_in_size != NULL set it the the
+  //! size of the structure copied.
   static void copy_sockaddr 
     (struct sockaddr* out,
      int sockaddr_out_size,
@@ -264,12 +345,20 @@ protected:
      int* sockaddr_in_size = 0
      );
 
-  // Get the sockaddr length by its type.
-  // Return 0 if the address family is unsupported
+  //! Get the sockaddr length by its type.
+  //! Return 0 if the address family is unsupported
   static int get_sockaddr_len 
     (const struct sockaddr* sa);
 
+  //! use an addrinfo member together with possible
+  //! different RSocketAddress-es, so, maintain shared_ptr
+  //! to free addrinfo through ~AddrinfoWrapper
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
+
+  //! The socket creation is two stage: 
+  //!  1) create fd (it will be RSocket ID in a repo)
+  //!  2) create RSocket object
+  SOCKET fd;
 };
 
 std::ostream&

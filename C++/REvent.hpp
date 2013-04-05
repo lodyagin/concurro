@@ -1,5 +1,17 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_REVENT_HPP_
+#define CONCURRO_REVENT_HPP_
+
+#include "REvent.h"
+#include "RState.hpp"
+
 template<class Axis>
 REvent<Axis>::REvent(const char* from, 
 							const char* to)
@@ -45,3 +57,4 @@ bool REvent<Axis>
   return event(obj).wait(time);
 }
 
+#endif

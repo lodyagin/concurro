@@ -1,4 +1,4 @@
-#include "REvent.h"
+#include "REvent.hpp"
 #include "CUnit.h"
 #include "RThread.h"
 #include <string>
