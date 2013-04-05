@@ -40,25 +40,7 @@ enum class IPVer { v4, v6 };
  */
 class AddrinfoWrapper : public SNotCopyable
 {
-  friend class AddressRequestBase;
 public:
-
-#ifdef USE_ADDRINFO_ID
-  //! unique identify addrinfo
-  struct Id
-  {
-    int ai_flags;
-    int ai_family;
-    int ai_socktype;
-    int ai_protocol;
-
-    Id();
-    Id(const AddrinfoWrapper&);
-    operator std::string&& ();
-    bool operator< (const Id&) const;
-  };
-#endif
-
   typedef addrinfo        value_type;
   typedef const addrinfo*       pointer;
   typedef const addrinfo& const_reference;
@@ -142,6 +124,7 @@ public:
     return theSize == 0;
   }
 
+#if 0
   operator const addrinfo&() const;
 
   std::string universal_id() const
@@ -152,121 +135,20 @@ public:
 
   AddrinfoWrapper* transform_object
     (const AddrinfoWrapper*) const;
-
-#ifdef USE_ADDRINFO_ID
-  const Id& get_id() const;
 #endif
 
 protected:
   addrinfo* ai;
   size_t theSize;
-  const std::string universal_object_id;
 
-  AddrinfoWrapper
+  /*AddrinfoWrapper
     (const ObjectCreationInfo& oi,
-     const AddressRequestBase& par);
+	 const AddressRequestBase& par);*/
 };
 
-#ifdef USE_ADDRINFO_ID
-std::ostream&
-operator<< (std::ostream&, const AddrinfoWrapper::Id&);
-
-std::istream&
-operator>> (std::istream&, AddrinfoWrapper::Id&);
-#endif
-
-#if 1
-class RSocketAddress //: public HasStringView
-{
-public:
-  /** 
-   * Normally it should contain only one std::string field
-   * to define all parameters, like this one:
-   * tcp://localhost:5555&ipv=4
-   * Now proto is default to tcp and a version to ipv4.
-   */
-  struct Par
-  {
-    std::string host;
-    uint16_t port;
-
-    RSocketAddress* create_derivation
-      (const ObjectCreationInfo& oi) const;
-
-    RSocketAddress* transform_object
-      (const RSocketAddress*) const
-    { THROW_NOT_IMPLEMENTED; }
-
-    std::string get_id() const;
-  };
-
-  const std::string socket_locator;
-
-  std::string universal_id() const
-  {
-    return socket_locator;
-  }
-
-  RSocketAddress() = delete;
-  //RSocketAddress(const std::string& host, uint16_t port);
-  //RSocketAddress(struct addrinfo*);
-  virtual ~RSocketAddress (void);
-
-  // sockaddr pretty print
-  static void outString 
-    (std::ostream& out, 
-     const struct sockaddr* sa
-     );
-
-  // in_addr pretty print
-  static void outString 
-    (std::ostream& out, 
-     const struct in_addr* ia
-     );
-
-  // in6_addr pretty print
-  static void outString 
-    (std::ostream& out, 
-     const struct in6_addr* ia
-     );
-
-  // addrinfo pretty print
-  static void outString 
-    (std::ostream& out, 
-     const struct addrinfo* ai
-     );
-
-  /*virtual RSocketBase::Par& create_socket_pars
-	 (const ObjectCreationInfo& oi,
-	 const RSocketBase::Par& par) const = 0;*/
-
-protected:
-  // Copy socket address
-  // The size of information copied is defined by 
-  // the 'in' structure type.
-  // It throws an exception if sockaddr_out_size is
-  // less than copied size (and do not copy in this case).
-  // If sockaddr_in_size != NULL set it the the
-  // size of the structure copied.
-  static void copy_sockaddr 
-    (struct sockaddr* out,
-     int sockaddr_out_size,
-     const struct sockaddr* in,
-     int* sockaddr_in_size = 0
-     );
-
-  // Get the sockaddr length by its type.
-  // Return 0 if the address family is unsupported
-  static int get_sockaddr_len 
-    (const struct sockaddr* sa);
-
-  struct addrinfo* ai;
-};
-#endif
-
+class RSocketAddress;
 
 class AddressRequestBase 
-//: public GeneralizedPar<AddressRequestBase, AddrinfoWrapper>
 {
 public:
   std::string host;
@@ -276,24 +158,24 @@ public:
   AddressRequestBase(const std::string& host_, 
                      uint16_t port_, 
                      addrinfo&& hints_)
-    : host(host_), port(port_), hints(hints_),
-      ai(0) {}
+    : host(host_), port(port_), hints(hints_)
+      {}
 
   size_t n_objects(const ObjectCreationInfo& oi);
 
-  AddrinfoWrapper* create_next_derivation
+  RSocketAddress* create_next_derivation
     (const ObjectCreationInfo& oi);
 
-  AddrinfoWrapper* create_derivation
+  RSocketAddress* create_derivation
     (const ObjectCreationInfo& oi) const
     { THROW_NOT_IMPLEMENTED; }
 
-  AddrinfoWrapper* transform_object
-    (const AddrinfoWrapper*) const
+  RSocketAddress* transform_object
+    (const RSocketAddress*) const
     { THROW_NOT_IMPLEMENTED; }
 
 protected:
-  AddrinfoWrapper* ai;
+  std::shared_ptr<AddrinfoWrapper> aw_ptr;
   AddrinfoWrapper::const_iterator next_obj;
 };
 
@@ -327,55 +209,99 @@ public:
   {}
 };
 
+class RSocketBase;
+
+class RSocketAddress 
+: public StdIdMember,
+  public GeneralizedPar<RSocketAddress, RSocketBase>
+{
+  friend class AddressRequestBase;
+public:
+  virtual ~RSocketAddress() {}
+
+  // sockaddr pretty print
+  static void outString 
+    (std::ostream& out, 
+     const struct sockaddr* sa
+     );
+
+  // in_addr pretty print
+  static void outString 
+    (std::ostream& out, 
+     const struct in_addr* ia
+     );
+
+  // in6_addr pretty print
+  static void outString 
+    (std::ostream& out, 
+     const struct in6_addr* ia
+     );
+
+  // addrinfo pretty print
+  static void outString 
+    (std::ostream& out, 
+     const struct addrinfo* ai
+     );
+
+  const addrinfo *const ai;
+
+protected:
+  RSocketAddress(const ObjectCreationInfo& oi,
+	              const std::shared_ptr<AddrinfoWrapper>&,
+					  const addrinfo* ai_);
+
+  // Copy socket address
+  // The size of information copied is defined by 
+  // the 'in' structure type.
+  // It throws an exception if sockaddr_out_size is
+  // less than copied size (and do not copy in this case).
+  // If sockaddr_in_size != NULL set it the the
+  // size of the structure copied.
+  static void copy_sockaddr 
+    (struct sockaddr* out,
+     int sockaddr_out_size,
+     const struct sockaddr* in,
+     int* sockaddr_in_size = 0
+     );
+
+  // Get the sockaddr length by its type.
+  // Return 0 if the address family is unsupported
+  static int get_sockaddr_len 
+    (const struct sockaddr* sa);
+
+  std::shared_ptr<AddrinfoWrapper> aw_ptr;
+};
+
+std::ostream&
+operator<< (std::ostream&, const RSocketAddress&);
 
 /**
  * Repository is like a relational database.  It is for
  * various selects for possible protocols/addresses.
  */
 class SocketAddressRepository :
-#ifdef USE_ADDRINFO_ID
-  public Repository<
-    AddrinfoWrapper, 
-    AddrinfoWrapper, // a hint for getaddrinfo
-    std::map<AddrinfoWrapper::Id, AddrinfoWrapper*>,
-    AddrinfoWrapper::Id
-  >
-#else
   public SparkRepository<
-    AddrinfoWrapper, 
+    RSocketAddress, 
     AddressRequestBase,
-    std::vector<AddrinfoWrapper*>,
-    std::vector<AddrinfoWrapper*>::size_type
+    std::vector,
+	 size_t
   >
-#endif
 {
 public:
-#ifdef USE_ADDRINFO_ID
-  typedef Repository<
-    AddrinfoWrapper, 
-    AddrinfoWrapper, // a hint for getaddrinfo
-    std::map<AddrinfoWrapper::Id, AddrinfoWrapper*>,
-    AddrinfoWrapper::Id 
-    > Parent;
-  typedef AddrinfoWrapper::Id Id;
-#else
   typedef SparkRepository<
-    AddrinfoWrapper, 
+    RSocketAddress, 
     AddressRequestBase,
-    std::vector<AddrinfoWrapper*>,
-    std::vector<AddrinfoWrapper*>::size_type
+    std::vector,
+    size_t
   > Parent;
-  typedef std::vector<AddrinfoWrapper*>::size_type Id;
-#endif
+  typedef size_t Id;
 
   SocketAddressRepository()
     : Parent("some SocketAddressRepository", 8) {}
 
   template<enum NetworkProtocol, enum IPVer>
-  std::list<AddrinfoWrapper*>&& create_addresses
+  std::list<RSocketAddress*> create_addresses
     (const std::string& host, uint16_t port);
 };
-
-#include "RSocketAddress.hpp"
 
 #endif

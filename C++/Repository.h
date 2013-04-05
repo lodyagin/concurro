@@ -53,7 +53,11 @@ struct ObjectCreationInfo
  * A RepositoryBase contain not-specialized methods of
  * Repository, i.e., methods not dependent on the ObjMap.
  */
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
 class RepositoryBase : public AbstractRepositoryBase
 {
 public:
@@ -151,7 +155,7 @@ public:
 protected:
   typedef Logger<RepositoryBase> log;
 
-  ObjMap* objects;
+  //ObjMap<Obj*>* objects;
   RMutex objectsM;
 
   /// Calculate an id for a new object, possible based on Par
@@ -170,7 +174,11 @@ protected:
  * This is implementation of Repository for vector-like
  * objects. 
  */
-template< class Obj, class Par, class ObjMap, class ObjId >
+template< 
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId 
+>
 class Repository 
   : public RepositoryBase<Obj, Par, ObjMap, ObjId>,
   public SNotCopyable
@@ -182,14 +190,13 @@ public:
 
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
-  Repository 
-	 (const std::string& repository_name, size_t initial_value)
-	 : Parent (repository_name)
-  {
-	 this->objects = new ObjMap (initial_value);
-	 this->objects->push_back (0); // id 0 is not used for
-											 // real objects
-  }
+  Repository(const std::string& repository_name,
+				size_t initial_capacity)
+	: Parent (repository_name) ,
+	 objects(new ObjMap<Obj*> (initial_capacity))
+  {}
+
+  ~Repository() { delete objects; }
 
 protected:
   /// This specialization takes the first unused (numeric)
@@ -219,8 +226,10 @@ protected:
   void insert_object (ObjId id, Obj* obj)
   {
 	 RLOCK(this->objectsM);
-	 this->objects->at(id) = obj;
+	 objects->at(id) = obj;
   }
+protected:
+  ObjMap<Obj*>* objects;
 };
 
 /**
@@ -228,26 +237,35 @@ protected:
  * std::unordered_map.
  */
 template<class Obj, class Par, class ObjId>
-class Repository<Obj, Par, std::unordered_map<ObjId, Obj*>, ObjId>
-  : public RepositoryBase<Obj, Par, std::unordered_map<ObjId, Obj*>, ObjId>,
+class Repository<Obj, Par, std::unordered_map, ObjId>
+: public RepositoryBase<Obj, Par, std::unordered_map, ObjId>,
   public SNotCopyable
 {
 public:
-  typedef RepositoryBase<Obj, Par, std::unordered_map<ObjId, Obj*>,
+  typedef RepositoryBase<Obj, Par, std::unordered_map,
 	 ObjId> Parent;
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
   typedef std::unordered_map<ObjId, Obj*> ObjMap;
+
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
-  Repository 
-	 (const std::string& repository_name, size_t initial_value)
-	 : Parent (repository_name)
-  {
-	 this->objects = new ObjMap (initial_value);
-  }
+  Repository(const std::string& repository_name, 
+				 size_t initial_value)
+	 : Parent (repository_name),
+	 objects(new ObjMap (initial_value)) 
+	{
+	  // id 0 is not used for real objects
+	  objects->insert
+		 (std::pair<ObjId, Obj*>(0, (Obj*)0));
+   }
+
+  ~Repository() { delete objects; }
+
 protected:
+  std::unordered_map<ObjId, Obj*>* objects;
+
   /// This specialization takes the key value from pars.
   ObjId get_object_id (const ObjectCreationInfo& oi,
 		       const Par& param)
@@ -275,12 +293,12 @@ protected:
  * This is a specialization of Repository for std::map.
  */
 template<class Obj, class Par, class ObjId>
-class Repository<Obj, Par, std::map<ObjId, Obj*>, ObjId>
-  : public RepositoryBase<Obj, Par, std::map<ObjId, Obj*>, ObjId>,
+class Repository<Obj, Par, std::map, ObjId>
+  : public RepositoryBase<Obj, Par, std::map, ObjId>,
   public SNotCopyable
 {
 public:
-  typedef RepositoryBase<Obj, Par, std::map<ObjId, Obj*>,
+  typedef RepositoryBase<Obj, Par, std::map,
 	 ObjId> Parent;
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
@@ -319,13 +337,19 @@ protected:
   }
 };
 
-template<class Obj, class Par, class ObjMap, 
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
   class ObjId, class ObjMapValue>
 class Destructor 
   : public std::unary_function<ObjMapValue, void>
 {};
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
 class Destructor<Obj, Par, ObjMap, ObjId, Obj*> 
   : public std::unary_function<Obj*, void>
 {
@@ -345,7 +369,11 @@ protected:
   RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
 };
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
 class Destructor<
   Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>
 > 
@@ -384,8 +412,11 @@ DEFINE_EXCEPTION(
  * A repository which replase create_object with
  * create_several_object function.  
  */
-template<class Obj, class Par, class ObjMap, class ObjId,
-  template<class...> class List = std::list>
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, class ObjId,
+  template<class...> class List = std::list
+>
 class SparkRepository
   : public Repository<Obj, Par, ObjMap, ObjId>
 {
@@ -401,7 +432,7 @@ public:
 
   //! Some kind of params cause creation more than one
   //object.
-  virtual List<Obj*>&& create_several_objects(Par& param);
+  virtual List<Obj*> create_several_objects(Par& param);
 private:
 typedef Logger<
   SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;
@@ -420,10 +451,7 @@ class GeneralizedPar
 {
 public:
   virtual Object* create_derivation
-    (const ObjectCreationInfo& oi) const
-  {
-	 return new Object(oi, dynamic_cast<const Par&>(*this));
-  }
+    (const ObjectCreationInfo& oi) const;
 
   virtual Object* transform_object
     (const Object*) const
@@ -446,8 +474,6 @@ public:
   std::string universal_id() const
   { return universal_object_id; }
 };
-
-#include "Repository.hpp"
 
 #endif
 

@@ -39,79 +39,29 @@ size_t AddressRequestBase
 //
 ::n_objects(const ObjectCreationInfo& oi)
 {
-  ai = new AddrinfoWrapper(oi, *this);
-  next_obj = ai->begin();
-  return ai->size();
+  addrinfo* ai_;
+
+  rSocketCheck(
+    getaddrinfo(host.c_str(),
+                SFORMAT(port).c_str(), 
+                &hints, &ai_) 
+    == 0);
+  aw_ptr = std::make_shared<AddrinfoWrapper>(ai_);
+  next_obj = aw_ptr->begin();
+  return aw_ptr->size();
 }
 
-AddrinfoWrapper* AddressRequestBase
+RSocketAddress* AddressRequestBase
 //
 ::create_next_derivation(const ObjectCreationInfo& oi)
 {
-  return new AddrinfoWrapper(&*next_obj++);
-}
-
-
-
-#ifdef USE_ADDRINFO_ID
-AddrinfoWrapper::Id::Id()
-  : 
-  ai_flags(0),
-  ai_family(0),
-  ai_socktype(0),
-  ai_protocol(0)
-{}
-
-AddrinfoWrapper::Id::Id(const AddrinfoWrapper& ai)
-  : 
-  ai_flags(ai.ai->ai_flags),
-  ai_family(ai.ai->ai_family),
-  ai_socktype(ai.ai->ai_socktype),
-  ai_protocol(ai.ai->ai_protocol)
-{
-  assert(ai.ai);
-}
-
-AddrinfoWrapper::Id::operator std::string&&()
-{
-  return std::move
-    (SFORMAT(std::hex << ai_family
-	     << ':' << ai_socktype
-	     << ':' << ai_protocol
-	     << ':' << ai_flags ));
-}
-
-bool AddrinfoWrapper::Id::operator< 
-  (const AddrinfoWrapper::Id& b) const
-{
-  return ai_family < b.ai_family
-    && ai_socktype < b.ai_socktype
-    && ai_protocol < b.ai_protocol
-    && ai_flags < b.ai_flags;
+  return new RSocketAddress(oi, aw_ptr, &*next_obj++);
 }
 
 AddrinfoWrapper::AddrinfoWrapper (addrinfo* _ai)
-  : ai (_ai), theSize (0), 
-    universal_object_id("0") // not in a repository
+  : ai (_ai), theSize (0)
 {
   // Count the size
-  for (addrinfo* ail = ai; ail != 0; ail = ail->ai_next)
-    theSize++;
-}
-#endif
-
-AddrinfoWrapper::AddrinfoWrapper
-    (const ObjectCreationInfo& oi,
-     const AddressRequestBase& par)
-: ai(0), theSize(0), universal_object_id(oi.objectId)
-{
-  rSocketCheck(
-    getaddrinfo(par.host.c_str(),
-                SFORMAT(par.port).c_str(), 
-                &par.hints, &ai) 
-    == 0);
-
-  // Define a size
   for (addrinfo* ail = ai; ail != 0; ail = ail->ai_next)
     theSize++;
 }
@@ -122,25 +72,16 @@ AddrinfoWrapper::~AddrinfoWrapper ()
     ::freeaddrinfo (ai);
 }
 
-#if 0
-RSocketAddress* RSocketAddress::Par
-//
-::create_derivation(const ObjectCreationInfo& oi) const
+RSocketAddress::RSocketAddress
+  (const ObjectCreationInfo& oi,
+   const std::shared_ptr<AddrinfoWrapper>& ptr,
+	const addrinfo* ai_)
+:   StdIdMember(oi.objectId),
+    ai(ai_),
+	 aw_ptr(ptr)
 {
-  std::ostream_iterator<addrinfo> os(std::cerr);
-  std::cerr << '\n';
-  std::cerr << aiw.size() << '\n';
-  std::copy(aiw.begin(), aiw.end(), os);
-  std::cerr.flush();
+  assert(ai);
 }
-
-
-std::string RSocketAddress::Par::get_id() const
-{
-  return SFORMAT("tcp://" << host << ':' << port
-		 << "&ipv=4");
-}
-#endif
 
 void RSocketAddress::outString 
   (std::ostream& out, const struct sockaddr* sa)
@@ -271,35 +212,9 @@ int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
   }
 }
 
-
-#if 0
-RSocketBase::Par& RSocketAddress::create_socket_pars
-  (const ObjectCreationInfo& oi,
-   const RSocketBase::Par& par) const
+std::ostream&
+operator<< (std::ostream& out, const RSocketAddress& sa)
 {
-  RSocketBase::Par* par = 0;
- 
-  // TODO RSocketAddress(addrinfo) -> RMultiprotoSocketAddress *-
-  // RSingleprotoSocketAddress(sockaddr)
-  // boost::asio?
-
-  // socket types
-  // ai->ai_flags == AI_PASSIVE -> RClientSideSocket
-  // ai->ai_family == AF_INET -> par.domain
-  // ai->ai_socktype -> par.type== SOCK_STREAM -> TCPSocket
-  // ai->ai_protocol -> par.protocol
-
-  switch (sa_in) 
-  {
-  RSocketBase::Par ipv4_par(par);
-  }
-  
-  par->domain = sa_in.ai_family;
-  //par.type = todo get for example from TCPSocket
-  //par.protocol = ??
+  RSocketAddress::outString(out, sa.ai->ai_addr);
+  return out;
 }
-#endif
-
-
-
-

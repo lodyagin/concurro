@@ -117,6 +117,4 @@ protected:
   const RState<class_::state_class::axis>					\
     class_::state ## State(#state);
 
-#include "RState.hpp"
-
 #endif

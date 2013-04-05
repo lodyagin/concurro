@@ -55,6 +55,4 @@ const UniversalState& operator +
 // include shutdown event also
 //size_t waitMultipleSD( HANDLE *, size_t count );
 
-#include "REvent.hpp"
-
 #endif 

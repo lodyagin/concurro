@@ -5,12 +5,15 @@
 
 void test_127001_socket_address();
 void test_localhost_socket_address();
+void test_insocket();
 
 CU_TestInfo RSocketTests[] = {
   {"test 127.0.0.1:5555 address", 
 	test_127001_socket_address},
   {"test localhost socket address", 
 	test_localhost_socket_address},
+  {"test InSocket",
+	test_insocket},
   CU_TEST_INFO_NULL
 };
 
@@ -28,25 +31,30 @@ int RSocketCUClean()
 
 void test_127001_socket_address()
 {
-  {
-    SocketAddressRepository sar;
-    auto aiws = sar.create_addresses
-      <NetworkProtocol::TCP, IPVer::v4>
-      ("127.0.0.1", 5555);
+  SocketAddressRepository sar;
+  auto aiws = sar.create_addresses
+	 <NetworkProtocol::TCP, IPVer::v4>
+	 ("127.0.0.1", 5555);
 
-    CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
-  }
+  CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
 }
 
 void test_localhost_socket_address()
 {
-  {
-    SocketAddressRepository sar;
-    auto aiws = sar.create_addresses
-      <NetworkProtocol::TCP, IPVer::v4>
-      ("localhost", 5555);
+  SocketAddressRepository sar;
+  auto aiws = sar.create_addresses
+	 <NetworkProtocol::TCP, IPVer::v4>
+	 ("localhost", 5555);
 
-    CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
-  }
+  CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
+}
+
+void test_insocket()
+{
+  SocketRepository<std::vector, size_t> sr;
+  InSocket* in_sock = sr.create_object
+	 (*SocketAddressRepository()
+	  . create_addresses(<NetworkProtocol::TCP, IPVer::v4>)
+	  . begin());
 }
 

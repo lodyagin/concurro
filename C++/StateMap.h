@@ -275,7 +275,7 @@ class StateMapRepository
 : public Repository<
   StateMap, 
   StateMapParBase, 
-  std::unordered_map<StateMapId, StateMap*>,
+  std::unordered_map,
   StateMapId
   >,
   public SAutoSingleton<StateMapRepository>
@@ -286,7 +286,7 @@ public:
   typedef Repository< 
 	 StateMap, 
 	 StateMapParBase, 
-	 std::unordered_map<StateMapId, StateMap*>, 
+	 std::unordered_map,
 	 StateMapId > Parent;
 
   StateMapRepository() 

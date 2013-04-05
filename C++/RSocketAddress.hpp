@@ -26,27 +26,11 @@ template<
   enum NetworkProtocol protocol, 
   enum IPVer ip_version
 >
-std::list<AddrinfoWrapper*>&& SocketAddressRepository
+std::list<RSocketAddress*> SocketAddressRepository
 //
 ::create_addresses(const std::string& host, uint16_t port)
 {
-#if 0
-  struct addrinfo* ai;
-
-  ObjectCreationInfo cinfo = { this, std::string() };
-  const auto objId = get_object_id(cinfo, par);
-  toString (objId, cinfo.objectId);
-  
-  List<AddrinfoWrapper*> out;
-  // TODO remove repetitions from aiw
-  std::transform
-    (aiw.begin(), aiw.end(), out.begin(),
-     std::bind
-      (&SocketAddressRepository::create_object,
-       );
-#endif
-
   AddressRequest<protocol, ip_version> par(host, port);   
-  return std::move(create_several_objects(par));
+  return create_several_objects(par);
 }
 

@@ -77,7 +77,5 @@ protected:
   EventMap events;
 };
 
-#include "RObjectWithStates.hpp"
-
 #endif
 

@@ -166,11 +166,16 @@ class RSocket : public Bases...
   struct Par : public Bases::Par... {};
 };
 
-template<class Map, class Id>
+template<template<class...> class Map, class Id>
 class SocketRepository
-  : public Repository<
-  RSocketBase, RSocketBase::Par, Map, Id>
+  : public Repository<RSocketBase, RSocketAddress, Map, Id>
 {
+public:
+  typedef Repository<RSocketBase, RSocketAddress, Map, Id>
+	 Parent;
+
+  SocketRepository()
+    : Parent("SocketRepository", 10) {}
 };
 
 #endif

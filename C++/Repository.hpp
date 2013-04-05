@@ -213,14 +213,15 @@ Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
 //
 ::create_object (const Par& param)
 {
-  THROW_EXCEPTION(SeveralObjects, void);
+  //THROW_EXCEPTION(SeveralObjects, void);
+  throw SeveralObjects();
 }
 
 template<
   class Obj, class Par, class ObjMap, class ObjId,
   template<class...> class List
 >
-List<Obj*>&& SparkRepository<Obj, Par, ObjMap, ObjId, List>
+List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
 //
 ::create_several_objects(Par& param)
 {
@@ -249,5 +250,19 @@ List<Obj*>&& SparkRepository<Obj, Par, ObjMap, ObjId, List>
         out.push_back(obj);
       }
   }
-  return std::move(out);
+  return out;
 }
+
+
+/*=====================================*/
+/*========= helper templates ==========*/
+/*=====================================*/
+
+template<class Par, class Object>
+Object* GeneralizedPar::create_derivation
+    (const ObjectCreationInfo& oi) const
+{
+  return new Object(oi, dynamic_cast<const Par&>(*this));
+}
+
+
