@@ -13,25 +13,17 @@
 #include "SNotCopyable.h"
 #include "SException.h"
 #include "SShutdown.h"
-//#include "REvent.h"
-//#include "StateMap.h"
 #include "Logging.h"
 #include <algorithm>
 #include <utility>
-#include <map>
 #include <list>
+#include <map>
 #include <unordered_map>
 #include <assert.h>
 
-/// The Par contains invalid parameters.
-class InvalidObjectParameters : public SException
-{
-public:
-  InvalidObjectParameters ()
-	 : SException 
-	 ("Invalid parameters for repository object creation")
-  {}
-};
+DEFINE_EXCEPTION(InvalidObjectParameters,
+  "Invalid parameters for repository object creation"
+)
 
 class AbstractRepositoryBase 
 {
@@ -47,7 +39,15 @@ struct ObjectCreationInfo
   std::string objectId;
 };
 
-
+template<
+  class Obj, class ObjId,
+  template<class...> class ObjMap
+>
+class RepositoryMapType
+{
+public:
+  typedef ObjMap<Obj*> Map;
+};
 
 /**
  * A RepositoryBase contain not-specialized methods of
@@ -94,7 +94,8 @@ public:
   };
 
   RepositoryBase (const std::string& repo_name) 
-	 : objectsM (SFORMAT(repo_name << ".objectsM")) {}
+	 : objectsM (SFORMAT(repo_name << ".objectsM")),
+	   objects(0) {}
 
   virtual ~RepositoryBase ();
 
@@ -155,11 +156,12 @@ public:
 protected:
   typedef Logger<RepositoryBase> log;
 
-  //ObjMap<Obj*>* objects;
   RMutex objectsM;
+  typename RepositoryMapType<Obj, ObjId, ObjMap>
+	 ::Map* objects;
 
-  /// Calculate an id for a new object, possible based on Par
-  /// (depending of the Repository type)
+  //! Calculate an id for a new object, possible based on
+  //! Par (depending of the Repository type)
   virtual ObjId get_object_id 
 	 (const ObjectCreationInfo& oi,
 	  const Par&) = 0;
@@ -192,11 +194,15 @@ public:
   /// for vector and size for hash tables.
   Repository(const std::string& repository_name,
 				size_t initial_capacity)
-	: Parent (repository_name) ,
-	 objects(new ObjMap<Obj*> (initial_capacity))
-  {}
+  : Parent (repository_name) 
+  {
+	 this->objects = new typename RepositoryMapType<Obj,
+		ObjId, ObjMap>::Map (initial_capacity);
+	 this->objects->push_back (0); // id 0 is not used for
+											 // real objects
+  }
 
-  ~Repository() { delete objects; }
+  //~Repository() { delete objects; }
 
 protected:
   /// This specialization takes the first unused (numeric)
@@ -226,10 +232,68 @@ protected:
   void insert_object (ObjId id, Obj* obj)
   {
 	 RLOCK(this->objectsM);
-	 objects->at(id) = obj;
+	 this->objects->at(id) = obj;
   }
+};
+
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId, class ObjMapValue>
+class Destructor 
+  : public std::unary_function<ObjMapValue, void>
+{};
+
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
+class Destructor<Obj, Par, ObjMap, ObjId, Obj*> 
+  : public std::unary_function<Obj*, void>
+{
+public:
+  Destructor 
+	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
+    : repo (_repo)
+  {}
+
+  void operator () (Obj* obj)
+  { 
+    if (obj) 
+      repo->delete_object (obj, true); 
+  }
+
 protected:
-  ObjMap<Obj*>* objects;
+  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
+};
+
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
+class Destructor<
+  Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>
+> 
+: public std::unary_function
+   <std::pair<const ObjId, Obj*>, void>
+{
+public:
+  Destructor 
+	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
+    : repo (_repo)
+  {}
+
+  void operator() 
+	 (const std::pair<const ObjId, Obj*>& pair)
+  { 
+    if (pair.second) 
+      repo->delete_object (pair.second, true); 
+  }
+
+protected:
+  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
 };
 
 /**
@@ -253,19 +317,12 @@ public:
   /// for vector and size for hash tables.
   Repository(const std::string& repository_name, 
 				 size_t initial_value)
-	 : Parent (repository_name),
-	 objects(new ObjMap (initial_value)) 
-	{
-	  // id 0 is not used for real objects
-	  objects->insert
-		 (std::pair<ObjId, Obj*>(0, (Obj*)0));
-   }
-
-  ~Repository() { delete objects; }
+	 : Parent (repository_name)
+  {
+	 this->objects = new ObjMap (initial_value);
+  }
 
 protected:
-  std::unordered_map<ObjId, Obj*>* objects;
-
   /// This specialization takes the key value from pars.
   ObjId get_object_id (const ObjectCreationInfo& oi,
 		       const Par& param)
@@ -337,66 +394,6 @@ protected:
   }
 };
 
-template<
-  class Obj, class Par, 
-  template<class...> class ObjMap, 
-  class ObjId, class ObjMapValue>
-class Destructor 
-  : public std::unary_function<ObjMapValue, void>
-{};
-
-template<
-  class Obj, class Par, 
-  template<class...> class ObjMap, 
-  class ObjId
->
-class Destructor<Obj, Par, ObjMap, ObjId, Obj*> 
-  : public std::unary_function<Obj*, void>
-{
-public:
-  Destructor 
-	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
-    : repo (_repo)
-  {}
-
-  void operator () (Obj* obj)
-  { 
-    if (obj) 
-      repo->delete_object (obj, true); 
-  }
-
-protected:
-  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
-};
-
-template<
-  class Obj, class Par, 
-  template<class...> class ObjMap, 
-  class ObjId
->
-class Destructor<
-  Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>
-> 
-: public std::unary_function
-   <std::pair<const ObjId, Obj*>, void>
-{
-public:
-  Destructor 
-	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
-    : repo (_repo)
-  {}
-
-  void operator() 
-	 (const std::pair<const ObjId, Obj*>& pair)
-  { 
-    if (pair.second) 
-      repo->delete_object (pair.second, true); 
-  }
-
-protected:
-  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
-};
-
 
 /*=====================================*/
 /*========== SparkRepository ==========*/
@@ -443,6 +440,7 @@ typedef Logger<
 /*========= helper templates ==========*/
 /*=====================================*/
 
+#if 0
 /**
  * A repository parameter general template.
  */
@@ -458,6 +456,9 @@ public:
   { THROW_NOT_IMPLEMENTED; }
 
 };
+#else
+#define STD_DERIVATION(Object)
+#endif
 
 /**
  * A repository member with default universal id

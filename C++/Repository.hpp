@@ -1,11 +1,35 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_REPOSITORY_HPP_
+#define CONCURRO_REPOSITORY_HPP_
+
+#include "Repository.h"
 #include <set>
+
+template<class Obj, class ObjId>
+class RepositoryMapType<Obj, ObjId, std::unordered_map>
+{
+public:
+  typedef std::unordered_map<ObjId, Obj*> Map;
+};
+
+template<class Obj, class ObjId>
+class RepositoryMapType<Obj, ObjId, std::map>
+{
+public:
+  typedef std::map<ObjId, Obj*> Map;
+};
 
 template<
   class Obj, 
   class Par, 
-  class ObjMap, 
+  template<class...> class ObjMap, 
   class ObjId 
 >
 RepositoryBase<Obj, Par, ObjMap, ObjId>
@@ -15,7 +39,9 @@ RepositoryBase<Obj, Par, ObjMap, ObjId>
   std::for_each
     (objects->begin (), 
      objects->end (),
-     Destructor<Obj, Par, ObjMap, ObjId, typename ObjMap::value_type> (this)
+     Destructor<Obj, Par, ObjMap, ObjId, 
+	  typename RepositoryMapType<Obj, ObjId, ObjMap>
+	    ::Map::value_type> (this)
      );
   delete objects;
 }
@@ -23,7 +49,7 @@ RepositoryBase<Obj, Par, ObjMap, ObjId>
 template<
   class Obj, 
   class Par, 
-  class ObjMap, 
+  template<class...> class ObjMap, 
   class ObjId
 >
 Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
@@ -55,7 +81,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   return obj;
 }
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
 ::replace_object (ObjId id, const Par& param, bool freeMemory)
@@ -87,7 +113,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   return (*objects)[id];
 }
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
 ::delete_object (Obj* obj, bool freeMemory)
@@ -99,7 +125,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
   delete_object_by_id (objId, freeMemory);
 }
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
 ::delete_object_by_id (ObjId id, bool freeMemory)
@@ -122,7 +148,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
   if (freeMemory) delete ptr;
 }
 
-template <class Obj, class Par, class ObjMap, class ObjId>
+template <class Obj, class Par, template<class...> class ObjMap, class ObjId>
 Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
 //
 ::get_object_by_id (ObjId id) const
@@ -137,7 +163,7 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
 }
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 template<class Out, class Pred>
 Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
@@ -165,7 +191,7 @@ protected:
   State state;
 };
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 template<class Out, class State>
 Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
@@ -176,7 +202,7 @@ Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 	 (res, StateMatch<Obj, State> (state));
 }
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>::for_each (Op& f)
 {
@@ -187,7 +213,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>::for_each (Op& f)
       f (*(*objects)[i]);
 }
 
-template<class Obj, class Par, class ObjMap, class ObjId>
+template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
@@ -200,13 +226,12 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
       f (*(*objects)[i]);
 }
 
-
 /*=====================================*/
 /*========== SparkRepository ==========*/
 /*=====================================*/
 
 template<
-  class Obj, class Par, class ObjMap, class ObjId,
+  class Obj, class Par, template<class...> class ObjMap, class ObjId,
   template<class...> class List
 >
 Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
@@ -218,7 +243,7 @@ Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
 }
 
 template<
-  class Obj, class Par, class ObjMap, class ObjId,
+  class Obj, class Par, template<class...> class ObjMap, class ObjId,
   template<class...> class List
 >
 List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
@@ -258,11 +283,13 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
 /*========= helper templates ==========*/
 /*=====================================*/
 
+#if 0
 template<class Par, class Object>
-Object* GeneralizedPar::create_derivation
+Object* GeneralizedPar<Par, Object>::create_derivation
     (const ObjectCreationInfo& oi) const
 {
   return new Object(oi, dynamic_cast<const Par&>(*this));
 }
+#endif
 
-
+#endif
