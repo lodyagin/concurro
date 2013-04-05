@@ -28,8 +28,6 @@ public:
                                       // was closed
 
 protected:
-  typedef Logger<InSocket> log;
-
   ~InSocket();
   
   //! Doing ::select and signalling new_data.
@@ -54,8 +52,7 @@ protected:
   size_t socket_rd_buf_size;
 
 protected:
-  //! This type can be used only as a base
-  InSocket() {}
+  InSocket();
 };
 
 #endif

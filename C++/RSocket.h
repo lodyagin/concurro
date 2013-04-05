@@ -36,11 +36,23 @@ class RSocketBase
 public:
   virtual ~RSocketBase () {}
 
-  virtual void close() = 0;
+  virtual void close();
+
+#if 0
+  std::string universal_id() const 
+  { return universal_object_id; }
 
 protected:
+  std::string universal_object_id;
+#else
+protected:
+#endif
   //! A socket file descriptor.
   SOCKET fd;
+
+  //! This is a 'technical' version. Properly constructed
+  //! RSocket always call RSocketBase(SOCKET) at the end.
+  RSocketBase() : StdIdMember("0") { THROW_PROGRAM_ERROR;}
 
   //! This type is only for repository creation
   RSocketBase(SOCKET fd_) 
@@ -55,9 +67,9 @@ protected:
   //RSocketBase(SOCKET socket) : fd(socket) {}
 
   //! set blocking mode
-  virtual void set_blocking (bool blocking) = 0;
-
-  virtual bool get_blocking () const = 0;
+  //virtual void set_blocking (bool blocking);
+  //! get blocking mode
+  //virtual bool get_blocking () const;
 };
 
 std::ostream&
@@ -92,21 +104,6 @@ protected:
   : RThread<std::thread>(oi, p) {}
 };
 
-class OutSocketStateAxis : public StateAxis {};
-
-class OutSocket
-: public RObjectWithStates<OutSocketStateAxis>
-{
-public:
-  DECLARE_STATES(OutSocketStateAxis, State);
-  DECLARE_STATE_CONST(State, wait_you);
-  DECLARE_STATE_CONST(State, busy);
-  DECLARE_STATE_CONST(State, closed);
-
-  //! Doing ::select and signalling wait_you.
-  void run();
-};
-
 //class InOutSocket : public InSocket, public OutSocket {};
 
 
@@ -121,40 +118,30 @@ public:
 template<class... Bases>
 class RSocket : public Bases...
 {
-  struct Par : public Bases::Par... {};
+protected:
+  DEFAULT_LOGGER(RSocket<Bases...>);
 };
 
 //=================================================
-// Classes to make an appropriate RSocket type by
-// parameters 
+// Functions to make an appropriate RSocket type by
+// enum parameters 
 
-class ClientSocket;
-class ServerSocket;
-class InSocket;
-class OutSocket;
-class TCPSocket;
+inline RSocketBase* RSocketAllocator0
+  (SocketSide side,
+   NetworkProtocol protocol,
+   IPVer ver);
+    
+template<class Side>
+inline RSocketBase* RSocketAllocator1
+ (NetworkProtocol protocol,
+  IPVer ver);
 
-//! {Client,Server}Socket
-template<SocketSide> class SocketBySocketSide {};
+template<class Side, class Protocol>
+inline RSocketBase* RSocketAllocator2(IPVer ver);
 
-template<> class SocketBySocketSide<SocketSide::Client>
-{ public: typedef ClientSocket SocketType; };
+template<class... Bases>
+inline RSocketBase* RSocketAllocator();
 
-template<> class SocketBySocketSide<SocketSide::Server>
-{ public: typedef ServerSocket SocketType; };
-
-template<SocketSide, NetworkProtocol, IPVer>
-class SocketMaker {};
-
-template<SocketSide side, IPVer ver> 
-class SocketMaker<side, NetworkProtocol::TCP, ver>
-{ 
-public:
-  typedef RSocket<
-	 typename SocketBySocketSide<side>::SocketType,
-	 TCPSocket,
-	 InSocket, OutSocket> SocketType;
-};
 
 
 class SocketRepository

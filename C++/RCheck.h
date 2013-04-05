@@ -8,6 +8,8 @@ void rCheck( BOOL );
 void rCheck( BOOL, const wchar_t * fmt, ... );
 void rError( const wchar_t * fmt, ... );
 void rErrorCode( DWORD code, const wchar_t * fmt, ... );
+#else
+#define rCheck rSocketCheck
 #endif
 
 #ifdef _WIN32

@@ -27,8 +27,8 @@ InSocket::InSocket()
   getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
      &socket_rd_buf_size, &m);
   socket_rd_buf_size++; // to allow catch an overflow error
-  LOG_DEBUG(log, "socket_rd_buf_size = " 
-				<< socket_rd_buf_size);
+  LOGGER_DEBUG(logger(), "socket_rd_buf_size = " 
+               << socket_rd_buf_size);
   msg.reserve(socket_rd_buf_size);
 }
 

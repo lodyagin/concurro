@@ -358,7 +358,7 @@ protected:
   //! The socket creation is two stage: 
   //!  1) create fd (it will be RSocket ID in a repo)
   //!  2) create RSocket object
-  SOCKET fd;
+  mutable SOCKET fd;
 };
 
 std::ostream&

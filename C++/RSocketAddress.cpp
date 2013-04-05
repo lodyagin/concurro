@@ -8,7 +8,7 @@
 
 #include "StdAfx.h"
 #include "RSocketAddress.hpp"
-#include "RSocket.h"
+#include "RSocket.hpp"
 #ifdef _WIN32
 #  include <winsock2.h>
 #  include <Ws2tcpip.h>
@@ -18,6 +18,7 @@
 #  include <arpa/inet.h>
 #  include <netdb.h>
 #endif
+#include "RCheck.h"
 
 std::ostream& operator << 
   (std::ostream& out, const addrinfo& ai)
@@ -44,12 +45,16 @@ NetworkProtocolHints<NetworkProtocol::TCP>
 //
 ::NetworkProtocolHints()
 {
-  struct protoent buf, *pent;
+  struct protoent pent_buf, *pent;
+  char str_buf[1024]; 
+  // see
+  // http://www.unix.com/man-page/Linux/3/getprotobyname_r/
 
   hints.ai_socktype = SOCK_STREAM;
   rCheck
-	 (getprotobyname_r("TCP", &buf, sizeof(buf), &pent)==0);
-  assert(pent = &buf);
+	 (getprotobyname_r("TCP", &pent_buf, str_buf, 
+                      sizeof(str_buf), &pent)==0);
+  assert(pent = &pent_buf);
   hints.ai_protocol = pent->p_proto;
 }
 
@@ -74,7 +79,7 @@ size_t AddressRequestBase
 
 
   rSocketCheck(
-    getaddrinfo(host.c_str(),
+    getaddrinfo(node,
                 SFORMAT(port).c_str(), 
                 &hints, &ai_) 
     == 0);
@@ -132,8 +137,6 @@ RSocketBase* RSocketAddress::create_derivation
   IPVer ver;
   SocketSide side;
 
-  struct protoent buf, *pent;
-
   switch (ai->ai_family) 
   {
   case AF_INET:   ver = IPVer::v4; break;
@@ -145,17 +148,25 @@ RSocketBase* RSocketAddress::create_derivation
   side = (ai->ai_flags & AI_PASSIVE) 
 	 ? SocketSide::Server : SocketSide::Client;
 
-  rCheck
-	 (::getprotobynumber_r(ai->ai_protocol, 
-								  &buf, sizeof(buf), &pent) == 0);
-  assert(&buf == pent);
-  if (strcmp(pent->p_name, "TCP") == 0) {
-	 protocol = NetworkProtocol::TCP;
-  }
-  else THROW_NOT_IMPLEMENTED;
+  {
+    struct protoent pent_buf, *pent;
+    char str_buf[1024]; 
+    // see
+    // http://www.unix.com/man-page/Linux/3/getprotobyname_r/
 
-  return new typename SocketMaker<side, protocol, ver>
-	 ::SocketType(fd);
+    rCheck
+      (::getprotobynumber_r(ai->ai_protocol, 
+                            &pent_buf, 
+                            str_buf, sizeof(str_buf),
+                            &pent) == 0);
+        assert(&pent_buf == pent);
+    if (strcmp(pent->p_name, "TCP") == 0) {
+      protocol = NetworkProtocol::TCP;
+    }
+    else THROW_NOT_IMPLEMENTED;
+  }
+
+  return RSocketAllocator0(side, protocol, ver);
 }
 
 SOCKET RSocketAddress::get_id() const
@@ -165,6 +176,7 @@ SOCKET RSocketAddress::get_id() const
 	 ((fd = ::socket(ai->ai_family, 
 						  ai->ai_socktype,
 						  ai->ai_protocol)) >= 0);
+  return fd;
 }
 
 

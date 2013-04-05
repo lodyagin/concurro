@@ -52,7 +52,7 @@ void test_localhost_socket_address()
 
 void test_insocket()
 {
-  SocketRepository<std::vector, size_t> sr;
+  SocketRepository sr;
   InSocket* in_sock = dynamic_cast<InSocket*>
 	 (sr.create_object
 	  (*SocketAddressRepository()
