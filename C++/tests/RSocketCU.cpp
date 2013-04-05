@@ -3,10 +3,14 @@
 #include "CUnit.h"
 #include <list>
 
-void test_socket_address1();
+void test_127001_socket_address();
+void test_localhost_socket_address();
 
 CU_TestInfo RSocketTests[] = {
-  {"test socket address 1", test_socket_address1},
+  {"test 127.0.0.1:5555 address", 
+	test_127001_socket_address},
+  {"test localhost socket address", 
+	test_localhost_socket_address},
   CU_TEST_INFO_NULL
 };
 
@@ -22,7 +26,19 @@ int RSocketCUClean()
   return 0;
 }
 
-void test_socket_address1()
+void test_127001_socket_address()
+{
+  {
+    SocketAddressRepository sar;
+    auto aiws = sar.create_addresses
+      <NetworkProtocol::TCP, IPVer::v4>
+      ("127.0.0.1", 5555);
+
+    CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
+  }
+}
+
+void test_localhost_socket_address()
 {
   {
     SocketAddressRepository sar;
@@ -33,3 +49,4 @@ void test_socket_address1()
     CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
   }
 }
+
