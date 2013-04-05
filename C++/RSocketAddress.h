@@ -28,18 +28,10 @@ std::ostream& operator<<
 
 //#define USE_ADDRINFO_ID
 
-class AddrinfoWrapper;
+class AddressRequestBase;
 
-class AddressRequest
-{
-public:
-    AddrinfoWrapper* create_derivation
-      (const ObjectCreationInfo& oi) const;
-
-    AddrinfoWrapper* transform_object
-      (const AddrinfoWrapper*) const
-    { THROW_NOT_IMPLEMENTED; }
-};
+enum class NetworkProtocol { TCP, UDP };
+enum class IPVer { v4, v6 };
 
 /**
  * STL style wrapper over addrinfo.
@@ -48,7 +40,7 @@ public:
  */
 class AddrinfoWrapper : public SNotCopyable
 {
-  friend class AddressRequest;
+  friend class AddressRequestBase;
 public:
 
 #ifdef USE_ADDRINFO_ID
@@ -125,10 +117,8 @@ public:
     addrinfo* ptr;
   };
 
-#ifdef USE_ADDRINFO_ID
   // If _ai == 0 then size () == 0 and empty () == true.
   AddrinfoWrapper (addrinfo* _ai);
-#endif
 
   ~AddrinfoWrapper (); // destroy addrinfo
 
@@ -152,6 +142,8 @@ public:
     return theSize == 0;
   }
 
+  operator const addrinfo&() const;
+
   std::string universal_id() const
   { return universal_object_id; }
 
@@ -172,7 +164,7 @@ protected:
 
   AddrinfoWrapper
     (const ObjectCreationInfo& oi,
-     const AddressRequest& par);
+     const AddressRequestBase& par);
 };
 
 #ifdef USE_ADDRINFO_ID
@@ -182,9 +174,6 @@ operator<< (std::ostream&, const AddrinfoWrapper::Id&);
 std::istream&
 operator>> (std::istream&, AddrinfoWrapper::Id&);
 #endif
-
-enum class NetworkProtocol { TCP, UDP };
-enum class IPVer { v4, v6 };
 
 #if 1
 class RSocketAddress //: public HasStringView
@@ -275,52 +264,37 @@ protected:
 };
 #endif
 
-/**
- * Repository is like a relational database.  It is for
- * various selects for possible protocols/addresses.
- */
-class SocketAddressRepository :
-#ifdef USE_ADDRINFO_ID
-  public Repository<
-    AddrinfoWrapper, 
-    AddrinfoWrapper, // a hint for getaddrinfo
-    std::map<AddrinfoWrapper::Id, AddrinfoWrapper*>,
-    AddrinfoWrapper::Id
-  >
-#else
-  public SparkRepository<
-    AddrinfoWrapper, 
-    AddressRequest,
-    std::vector<AddrinfoWrapper*>,
-    std::vector<AddrinfoWrapper*>::size_type
-  >
-#endif
+
+class AddressRequestBase 
+//: public GeneralizedPar<AddressRequestBase, AddrinfoWrapper>
 {
 public:
-#ifdef USE_ADDRINFO_ID
-  typedef Repository<
-    AddrinfoWrapper, 
-    AddrinfoWrapper, // a hint for getaddrinfo
-    std::map<AddrinfoWrapper::Id, AddrinfoWrapper*>,
-    AddrinfoWrapper::Id 
-    > Parent;
-  typedef AddrinfoWrapper::Id Id;
-#else
-  typedef SparkRepository<
-    AddrinfoWrapper, 
-    AddressRequest,
-    std::vector<AddrinfoWrapper*>,
-    std::vector<AddrinfoWrapper*>::size_type
-  > Parent;
-  typedef std::vector<AddrinfoWrapper*>::size_type Id;
-#endif
+  std::string host;
+  uint16_t port;
+  addrinfo hints;
 
-  SocketAddressRepository()
-    : Parent("some SocketAddressRepository", 8) {}
+  AddressRequestBase(const std::string& host_, 
+                     uint16_t port_, 
+                     addrinfo&& hints_)
+    : host(host_), port(port_), hints(hints_),
+      ai(0) {}
 
-  template<enum NetworkProtocol, enum IPVer>
-  std::list<AddrinfoWrapper*>&& create_addresses
-    (const std::string& host, uint16_t port);
+  size_t n_objects(const ObjectCreationInfo& oi);
+
+  AddrinfoWrapper* create_next_derivation
+    (const ObjectCreationInfo& oi);
+
+  AddrinfoWrapper* create_derivation
+    (const ObjectCreationInfo& oi) const
+    { THROW_NOT_IMPLEMENTED; }
+
+  AddrinfoWrapper* transform_object
+    (const AddrinfoWrapper*) const
+    { THROW_NOT_IMPLEMENTED; }
+
+protected:
+  AddrinfoWrapper* ai;
+  AddrinfoWrapper::const_iterator next_obj;
 };
 
 template<enum NetworkProtocol, enum IPVer>
@@ -339,54 +313,69 @@ class HintsBuilder
   addrinfo hints;  
 };
 
-template<>
-class HintsBuilder<NetworkProtocol::TCP, IPVer::v4>
-{
-public:
-  HintsBuilder() : hints({0})
-  {
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_INET;
-  }
-  operator addrinfo&& () 
-  { return hints; }
-protected:
-  addrinfo hints;  
-};
-
 template<
   enum NetworkProtocol protocol, 
   enum IPVer ip_version
 >
-std::list<AddrinfoWrapper*>&& SocketAddressRepository
-//
-::create_addresses(const std::string& host, uint16_t port)
+class AddressRequest : public AddressRequestBase
 {
-#if 0
-  struct addrinfo* ai;
+public:
+  AddressRequest(const std::string& host_, 
+                 uint16_t port_)
+  : AddressRequestBase
+    (host_, port_, HintsBuilder<protocol, ip_version>())
+  {}
+};
 
-  rSocketCheck(
-    getaddrinfo
-    (host.c_str(), 
-     SFORMAT(port).c_str(), 
-     &(addrinfo&&)HintsBuilder<protocol, ip_version>(), 
-     &ai) == 0 );
 
-  ObjectCreationInfo cinfo = { this, std::string() };
-  const auto objId = get_object_id(cinfo, par);
-  toString (objId, cinfo.objectId);
-  
-  List<AddrinfoWrapper*> out;
-  // TODO remove repetitions from aiw
-  std::transform
-    (aiw.begin(), aiw.end(), out.begin(),
-     std::bind
-      (&SocketAddressRepository::create_object,
-       );
+/**
+ * Repository is like a relational database.  It is for
+ * various selects for possible protocols/addresses.
+ */
+class SocketAddressRepository :
+#ifdef USE_ADDRINFO_ID
+  public Repository<
+    AddrinfoWrapper, 
+    AddrinfoWrapper, // a hint for getaddrinfo
+    std::map<AddrinfoWrapper::Id, AddrinfoWrapper*>,
+    AddrinfoWrapper::Id
+  >
+#else
+  public SparkRepository<
+    AddrinfoWrapper, 
+    AddressRequestBase,
+    std::vector<AddrinfoWrapper*>,
+    std::vector<AddrinfoWrapper*>::size_type
+  >
+#endif
+{
+public:
+#ifdef USE_ADDRINFO_ID
+  typedef Repository<
+    AddrinfoWrapper, 
+    AddrinfoWrapper, // a hint for getaddrinfo
+    std::map<AddrinfoWrapper::Id, AddrinfoWrapper*>,
+    AddrinfoWrapper::Id 
+    > Parent;
+  typedef AddrinfoWrapper::Id Id;
+#else
+  typedef SparkRepository<
+    AddrinfoWrapper, 
+    AddressRequestBase,
+    std::vector<AddrinfoWrapper*>,
+    std::vector<AddrinfoWrapper*>::size_type
+  > Parent;
+  typedef std::vector<AddrinfoWrapper*>::size_type Id;
 #endif
 
-  AddressRequest par;   
-  return std::move(create_several_objects(par));
-}
+  SocketAddressRepository()
+    : Parent("some SocketAddressRepository", 8) {}
+
+  template<enum NetworkProtocol, enum IPVer>
+  std::list<AddrinfoWrapper*>&& create_addresses
+    (const std::string& host, uint16_t port);
+};
+
+#include "RSocketAddress.hpp"
 
 #endif

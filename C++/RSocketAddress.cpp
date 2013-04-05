@@ -35,12 +35,22 @@ std::ostream& operator <<
   return out;
 }
 
-AddrinfoWrapper* AddressRequest
+size_t AddressRequestBase
 //
-::create_derivation(const ObjectCreationInfo& oi) const
+::n_objects(const ObjectCreationInfo& oi)
 {
-  return new AddrinfoWrapper(oi, *this);
+  ai = new AddrinfoWrapper(oi, *this);
+  next_obj = ai->begin();
+  return ai->size();
 }
+
+AddrinfoWrapper* AddressRequestBase
+//
+::create_next_derivation(const ObjectCreationInfo& oi)
+{
+  return new AddrinfoWrapper(&*next_obj++);
+}
+
 
 
 #ifdef USE_ADDRINFO_ID
@@ -92,11 +102,16 @@ AddrinfoWrapper::AddrinfoWrapper (addrinfo* _ai)
 
 AddrinfoWrapper::AddrinfoWrapper
     (const ObjectCreationInfo& oi,
-     const AddressRequest& par)
-  : ai (_ai), theSize (0), 
-    universal_object_id("0") // not in a repository
+     const AddressRequestBase& par)
+: ai(0), theSize(0), universal_object_id(oi.objectId)
 {
-  // Count the size
+  rSocketCheck(
+    getaddrinfo(par.host.c_str(),
+                SFORMAT(par.port).c_str(), 
+                &par.hints, &ai) 
+    == 0);
+
+  // Define a size
   for (addrinfo* ail = ai; ail != 0; ail = ail->ai_next)
     theSize++;
 }

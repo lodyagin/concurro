@@ -1,5 +1,7 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+#include <set>
+
 template<
   class Obj, 
   class Par, 
@@ -49,7 +51,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     SCHECK (obj);
     insert_object (objId, obj);
   }
-  //  LOG_TRACE(log, "Object " << *obj << " is created.");
+  LOG_TRACE(log, "Object " << *obj << " is created.");
   return obj;
 }
 
@@ -198,3 +200,54 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
       f (*(*objects)[i]);
 }
 
+
+/*=====================================*/
+/*========== SparkRepository ==========*/
+/*=====================================*/
+
+template<
+  class Obj, class Par, class ObjMap, class ObjId,
+  template<class...> class List
+>
+Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
+//
+::create_object (const Par& param)
+{
+  THROW_EXCEPTION(SeveralObjects, void);
+}
+
+template<
+  class Obj, class Par, class ObjMap, class ObjId,
+  template<class...> class List
+>
+List<Obj*>&& SparkRepository<Obj, Par, ObjMap, ObjId, List>
+//
+::create_several_objects(Par& param)
+{
+  List<Obj*> out;
+  Obj* obj = 0;
+
+  ObjectCreationInfo cinfo = { this, std::string() };
+  {
+      RLOCK (this->objectsM);
+      const size_t n = param.n_objects(cinfo); 
+      // count objects to be created (it also can create
+      // them)
+
+      for (size_t k = 0; k < n; k++)
+      { 
+        cinfo.objectId.clear();
+        const ObjId objId = get_object_id(cinfo, param);
+        toString(objId, cinfo.objectId);
+
+        // dynamic cast for use with inherited parameters
+        obj = dynamic_cast<Obj*>
+          (param.create_next_derivation (cinfo));
+        SCHECK (obj);
+        insert_object (objId, obj);
+        LOG_TRACE(log, "Object " << *obj << " is created.");
+        out.push_back(obj);
+      }
+  }
+  return std::move(out);
+}

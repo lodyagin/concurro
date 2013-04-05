@@ -370,6 +370,16 @@ protected:
 };
 
 
+/*=====================================*/
+/*========== SparkRepository ==========*/
+/*=====================================*/
+
+DEFINE_EXCEPTION(
+  SeveralObjects, 
+  "The param leads to several objects creation, "
+  "you should use create_several_objects."
+);
+
 /**
  * A repository which replase create_object with
  * create_several_object function.  
@@ -379,7 +389,9 @@ template<class Obj, class Par, class ObjMap, class ObjId,
 class SparkRepository
   : public Repository<Obj, Par, ObjMap, ObjId>
 {
- public:
+public:
+  typedef Repository<Obj, Par, ObjMap, ObjId> Parent;
+
   SparkRepository
     (const std::string& repo_name, size_t init_capacity)
  : Repository<Obj, Par, ObjMap, ObjId>
@@ -389,23 +401,28 @@ class SparkRepository
 
   //! Some kind of params cause creation more than one
   //object.
-  virtual List<Obj*> create_several_objects
-    (const Par& param);
+  virtual List<Obj*>&& create_several_objects(Par& param);
+private:
+typedef Logger<
+  SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;
 };
 
 
-#if 0
+/*=====================================*/
+/*========= helper templates ==========*/
+/*=====================================*/
+
 /**
  * A repository parameter general template.
  */
-template<class Object>
+template<class Par, class Object>
 class GeneralizedPar
 {
 public:
   virtual Object* create_derivation
     (const ObjectCreationInfo& oi) const
   {
-	 return new Object(oi, *this);
+	 return new Object(oi, dynamic_cast<const Par&>(*this));
   }
 
   virtual Object* transform_object
@@ -413,7 +430,6 @@ public:
   { THROW_NOT_IMPLEMENTED; }
 
 };
-#endif
 
 /**
  * A repository member with default universal id
