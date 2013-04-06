@@ -1,5 +1,11 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
 #include "InSocket.h"
 #include <sys/types.h>
@@ -8,8 +14,8 @@
 RAxis<InSocketStateAxis> in_socket_state_axis
 ({
   {   "new_data",  // new data or an error
-  "empty",
-  "closed"      },
+      "empty",
+      "closed"      },
   { {"new_data", "empty"},
   {"empty", "new_data"},
   {"new_data", "closed"},
@@ -27,7 +33,7 @@ InSocket::InSocket()
   getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
      &socket_rd_buf_size, &m);
   socket_rd_buf_size++; // to allow catch an overflow error
-  LOGGER_DEBUG(logger(), "socket_rd_buf_size = " 
+  LOG_DEBUG(log, "socket_rd_buf_size = " 
                << socket_rd_buf_size);
   msg.reserve(socket_rd_buf_size);
 }

@@ -52,6 +52,8 @@ protected:
   size_t socket_rd_buf_size;
 
 protected:
+  typedef Logger<RSocketBase> log;
+
   InSocket();
 };
 

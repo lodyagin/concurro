@@ -1,3 +1,11 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
 #include "TCPSocket.h"
 
