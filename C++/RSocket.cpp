@@ -10,6 +10,8 @@
 #include "StdAfx.h"
 #include "RSocket.hpp"
 #include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 /*=================================*/
 /*========== RSocketBase ==========*/
@@ -19,11 +21,11 @@
 RSocketBase::RSocketBase(const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
 	 fd(addr.get_fd()), 
-	 aw_ptr(addr.get_aw_ptr());
+	 aw_ptr(addr.get_aw_ptr())
 {
   assert(fd >= 0);
   assert(aw_ptr);
-  assert(aw_ptr->ai_addr);
+  assert(aw_ptr->begin()->ai_addr);
 
   set_blocking(false);
 }
@@ -35,12 +37,12 @@ void RSocketBase::set_blocking (bool blocking)
   ioctlsocket(socket, FIONBIO, &mode);
 #else
   int opts = 0;
-  rSocketCheck((opts = fcntl(socket, F_GETFL)) != -1);
+  rSocketCheck((opts = fcntl(fd, F_GETFL)) != -1);
   if (blocking)
 	 opts &= (~O_NONBLOCK);
   else
 	 opts |= O_NONBLOCK;
-  rSocketCheck(fcntl(socket, F_SETFL, opts) != -1);
+  rSocketCheck(fcntl(fd, F_SETFL, opts) != -1);
 #endif
 }
 
@@ -56,6 +58,6 @@ SocketThreadWithPair::SocketThreadWithPair
   : SocketThread(oi, p), sock_pair({-1}) 
 {
   rSocketCheck(
-	 ::socketpair(AF_UNIX, SOCK_DGRAM, sock_pair) == 0);
+	 ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);
 }
 

@@ -1,5 +1,11 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #ifndef CONCURRO_THREADREPOSITORY_H_
 #define CONCURRO_THREADREPOSITORY_H_
 
@@ -9,37 +15,35 @@
 #include <algorithm>
 #include <vector>
 
-template<class Thread, class Map, class ObjectId>
-class ThreadRepository :
-  public Repository<
-#if 0
-	 RThreadBase, 
-	 RThreadBase::Par, 
-#else
-	 Thread, typename Thread::Par,
-#endif
-	 Map, ObjectId
-	 >
+template<class Thread, template<class...> class Container, class ThreadId>
+class ThreadRepository 
+: public Repository<
+  RThread<Thread>, 
+  typename RThread<Thread>::Par, 
+  Container,
+  ThreadId >,
+  public SAutoSingleton<ThreadRepository<Thread, Container, ThreadId> >
 {
 public:
-  typedef Repository
-	 <Thread, typename Thread::Par, Map, ObjectId> Parent;
+  typedef Repository<
+    RThread<Thread>, 
+    typename RThread<Thread>::Par, 
+    Container,
+    ThreadId> Parent;
 
-  ThreadRepository
-	 (const std::string& repository_name, 
-	  size_t reserved_size) 
-	 : Parent(repository_name, reserved_size) {}
+  ThreadRepository() 
+	 : Parent(typeid(*this).name(), 100) {}
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
 
   // Overrides
   void delete_object_by_id 
-    (ObjectId id, bool freeMemory);
+    (ThreadId id, bool freeMemory);
 
   // Overrides
   RThreadBase* replace_object 
-    (ObjectId id, 
+    (ThreadId id, 
      const RThreadBase::Par& param,
      bool freeMemory
      )
@@ -93,44 +97,6 @@ struct ThreadWaiter<std::pair<Key, Val>>
 		p.second->RThreadBase::wait ();
   }
 };
-
-template<class Thread, class Map, class ObjectId>
-void ThreadRepository<Thread, Map, ObjectId>
-//
-::stop_subthreads ()
-{
-  std::for_each (
-    this->objects->begin (),
-    this->objects->end (),
-    ThreadStopper<typename Map::value_type> ()
-    );
-}
-
-template<class Thread, class Map, class ObjectId>
-void ThreadRepository<Thread, Map, ObjectId>
-//
-::wait_subthreads ()
-{
-  std::for_each (
-    this->objects->begin (),
-    this->objects->end (),
-    ThreadWaiter<typename Map::value_type> ()
-    );
-}
-
-template<class Thread, class Map, class ObjectId>
-void ThreadRepository<Thread, Map, ObjectId>
-//
-::delete_object_by_id (ObjectId id, bool freeMemory)
-{
-  RThreadBase* th = get_object_by_id (id);
-  if (th) 
-  {
-    th->stop ();
-    th->wait ();
-    Parent::delete_object_by_id (id, freeMemory);
-  }
-}
 
 #endif
 

@@ -9,8 +9,8 @@
 #include "StdAfx.h"
 #include "TCPSocket.h"
 
-DEFINE_STATES(TCPSocket, TCPStateAxis, State)
-(  {"created",
+DEFINE_STATES(TCPAxis, 
+   {"created",
     "closed",  
 	 "in_closed",    // input part of connection is closed
 	 "out_closed",
@@ -61,8 +61,9 @@ DEFINE_STATE_CONST(TCPSocket, State, closing);
 DEFINE_STATE_CONST(TCPSocket, State, destroyed);
 
 TCPSocket::TCPSocket()
-  : RObjectWithStates<TCPStateAxis> (closedState),
-    tcp_protoent(NULL)
+  : RObjectWithStates<TCPAxis> (closedState),
+    tcp_protoent(NULL),
+    thread(0)
 {
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) != NULL);
 }
@@ -70,7 +71,7 @@ TCPSocket::TCPSocket()
 TCPSocket::~TCPSocket()
 {
   ask_close();
-  static REvent<TCPStateAxis>("closed").wait(*this);
+  static REvent<TCPAxis>("closed").wait(*this);
   State::move_to(*this, destroyedState);
 }
 

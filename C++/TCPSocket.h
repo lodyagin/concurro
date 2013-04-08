@@ -9,13 +9,13 @@
 #include "Logging.h"
 #include <netdb.h>
 
-class TCPStateAxis : public StateAxis {};
+class TCPAxis : public StateAxis {};
 
 class TCPSocket : virtual public RSocketBase
-, public RObjectWithStates<TCPStateAxis>
+, public RObjectWithStates<TCPAxis>
 {
 public:
-  DECLARE_STATES(TCPStateAxis, State);
+  DECLARE_STATES(TCPAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, closed);
   DECLARE_STATE_CONST(State, in_closed);
@@ -50,7 +50,7 @@ protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)
 		: SocketThread(oi, p) {}
 	 void run();
-  } thread;
+  }* thread;
 };
 
 #endif

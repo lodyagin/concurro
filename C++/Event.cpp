@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "REvent.hpp"
 #include "Logging.h"
-#include "RThread.h"
+#include "RThread.hpp"
 #ifdef _WIN32
 #include "SShutdown.h"
 #else

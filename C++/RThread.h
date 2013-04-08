@@ -1,4 +1,5 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
 /**
  * @file
  * An unified wrapper over different type of threads (i.e., QThread, posix thread etc.).
@@ -39,7 +40,7 @@ public:
   {
 	 Event* extTerminated;
 
-    Par() : extTerminated(0) {}
+    Par(Event* ext_terminated = 0) : extTerminated(ext_terminated) {}
 	 virtual ~Par() {}
 	 virtual RThreadBase* create_derivation
 	   (const ObjectCreationInfo&) const = 0;
@@ -179,6 +180,9 @@ class RThread<std::thread> : public RThreadBase
 public:
   struct Par : public RThreadBase::Par
   {
+    Par(Event* ext_terminated = 0)
+    : RThreadBase::Par(ext_terminated) {}
+
 	 RThreadBase* create_derivation
 	   (const ObjectCreationInfo& oi) const
 	 {
@@ -200,6 +204,10 @@ public:
     delete th; 
   }
 
+  //! Create a thread and register it in a ThreadRepository
+  static RThread<std::thread>* create
+    (Event* ext_terminated = 0);
+
   DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
@@ -214,7 +222,5 @@ protected:
 
   std::thread* th;
 };
-
-void sSleep( int ms );
 
 #endif
