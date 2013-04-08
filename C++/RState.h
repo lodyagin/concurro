@@ -102,11 +102,8 @@ protected:
   friend class RAxis<axis>;
 
 
-#if 0
 #define DEFINE_STATES(class_, axis, state_class)	\
-  const StateMapPar<axis> \
-	 class_::new_states__ ## state_class
-#endif
+  static RAxis<axis> axis__(StateMapPar<axis> pars);
 
 
 #define DECLARE_STATE_CONST(state_class, state)	\

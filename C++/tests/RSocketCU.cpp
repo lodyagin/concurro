@@ -1,5 +1,5 @@
-#include "RSocketAddress.h"
-#include "RSocket.h"
+#include "RSocketAddress.hpp"
+#include "RSocket.hpp"
 #include "InSocket.h"
 #include "CUnit.h"
 #include <list>

@@ -4,7 +4,7 @@
 //#include <iostream>
 #include <string>
 #include <thread>
-#include "REvent.h"
+#include "REvent.hpp"
 //#include "concurrent/C++/REvent.h"
 //#include <boost/thread/thread.hpp>
 

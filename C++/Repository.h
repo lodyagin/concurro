@@ -476,6 +476,15 @@ public:
   { return universal_object_id; }
 };
 
+//! The simplest form of a derivation
+#define PAR_CREATE_DERIVATION(type, parent, object) \
+struct Par : public parent::Par \
+{ \
+  object* create_derivation \
+	 (const ObjectCreationInfo& oi) const \
+  { return new type(oi, *this); } \
+};
+
 #endif
 
 

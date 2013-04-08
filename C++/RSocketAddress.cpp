@@ -120,9 +120,7 @@ RSocketAddress::RSocketAddress
    const std::shared_ptr<AddrinfoWrapper>& ptr,
 	const addrinfo* ai_)
 :   StdIdMember(oi.objectId),
-    ai(ai_),
-	 aw_ptr(ptr),
-	 fd(-1)
+    ai(ai_), aw_ptr(ptr), fd(-1)
 {
   assert(ai);
 }
@@ -166,7 +164,7 @@ RSocketBase* RSocketAddress::create_derivation
     else THROW_NOT_IMPLEMENTED;
   }
 
-  return RSocketAllocator0(side, protocol, ver);
+  return RSocketAllocator0(side, protocol, ver, *this);
 }
 
 SOCKET RSocketAddress::get_id() const
@@ -305,7 +303,7 @@ int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
     return sizeof (SOCKADDR_BTH);*/
 
   default:
-    return 0;
+    THROW_NOT_IMPLEMENTED;
   }
 }
 

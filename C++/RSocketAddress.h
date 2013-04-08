@@ -326,6 +326,11 @@ public:
 
   const addrinfo *const ai;
 
+  SOCKET get_fd() const { return fd; }
+
+  std::shared_ptr<AddrinfoWrapper> get_aw_ptr() const
+  { return aw_ptr; }
+
 protected:
   RSocketAddress(const ObjectCreationInfo& oi,
 	              const std::shared_ptr<AddrinfoWrapper>&,

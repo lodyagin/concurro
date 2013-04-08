@@ -15,11 +15,18 @@ RAxis<InSocketStateAxis> in_socket_state_axis
 ({
   {   "new_data",  // new data or an error
       "empty",
-      "closed"      },
+      "closed",
+		"error",
+		"destroyed"
+  },
   { {"new_data", "empty"},
   {"empty", "new_data"},
   {"new_data", "closed"},
-  {"empty", "closed"} }
+  {"empty", "closed"},
+  {"empty", "error"},
+  {"error", "closed"},
+  {"closed", "destroyed"}
+  }
 });
 DEFINE_STATE_CONST(InSocket, State, new_data);
 DEFINE_STATE_CONST(InSocket, State, empty);
@@ -42,6 +49,10 @@ InSocket::~InSocket()
 {
 }
 
+void InSocket::ask_close()
+{
+}
+
 void InSocket::Thread::run()
 {
   fd_set rfds;
@@ -50,27 +61,34 @@ void InSocket::Thread::run()
   const SOCKET fd = socket->fd;
   SCHECK(fd >= 0);
 
-  REvent<DataBufferStateAxis> buf_discharged("discharged");
+  static REvent<DataBufferStateAxis> buf_discharged
+	 ("discharged");
 
   for(;;) {
     // Wait for new data
+    FD_SET(sock_pair[ForSelect], &rfds);
     FD_SET(fd, &rfds);
+	 const int maxfd = max(sock_pair[ForSelect], fd) + 1;
     rSocketCheck(
-		 ::select(fd+1, &rfds, NULL, NULL, NULL) > 0);
+		 ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
 
-    InSocket::State::move_to(*socket, new_dataState);
+	 if (FD_ISSET(fd, &rfds)) {
+		const ssize_t red = ::read(fd, socket->msg.data(),
+											socket->msg.capacity());
+		if (red < 0) {
+		  State::move_to(*socket, errorState);
+		  // TODO add the error code
+		  break;
+		}
 
-    ssize_t red;
-    rSocketCheck(
-      (red = ::read(fd, socket->msg.data(),
-         socket->msg.capacity())) >= 0
-      );
-    socket->msg.resize(red);
+		SCHECK((size_t) red < socket->socket_rd_buf_size); 
+		// to make sure we always read all (rd_buf_size =
+		// internal socket rcv buffer + 1)
 
-    SCHECK((size_t) red < socket->socket_rd_buf_size); 
-    // to make sure we always read all (rd_buf_size =
-    // internal socket rcv buffer + 1)
-
+		socket->msg.resize(red);
+		InSocket::State::move_to(*socket, new_dataState);
+	 }
+...
     if (red == 0) { // EOF
       InSocket::State::move_to(*socket, closedState);
       break;

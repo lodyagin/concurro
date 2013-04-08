@@ -36,8 +36,6 @@ class RSocketBase
 public:
   virtual ~RSocketBase () {}
 
-  virtual void close();
-
 #if 0
   std::string universal_id() const 
   { return universal_object_id; }
@@ -50,33 +48,27 @@ protected:
   //! A socket file descriptor.
   SOCKET fd;
 
+  std::shared_ptr<AddrinfoWrapper> aw_ptr;
+
   //! This is a 'technical' version. Properly constructed
   //! RSocket always call RSocketBase(SOCKET) at the end.
   RSocketBase() : StdIdMember("0") { THROW_PROGRAM_ERROR;}
 
   //! This type is only for repository creation
-  RSocketBase(SOCKET fd_) 
-	 : StdIdMember(SFORMAT(fd_)),
-	 fd(fd_)
-  {
-	 assert(fd >= 0);
-  }
-
+  RSocketBase(const RSocketAddress& addr);
+  
   /*RSocketBase(const ObjectCreationInfo& oi,
   const Par& par);*/
   //RSocketBase(SOCKET socket) : fd(socket) {}
 
   //! set blocking mode
-  //virtual void set_blocking (bool blocking);
+  virtual void set_blocking (bool blocking);
   //! get blocking mode
   //virtual bool get_blocking () const;
 };
 
 std::ostream&
 operator<< (std::ostream&, const RSocketBase&);
-
-class ClientSideSocket : virtual public RSocketBase 
-{};
 
 class ServerSideSocket : virtual public RSocketBase 
 {};
@@ -100,8 +92,27 @@ public:
   };
 
 protected:
+  RSocketBase* socket;
+
   SocketThread(const ObjectCreationInfo& oi, const Par& p) 
-  : RThread<std::thread>(oi, p) {}
+	 : RThread<std::thread>(oi, p), socket(p.socket) 
+  { assert(socket); }
+};
+
+class SocketThreadWithPair: public SocketThread
+{ 
+public:
+  PAR_CREATE_DERIVATION(SocketThreadWithPair, SocketThread,
+								RThreadBase)
+protected:
+  //! indexing sock_pair sockets
+  enum {ForSelect = 0, ForSignal = 1};
+
+  //! the pair for ::select call waking-up
+  int sock_pair[2];
+
+  SocketThreadWithPair
+	 (const ObjectCreationInfo& oi, const Par& p);
 };
 
 //class InOutSocket : public InSocket, public OutSocket {};
@@ -118,7 +129,12 @@ protected:
 template<class... Bases>
 class RSocket : public Bases...
 {
+  friend RSocketBase* RSocketAllocator
+	 (const RSocketAddress& addr);
 protected:
+  RSocket(const RSocketAddress& addr)
+	 : RSocketBase(addr) {}
+
   DEFAULT_LOGGER(RSocket<Bases...>);
 };
 
@@ -129,18 +145,22 @@ protected:
 inline RSocketBase* RSocketAllocator0
   (SocketSide side,
    NetworkProtocol protocol,
-   IPVer ver);
+   IPVer ver,
+	const RSocketAddress& addr);
     
 template<class Side>
 inline RSocketBase* RSocketAllocator1
  (NetworkProtocol protocol,
-  IPVer ver);
+  IPVer ver,
+  const RSocketAddress& addr);
 
 template<class Side, class Protocol>
-inline RSocketBase* RSocketAllocator2(IPVer ver);
+inline RSocketBase* RSocketAllocator2
+  (IPVer ver, const RSocketAddress& addr);
 
 template<class... Bases>
-inline RSocketBase* RSocketAllocator();
+inline RSocketBase* RSocketAllocator
+  (const RSocketAddress& addr);
 
 
 

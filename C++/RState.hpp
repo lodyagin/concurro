@@ -1,8 +1,17 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_RSTATE_HPP_
+#define CONCURRO_RSTATE_HPP_
+
 #include "RState.h"
 #include "Repository.hpp"
-#include "RObjectWithStates.h"
+#include "RObjectWithStates.hpp"
 #include <cstdatomic>
 
 template<class Axis>
@@ -197,3 +206,5 @@ operator<< (std::ostream& out, const RState<Axis>& st)
   out << st.name();
   return out;
 }
+
+#endif

@@ -26,12 +26,12 @@ set (concurrent_SOURCES
 #  RServerSocketAddress.cpp
 #  RSingleSocket.cpp
   RSocketAddress.cpp
-#  RSocket.cpp
-  InSocket.cpp
+  RSocket.cpp
+#  InSocket.cpp
 #  RSocketGroup.cpp
   RThread.cpp
   SException.cpp
-##  TCPSocket.cpp
+  TCPSocket.cpp
   SShutdown.cpp
   StateMap.cpp
   StdAfx.cpp

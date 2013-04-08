@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 #include "StateMap.h"
-#include "RState.h"
+#include "RState.hpp"
 #include <assert.h>
 #include <cstdatomic>
 

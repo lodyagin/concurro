@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "REvent.h"
+#include "REvent.hpp"
 #include "Logging.h"
 #include "RThread.h"
 #ifdef _WIN32

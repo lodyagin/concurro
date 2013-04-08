@@ -27,34 +27,31 @@ public:
   DECLARE_STATE_CONST(State, closed); // a reading side
                                       // was closed
 
+  virtual void ask_close();
+
 protected:
-  ~InSocket();
-  
+  typedef Logger<RSocketBase> log;
+
   //! Doing ::select and signalling new_data.
-  class Thread : public SocketThread
+  class Thread : public SocketThreadWithPair
   {
   public:
-    void run(); 
-
+	 PAR_CREATE_DERIVATION(Thread, SocketThread, 
+								  RThreadBase)
   protected:
-    Thread(const ObjectCreationInfo& oi, const Par& p) 
-    : SocketThread(oi, p), 
-      socket(dynamic_cast<InSocket*>(p.socket)) 
-	{ assert(socket); }
-
-    InSocket* socket;
-  };
+	 Thread(const ObjectCreationInfo& oi, const Par& p)
+		: SocketThreadWithPair(oi, p) {}
+	 void run();
+  } thread;
 
   //! The last received data
   RSingleBuffer msg;
 
   //! Actual size of a socket internal read buffer + 1.
   size_t socket_rd_buf_size;
-
-protected:
-  typedef Logger<RSocketBase> log;
-
+  
   InSocket();
+  ~InSocket();
 };
 
 #endif
