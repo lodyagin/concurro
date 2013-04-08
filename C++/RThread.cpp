@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "RThread.hpp"
+#include "RThread.h"
 #include "SShutdown.h"
 #include "Logging.h"
 #include <assert.h>

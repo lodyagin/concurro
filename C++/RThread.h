@@ -204,10 +204,6 @@ public:
     delete th; 
   }
 
-  //! Create a thread and register it in a ThreadRepository
-  static RThread<std::thread>* create
-    (Event* ext_terminated = 0);
-
   DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:

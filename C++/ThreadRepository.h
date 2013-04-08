@@ -34,6 +34,10 @@ public:
   ThreadRepository() 
 	 : Parent(typeid(*this).name(), 100) {}
 
+  //! Create a thread and register it in the ThreadRepository
+  template<class Th>
+  static Th* create(Event* ext_terminated = 0);
+
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
 
