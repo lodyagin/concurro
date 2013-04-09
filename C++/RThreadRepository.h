@@ -6,8 +6,8 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_THREADREPOSITORY_H_
-#define CONCURRO_THREADREPOSITORY_H_
+#ifndef CONCURRO_RTHREADREPOSITORY_H_
+#define CONCURRO_RTHREADREPOSITORY_H_
 
 #include "Repository.h"
 #include "RThread.h"
@@ -27,7 +27,7 @@ template<
   template<class...> class Container, 
   class ThreadId
 >
-class ThreadRepository 
+class RThreadRepository 
 : public Repository<
   RThread<Thread>, 
   typename RThread<Thread>::Par, 
@@ -43,7 +43,7 @@ public:
     ThreadId> Parent;
   typedef typename RThread<Thread>::Par Par;
 
-  ThreadRepository() 
+  RThreadRepository() 
 	 : Parent(typeid(*this).name(), 100) {}
 
   virtual void stop_subthreads ();
@@ -51,7 +51,8 @@ public:
 
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
-	 return Parent::create_object(par);
+	 return Parent::create_object
+      (static_cast<const typename RThread<Thread>::Par&>(par));
   }
 
   // Overrides
@@ -120,18 +121,18 @@ class AbstractThreadFactory
 {
 public:
   //! Create a thread and register it in the
-  //! ThreadRepository
+  //! RThreadRepository
   virtual RThreadBase* create
 	 (const RThreadBase::Par&) = 0;
 };
 
-template<class ThreadRepository>
+template<class RThreadRepository>
 class ThreadFactory
 {
 public:
-  ThreadRepository *const thread_repository;
+  RThreadRepository *const thread_repository;
 
-  ThreadFactory(ThreadRepository* tr)
+  ThreadFactory(RThreadRepository* tr)
 	 : thread_repository(tr) { SCHECK(tr); }
   RThreadBase* create(const RThreadBase::Par&);
 };

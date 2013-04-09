@@ -1,6 +1,7 @@
 #include "RSocketAddress.hpp"
 #include "RSocket.hpp"
 //#include "InSocket.h"
+#include "RThreadRepository.hpp"
 #include "CUnit.h"
 #include <list>
 #include <thread>
@@ -51,7 +52,7 @@ void test_localhost_socket_address()
   CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
 }
 
-static ThreadRepository<
+static RThreadRepository<
   std::thread, std::map, std::thread::native_handle_type
 > thread_repository;
 

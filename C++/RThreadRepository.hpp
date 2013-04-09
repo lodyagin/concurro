@@ -6,15 +6,15 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_THREADREPOSITORY_HPP_
-#define CONCURRO_THREADREPOSITORY_HPP_
+#ifndef CONCURRO_RTHREADREPOSITORY_HPP_
+#define CONCURRO_RTHREADREPOSITORY_HPP_
 
-#include "ThreadRepository.h"
+#include "RThreadRepository.h"
 
 template<class Thread, 
 			template<class...> class Container, 
 			class ThreadId>
-void ThreadRepository<Thread, Container, ThreadId>
+void RThreadRepository<Thread, Container, ThreadId>
 //
 ::stop_subthreads ()
 {
@@ -31,7 +31,7 @@ void ThreadRepository<Thread, Container, ThreadId>
 template<class Thread, 
 			template<class...> class Container, 
 			class ThreadId>
-void ThreadRepository<Thread, Container, ThreadId>
+void RThreadRepository<Thread, Container, ThreadId>
 //
 ::wait_subthreads ()
 {
@@ -48,7 +48,7 @@ void ThreadRepository<Thread, Container, ThreadId>
 template<class Thread, 
 			template<class...> class Container,
 			class ThreadId>
-void ThreadRepository<Thread, Container, ThreadId>
+void RThreadRepository<Thread, Container, ThreadId>
 //
 ::delete_object_by_id (ThreadId id, bool freeMemory)
 {

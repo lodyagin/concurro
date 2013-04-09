@@ -197,6 +197,7 @@ public:
 		assert(th); // get_id is called first
 		rthread = new RThread<std::thread>(oi, *this);
 		rthreadCreated.set();
+      return rthread;
 	 }
 
 	 RThreadBase* transform_object
