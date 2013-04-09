@@ -214,7 +214,8 @@ public:
 		return th->native_handle();
 	 }
 
-	 std::thread* get_thread() { return th.get(); }
+	 std::unique_ptr<std::thread> move_thread()
+	 { return std::move(th); }
 
 	 void run0()
 	 {
@@ -247,7 +248,7 @@ protected:
   //! It is for creation from ThreadRepository
   RThread(const ObjectCreationInfo& oi, const Par& par)
 	 : RThreadBase(oi.objectId, par.extTerminated),
-	 th(const_cast<Par&>(par).get_thread()) {}
+	 th(const_cast<Par&>(par).move_thread()) {}
 
   void start_impl () {}
 
