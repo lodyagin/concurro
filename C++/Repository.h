@@ -364,7 +364,8 @@ public:
   /// Create the repo. initial_value means initial size
   /// for vector and size for hash tables.
   Repository 
-	 (const std::string& repository_name, size_t initial_value)
+	 (const std::string& repository_name, 
+	  size_t initial_value)
 	 : Parent (repository_name)
   {
 	 this->objects = new ObjMap ();

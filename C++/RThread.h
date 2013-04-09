@@ -20,8 +20,8 @@
 #include <cstdatomic>
 #include <thread>
 
-/// An ancestor of all states of a thread.
-class ThreadStateAxis : public StateAxis {};
+//! An ancestor of all states of a thread.
+class ThreadAxis : public StateAxis {};
 
 /**
  * It is a base class for RThread. It contains the base
@@ -30,7 +30,7 @@ class ThreadStateAxis : public StateAxis {};
 class RThreadBase
   : public SNotCopyable,
     public HasStringView,
-    public RObjectWithEvents<ThreadStateAxis>
+    public RObjectWithEvents<ThreadAxis>
   // TODO this class should has a complex state:
   // (currentState, waitCnt, exitRequested)
 {
@@ -40,7 +40,8 @@ public:
   {
 	 Event* extTerminated;
 
-    Par(Event* ext_terminated = 0) : extTerminated(ext_terminated) {}
+    Par(Event* ext_terminated = 0) 
+	   : extTerminated(ext_terminated) {}
 	 virtual ~Par() {}
 	 virtual RThreadBase* create_derivation
 	   (const ObjectCreationInfo&) const = 0;
@@ -48,9 +49,9 @@ public:
 	   (const RThreadBase*) const = 0;
   };
 
-  /// Contains a common thread execution code. It calls user-defined
-  /// run(). It should be protected but is public for access from a
-  /// derived RThread template.
+  //! Contains a common thread execution code. It calls
+  //! user-defined run(). It should be protected but is
+  //! public for access from a derived RThread template.
   void _run ();
 
   const std::string universal_object_id;
@@ -81,12 +82,12 @@ public:
 
   void start();
   void wait();  // wait while thread finished
-  virtual void stop (); ///< try to stop implicitly
+  virtual void stop (); //!< try to stop implicitly
 
   bool is_running () const
   {
 //    RLOCK(cs);
-    return RAxis<ThreadStateAxis>::state_is
+    return RAxis<ThreadAxis>::state_is
 		(*this, workingState);
   }
 
@@ -100,7 +101,7 @@ public:
   }
 #endif
 
-  DECLARE_STATES(ThreadStateAxis, ThreadState);
+  DECLARE_STATES(ThreadAxis, ThreadState);
   DECLARE_STATE_CONST(ThreadState, ready);
   DECLARE_STATE_CONST(ThreadState, working);
   DECLARE_STATE_CONST(ThreadState, stop_requested);
@@ -115,7 +116,7 @@ protected:
 
   RThreadBase(const ObjectCreationInfo&, const Par&);
 
-  /// Mutex for concurrent access to this object.
+  //! Mutex for concurrent access to this object.
 //  RMutex cs;
 
   void set_state_internal (const ThreadState& state) /* overrides */;
@@ -128,7 +129,7 @@ protected:
   static unsigned int __stdcall _helper( void * );
 #endif
 
-  /// Start the thread procedure (called from _helper)
+  //! Start the thread procedure (called from _helper)
 
 
   //! It will be overrided with real thread procedure.
@@ -137,13 +138,13 @@ protected:
   //! to _run() calls run().
   virtual void run() {};
 
-  virtual void start_impl () = 0;
+  virtual void start_impl () {};
 
 
 //  Event stopEvent; //stop is requested
 
-  /// A number of threads waiting termination
-  /// of this thread.
+  //! A number of threads waiting termination
+  //! of this thread.
   std::atomic<int> waitCnt; 
 
   //! Somebody has requested termination. It is for
@@ -178,45 +179,79 @@ template<>
 class RThread<std::thread> : public RThreadBase
 {
 public:
-  struct Par : public RThreadBase::Par
+
+  class Par : public RThreadBase::Par
   {
+  public:
     Par(Event* ext_terminated = 0)
-    : RThreadBase::Par(ext_terminated) {}
+		: RThreadBase::Par(ext_terminated),
+		rthreadCreated(
+		  "RThread<std::thread>::Par::rthreadCreated",
+		  true, false),
+		rthread(0) 
+	 {}
 
 	 RThreadBase* create_derivation
 	   (const ObjectCreationInfo& oi) const
 	 {
-		return new RThread<std::thread>(oi, *this);
+		assert(th); // get_id is called first
+		rthread = new RThread<std::thread>(oi, *this);
+		rthreadCreated.set();
 	 }
 
 	 RThreadBase* transform_object
 	   (const RThreadBase*) const
-	 { THROW_NOT_IMPLEMENTED; }
+	 { 
+		THROW_NOT_IMPLEMENTED; 
+	 }
+
+	 std::thread::native_handle_type get_id() const
+	 {
+		th = std::unique_ptr<std::thread>
+		  (new std::thread
+			(&RThread<std::thread>::Par::run0, 
+			 const_cast<Par*>(this)));
+		return th->native_handle();
+	 }
+
+	 std::thread* get_thread() { return th.get(); }
+
+	 void run0()
+	 {
+		rthreadCreated.wait();
+		rthread->_run();
+		// <NB> `this' can be already destroyed 
+		// at this point
+	 }
+
+  protected:
+	 mutable std::unique_ptr<std::thread> th;
+	 mutable Event rthreadCreated;
+	 mutable RThread<std::thread>* rthread;
   };
 
   RThread(const std::string& id, Event* extTerminated = 0)
-	: RThreadBase(id, extTerminated) {}
+	 : RThreadBase(id, extTerminated),
+	 th(new std::thread
+		 (&RThread<std::thread>::_run, this)) {}
 
   ~RThread() 
   { 
     wait(); 
     th->join(); 
-    delete th; 
   }
 
   DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
-  /// It is for creation from ThreadRepository
+  //! It is for creation from ThreadRepository
   RThread(const ObjectCreationInfo& oi, const Par& par)
-	 : RThreadBase(oi.objectId, par.extTerminated) {}
+	 : RThreadBase(oi.objectId, par.extTerminated),
+	 th(const_cast<Par&>(par).get_thread()) {}
 
-  void start_impl () {
-	 th = new std::thread
-		(&RThread<std::thread>::_run, this);
-  }
+  void start_impl () {}
 
-  std::thread* th;
+  std::unique_ptr<std::thread> th;
 };
 
 #endif

@@ -18,10 +18,14 @@
 /*=================================*/
 
 //! This type is only for repository creation
-RSocketBase::RSocketBase(const RSocketAddress& addr) 
+RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
+								 const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
 	 fd(addr.get_fd()), 
-	 aw_ptr(addr.get_aw_ptr())
+	 aw_ptr(addr.get_aw_ptr()),
+	 thread_factory(
+		dynamic_cast<SocketRepository*const>(oi.repository)
+		-> thread_factory)
 {
   assert(fd >= 0);
   assert(aw_ptr);

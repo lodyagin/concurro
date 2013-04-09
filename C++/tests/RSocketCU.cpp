@@ -1,20 +1,21 @@
 #include "RSocketAddress.hpp"
 #include "RSocket.hpp"
-#include "InSocket.h"
+//#include "InSocket.h"
 #include "CUnit.h"
 #include <list>
+#include <thread>
 
 void test_127001_socket_address();
 void test_localhost_socket_address();
-void test_insocket();
+void test_client_socket();
 
 CU_TestInfo RSocketTests[] = {
   {"test 127.0.0.1:5555 address", 
 	test_127001_socket_address},
   {"test localhost socket address", 
 	test_localhost_socket_address},
-  {"test InSocket",
-	test_insocket},
+  {"test Client_Socket",
+	test_client_socket},
   CU_TEST_INFO_NULL
 };
 
@@ -50,10 +51,14 @@ void test_localhost_socket_address()
   CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
 }
 
-void test_insocket()
+static ThreadRepository<
+  std::thread, std::map, std::thread::native_handle_type
+> thread_repository;
+
+void test_client_socket()
 {
-  SocketRepository sr;
-  InSocket* in_sock = dynamic_cast<InSocket*>
+  SocketRepository sr (&thread_repository);
+  ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*SocketAddressRepository()
 		. create_addresses<NetworkProtocol::TCP, IPVer::v4>

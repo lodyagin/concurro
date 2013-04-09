@@ -34,10 +34,19 @@ DEFINE_STATE_CONST(ClientSocket, State, connecting);
 DEFINE_STATE_CONST(ClientSocket, State, connected);
 DEFINE_STATE_CONST(ClientSocket, State, 
 						 connection_timed_out);
-DEFINE_STATE_CONST(ClientSocket, State, connection_refused);
+DEFINE_STATE_CONST(ClientSocket, State, 
+						 connection_refused);
 DEFINE_STATE_CONST(ClientSocket, State, 
 						 destination_unreachable);
 DEFINE_STATE_CONST(ClientSocket, State, destroyed);
+
+
+ClientSocket::ClientSocket() 
+  : RObjectWithEvents<ClientSocketAxis> (createdState),
+	 thread(
+{
+  ask_connect();
+}
 
 ClientSocket::~ClientSocket()
 {

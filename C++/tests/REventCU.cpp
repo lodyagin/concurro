@@ -1,6 +1,6 @@
 #include "REvent.hpp"
 #include "CUnit.h"
-#include "RThread.hpp"
+#include "RThread.h"
 #include <string>
 #include <thread>
 

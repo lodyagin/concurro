@@ -11,7 +11,9 @@
 
 #include "ThreadRepository.h"
 
-template<class Thread, template<class...> class Container, class ThreadId>
+template<class Thread, 
+			template<class...> class Container, 
+			class ThreadId>
 void ThreadRepository<Thread, Container, ThreadId>
 //
 ::stop_subthreads ()
@@ -26,7 +28,9 @@ void ThreadRepository<Thread, Container, ThreadId>
     );
 }
 
-template<class Thread, template<class...> class Container, class ThreadId>
+template<class Thread, 
+			template<class...> class Container, 
+			class ThreadId>
 void ThreadRepository<Thread, Container, ThreadId>
 //
 ::wait_subthreads ()
@@ -41,7 +45,9 @@ void ThreadRepository<Thread, Container, ThreadId>
     );
 }
 
-template<class Thread, template<class...> class Container, class ThreadId>
+template<class Thread, 
+			template<class...> class Container,
+			class ThreadId>
 void ThreadRepository<Thread, Container, ThreadId>
 //
 ::delete_object_by_id (ThreadId id, bool freeMemory)
@@ -53,17 +59,6 @@ void ThreadRepository<Thread, Container, ThreadId>
     th->wait ();
     Parent::delete_object_by_id (id, freeMemory);
   }
-}
-
-template<class Thread, template<class...> class Container, class ThreadId>
-template<class Th>
-Th* ThreadRepository<Thread, Container, ThreadId>
-//
-::create(Event* ext_terminated)
-{
-  return dynamic_cast<Th*>
-    (ThreadRepository::instance()
-     . create_object(typename Th::Par(ext_terminated)));
 }
 
 #endif

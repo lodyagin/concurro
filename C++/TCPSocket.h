@@ -12,7 +12,7 @@
 class TCPAxis : public StateAxis {};
 
 class TCPSocket : virtual public RSocketBase
-, public RObjectWithStates<TCPAxis>
+, public RObjectWithEvents<TCPAxis>
 {
 public:
   DECLARE_STATES(TCPAxis, State);
@@ -29,7 +29,7 @@ public:
 
   ~TCPSocket();
 
-  virtual void ask_close();
+  //virtual void ask_close();
 
 protected:
   typedef Logger<TCPSocket> log;
@@ -44,8 +44,18 @@ protected:
   class Thread : public SocketThread
   {
   public:
-	 PAR_CREATE_DERIVATION(Thread, SocketThread, 
-								  RThreadBase)
+	 struct Par : public SocketThread::Par
+	 {
+	   Par(RSocketBase* sock) 
+		  : SocketThread::Par(sock) {}
+
+		RThreadBase* create_derivation
+		  (const ObjectCreationInfo& oi) const
+		{ 
+		  return new Thread(oi, *this); 
+		}
+	 };
+
   protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)
 		: SocketThread(oi, p) {}

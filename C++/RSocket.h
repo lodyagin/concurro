@@ -17,6 +17,7 @@
 #include "RSocketAddress.h"
 #include "RThread.h"
 #include "RState.h"
+#include "ThreadRepository.h"
 #ifndef _WIN32
 #  define SOCKET int
 #endif
@@ -48,14 +49,19 @@ protected:
   //! A socket file descriptor.
   SOCKET fd;
 
+  //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
+  
+  //! A thread repository to internal threads creation
+  ThreadFactory* thread_factory;
 
   //! This is a 'technical' version. Properly constructed
   //! RSocket always call RSocketBase(SOCKET) at the end.
   RSocketBase() : StdIdMember("0") { THROW_PROGRAM_ERROR;}
 
   //! This type is only for repository creation
-  RSocketBase(const RSocketAddress& addr);
+  RSocketBase (const ObjectCreationInfo& oi,
+					const RSocketAddress& addr);
   
   /*RSocketBase(const ObjectCreationInfo& oi,
   const Par& par);*/
@@ -78,14 +84,18 @@ class SocketThread: public RThread<std::thread>
 public:
   struct Par : public RThread<std::thread>::Par
   {
-  RSocketBase* socket;
+	 RSocketBase* socket;
 
-  RThreadBase* create_derivation
-  (const ObjectCreationInfo&) const;
+    Par(RSocketBase* sock, Event* ext_terminated = 0) 
+	 : RThread<std::thread>::Par(ext_terminated),
+		socket(sock) {}
 
-  RThreadBase* transform_object
-  (const RThreadBase*) const
-  { THROW_NOT_IMPLEMENTED; }
+	 RThreadBase* create_derivation
+		(const ObjectCreationInfo&) const;
+
+	 RThreadBase* transform_object
+		(const RThreadBase*) const
+	 { THROW_NOT_IMPLEMENTED; }
 
   //SocketId get_id() const
   //{ return socket->socket; }
@@ -129,11 +139,14 @@ protected:
 template<class... Bases>
 class RSocket : public Bases...
 {
+  template<class...>
   friend RSocketBase* RSocketAllocator
-	 (const RSocketAddress& addr);
+	 (const ObjectCreationInfo& oi,
+	  const RSocketAddress& addr);
 protected:
-  RSocket(const RSocketAddress& addr)
-	 : RSocketBase(addr) {}
+  RSocket(const ObjectCreationInfo& oi,
+			 const RSocketAddress& addr)
+	 : RSocketBase(oi, addr) {}
 
   DEFAULT_LOGGER(RSocket<Bases...>);
 };
@@ -146,35 +159,45 @@ inline RSocketBase* RSocketAllocator0
   (SocketSide side,
    NetworkProtocol protocol,
    IPVer ver,
+	const ObjectCreationInfo& oi,
 	const RSocketAddress& addr);
     
 template<class Side>
 inline RSocketBase* RSocketAllocator1
  (NetworkProtocol protocol,
   IPVer ver,
+  const ObjectCreationInfo& oi,
   const RSocketAddress& addr);
 
 template<class Side, class Protocol>
 inline RSocketBase* RSocketAllocator2
-  (IPVer ver, const RSocketAddress& addr);
+  (IPVer ver, 
+	const ObjectCreationInfo& oi,
+	const RSocketAddress& addr);
 
 template<class... Bases>
 inline RSocketBase* RSocketAllocator
-  (const RSocketAddress& addr);
+  (const ObjectCreationInfo& oi,
+   const RSocketAddress& addr);
 
 
-
+//template<template<class...> class Container>
 class SocketRepository
 : public Repository
-    <RSocketBase, RSocketAddress, std::map, SOCKET>
+  <RSocketBase, RSocketAddress, std::map, SOCKET>
 {
 public:
   typedef Repository
 	 <RSocketBase, RSocketAddress, std::map, SOCKET>
 	 Parent;
 
-  SocketRepository()
-    : Parent("SocketRepository", 10) {}
+  ThreadFactory *const thread_factory;
+
+  SocketRepository(ThreadFactory *const tf)
+    : Parent("SocketRepository", 10),
+	 thread_factory(tf) {}
+
+  
 };
 
 #endif

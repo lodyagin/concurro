@@ -1,6 +1,6 @@
 #include "RMutex.h"
 #include "CUnit.h"
-#include "RThread.hpp"
+#include "RThread.h"
 //#include <iostream>
 #include <string>
 #include <thread>

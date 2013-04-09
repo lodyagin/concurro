@@ -15,14 +15,25 @@
 #include <algorithm>
 #include <vector>
 
-template<class Thread, template<class...> class Container, class ThreadId>
+class ThreadFactory
+{
+public:
+  virtual RThreadBase* create_thread
+	 (const RThreadBase::Par&) = 0;
+};
+
+template<
+  class Thread, 
+  template<class...> class Container, 
+  class ThreadId
+>
 class ThreadRepository 
 : public Repository<
   RThread<Thread>, 
   typename RThread<Thread>::Par, 
   Container,
   ThreadId >,
-  public SAutoSingleton<ThreadRepository<Thread, Container, ThreadId> >
+  public ThreadFactory
 {
 public:
   typedef Repository<
@@ -30,16 +41,18 @@ public:
     typename RThread<Thread>::Par, 
     Container,
     ThreadId> Parent;
+  typedef typename RThread<Thread>::Par Par;
 
   ThreadRepository() 
 	 : Parent(typeid(*this).name(), 100) {}
 
-  //! Create a thread and register it in the ThreadRepository
-  template<class Th>
-  static Th* create(Event* ext_terminated = 0);
-
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
+
+  RThreadBase* create_thread (const RThreadBase::Par& par)
+  {
+	 return Parent::create_object(par);
+  }
 
   // Overrides
   void delete_object_by_id 
@@ -101,6 +114,29 @@ struct ThreadWaiter<std::pair<Key, Val>>
 		p.second->RThreadBase::wait ();
   }
 };
+
+#if 0
+class AbstractThreadFactory
+{
+public:
+  //! Create a thread and register it in the
+  //! ThreadRepository
+  virtual RThreadBase* create
+	 (const RThreadBase::Par&) = 0;
+};
+
+template<class ThreadRepository>
+class ThreadFactory
+{
+public:
+  ThreadRepository *const thread_repository;
+
+  ThreadFactory(ThreadRepository* tr)
+	 : thread_repository(tr) { SCHECK(tr); }
+  RThreadBase* create(const RThreadBase::Par&);
+};
+#else
+#endif
 
 #endif
 

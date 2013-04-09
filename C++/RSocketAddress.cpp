@@ -164,7 +164,8 @@ RSocketBase* RSocketAddress::create_derivation
     else THROW_NOT_IMPLEMENTED;
   }
 
-  return RSocketAllocator0(side, protocol, ver, *this);
+  return RSocketAllocator0
+	 (side, protocol, ver, oi, *this);
 }
 
 SOCKET RSocketAddress::get_id() const
@@ -288,7 +289,8 @@ void RSocketAddress::copy_sockaddr
 }
 
 
-int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
+int RSocketAddress::get_sockaddr_len 
+  (const struct sockaddr* sa)
 {
   assert (sa);
   switch (sa->sa_family)

@@ -6,9 +6,9 @@
 
 // RThread states  ========================================
 
-//DEFINE_STATES(RThreadBase, ThreadStateAxis, ThreadState)
-RAxis<ThreadStateAxis> thread_state_axis
-(StateMapPar<ThreadStateAxis>
+//DEFINE_STATES(RThreadBase, ThreadAxis, ThreadState)
+RAxis<ThreadAxis> thread_state_axis
+(StateMapPar<ThreadAxis>
 ({  "ready",         // after creation
 	 "working",       // it works
 	 "stop_requested", // somebody called stop()
@@ -49,7 +49,7 @@ RThreadBase::RThreadBase
  Event* extTerminated
 )
   : 
-    RObjectWithEvents<ThreadStateAxis> (readyState),
+    RObjectWithEvents<ThreadAxis> (readyState),
     universal_object_id (id),
     waitCnt (0), 
     //isTerminatedEvent (false),
@@ -63,7 +63,7 @@ RThreadBase::RThreadBase
 RThreadBase::RThreadBase
   (const ObjectCreationInfo& oi, const Par& p)
 : 
-    RObjectWithEvents<ThreadStateAxis> (readyState),
+    RObjectWithEvents<ThreadAxis> (readyState),
     universal_object_id (oi.objectId),
     waitCnt (0), 
     //isTerminatedEvent (false),
@@ -74,29 +74,10 @@ RThreadBase::RThreadBase
   LOG_INFO (log, "New " << *this);
 }
 
-#if 0
-void RThreadBase::state (ThreadState& state) const
-{
-  RObjectWithStates<ThreadStateAxis>::state (state);
-}
-
-void RThreadBase::set_state_internal (const ThreadState& state)
-{
-  RLOCK(cs); // TODO: is it needed?
-  RObjectWithStates<ThreadStateAxis>::set_state_internal 
-	 (state);
-}
-#endif
-
 void RThreadBase::start ()
 {
-//  RLOCK(cs);
-  ThreadState::check_moving_to (*this, workingState);
-
-  start_impl ();
-  // FIXME _current.set (0) on thread exit??
-
   ThreadState::move_to (*this, workingState);
+  start_impl ();
 }
 
 void RThreadBase::wait()
@@ -121,7 +102,9 @@ void RThreadBase::wait()
 #endif
        );
 
-	 REvent<ThreadStateAxis>("terminated").wait(*this);
+	 static REvent<ThreadAxis> 
+		isTerminated("terminated");
+	 isTerminated.wait(*this);
     //isTerminatedEvent.wait ();
     waitCnt--;
   }
@@ -165,7 +148,7 @@ void RThreadBase::outString (std::ostream& out) const
       << "], this = " 
       << std::hex << (void *) this << std::dec
       << ", currentState = " 
-		<< RState<ThreadStateAxis>(*this) << ')';
+		<< RState<ThreadAxis>(*this) << ')';
 }
 
 std::atomic<int> RThreadBase::counter (0);
@@ -204,7 +187,10 @@ RThreadBase::~RThreadBase()
 
 void RThreadBase::_run()
 {
-   //TODO check run from current thread
+  static REvent<ThreadAxis> isWorking("working");
+  isWorking.wait(*this);
+
+  //TODO check run from current thread
   LOG_DEBUG(log, *this << " started");
   try
   {

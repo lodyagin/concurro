@@ -11,14 +11,15 @@
 
 #include "RState.h"
 #include "RThread.h"
+#include "RObjectWithStates.h"
 
-class ClientSocketStateAxis : public StateAxis {};
+class ClientSocketAxis : public StateAxis {};
 
 class ClientSocket : virtual public RSocketBase,
-  RObjectWithEvents(ClientSocket)
+  public RObjectWithEvents<ClientSocketAxis>
 {
 public:
-  DECLARE_STATES(ClientSocketStateAxis, State);
+  DECLARE_STATES(ClientSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, connecting);
   DECLARE_STATE_CONST(State, connected);
@@ -36,11 +37,7 @@ public:
   virtual void ask_connect();
 
 protected:
-  ClientSocket() 
-	 : RObjectWithEvents<ClientSocket> (createdState) 
-  {
-	 ask_connect();
-  }
+  ClientSocket();
 
   void process_connect_error(int error);
 
@@ -53,7 +50,7 @@ protected:
   protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)
 		: SocketThread(oi, p) {}
-  } thread;
+  }* thread;
 };
 
 #endif

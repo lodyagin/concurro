@@ -8,6 +8,7 @@
 
 #include "StdAfx.h"
 #include "TCPSocket.h"
+#include "ClientSocket.h"
 
 DEFINE_STATES(TCPAxis, 
    {"created",
@@ -61,25 +62,30 @@ DEFINE_STATE_CONST(TCPSocket, State, closing);
 DEFINE_STATE_CONST(TCPSocket, State, destroyed);
 
 TCPSocket::TCPSocket()
-  : RObjectWithStates<TCPAxis> (closedState),
+  : RObjectWithEvents<TCPAxis> (closedState),
     tcp_protoent(NULL),
     thread(0)
 {
-  SCHECK((tcp_protoent = ::getprotobyname("TCP")) != NULL);
+  SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
+			NULL);
+  thread = dynamic_cast<Thread*>
+	 (thread_factory->create_thread(Thread::Par(this)));
 }
 
 TCPSocket::~TCPSocket()
 {
-  ask_close();
-  static REvent<TCPAxis>("closed").wait(*this);
+  //ask_close();
+  static REvent<TCPAxis> is_closed("closed");
+  is_closed.wait(*this);
   State::move_to(*this, destroyedState);
 }
 
+#if 0
 void TCPSocket::ask_close()
 {
   State::move_to(*this, closingState);
 
-  const int shutdown_ret = ::shutdown(fd, socket);
+  const int shutdown_ret = ::shutdown(fd, );
   //socketCreated.reset();
   State::move_to(*this, dest);
   if (close_ret == EWOULDBLOCK)
@@ -93,18 +99,23 @@ void TCPSocket::ask_close()
   if (!State::state_is(*this, closedState))
     State::move_to(*this, closedState);
 }
+#endif
 
 void TCPSocket::Thread::run()
 {
   ClientSocket* cli_sock = 0;
-  if (!(cli_sock = dynamic_cast<ClientSocket*>(this))) 
+  if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
 	 THROW_NOT_IMPLEMENTED;
+  TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
+  assert(tcp_sock);
   
-  static REvent<ClientSocketStateAxis>("connecting").wait
-	 (*this); // *this, not *cli_sock to check the API
-  State::move_to(*this, syn_sentState);
-  static REvent<ClientSocketStateAxis>("connected").wait
-	 (*this);
-  State::move_to(*this, establishedState);
+  static REvent<ClientSocketAxis> 
+	 is_connecting("connecting");
+  is_connecting.wait(*cli_sock);
+  TCPSocket::State::move_to(*tcp_sock, syn_sentState);
+  static REvent<ClientSocketAxis> 
+	 is_connected("connected");
+  is_connected.wait(*cli_sock);
+  TCPSocket::State::move_to(*tcp_sock, establishedState);
 }
 
