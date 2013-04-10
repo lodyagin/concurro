@@ -214,7 +214,7 @@ public:
 		return th->native_handle();
 	 }
 
-	 std::unique_ptr<std::thread> move_thread()
+	 std::unique_ptr<std::thread>&& move_thread()
 	 { return std::move(th); }
 
 	 void run0()
