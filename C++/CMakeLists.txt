@@ -8,36 +8,18 @@ project (concurrent)
 set (concurrent_SOURCES 
   Event.cpp
   HasStringView.cpp
-#  IPv4SocketAddress.cpp
-#  IPv6SocketAddress.cpp
   Logging.cpp
-#  NamedPipe.cpp
-#  AbstractConnection.cpp
-#  SCheck.cpp
   RBuffer.cpp
-#  RClientSocketAddress.cpp
-  SCommon.cpp
-#  SComplPort.cpp
-#  RConnectedSocket.cpp
-#  RInOutSocket.cpp
-#  RMultiprotoSocketAddress.cpp
   RMutex.cpp
-#  RPath.cpp
-#  RServerSocketAddress.cpp
-#  RSingleSocket.cpp
-  RSocketAddress.cpp
   RSocket.cpp
-#  InSocket.cpp
-#  RSocketGroup.cpp
+  RSocketAddress.cpp
   RThread.cpp
+  SCommon.cpp
   SException.cpp
-  TCPSocket.cpp
   SShutdown.cpp
   StateMap.cpp
   StdAfx.cpp
-#  SWinCheck.cpp
-#  time_wce.cpp
-#  UnknownprotoSocketAddress.cpp 
+  TCPSocket.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR})
