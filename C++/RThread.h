@@ -35,8 +35,6 @@ class RThreadBase
   : public SNotCopyable,
     public HasStringView,
     public RObjectWithEvents<ThreadAxis>
-  // TODO this class should has a complex state:
-  // (currentState, waitCnt, exitRequested)
 {
 public:
 
@@ -84,7 +82,7 @@ public:
   // TODO add std::call_once conditions. (? Also to dtr).
 
   void start();
-  void wait();  // wait while thread finished
+  //void wait();  change with precise event waiting
   virtual void stop (); //!< try to stop implicitly
 
   bool is_running () const
@@ -97,6 +95,7 @@ public:
   void outString (std::ostream& out) const;
 
 #if 0
+  //! return the stopEvent
   Event& get_stop_event ()
   {
     return stopEvent;
@@ -105,10 +104,9 @@ public:
 
   DECLARE_STATES(ThreadAxis, ThreadState);
   DECLARE_STATE_CONST(ThreadState, ready);
+  DECLARE_STATE_CONST(ThreadState, starting);
   DECLARE_STATE_CONST(ThreadState, working);
-  DECLARE_STATE_CONST(ThreadState, stop_requested);
   DECLARE_STATE_CONST(ThreadState, terminated);
-  DECLARE_STATE_CONST(ThreadState, destroyed);
 
   void state (ThreadState& state) const /* overrides */;
 
@@ -116,15 +114,26 @@ public:
 
 protected:
 
+  //! the thread is terminated (run() was running once).
+  static REvent<ThreadAxis> isTerminated;
+  //! the thread is running
+  //static REvent<ThreadAxis> isWorking;
+  //! to wait the "start()" call
+  static REvent<ThreadAxis> isStarting;
+
   bool destructor_delegate_is_called;
+
+  //! stop is requested
+  Event isStopRequested; 
 
   RThreadBase(const ObjectCreationInfo&, const Par&);
 
-  //! All descendants must call it in the destructor
+  //! A real work of a destructor is here. All descendants
+  //! must call it in the destructor. It waits the
+  //! terminationEvent. (Must be called from the most
+  //! overrided destructor to prevent destroying of
+  //! critical objects prior to _run() exit).
   void destructor_delegate();
-
-  //! Mutex for concurrent access to this object.
-//  RMutex cs;
 
   void set_state_internal (const ThreadState& state) /* overrides */;
 
@@ -136,9 +145,6 @@ protected:
   static unsigned int __stdcall _helper( void * );
 #endif
 
-  //! Start the thread procedure (called from _helper)
-
-
   //! It will be overrided with real thread procedure.
   //! It is not pure virtual to prevent situation of fast
   //! creation and destruction of an RThread object prior
@@ -147,19 +153,13 @@ protected:
 
   virtual void start_impl () {};
 
-
-//  Event stopEvent; //stop is requested
-
   //! A number of threads waiting termination
   //! of this thread.
-  std::atomic<int> waitCnt; 
-
-  //! Somebody has requested termination. It is for
-  //! checking from user-implemented run() method.
-//  std::atomic<bool> exitRequested; 
+  //TODO add this to (R)Event
+  //std::atomic<int> waitCnt; 
 
 private:
-  static std::atomic<int> counter;
+  //static std::atomic<int> counter;
 
   //thread terminate its processing
   //Event isTerminatedEvent; 

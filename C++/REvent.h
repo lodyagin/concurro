@@ -28,9 +28,10 @@ public:
 
   //! Wait for the event on obj for max time msecs.
   //! \return false on timeout.
-  bool wait(RObjectWithEvents<Axis>& obj, int time = -1);
+  bool wait(const RObjectWithEvents<Axis>& obj, 
+            int time = -1) const;
 
-  bool signalled(RObjectWithEvents<Axis>& obj) const
+  bool signalled(const RObjectWithEvents<Axis>& obj) const
   {
 	 return const_cast<REvent<Axis>*>(this)
 		-> event(obj).signalled();

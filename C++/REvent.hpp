@@ -42,7 +42,7 @@ Event& REvent<Axis>
 template<class Axis>
 bool REvent<Axis>
 //
-::wait(RObjectWithEvents<Axis>& obj, int time)
+::wait(const RObjectWithEvents<Axis>& obj, int time) const
 {
   if (is_arrival_event()) {
 	 const uint32_t obj_state = obj.current_state();
