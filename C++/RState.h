@@ -52,23 +52,40 @@ public:
   typedef Axis axis;
 
   RAxis(const StateMapPar<Axis>& par);
-#if 0
-  RAxis(std::initializer_list<const char*> states,
-		  std::initializer_list<
-	   std::pair<const char*, const char*>> transitions
-	 );
-#endif
 
-  /// Check permission of moving obj to the `to' state.
+  //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
 	 (const ObjectWithStatesInterface<Axis>& obj, 
 	  const RState<Axis>& to);
 
-  /// Atomic move obj to a new state
+  //! Atomic move obj to a new state
   static void move_to
 	 (ObjectWithStatesInterface<Axis>& obj, 
 	  const RState<Axis>& to);
 
+  //! Atomic compare-and-change the state
+  //! \return true if the object in the `from' state and
+  //! false otherwise.
+  //! \throw InvalidStateTransition if threre is no
+  //! transition from->to and the object is in the `from'
+  //! state.  
+  static bool compare_and_move
+	 (ObjectWithStatesInterface<Axis>& obj, 
+	  const RState<Axis>& from,
+	  const RState<Axis>& to);
+	 
+  //! Atomic compare-and-change the state which uses a set
+  //! of possible from-states.
+  //! \return true if the object in one of the `from'
+  //! states and false otherwise.
+  //! \throw InvalidStateTransition if threre is no
+  //! transition current->to and the current state is in
+  //! the `from' set.
+  static bool compare_and_move
+	 (ObjectWithStatesInterface<Axis>& obj, 
+	  const std::set<RState<Axis>>& from_set,
+	  const RState<Axis>& to);
+	 
   static uint32_t state
 	 (const ObjectWithStatesInterface<Axis>& obj);
 
@@ -95,6 +112,7 @@ protected:
   typedef Logger<RAxis<Axis>> log;
 
   static StateMap* stateMap;
+  std::atomic_flag changed;
 };
 
 #define DECLARE_STATES(axis, state_class)	\

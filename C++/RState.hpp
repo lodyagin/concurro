@@ -37,29 +37,6 @@ RAxis<Axis>::RAxis(const StateMapPar<Axis>& par)
   }
 }
 
-#if 0
-template<class Axis>
-RAxis<Axis>::RAxis
-  (std::initializer_list<const char*> states,
-	std::initializer_list<
-	  std::pair<const char*, const char*>> transitions
-  )
-{
-  StateMapPar<Axis> par(states, transitions);
-  if (!stateMap) {
-	 try {
-		stateMap = StateMapRepository::instance()
-		  . get_map_for_axis(typeid(Axis));
-	 }
-	 catch(const StateMapRepository::NoSuchId&)
-	 {
-		stateMap = StateMapRepository::instance()
-		  . create_object(par);
-	 }
-  }
-}
-#endif
-
 template<class Axis>
 void RAxis<Axis>
 //
@@ -79,27 +56,15 @@ void RAxis<Axis>
 ::move_to(ObjectWithStatesInterface<Axis>& obj, 
 			 const RState<Axis>& to)
 {
-  if (!stateMap->is_compatible(to))
-	 throw IncompatibleMap();
-
+  uint32_t from;
+  TransitionId trans_id;
   auto& current = obj.current_state();
-  stateMap->check_transition(current, to); // A
-  const auto from = current.exchange(to);  // B
 
-  const TransitionId trans_id = 
-	 stateMap->get_transition_id(from, to);
-
-  if (trans_id == 0) {
-	 // somebody changed state between A and B and a new
-	 // state has not transition to a desired value. Make
-	 // undo.
-	 const auto old = current.exchange(from);
-	 if (old != from)
-		// unable to undo, sombody changed it again
-		throw RaceConditionInStates(old, from, to);
-	 else
+  do {
+	 from = current.load();
+	 if (!(trans_id= stateMap->get_transition_id(from,to)))
 		throw InvalidStateTransition(from, to);
-  }
+  } while (!current.compare_exchange_strong(from, to));
 
   if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
 		(&obj)) {
@@ -113,6 +78,81 @@ void RAxis<Axis>
 					<< "] to [" 
 					<< stateMap->get_state_name(to)
 					<< "]");
+}
+
+template<class Axis>
+bool RAxis<Axis>
+//
+::compare_and_move(ObjectWithStatesInterface<Axis>& obj, 
+						 const RState<Axis>& from,
+						 const RState<Axis>& to)
+{
+  TransitionId trans_id;
+  auto& current = obj.current_state();
+  
+  if (current != from)
+	 return false;
+
+  if (!(trans_id= stateMap->get_transition_id(from,to)))
+	 throw InvalidStateTransition(from, to);
+
+  uint32_t expected = from;
+  if (!current.compare_exchange_strong(expected, to))
+	 return false;
+  
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
+		(&obj)) {
+	 assert(trans_id > 0);
+	 p->update_events(trans_id, to);
+  }
+
+  LOGGER_DEBUG(obj.logger(), 
+					"State changed from [" 
+					<< stateMap->get_state_name(from)
+					<< "] to [" 
+					<< stateMap->get_state_name(to)
+					<< "]");
+  return true;
+}
+
+template<class Axis>
+bool RAxis<Axis>
+//
+::compare_and_move
+  (ObjectWithStatesInterface<Axis>& obj, 
+	const std::set<RState<Axis>>& from_set,
+	const RState<Axis>& to)
+{
+  TransitionId trans_id;
+  uint32_t from;
+
+  auto& current = obj.current_state();
+  do {
+	 from = current.load();
+
+	 // should we move?
+	 if (from_set.find(from) == from_set.end())
+		return false;
+
+	 // check the from_set correctness
+	 if (!(trans_id= stateMap->get_transition_id(from,to)))
+		throw InvalidStateTransition(from, to);
+
+  } while(!current.compare_exchange_strong(from, to));
+
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
+		(&obj)) {
+	 assert(trans_id > 0);
+	 p->update_events(trans_id, to);
+  }
+
+  LOGGER_DEBUG(obj.logger(), 
+					"State changed from [" 
+					<< stateMap->get_state_name(from)
+					<< "] to [" 
+					<< stateMap->get_state_name(to)
+					<< "]");
+  return true;
 }
 
 template<class Axis>
