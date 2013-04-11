@@ -1,4 +1,5 @@
 set(TestsSrc
+  RThreadCU.cpp
   REventCU.cpp
   RMutexCU.cpp
   RBufferCU.cpp

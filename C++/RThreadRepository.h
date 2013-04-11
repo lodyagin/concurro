@@ -52,7 +52,8 @@ public:
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
 	 return Parent::create_object
-      (static_cast<const typename RThread<Thread>::Par&>(par));
+      (static_cast<const typename RThread<Thread>::Par&>
+		  (par));
   }
 
   // Overrides
@@ -73,11 +74,11 @@ public:
   }
 };
 
-template<class Val>
+template<class Obj>
 struct ThreadStopper
- : std::unary_function<Val, void>
+ : std::unary_function<Obj, void>
 {
-  void operator () (Val th)
+  void operator () (Obj th)
   {
     if (th && th->is_running ()) th->stop ();
   }

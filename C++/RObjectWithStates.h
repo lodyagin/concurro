@@ -11,7 +11,11 @@
 
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
+#if __GNUC_MINOR__< 6
 #include <cstdatomic>
+#else
+#include <atomic>
+#endif
 
 //! It can be used as a parent of an object which
 //! introduces new state axis.

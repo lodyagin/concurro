@@ -4,7 +4,11 @@
 #include "StateMap.h"
 #include "RState.hpp"
 #include <assert.h>
+#if __GNUC_MINOR__< 6
 #include <cstdatomic>
+#else
+#include <atomic>
+#endif
 
 UniversalEvent::operator UniversalState() const
 {

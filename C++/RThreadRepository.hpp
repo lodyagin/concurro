@@ -22,7 +22,7 @@ void RThreadRepository<Thread, Container, ThreadId>
     this->objects->begin (),
     this->objects->end (),
     ThreadStopper<typename RepositoryMapType
-                  <Thread, ThreadId, Container>
+	               <RThread<Thread>, ThreadId, Container>
                   ::Map::value_type
                   > ()
     );
@@ -39,7 +39,7 @@ void RThreadRepository<Thread, Container, ThreadId>
     this->objects->begin (),
     this->objects->end (),
     ThreadWaiter<typename RepositoryMapType
-                  <Thread, ThreadId, Container>
+	               <RThread<Thread>, ThreadId, Container>
                   ::Map::value_type
                   > ()
     );

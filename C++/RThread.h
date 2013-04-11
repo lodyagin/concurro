@@ -17,7 +17,11 @@
 #include "RObjectWithStates.h"
 #include "Repository.h"
 #include <string>
+#if __GNUC_MINOR__< 6
 #include <cstdatomic>
+#else
+#include <atomic>
+#endif
 #include <thread>
 
 //! An ancestor of all states of a thread.
@@ -55,13 +59,12 @@ public:
   void _run ();
 
   const std::string universal_object_id;
-  //const size_t num_id;
 
   RThreadBase 
 	 (const std::string& id,
 	  Event* extTerminated = 0
-	  //!< If not null the thread will set this event at the exit of
-     //! the run() method
+	  //!< If not null the thread will set this event at
+     //! the exit of the run() method
 	  );
 
   virtual ~RThreadBase ();
@@ -86,7 +89,6 @@ public:
 
   bool is_running () const
   {
-//    RLOCK(cs);
     return RAxis<ThreadAxis>::state_is
 		(*this, workingState);
   }
@@ -114,7 +116,12 @@ public:
 
 protected:
 
+  bool destructor_delegate_is_called;
+
   RThreadBase(const ObjectCreationInfo&, const Par&);
+
+  //! All descendants must call it in the destructor
+  void destructor_delegate();
 
   //! Mutex for concurrent access to this object.
 //  RMutex cs;
@@ -188,8 +195,16 @@ public:
 		rthreadCreated(
 		  "RThread<std::thread>::Par::rthreadCreated",
 		  true, false),
+		rthreadStarted(
+		  "RThread<std::thread>::Par::rthreadStarted",
+		  true, false),
 		rthread(0) 
 	 {}
+
+	 ~Par()
+	 {
+		rthreadStarted.wait();
+	 }
 
 	 RThreadBase* create_derivation
 	   (const ObjectCreationInfo& oi) const
@@ -222,6 +237,7 @@ public:
 	 {
 		rthreadCreated.wait();
 		rthread->_run();
+		rthreadStarted.set();
 		// <NB> `this' can be already destroyed 
 		// at this point
 	 }
@@ -229,17 +245,19 @@ public:
   protected:
 	 mutable std::unique_ptr<std::thread> th;
 	 mutable Event rthreadCreated;
+	 Event rthreadStarted;
 	 mutable RThread<std::thread>* rthread;
   };
 
   RThread(const std::string& id, Event* extTerminated = 0)
 	 : RThreadBase(id, extTerminated),
 	 th(new std::thread
-		 (&RThread<std::thread>::_run, this)) {}
+		 (&RThreadBase::_run, this)) {}
 
   ~RThread() 
   { 
-    wait(); 
+	 destructor_delegate();
+    //wait(); 
     th->join(); 
   }
 

@@ -103,10 +103,11 @@ void test_2_threads_try_acquire(){
   TestThread thread2(s1, mx, id2);
   thread2.start();
   usleep(300000);
-  if (thread1.getResuilt() == 1 && thread2.getResuilt() == 2)
+  if (thread1.getResuilt() == 1 
+		&& thread2.getResuilt() == 2)
     CU_PASS(id1 == 1)
-    else
-		CU_FAIL(id1! = 1);
+  else
+    CU_FAIL(id1! = 1);
 }
 
 

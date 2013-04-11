@@ -12,7 +12,11 @@
 #include "RState.h"
 #include "Repository.hpp"
 #include "RObjectWithStates.hpp"
+#if __GNUC_MINOR__< 6
 #include <cstdatomic>
+#else
+#include <atomic>
+#endif
 
 template<class Axis>
 StateMap* RAxis<Axis>::stateMap = 0;

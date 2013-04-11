@@ -10,13 +10,16 @@
 RAxis<ThreadAxis> thread_state_axis
 (StateMapPar<ThreadAxis>
 ({  "ready",         // after creation
+//	 "starting",      // from a user-overrided run() method
 	 "working",       // it works
 	 "stop_requested", // somebody called stop()
 	 "terminated",    
 	 "destroyed"    // to check a state in the destructor
 	 },
   {
-  {"ready", "working"},      // start ()
+  {"ready", "starting"},      // start ()
+
+//  {"starting", "working"},
 
   // natural termination only
   {"working", "terminated"}, 
@@ -51,6 +54,7 @@ RThreadBase::RThreadBase
   : 
     RObjectWithEvents<ThreadAxis> (readyState),
     universal_object_id (id),
+	 destructor_delegate_is_called(false),
     waitCnt (0), 
     //isTerminatedEvent (false),
 	 externalTerminated (extTerminated)
@@ -65,6 +69,7 @@ RThreadBase::RThreadBase
 : 
     RObjectWithEvents<ThreadAxis> (readyState),
     universal_object_id (oi.objectId),
+	 destructor_delegate_is_called(false),
     waitCnt (0), 
     //isTerminatedEvent (false),
     //stopEvent (true, false),
@@ -160,6 +165,17 @@ std::atomic<int> RThreadBase::counter (0);
 
 RThreadBase::~RThreadBase()
 {
+  if (!destructor_delegate_is_called)
+	 THROW_PROGRAM_ERROR;
+  // must be called from desc. destructors
+}
+
+
+void RThreadBase::destructor_delegate()
+{
+  if (destructor_delegate_is_called)
+	 return;
+
   bool needWait = true;
   bool needStop = true;
   { 
@@ -182,6 +198,7 @@ RThreadBase::~RThreadBase()
   ThreadState::move_to (*this, destroyedState);
 
   LOG_INFO(log, "Destroy " << *this);
+  destructor_delegate_is_called = true;
 }
 
 
@@ -191,7 +208,7 @@ void RThreadBase::_run()
   isWorking.wait(*this);
 
   //TODO check run from current thread
-  LOG_DEBUG(log, *this << " started");
+  LOG_DEBUG(log, (*this) << " started");
   try
   {
     run();
@@ -211,13 +228,12 @@ void RThreadBase::_run()
 		"Unknown type of exception in the thread.");
   }
 
-  ThreadState::move_to (*this, terminatedState);
-
   LOG_DEBUG(log, *this << " is finished.");
 
   if (externalTerminated) 
     externalTerminated->set ();
-  //isTerminatedEvent.set ();
+
+  ThreadState::move_to (*this, terminatedState);
 }
 
 void RThreadBase::log_from_constructor ()

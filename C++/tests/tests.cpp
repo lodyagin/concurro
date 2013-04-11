@@ -4,11 +4,14 @@
 #include <map>
 #include <string>
 
+extern CU_TestInfo RThreadTests[];
 extern CU_TestInfo RMutexTests[];
 extern CU_TestInfo REventTests[];
 extern CU_TestInfo RBufferTests[];
 extern CU_TestInfo RSocketTests[];
 
+int RThreadCUInit(void);
+int RThreadCUClean(void);
 int RMutexCUInit(void);
 int RMutexCUClean(void);
 int REventCUInit(void);
@@ -19,6 +22,8 @@ int RSocketCUInit(void);
 int RSocketCUClean(void);
 
 CU_SuiteInfo suites[] = {	
+  { "RThread", RThreadCUInit, RThreadCUClean, 0, 0,
+	  RThreadTests },
   { "RMutex", RMutexCUInit, RMutexCUClean, 0, 0,
 	  RMutexTests },
   { "REvent", REventCUInit, REventCUClean, 0, 0,
