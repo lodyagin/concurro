@@ -1,5 +1,6 @@
 #include "RThread.h"
 #include "CUnit.h"
+#include <thread>
 
 void test_local_block();
 
@@ -27,10 +28,19 @@ void test_local_block()
 {
   struct T : public RT 
   { 
+	 typedef Logger<T> log;
+
 	 T() : RT("test_local_block::T") {} 
-	 void run() { sleep(1000); }
+	 void run() { 
+		LOG_DEBUG(log, "Enter run()");
+		std::this_thread::sleep_for
+		  (std::chrono::hours::max());
+		LOG_DEBUG(log, "Exit run()");
+	 }
   } t1;
 
   t1.start();
+  std::this_thread::sleep_for
+		  (std::chrono::hours::max());
 }
 

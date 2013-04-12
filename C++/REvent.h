@@ -24,7 +24,11 @@ public:
   //! Create a *->to event
   REvent(const char* to);
 
-  Event& event(RObjectWithEvents<Axis>&);
+  Event& event
+	 (RObjectWithEvents<Axis>&);
+
+  const Event& event
+	 (const RObjectWithEvents<Axis>&) const;
 
   //! Wait for the event on obj for max time msecs.
   //! \return false on timeout.

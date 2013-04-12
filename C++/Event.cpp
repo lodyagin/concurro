@@ -35,7 +35,7 @@ EvtBase::~EvtBase()
   h = 0; 
 }
 
-void EvtBase::wait()
+void EvtBase::wait() const
 {
 #ifdef _WIN32
   wait(INFINITE);
@@ -45,7 +45,7 @@ void EvtBase::wait()
 #endif
 }
 
-bool EvtBase::wait( int time )
+bool EvtBase::wait(int time) const
 {
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {

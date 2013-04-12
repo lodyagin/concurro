@@ -36,6 +36,9 @@ class RThreadBase
     public HasStringView,
     public RObjectWithEvents<ThreadAxis>
 {
+  DECLARE_EVENT(ThreadAxis, starting)
+  DECLARE_EVENT(ThreadAxis, terminated)
+
 public:
 
   struct Par
@@ -113,13 +116,6 @@ public:
   DEFAULT_LOGGER(RThreadBase)
 
 protected:
-
-  //! the thread is terminated (run() was running once).
-  static REvent<ThreadAxis> isTerminated;
-  //! the thread is running
-  //static REvent<ThreadAxis> isWorking;
-  //! to wait the "start()" call
-  static REvent<ThreadAxis> isStarting;
 
   bool destructor_delegate_is_called;
 

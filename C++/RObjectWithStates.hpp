@@ -32,7 +32,7 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
 template<class Axis>
 Event* RObjectWithEvents<Axis>
 //
-::get_event(const UniversalEvent& ue)
+::get_event_impl(const UniversalEvent& ue) const
 {
   Event* ev = 0;
   const auto it = events.find(ue.id);

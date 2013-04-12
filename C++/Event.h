@@ -27,10 +27,10 @@ class EvtBase
 {
 public:
   //! Wait for event.
-  virtual void wait();
+  virtual void wait() const;
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
-  virtual bool wait( int time );  
+  virtual bool wait(int time) const;
   virtual ~EvtBase();
 
   const std::string universal_object_id;

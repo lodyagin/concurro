@@ -42,6 +42,11 @@ protected:
 	 return currentState;
   }
 
+  const std::atomic<uint32_t>& current_state() const
+  {
+	 return currentState;
+  }
+
   std::atomic<uint32_t> currentState;
 };
 
@@ -70,7 +75,17 @@ public:
 protected:
   //! Query an event object by UniversalEvent. 
   //! Also create new event object if it doesn't exists.
-  Event* get_event(const UniversalEvent&);
+  Event* get_event(const UniversalEvent& ue)
+  {
+	 return get_event_impl(ue);
+  }
+
+  //! Query an event object by UniversalEvent. 
+  //! Also create new event object if it doesn't exists.
+  const Event* get_event(const UniversalEvent& ue) const
+  {
+	 return get_event_impl(ue);
+  }
 
   //! Update events due to trans_id to
   void update_events
@@ -78,7 +93,11 @@ protected:
 
   typedef std::map<TransitionId, Event*> EventMap;
 
-  EventMap events;
+  mutable EventMap events;
+
+private:
+  //! A common implementation for both get_event
+  Event* get_event_impl(const UniversalEvent&) const;
 };
 
 #endif

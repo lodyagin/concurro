@@ -56,7 +56,7 @@ void RThreadRepository<Thread, Container, ThreadId>
   if (th) 
   {
     th->stop ();
-    th->wait ();
+	 RThreadBase::is_terminated().wait(*th);
     Parent::delete_object_by_id (id, freeMemory);
   }
 }

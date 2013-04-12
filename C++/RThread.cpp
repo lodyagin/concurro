@@ -27,9 +27,8 @@ DEFINE_STATE_CONST(RThreadBase, ThreadState, starting);
 DEFINE_STATE_CONST(RThreadBase, ThreadState, working);
 DEFINE_STATE_CONST(RThreadBase, ThreadState, terminated);
 
-REvent<ThreadAxis> isTerminated("terminated");
-//REvent<ThreadAxis> isWorking("working");
-REvent<ThreadAxis> isStarting("starting");
+DEFINE_EVENT(RThreadBase, ThreadAxis, starting);
+DEFINE_EVENT(RThreadBase, ThreadAxis, terminated);
 
 RThreadBase::RThreadBase 
 (const std::string& id, 
@@ -41,7 +40,10 @@ RThreadBase::RThreadBase
 	 destructor_delegate_is_called(false),
     //waitCnt (0), 
     //isTerminatedEvent (false),
-    isStopRequested (true, false),
+    isStopRequested
+	   (SFORMAT("RThreadBase[id=" << id 
+					<< "]::isStopRequested"), 
+		 true, false),
 	 externalTerminated (extTerminated)
 {
   LOG_INFO (log, "New " << *this);
@@ -53,10 +55,10 @@ RThreadBase::RThreadBase
     RObjectWithEvents<ThreadAxis> (readyState),
     universal_object_id (oi.objectId),
 	 destructor_delegate_is_called(false),
-    //waitCnt (0), 
-    //isTerminatedEvent (false),
-    isStopRequested (true, false),
-    //exitRequested (false),
+    isStopRequested 
+	   (SFORMAT("RThreadBase[id=" << oi.objectId
+					<< "]::isStopRequested"),
+					true, false),
 	 externalTerminated (p.extTerminated)
 {
   LOG_INFO (log, "New " << *this);
@@ -119,7 +121,7 @@ void RThreadBase::destructor_delegate()
     return;
 
   isStopRequested.set();
-  isTerminated.wait(*this);
+  is_terminated_event.wait(*this);
 
   LOG_INFO(log, "Destroy " << *this);
   destructor_delegate_is_called = true;
@@ -128,7 +130,7 @@ void RThreadBase::destructor_delegate()
 
 void RThreadBase::_run()
 {
-  isStarting.wait(*this);
+  is_starting_event.wait(*this);
 
   //TODO check run from current thread
   LOG_DEBUG(log, (*this) << " started");

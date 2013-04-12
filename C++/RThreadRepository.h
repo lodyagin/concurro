@@ -113,7 +113,7 @@ struct ThreadWaiter<std::pair<Key, Val>>
   void operator () (std::pair<Key, Val>& p)
   {
     if (p.second) 
-		p.second->RThreadBase::wait ();
+		RThreadBase::is_terminated().wait(*p.second);
   }
 };
 

@@ -40,6 +40,14 @@ Event& REvent<Axis>
 }
 
 template<class Axis>
+const Event& REvent<Axis>
+//
+::event(const RObjectWithEvents<Axis>& obj) const
+{
+  return *obj.get_event(*this);
+}
+
+template<class Axis>
 bool REvent<Axis>
 //
 ::wait(const RObjectWithEvents<Axis>& obj, int time) const
