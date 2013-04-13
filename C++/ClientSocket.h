@@ -9,9 +9,7 @@
 #ifndef CONCURRO_CLIENTSOCKET_H_
 #define CONCURRO_CLIENTSOCKET_H_
 
-#include "RState.h"
-#include "RThread.h"
-#include "RObjectWithStates.h"
+#include "RSocket.h"
 
 class ClientSocketAxis : public StateAxis {};
 
@@ -37,15 +35,29 @@ public:
   virtual void ask_connect();
 
 protected:
-  ClientSocket();
+  ClientSocket
+	 (const ObjectCreationInfo& oi, 
+	  const RSocketAddress& par);
 
   void process_connect_error(int error);
+  
+  RThreadFactory* thread_factory;
 
   class Thread : public SocketThread
   {
   public:
-	 PAR_CREATE_DERIVATION(Thread, SocketThread, 
-								  RThreadBase)
+	 struct Par : public SocketThread::Par
+	 { 
+		Par(RSocketBase* sock) 
+		  : SocketThread::Par(sock) {}
+
+		RThreadBase* create_derivation
+		  (const ObjectCreationInfo& oi) const
+		{ 
+		  return new Thread(oi, *this); 
+		}
+	 };
+
 	 void run();
   protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)

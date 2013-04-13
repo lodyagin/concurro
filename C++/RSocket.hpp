@@ -10,13 +10,13 @@
 #define CONCURRO_RSOCKET_HPP_
 
 #include "RSocket.h"
+#include "ClientSocket.h"
+#include "TCPSocket.h"
 //#include "InSocket.h"
 //#include "OutSocket.h"
 
 // temporary empty definitions
-class ClientSocket : public virtual RSocketBase {};
 class ServerSocket : public virtual RSocketBase {};
-class TCPSocket : public virtual RSocketBase {};
 
 inline RSocketBase* RSocketAllocator0
   (SocketSide side,
@@ -30,9 +30,11 @@ inline RSocketBase* RSocketAllocator0
   case SocketSide::Client:
     return RSocketAllocator1
       <ClientSocket> (protocol, ver, oi, addr);
+#if 0
   case SocketSide::Server:
     return RSocketAllocator1
       <ServerSocket>(protocol, ver, oi, addr);
+#endif
   default: 
     THROW_NOT_IMPLEMENTED;
   }

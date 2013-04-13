@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.6.4)
 
-set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x -Wall")
+set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x -Wall -frtti")
 
 add_subdirectory(tests)
 
 project (concurrent)
 set (concurrent_SOURCES 
+  ClientSocket.cpp
   Event.cpp
   HasStringView.cpp
   Logging.cpp

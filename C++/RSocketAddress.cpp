@@ -158,7 +158,10 @@ RSocketBase* RSocketAddress::create_derivation
                             str_buf, sizeof(str_buf),
                             &pent) == 0);
         assert(&pent_buf == pent);
-    if (strcmp(pent->p_name, "TCP") == 0) {
+    if (strcmp(pent->p_name, "tcp") == 0
+		  || strcmp(pent->p_name, "TCP") == 0
+		) 
+	 {
       protocol = NetworkProtocol::TCP;
     }
     else THROW_NOT_IMPLEMENTED;

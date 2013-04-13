@@ -39,7 +39,11 @@ protected:
   struct protoent* tcp_protoent;
   
   //! Create a TCP socket in a "closed" state.
-  TCPSocket();
+  TCPSocket
+	 (const ObjectCreationInfo& oi, 
+	  const RSocketAddress& par);
+
+  RThreadFactory* thread_factory;
 
   class Thread : public SocketThread
   {

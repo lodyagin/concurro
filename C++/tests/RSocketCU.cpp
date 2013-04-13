@@ -1,5 +1,6 @@
 #include "RSocketAddress.hpp"
 #include "RSocket.hpp"
+#include "RState.hpp"
 //#include "InSocket.h"
 #include "RThreadRepository.hpp"
 #include "CUnit.h"
@@ -58,11 +59,16 @@ static RThreadRepository<
 
 void test_client_socket()
 {
+  struct Log { typedef Logger<Log> log; };
+
   RSocketRepository sr (&thread_repository);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*RSocketAddressRepository()
 		. create_addresses<NetworkProtocol::TCP, IPVer::v4>
 		("localhost", 5555) . front()));
+  LOG_DEBUG(Log::log, 
+				"test_client_socket::cli_sock state: " <<
+				RState<ClientSocketAxis>(*cli_sock));
 }
 

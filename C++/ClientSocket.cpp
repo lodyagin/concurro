@@ -9,8 +9,8 @@
 #include "StdAfx.h"
 #include "ClientSocket.h"
 
-DEFINE_STATES(ClientSocket, ClientSocketStateAxis, State)
-(  {"created",
+DEFINE_STATES(ClientSocketAxis, 
+   {"created",
     "connecting",  
 	 "connected",
 	 "connection_timed_out",
@@ -28,7 +28,7 @@ DEFINE_STATES(ClientSocket, ClientSocketStateAxis, State)
 		{"connection_refused", "destroyed"},
 		{"destination_unreachable", "destroyed"}
 	 }
-  });
+);
 DEFINE_STATE_CONST(ClientSocket, State, created);
 DEFINE_STATE_CONST(ClientSocket, State, connecting);
 DEFINE_STATE_CONST(ClientSocket, State, connected);
@@ -41,32 +41,45 @@ DEFINE_STATE_CONST(ClientSocket, State,
 DEFINE_STATE_CONST(ClientSocket, State, destroyed);
 
 
-ClientSocket::ClientSocket() 
-  : RObjectWithEvents<ClientSocketAxis> (createdState),
-	 thread(
+ClientSocket::ClientSocket
+  (const ObjectCreationInfo& oi, 
+	const RSocketAddress& par)
+  : 
+	 RSocketBase(oi, par),
+	 RObjectWithEvents<ClientSocketAxis>(createdState),
+	 thread_factory(dynamic_cast<RSocketRepository*>
+						 (oi.repository) -> thread_factory),
+	 thread(dynamic_cast<Thread*>
+			  (thread_factory->create_thread
+				(Thread::Par(this))))
 {
+  SCHECK(thread);
   ask_connect();
 }
 
 ClientSocket::~ClientSocket()
 {
+  assert(thread_factory);
+  thread_factory->delete_thread(thread);
   State::move_to(*this, destroyedState);
 }
 
 void ClientSocket::ask_connect()
 {
   const int res = ::connect
-	 (fd, aw_ptr->ai_addr, aw_ptr->ai_addrlen);
+	 (fd, 
+	  aw_ptr->begin()->ai_addr, 
+	  aw_ptr->begin()->ai_addrlen);
   process_connect_error(res);
 }
 
-void process_connect_error(int error)
+void ClientSocket::process_connect_error(int error)
 {
   switch (error) {
   case EINPROGRESS:
 	 State::move_to(*this, connectingState);
 	 // <NB> there are no connecting->connecting transition
-	 thread.start();
+	 thread->start();
 	 return;
   case ETIMEDOUT:
 	 State::move_to(*this, connection_timed_outState);
@@ -99,9 +112,11 @@ void ClientSocket::Thread::run()
 	 ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
 
   int connect_error = 0;
+  socklen_t connect_error_len = sizeof(connect_error);
   rSocketCheck(
 	 getsockopt(fd, SOL_SOCKET, SO_ERROR, &connect_error,
-					sizeof(connect_error)) == 0);
+					&connect_error_len) == 0);
 
-  process_connect_error(connect_error);
+  dynamic_cast<ClientSocket*>(socket)
+	 -> process_connect_error(connect_error);
 }

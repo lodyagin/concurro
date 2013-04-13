@@ -30,7 +30,7 @@ DEFINE_STATES(TCPAxis,
 	 },
   {
   {"created", "listen"},      // listen()
-  {"reated", "syn_sent"},    // our connect()
+  {"created", "syn_sent"},    // our connect()
   {"listen", "accepting"}, // connect() from other side
   {"accepting", "listen"},
   {"listen", "closed"},
@@ -61,15 +61,22 @@ DEFINE_STATE_CONST(TCPSocket, State, established);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
 DEFINE_STATE_CONST(TCPSocket, State, destroyed);
 
-TCPSocket::TCPSocket()
-  : RObjectWithEvents<TCPAxis> (closedState),
+TCPSocket::TCPSocket
+	 (const ObjectCreationInfo& oi, 
+	  const RSocketAddress& par)
+  : 
+	 RSocketBase(oi, par),
+    RObjectWithEvents<TCPAxis> (closedState),
     tcp_protoent(NULL),
-    thread(0)
+	 thread_factory(dynamic_cast<RSocketRepository*>
+						 (oi.repository) -> thread_factory),
+	 thread(dynamic_cast<Thread*>
+			  (thread_factory->create_thread
+				(Thread::Par(this))))
 {
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);
-  thread = dynamic_cast<Thread*>
-	 (thread_factory->create_thread(Thread::Par(this)));
+  thread->start();
 }
 
 TCPSocket::~TCPSocket()
@@ -77,6 +84,8 @@ TCPSocket::~TCPSocket()
   //ask_close();
   static REvent<TCPAxis> is_closed("closed");
   is_closed.wait(*this);
+  assert(thread_factory);
+  thread_factory->delete_thread(thread);
   State::move_to(*this, destroyedState);
 }
 

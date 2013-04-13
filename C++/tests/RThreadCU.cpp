@@ -115,9 +115,11 @@ static RThreadRepository<
 
 void test_thread_in_repository()
 {
+  RThreadFactory* tf = &thread_repository;
+
   T1* thread = dynamic_cast<T1*>
-	 (thread_repository.create_thread(T1::Par()));
+	 (tf->create_thread(T1::Par()));
   thread->start();
-  thread_repository.delete_object(thread, true);
+  tf->delete_thread(thread); //implies stop()
 }
 

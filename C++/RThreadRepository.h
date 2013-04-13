@@ -18,8 +18,15 @@
 class RThreadFactory
 {
 public:
+  //! It delegates the call to
+  //! RThreadRepository::create_object
   virtual RThreadBase* create_thread
 	 (const RThreadBase::Par&) = 0;
+
+  //! It delegates the call to
+  //! RThreadRepository::delete_object(thread, true)
+  virtual void delete_thread
+	 (RThreadBase* thread) = 0;
 };
 
 template<
@@ -55,6 +62,13 @@ public:
 	 return Parent::create_object
 		(dynamic_cast<const typename RThread<Thread>::Par&>
 		 (par));
+  }
+
+  //! It overrides RThreadFactory::delete_thread
+  void delete_thread(RThreadBase* thread)
+  {
+	 delete_object
+		(dynamic_cast<RThread<Thread>*>(thread), true);
   }
 
   // Overrides

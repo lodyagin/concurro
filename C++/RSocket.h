@@ -38,6 +38,13 @@ public:
   virtual ~RSocketBase () {}
 
 #if 0
+  SOCKET get_fd()
+#else
+  //! A socket file descriptor.
+  const SOCKET fd;
+#endif
+
+#if 0
   std::string universal_id() const 
   { return universal_object_id; }
 
@@ -46,9 +53,6 @@ protected:
 #else
 protected:
 #endif
-  //! A socket file descriptor.
-  SOCKET fd;
-
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
@@ -57,7 +61,7 @@ protected:
 
   //! This is a 'technical' version. Properly constructed
   //! RSocket always call RSocketBase(SOCKET) at the end.
-  RSocketBase() : StdIdMember("0") { THROW_PROGRAM_ERROR;}
+  //RSocketBase() : StdIdMember("0") { THROW_PROGRAM_ERROR;}
 
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
@@ -90,13 +94,13 @@ public:
 	 : RThread<std::thread>::Par(ext_terminated),
 		socket(sock) {}
 
-	 RThreadBase* create_derivation
-		(const ObjectCreationInfo&) const;
-
 	 RThreadBase* transform_object
 		(const RThreadBase*) const
 	 { THROW_NOT_IMPLEMENTED; }
   };
+
+  typedef RThread<std::thread>::RepositoryType 
+	 RepositoryType;
 
 protected:
   RSocketBase* socket;
@@ -145,7 +149,7 @@ class RSocket : public Bases...
 protected:
   RSocket(const ObjectCreationInfo& oi,
 			 const RSocketAddress& addr)
-	 : RSocketBase(oi, addr) {}
+	 : RSocketBase(oi, addr), Bases(oi, addr)... {}
 
   DEFAULT_LOGGER(RSocket<Bases...>);
 };

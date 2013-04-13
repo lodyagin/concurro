@@ -182,13 +182,15 @@ class RThread<std::thread> : public RThreadBase
 {
 public:
 
+  //! A RepositoryType to use with this RThread
+  typedef RepositoryInterface<
+	 RThread<std::thread>, 
+	 RThread<std::thread>::Par, 
+	 std::thread::native_handle_type> RepositoryType;
+
   class Par : public RThreadBase::Par
   {
   public:
-	 typedef RepositoryInterface<
-		RThread<std::thread>, Par, 
-		std::thread::native_handle_type> RepositoryType;
-
     Par(Event* ext_terminated = 0)
 		: RThreadBase::Par(ext_terminated),
 		rthreadCreated(
@@ -216,6 +218,7 @@ public:
 	 {
 		repository = dynamic_cast<RepositoryType*>
 		  (oi.repository);
+		SCHECK(repository);
 		oi.objectCreated = &rthreadCreated;
 		th = std::unique_ptr<std::thread>
 		  (new std::thread

@@ -180,7 +180,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 		 tit != par.transitions.end(); tit++)
   {
 	 TransitionId& old = transitions
-		[name2idx[tit->first]][name2idx[tit->second]];
+		[name2idx.at(tit->first)][name2idx.at(tit->second)];
 
 	 if (!old)
 		// count only new transitions
