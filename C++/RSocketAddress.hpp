@@ -53,7 +53,7 @@ template<
   enum NetworkProtocol protocol, 
   enum IPVer ip_version
 >
-std::list<RSocketAddress*> SocketAddressRepository
+std::list<RSocketAddress*> RSocketAddressRepository
 //
 ::create_addresses(const std::string& host, uint16_t port)
 {

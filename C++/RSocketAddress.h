@@ -373,7 +373,7 @@ operator<< (std::ostream&, const RSocketAddress&);
  * Repository is like a relational database.  It is for
  * various selects for possible protocols/addresses.
  */
-class SocketAddressRepository :
+class RSocketAddressRepository :
   public SparkRepository<
     RSocketAddress, 
     AddressRequestBase,
@@ -390,8 +390,8 @@ public:
   > Parent;
   typedef size_t Id;
 
-  SocketAddressRepository()
-    : Parent("some SocketAddressRepository", 8) {}
+  RSocketAddressRepository()
+    : Parent("some RSocketAddressRepository", 8) {}
 
   template<enum NetworkProtocol, enum IPVer>
   std::list<RSocketAddress*> create_addresses

@@ -38,7 +38,7 @@ class RThreadRepository
 public:
   typedef Repository<
     RThread<Thread>, 
-    typename RThread<Thread>::Par, 
+    typename RThread<Thread>::Par, //<NB>
     Container,
     ThreadId> Parent;
   typedef typename RThread<Thread>::Par Par;
@@ -49,11 +49,12 @@ public:
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
 
+  //! It overrides ThreadFactory::create_thread
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
 	 return Parent::create_object
-      (static_cast<const typename RThread<Thread>::Par&>
-		  (par));
+		(dynamic_cast<const typename RThread<Thread>::Par&>
+		 (par));
   }
 
   // Overrides
@@ -61,7 +62,7 @@ public:
     (ThreadId id, bool freeMemory);
 
   // Overrides
-  RThreadBase* replace_object 
+  RThread<Thread>* replace_object 
     (ThreadId id, 
      const RThreadBase::Par& param,
      bool freeMemory

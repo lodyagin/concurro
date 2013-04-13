@@ -34,7 +34,7 @@ int RSocketCUClean()
 
 void test_127001_socket_address()
 {
-  SocketAddressRepository sar;
+  RSocketAddressRepository sar;
   auto aiws = sar.create_addresses
 	 <NetworkProtocol::TCP, IPVer::v4>
 	 ("127.0.0.1", 5555);
@@ -44,7 +44,7 @@ void test_127001_socket_address()
 
 void test_localhost_socket_address()
 {
-  SocketAddressRepository sar;
+  RSocketAddressRepository sar;
   auto aiws = sar.create_addresses
 	 <NetworkProtocol::TCP, IPVer::v4>
 	 ("localhost", 5555);
@@ -61,7 +61,7 @@ void test_client_socket()
   SocketRepository sr (&thread_repository);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
-	  (*SocketAddressRepository()
+	  (*RSocketAddressRepository()
 		. create_addresses<NetworkProtocol::TCP, IPVer::v4>
 		("localhost", 5555) . front()));
 }
