@@ -27,8 +27,6 @@
 //! An ancestor of all states of a thread.
 class ThreadAxis : public StateAxis {};
 
-class RThreadImpl;
-
 /**
  * It is a base class for RThread. It contains the base
  * implementation which not depends on a particular physical thread.
@@ -38,9 +36,7 @@ class RThreadBase
     public HasStringView,
     public RObjectWithEvents<ThreadAxis>
 {
-  friend class RThreadImpl;
-
-  DECLARE_EVENT(ThreadAxis, working);
+  DECLARE_EVENT(ThreadAxis, starting)
   DECLARE_EVENT(ThreadAxis, terminated)
 
 public:
@@ -58,11 +54,15 @@ public:
 	   (const RThreadBase*) const = 0;
   };
 
+  //! Contains a common thread execution code. It calls
+  //! user-defined run(). It should be protected but is
+  //! public for access from a derived RThread template.
+  void _run ();
+
   const std::string universal_object_id;
 
   RThreadBase 
 	 (const std::string& id,
-	  RThreadImpl* impl_obj,
 	  Event* extTerminated = 0
 	  //!< If not null the thread will set this event at
      //! the exit of the run() method
@@ -107,6 +107,7 @@ public:
 
   DECLARE_STATES(ThreadAxis, ThreadState);
   DECLARE_STATE_CONST(ThreadState, ready);
+  DECLARE_STATE_CONST(ThreadState, starting);
   DECLARE_STATE_CONST(ThreadState, working);
   DECLARE_STATE_CONST(ThreadState, terminated);
 
@@ -121,18 +122,18 @@ protected:
   //! stop is requested
   Event isStopRequested; 
 
-  RThreadImpl* impl;
-
   RThreadBase(const ObjectCreationInfo&, const Par&);
 
   //! A real work of a destructor is here. All descendants
   //! must call it in the destructor. It waits the
-  //! terminationEvent. 
+  //! terminationEvent. (Must be called from the most
+  //! overrided destructor to prevent destroying of
+  //! critical objects prior to _run() exit).
   void destructor_delegate();
 
-  void set_state_internal (const ThreadState& state);
+  void set_state_internal (const ThreadState& state) /* overrides */;
 
-  //void log_from_constructor ();
+  void log_from_constructor ();
 
 #if 0
   // It is ThreadProc, it simple calls _run ()
@@ -140,7 +141,13 @@ protected:
   static unsigned int __stdcall _helper( void * );
 #endif
 
-  virtual void start_impl () = 0;
+  //! It will be overrided with real thread procedure.
+  //! It is not pure virtual to prevent situation of fast
+  //! creation and destruction of an RThread object prior
+  //! to _run() calls run().
+  virtual void run() {};
+
+  virtual void start_impl () {};
 
   //! A number of threads waiting termination
   //! of this thread.
@@ -159,39 +166,22 @@ private:
   //void _run();
 };
 
-class RThreadImpl : public SNotCopyable
-{
-  friend class RThreadBase;
-
-protected:
-  typedef Logger<RThreadImpl> log;
-
-  RThreadBase* ctrl;
-
-  RThreadImpl(RThreadBase* control)
-	 : ctrl(control) {}
-
-  //! Contains a common thread execution code. It calls
-  //! user-defined run(). 
-  void _run();
-
-  //! It will be overrided with real thread procedure.
-  virtual void run() = 0;
-};
+/*
+  It can be started and stoped only once, like Java
+  thread.  SException will be raised if we try to start
+  several times.  */
 
 /**
  * Any kind thread-wrapper object. Thread is the real
  * thread class. Each RThread object must be member of a
  * ThreadRepository.
  */
-template<class Thread, class Impl> class RThread {};
+template<class Thread> class RThread {};
 
-template<class Impl>
-class RThread<std::thread, Impl> 
-: public RThreadBase
+template<>
+class RThread<std::thread> : public RThreadBase
 {
 public:
-  typedef RThread<std::thread, Impl> This;
 
   class Par : public RThreadBase::Par
   {
@@ -216,9 +206,7 @@ public:
 	   (const ObjectCreationInfo& oi) const
 	 {
 		assert(th); // get_id is called first
-		rthread = new RThread<std::thread, Impl>
-		  (oi, *this);
-		rthread.impl = new RThreadImpl(rthread);
+		rthread = new RThread<std::thread>(oi, *this);
 		rthreadCreated.set();
       return rthread;
 	 }
@@ -233,7 +221,7 @@ public:
 	 {
 		th = std::unique_ptr<std::thread>
 		  (new std::thread
-			(&RThread<std::thread, Impl>::Par::run0, 
+			(&RThread<std::thread>::Par::run0, 
 			 const_cast<Par*>(this)));
 		return th->native_handle();
 	 }
@@ -244,8 +232,7 @@ public:
 	 void run0()
 	 {
 		rthreadCreated.wait();
-		assert(rthread->impl);
-		rthread->impl->_run();
+		rthread->_run();
 		rthreadStarted.set();
 		// <NB> `this' can be already destroyed 
 		// at this point
@@ -255,15 +242,13 @@ public:
 	 mutable std::unique_ptr<std::thread> th;
 	 mutable Event rthreadCreated;
 	 Event rthreadStarted;
-	 mutable RThread<std::thread, Impl>* rthread;
-	 RThreadImpl* impl;
+	 mutable RThread<std::thread>* rthread;
   };
 
   RThread(const std::string& id, Event* extTerminated = 0)
-	 : RThreadBase
-	   (id, new RThreadImpl(this), extTerminated),
+	 : RThreadBase(id, extTerminated),
 	 th(new std::thread
-		 (&RThreadImpl::_run, impl)) {}
+		 (&RThreadBase::_run, this)) {}
 
   ~RThread() 
   { 
@@ -272,7 +257,7 @@ public:
     th->join(); 
   }
 
-  DEFAULT_LOGGER(This)
+  DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
   //! It is for creation from ThreadRepository
