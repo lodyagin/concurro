@@ -168,7 +168,8 @@ RSocketBase* RSocketAddress::create_derivation
 	 (side, protocol, ver, oi, *this);
 }
 
-SOCKET RSocketAddress::get_id() const
+SOCKET RSocketAddress
+::get_id(ObjectCreationInfo& oi) const
 {
   assert(ai);
   rSocketCheck

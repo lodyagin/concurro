@@ -154,7 +154,7 @@ public:
   { THROW_NOT_IMPLEMENTED; }
 
   virtual StateMapId get_id
-  (const ObjectCreationInfo& oi) const = 0;
+  (ObjectCreationInfo& oi) const = 0;
 
 protected:
   StateMapId get_map_id(const ObjectCreationInfo&,
@@ -173,7 +173,7 @@ public:
 	 )
 	 : StateMapParBase(states, transitions) {}
 
-  StateMapId get_id(const ObjectCreationInfo& oi) const;
+  StateMapId get_id(ObjectCreationInfo& oi) const;
 };
 
 std::ostream& operator<< 
@@ -319,7 +319,7 @@ protected:
 template<class Axis>
 StateMapId StateMapPar<Axis>
 //
-::get_id(const ObjectCreationInfo& oi) const
+::get_id(ObjectCreationInfo& oi) const
 {
   return StateMapParBase::get_map_id(oi, typeid(Axis));
 }

@@ -14,6 +14,7 @@
 #include "SException.h"
 #include "SShutdown.h"
 #include "Logging.h"
+#include "Event.h"
 #include <algorithm>
 #include <utility>
 #include <list>
@@ -31,38 +32,15 @@ public:
   virtual ~AbstractRepositoryBase() {}
 };
 
-/// It is used for object creation as an argument to
-/// Par::create_derivation
-struct ObjectCreationInfo
-{
-  AbstractRepositoryBase* repository;
-  std::string objectId;
-};
-
-template<
-  class Obj, class ObjId,
-  template<class...> class ObjMap
->
-class RepositoryMapType
-{
-public:
-  typedef ObjMap<Obj*> Map;
-};
-
-/**
- * A RepositoryBase contain not-specialized methods of
- * Repository, i.e., methods not dependent on the ObjMap.
+/** It defines an interface for RepositoryBase but
+ * is abstracted from a Container template parameter.
  */
-template<
-  class Obj, class Par, 
-  template<class...> class ObjMap, 
-  class ObjId
->
-class RepositoryBase : public AbstractRepositoryBase
+template<class Obj, class Par, class ObjId>
+class RepositoryInterface 
+  : public AbstractRepositoryBase
 {
 public:
-
-  /// No object with such id exists.
+  //! No object with such id exists.
   class NoSuchId : public SException
   {
   public:
@@ -93,43 +71,95 @@ public:
 	 const ObjId id;
   };
 
+  //! Create a new object in the repository by parameters
+  //! Par.
+  //! \exception InvalidObjectParameters something is
+  //! wrong with param. 
+  virtual Obj* create_object (const Par& param) = 0;
+  
+  //! Delete obj from the repository. freeMemory means
+  //! to call the object desctructor after it.
+  virtual void delete_object
+	 (Obj* obj, bool freeMemory) = 0;
+
+  //! Delete the object with id.
+  //! \param freeMemory call delete on the object itself
+  //!  (destructor). false means only remove a
+  //!  registration in the repository.
+  //! \exception NoSuchId
+  virtual void delete_object_by_id 
+	 (ObjId id, bool freeMemory) = 0;
+
+  virtual Obj* get_object_by_id (ObjId id) const = 0;
+
+  //! Replace the old object by new one (and create the
+  //! new). The old object is deleted.
+  //! \exception InvalidObjectParameters something is
+  //!   wrong with param.
+  //! \exception NoSuchId
+  virtual Obj* replace_object 
+	 (ObjId id, const Par& param, bool freeMemory) = 0;
+};
+
+//! It is used for object creation as an argument to
+//! Par::create_derivation
+struct ObjectCreationInfo
+{
+  AbstractRepositoryBase* repository;
+  std::string objectId;
+  Event* objectCreated;
+
+  ObjectCreationInfo()
+  : repository(0), objectCreated(0) {}
+};
+
+template<
+  class Obj, class ObjId,
+  template<class...> class ObjMap
+>
+class RepositoryMapType
+{
+public:
+  typedef ObjMap<Obj*> Map;
+};
+
+/**
+ * A RepositoryBase contain not-specialized methods of
+ * Repository, i.e., methods not dependent on the ObjMap.
+ */
+template<
+  class Obj, class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
+class RepositoryBase 
+  : public RepositoryInterface<Obj, Par, ObjId>
+{
+public:
+  typedef RepositoryInterface<Obj, Par, ObjId> Parent;
+  typedef typename Parent::NoSuchId NoSuchId;
+  typedef typename Parent::IdIsAlreadyUsed 
+	 IdIsAlreadyUsed;
+
   RepositoryBase (const std::string& repo_name) 
 	 : objectsM (SFORMAT(repo_name << ".objectsM")),
 	   objects(0) {}
 
   virtual ~RepositoryBase ();
 
-  //! Create a new object in the repository by parameters
-  //! Par.
-  //! \exception InvalidObjectParameters something is
-  //! wrong with param. 
-  virtual Obj* create_object (const Par& param);
+  Obj* create_object (const Par& param);
+  void delete_object(Obj* obj, bool freeMemory);
+  void delete_object_by_id(ObjId id, bool freeMemory);
+  Obj* get_object_by_id (ObjId id) const;
 
-  /// Delete obj from the repository. freeMemory means
-  /// to call the object desctructor after it.
-  virtual void delete_object(Obj* obj, bool freeMemory);
-
-  /// Delete the object with id.
-  /// \param freeMemory call delete on the object itself
-  ///        (destructor). false means only remove a registration in the
-  ///        repository.
-  /// \exception NoSuchId
-  virtual void delete_object_by_id (ObjId id, bool freeMemory);
-
-  virtual Obj* get_object_by_id (ObjId id) const;
-
-  /// Replace the old object by new one (and create the new).
-  /// The old object is deleted.
-  /// \exception InvalidObjectParameters something is wrong with param. 
-  /// \exception NoSuchId
-  virtual Obj* replace_object 
+  Obj* replace_object 
 	 (ObjId id, const Par& param, bool freeMemory);
 
-  /// return ids of objects selected by a predicate
+  //! return ids of objects selected by a predicate
   template<class Out, class Pred>
   Out get_object_ids_by_pred (Out res, Pred p);
 
-  /// return ids of objects selected by  an UniversalState
+  //! return ids of objects selected by  an UniversalState
   template<class Out, class State>
   Out get_object_ids_by_state
     (Out res, const State& state);
@@ -163,10 +193,9 @@ protected:
   //! Calculate an id for a new object, possible based on
   //! Par (depending of the Repository type)
   virtual ObjId get_object_id 
-	 (const ObjectCreationInfo& oi,
-	  const Par&) = 0;
+	 (ObjectCreationInfo& oi, const Par&) = 0;
 
-  /// Insert new object into objects
+  //! Insert new object into objects
   virtual void insert_object (ObjId, Obj*) = 0;
 };
 
@@ -190,8 +219,8 @@ public:
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
-  /// Create the repo. initial_value means initial size
-  /// for vector and size for hash tables.
+  //! Create the repo. initial_value means initial size
+  //! for vector and size for hash tables.
   Repository(const std::string& repository_name,
 				size_t initial_capacity)
   : Parent (repository_name) 
@@ -205,10 +234,10 @@ public:
   //~Repository() { delete objects; }
 
 protected:
-  /// This specialization takes the first unused (numeric)
-  /// id and ignores Par
-  ObjId get_object_id (const ObjectCreationInfo&,
-		       const Par&)
+  //! This specialization takes the first unused (numeric)
+  //! id and ignores Par
+  ObjId get_object_id 
+	 (ObjectCreationInfo&, const Par&)
   {
 	 RLOCK(this->objectsM);
 
@@ -313,8 +342,8 @@ public:
 
   typedef std::unordered_map<ObjId, Obj*> ObjMap;
 
-  /// Create the repo. initial_value means initial size
-  /// for vector and size for hash tables.
+  //! Create the repo. initial_value means initial size
+  //! for vector and size for hash tables.
   Repository(const std::string& repository_name, 
 				 size_t initial_value)
 	 : Parent (repository_name)
@@ -323,9 +352,9 @@ public:
   }
 
 protected:
-  /// This specialization takes the key value from pars.
-  ObjId get_object_id (const ObjectCreationInfo& oi,
-		       const Par& param)
+  //! This specialization takes the key value from pars.
+  ObjId get_object_id 
+	 (ObjectCreationInfo& oi, const Par& param)
   {
 	 RLOCK(this->objectsM);
 
@@ -361,8 +390,8 @@ public:
   using Parent::IdIsAlreadyUsed;
 
   typedef std::map<ObjId, Obj*> ObjMap;
-  /// Create the repo. initial_value means initial size
-  /// for vector and size for hash tables.
+  //! Create the repo. initial_value means initial size
+  //! for vector and size for hash tables.
   Repository 
 	 (const std::string& repository_name, 
 	  size_t initial_value)
@@ -371,14 +400,13 @@ public:
 	 this->objects = new ObjMap ();
   }
 protected:
-  /// This specialization takes the key value from pars.
+  //! This specialization takes the key value from pars.
   ObjId get_object_id 
-	 (const ObjectCreationInfo& oi,
-	  const Par& param)
+	 (ObjectCreationInfo& oi, const Par& param)
   {
 	 RLOCK(this->objectsM);
 
-	 ObjId id = param.get_id ();
+	 ObjId id = param.get_id (oi);
 
 	 if (this->objects->find(id) != this->objects->end()) {
 		throw typename Parent::IdIsAlreadyUsed (id);

@@ -142,12 +142,9 @@ protected:
 #endif
 
   //! It will be overrided with real thread procedure.
-  //! It is not pure virtual to prevent situation of fast
-  //! creation and destruction of an RThread object prior
-  //! to _run() calls run().
-  virtual void run() {};
+  virtual void run() = 0;
 
-  virtual void start_impl () {};
+  virtual void start_impl () = 0;
 
   //! A number of threads waiting termination
   //! of this thread.
@@ -188,6 +185,10 @@ public:
   class Par : public RThreadBase::Par
   {
   public:
+	 typedef RepositoryInterface<
+		RThread<std::thread>, Par, 
+		std::thread::native_handle_type> RepositoryType;
+
     Par(Event* ext_terminated = 0)
 		: RThreadBase::Par(ext_terminated),
 		rthreadCreated(
@@ -196,21 +197,12 @@ public:
 		rthreadStarted(
 		  "RThread<std::thread>::Par::rthreadStarted",
 		  true, false),
-		rthread(0) 
+		repository(0), th_id(0)
 	 {}
 
 	 ~Par()
 	 {
 		rthreadStarted.wait();
-	 }
-
-	 RThreadBase* create_derivation
-	   (const ObjectCreationInfo& oi) const
-	 {
-		assert(th); // get_id is called first
-		rthread = new RThread<std::thread>(oi, *this);
-		rthreadCreated.set();
-      return rthread;
 	 }
 
 	 RThreadBase* transform_object
@@ -219,13 +211,18 @@ public:
 		THROW_NOT_IMPLEMENTED; 
 	 }
 
-	 std::thread::native_handle_type get_id() const
+	 std::thread::native_handle_type get_id
+		(ObjectCreationInfo& oi) const
 	 {
+		repository = dynamic_cast<RepositoryType*>
+		  (oi.repository);
+		oi.objectCreated = &rthreadCreated;
 		th = std::unique_ptr<std::thread>
 		  (new std::thread
 			(&RThread<std::thread>::Par::run0, 
 			 const_cast<Par*>(this)));
-		return th->native_handle();
+		th_id = th->native_handle();
+		return th_id;
 	 }
 
 	 std::unique_ptr<std::thread>&& move_thread()
@@ -233,18 +230,25 @@ public:
 
 	 void run0()
 	 {
+		assert(repository);
 		rthreadCreated.wait();
-		rthread->_run();
+		assert(th_id);
+		RThread<std::thread>* rthread = repository
+		  -> get_object_by_id(th_id);
+		assert(rthread);
 		rthreadStarted.set();
 		// <NB> `this' can be already destroyed 
 		// at this point
+		rthread->_run();
 	 }
 
   protected:
 	 mutable std::unique_ptr<std::thread> th;
 	 mutable Event rthreadCreated;
 	 Event rthreadStarted;
-	 mutable RThread<std::thread>* rthread;
+	 //mutable RThread<std::thread>* rthread;
+	 mutable RepositoryType* repository;
+	 mutable std::thread::native_handle_type th_id;
   };
 
   RThread(const std::string& id, Event* extTerminated = 0)

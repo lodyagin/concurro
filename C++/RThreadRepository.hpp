@@ -50,6 +50,18 @@ template<class Thread,
 			class ThreadId>
 void RThreadRepository<Thread, Container, ThreadId>
 //
+::delete_object(RThread<Thread>* thread, bool freeMemory)
+{
+  thread->stop();
+  RThreadBase::is_terminated().wait(*thread);
+  Parent::delete_object(thread, freeMemory);
+}
+
+template<class Thread, 
+			template<class...> class Container,
+			class ThreadId>
+void RThreadRepository<Thread, Container, ThreadId>
+//
 ::delete_object_by_id (ThreadId id, bool freeMemory)
 {
   RThreadBase* th = get_object_by_id (id);

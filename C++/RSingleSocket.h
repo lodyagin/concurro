@@ -96,7 +96,7 @@ protected:
 		  (const RThreadBase*) const
 		{ THROW_NOT_IMPLEMENTED; }
 
-		SocketId get_id() const
+		SocketId get_id(ObjectCreationInfo& oi) const
 		{ return socket->socket; }
 	 };
 

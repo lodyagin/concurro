@@ -96,9 +96,6 @@ public:
 	 RThreadBase* transform_object
 		(const RThreadBase*) const
 	 { THROW_NOT_IMPLEMENTED; }
-
-  //SocketId get_id() const
-  //{ return socket->socket; }
   };
 
 protected:
@@ -123,6 +120,8 @@ protected:
 
   SocketThreadWithPair
 	 (const ObjectCreationInfo& oi, const Par& p);
+
+  void run() { THROW_NOT_IMPLEMENTED; }
 };
 
 //class InOutSocket : public InSocket, public OutSocket {};

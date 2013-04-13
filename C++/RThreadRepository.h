@@ -58,6 +58,10 @@ public:
   }
 
   // Overrides
+  void delete_object
+	 (RThread<Thread>* thread, bool freeMemory);
+
+  // Overrides
   void delete_object_by_id 
     (ThreadId id, bool freeMemory);
 

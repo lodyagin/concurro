@@ -296,7 +296,7 @@ public:
     (const RSocketBase*) const
   { THROW_NOT_IMPLEMENTED; }
 
-  SOCKET get_id() const;
+  SOCKET get_id(ObjectCreationInfo& oi) const;
 
   virtual ~RSocketAddress() {}
 

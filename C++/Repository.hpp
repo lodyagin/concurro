@@ -60,11 +60,12 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
        ::xShuttingDown 
         (L"Stop request from the owner thread.");*/
   Obj* obj = 0;
+  // <NB> cinfo.objectId is empty at the first call to param
+  ObjectCreationInfo cinfo;
+  cinfo.repository = this;
   { 
     RLOCK (objectsM);
 
-	 // <NB> uniId is empty at the first call to param
-	 ObjectCreationInfo cinfo = { this, std::string() };
     const ObjId objId = get_object_id(cinfo, param);
     toString (objId, cinfo.objectId);
 
@@ -78,6 +79,12 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     insert_object (objId, obj);
   }
   LOG_TRACE(log, "Object " << *obj << " is created.");
+
+  if (cinfo.objectCreated)
+	 cinfo.objectCreated->set(); 
+    // <NB> after inserting into repo
+    // and unlocking
+
   return obj;
 }
 
@@ -253,7 +260,8 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
   List<Obj*> out;
   Obj* obj = 0;
 
-  ObjectCreationInfo cinfo = { this, std::string() };
+  ObjectCreationInfo cinfo;
+  cinfo.repository = this;
   {
       RLOCK (this->objectsM);
       const size_t n = param.n_objects(cinfo); 
@@ -271,7 +279,12 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
           (param.create_next_derivation (cinfo));
         SCHECK (obj);
         insert_object (objId, obj);
-        LOG_TRACE(log, "Object " << *obj << " is created.");
+        LOG_TRACE(log, 
+						"Object " << *obj << " is created.");
+		  
+		  if (cinfo.objectCreated)
+			 cinfo.objectCreated->set();
+
         out.push_back(obj);
       }
   }
