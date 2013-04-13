@@ -53,7 +53,7 @@ protected:
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
   //! A thread repository to internal threads creation
-  ThreadFactory* thread_factory;
+  RThreadFactory* thread_factory;
 
   //! This is a 'technical' version. Properly constructed
   //! RSocket always call RSocketBase(SOCKET) at the end.
@@ -190,9 +190,9 @@ public:
 	 <RSocketBase, RSocketAddress, std::map, SOCKET>
 	 Parent;
 
-  ThreadFactory *const thread_factory;
+  RThreadFactory *const thread_factory;
 
-  SocketRepository(ThreadFactory *const tf)
+  SocketRepository(RThreadFactory *const tf)
     : Parent("SocketRepository", 10),
 	 thread_factory(tf) {}
 

@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <vector>
 
-class ThreadFactory
+class RThreadFactory
 {
 public:
   virtual RThreadBase* create_thread
@@ -33,7 +33,7 @@ class RThreadRepository
   typename RThread<Thread>::Par, 
   Container,
   ThreadId >,
-  public ThreadFactory
+  public RThreadFactory
 {
 public:
   typedef Repository<
@@ -49,7 +49,7 @@ public:
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
 
-  //! It overrides ThreadFactory::create_thread
+  //! It overrides RThreadFactory::create_thread
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
 	 return Parent::create_object
@@ -121,29 +121,6 @@ struct ThreadWaiter<std::pair<Key, Val>>
 		RThreadBase::is_terminated().wait(*p.second);
   }
 };
-
-#if 0
-class AbstractThreadFactory
-{
-public:
-  //! Create a thread and register it in the
-  //! RThreadRepository
-  virtual RThreadBase* create
-	 (const RThreadBase::Par&) = 0;
-};
-
-template<class RThreadRepository>
-class ThreadFactory
-{
-public:
-  RThreadRepository *const thread_repository;
-
-  ThreadFactory(RThreadRepository* tr)
-	 : thread_repository(tr) { SCHECK(tr); }
-  RThreadBase* create(const RThreadBase::Par&);
-};
-#else
-#endif
 
 #endif
 
