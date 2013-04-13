@@ -1,5 +1,6 @@
 #include "RThreadRepository.hpp"
 #include "CUnit.h"
+#include "tests.h"
 #include <thread>
 
 void test_local_block();
@@ -29,10 +30,6 @@ int RThreadCUClean()
   return 0;
 }
 
-typedef RThread<std::thread> RT;
-
-static const std::chrono::milliseconds ms100(100);
-
 struct T1 : public RT
 { 
   struct Par : public RT::Par
@@ -54,7 +51,7 @@ struct T1 : public RT
   ~T1() { destroy(); }
   void run() { 
 	 RT::ThreadState::move_to(*this, workingState);
-	 std::this_thread::sleep_for(ms100);
+	 USLEEP(100);
   }
 };
 
@@ -91,8 +88,8 @@ void test_local_block()
   {
 	 T2 t2(true);
 	 t2.start();
-	 std::this_thread::sleep_for(ms100);
-	 std::this_thread::sleep_for(ms100);
+	 USLEEP(100);
+	 USLEEP(100);
 	 CU_ASSERT_TRUE_FATAL(
 		RThreadState::state_is(t2, T2::terminatedState));
   }
@@ -102,8 +99,8 @@ void test_local_no_start()
 {
   T2 t2(false);
   t2.start();
-  std::this_thread::sleep_for(ms100);
-  std::this_thread::sleep_for(ms100);
+  USLEEP(100);
+  USLEEP(100);
   CU_ASSERT_TRUE_FATAL(
 	 RThreadState::state_is(t2, T2::workingState));
   t2.stop();

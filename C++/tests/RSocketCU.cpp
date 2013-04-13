@@ -57,10 +57,10 @@ static RThreadRepository<
   std::thread, std::map, std::thread::native_handle_type
 > thread_repository;
 
+struct Log { typedef Logger<Log> log; };
+
 void test_client_socket()
 {
-  struct Log { typedef Logger<Log> log; };
-
   RSocketRepository sr (&thread_repository);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object

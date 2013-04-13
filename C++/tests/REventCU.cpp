@@ -1,6 +1,7 @@
 #include "REvent.hpp"
 #include "CUnit.h"
 #include "RThread.h"
+#include "tests.h"
 #include <string>
 #include <thread>
 
@@ -46,9 +47,9 @@ public:
 	 RThreadState::move_to(*this, workingState);
 	 //Event wait_forever("Test::run::wait_forever",true);
 	 //wait_forever.wait();
-	 std::this_thread::sleep_for(ms100);
+	 USLEEP(100);
 	 State::move_to(*this, chargedState);
-	 std::this_thread::sleep_for(ms100);
+	 USLEEP(100);
 	 State::move_to(*this, dischargedState);
   }
 
