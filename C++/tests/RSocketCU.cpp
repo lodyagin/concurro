@@ -58,7 +58,7 @@ static RThreadRepository<
 
 void test_client_socket()
 {
-  SocketRepository sr (&thread_repository);
+  RSocketRepository sr (&thread_repository);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*RSocketAddressRepository()

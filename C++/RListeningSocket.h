@@ -20,7 +20,7 @@ public:
   struct Par : public RServerSideSocket::Par
   {
 	 //! To create connected sockets here.
-	 SocketRepository* repo;
+	 RSocketRepository* repo;
   };
 
   ~RListeningSocket ();

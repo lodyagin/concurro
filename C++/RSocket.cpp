@@ -24,7 +24,7 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 	 fd(addr.get_fd()), 
 	 aw_ptr(addr.get_aw_ptr()),
 	 thread_factory(
-		dynamic_cast<SocketRepository*const>(oi.repository)
+		dynamic_cast<RSocketRepository*const>(oi.repository)
 		-> thread_factory)
 {
   assert(fd >= 0);

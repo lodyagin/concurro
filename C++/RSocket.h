@@ -181,7 +181,7 @@ inline RSocketBase* RSocketAllocator
 
 
 //template<template<class...> class Container>
-class SocketRepository
+class RSocketRepository
 : public Repository
   <RSocketBase, RSocketAddress, std::map, SOCKET>
 {
@@ -192,8 +192,8 @@ public:
 
   RThreadFactory *const thread_factory;
 
-  SocketRepository(RThreadFactory *const tf)
-    : Parent("SocketRepository", 10),
+  RSocketRepository(RThreadFactory *const tf)
+    : Parent("RSocketRepository", 10),
 	 thread_factory(tf) {}
 
   
