@@ -115,7 +115,7 @@ RThreadBase::~RThreadBase()
 }
 
 
-void RThreadBase::destructor_delegate()
+void RThreadBase::destroy()
 {
   if (destructor_delegate_is_called) 
     return;

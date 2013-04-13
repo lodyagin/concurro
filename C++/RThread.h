@@ -129,7 +129,7 @@ protected:
   //! terminationEvent. (Must be called from the most
   //! overrided destructor to prevent destroying of
   //! critical objects prior to _run() exit).
-  void destructor_delegate();
+  void destroy();
 
   void set_state_internal (const ThreadState& state) /* overrides */;
 
@@ -165,6 +165,8 @@ private:
   // (Access inside the thread)
   //void _run();
 };
+
+typedef RThreadBase::ThreadState RThreadState;
 
 /*
   It can be started and stoped only once, like Java
@@ -252,8 +254,11 @@ public:
 
   ~RThread() 
   { 
-	 destructor_delegate();
-    //wait(); 
+	 // every descendant must call destroy() in its
+	 // destructor. 
+	 if (!destructor_delegate_is_called)
+		THROW_PROGRAM_ERROR;
+
     th->join(); 
   }
 
