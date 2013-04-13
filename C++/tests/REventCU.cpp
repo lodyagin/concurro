@@ -24,9 +24,13 @@ int REventCUClean()
   return 0;
 }
 
+typedef RThread<std::thread> RT;
+
+static const std::chrono::milliseconds ms100(100);
+
 class CDAxis : public StateAxis {};
 class Test : public RObjectWithEvents<CDAxis>,
-				 public RThread<std::thread>
+				 public RT
 {
 public:
   DECLARE_STATES(CDAxis, State);
@@ -34,15 +38,17 @@ public:
   DECLARE_STATE_CONST(State, discharged);
 
   Test() : RObjectWithEvents<CDAxis>(dischargedState),
-			  RThread<std::thread>("Test") {}
+			  RT("Test") {}
+  ~Test() { destroy(); }
 
   void run()
   {
+	 RThreadState::move_to(*this, workingState);
 	 //Event wait_forever("Test::run::wait_forever",true);
 	 //wait_forever.wait();
-	 usleep(100000);
+	 std::this_thread::sleep_for(ms100);
 	 State::move_to(*this, chargedState);
-	 usleep(100000);
+	 std::this_thread::sleep_for(ms100);
 	 State::move_to(*this, dischargedState);
   }
 
