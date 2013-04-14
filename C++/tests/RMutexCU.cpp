@@ -19,16 +19,16 @@ void test_event();
 void test_event_2threads();
 
 CU_TestInfo RMutexTests[] = {
-  {"thread wait while event not set",
-   test_event},
-  {"2 threads wait while event not set",
-   test_event_2threads},
+//  {"thread wait while event not set",
+//  test_event},
+//  {"2 threads wait while event not set",
+//   test_event_2threads},
   {"RMutex can be acquired by the same thread several times",
    test_same_thread_acquire },
   {"RMutex acquire in 1st thread and 2nd thread can't acquire it at same time",
    test_2_threads_try_acquire },
-  {"we can't leave from local region while thread is run",
-   test_local_thread_variable },
+//  {"we can't leave from local region while thread is run",
+//   test_local_thread_variable },
 #if 0
   {"RMutex more releases than acquire in the same thread",
    test_same_thread_overrelease },
@@ -69,45 +69,47 @@ void test_same_thread_overrelease()
   MUTEX_RELEASE(mx);;
 }
 
-class TestThread : public RThread<std::thread> {
-public:
-  TestThread(const std::string& id,
-             RMutex& mutex, int sleep_time)
-    :
-	  RThread<std::thread>(id), 
-	  sleept(sleep_time),
-	  mx(mutex) {}
+typedef RThread<std::thread> RT;
 
-  int getResuilt(){return arg;}
-protected:
+typedef std::chrono::milliseconds MS;
+
+struct TestT : public RT
+{
+
+public:
+  int getResult(){return arg;}
+  TestT(std::string id, RMutex& mutex, MS ms, std::atomic_int &t) :
+  	RT(id), sleept(ms), mx(mutex), test(t) {}
+  ~TestT() {destroy(); }
+
   void run(){
-    static volatile int test=0;
+  	RT::ThreadState::move_to(*this, workingState);
     MUTEX_ACQUIRE(mx);
-    sleep(sleept);
+    std::this_thread::sleep_for(sleept);
     arg = ++test;
     MUTEX_RELEASE(mx);
   }
-  volatile int sleept;
-  volatile int arg;
+
+  MS sleept;
+  int arg;
   RMutex& mx;
+  std::atomic_int& test;
+  typedef Logger<TestT> log;
 };
 
 void test_2_threads_try_acquire(){
   RMutex mx("mx");
-  int id1 = 2, id2 = 0;
-  std::string s = "11111";
-  std::string s1 = "22222";
-  TestThread thread1(s, mx, id1);
+  std::atomic_int test(0);
+  TestT thread1("1", mx, MS(100), test);
   thread1.start();
-  usleep(100000);
-  TestThread thread2(s1, mx, id2);
+  TestT thread2("2", mx, MS(0), test);
   thread2.start();
-  usleep(300000);
-  if (thread1.getResuilt() == 1 
-		&& thread2.getResuilt() == 2)
-    CU_PASS(id1 == 1)
-  else
-    CU_FAIL(id1! = 1);
+  sleep(1);
+  if (thread1.getResult() == 1 && thread2.getResult() == 2){
+    CU_PASS(1);
+  } else {
+    CU_FAIL(1);
+  }
 }
 
 
@@ -162,8 +164,6 @@ void test_event()
   event->wait();
   if(*b) CU_PASS(*b) else CU_FAIL(*b);
 }
-
-typedef RThread<std::thread> RT;
 
 void test_event_2threads()
 {
