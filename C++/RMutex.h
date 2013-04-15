@@ -7,8 +7,11 @@
 #include "SNotCopyable.h"
 #include "Logging.h"
 #include <log4cxx/spi/location/locationinfo.h>
+#ifndef GPP44
+#include <atomic>
+#else
 #include <cstdatomic>
-
+#endif
 #ifndef _WIN32
 #include <boost/thread/recursive_mutex.hpp>
 #endif

@@ -4,7 +4,11 @@
 #include "StateMap.h"
 #include "RState.h"
 #include <assert.h>
+#ifndef GPP44
+#include <atomic>
+#else
 #include <cstdatomic>
+#endif
 
 UniversalEvent::operator UniversalState() const
 {

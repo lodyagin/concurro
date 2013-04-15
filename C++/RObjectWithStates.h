@@ -11,7 +11,11 @@
 
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
+#ifndef GPP44
+#include <atomic>
+#else
 #include <cstdatomic>
+#endif
 
 //! It can be used as a parent of an object which
 //! introduces new state axis.
