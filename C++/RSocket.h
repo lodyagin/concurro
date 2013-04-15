@@ -113,8 +113,8 @@ protected:
 class SocketThreadWithPair: public SocketThread
 { 
 public:
-  PAR_CREATE_DERIVATION(SocketThreadWithPair, SocketThread,
-								RThreadBase)
+  //PAR_CREATE_DERIVATION(SocketThreadWithPair, SocketThread,
+//								RThreadBase)
 protected:
   //! indexing sock_pair sockets
   enum {ForSelect = 0, ForSignal = 1};
@@ -125,7 +125,7 @@ protected:
   SocketThreadWithPair
 	 (const ObjectCreationInfo& oi, const Par& p);
 
-  void run() { THROW_NOT_IMPLEMENTED; }
+  //void run() { THROW_NOT_IMPLEMENTED; }
 };
 
 //class InOutSocket : public InSocket, public OutSocket {};

@@ -70,5 +70,10 @@ void test_client_socket()
   LOG_DEBUG(Log::log, 
 				"test_client_socket::cli_sock state: " <<
 				RState<ClientSocketAxis>(*cli_sock));
+
+  std::this_thread::sleep_for
+	 (std::chrono::seconds(200));
+
+
 }
 

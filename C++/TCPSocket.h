@@ -63,6 +63,7 @@ protected:
   protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)
 		: SocketThread(oi, p) {}
+	 ~Thread() { destroy(); }
 	 void run();
   }* thread;
 };
