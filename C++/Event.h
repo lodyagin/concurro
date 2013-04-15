@@ -16,7 +16,11 @@
 #include "pevents.h"
 typedef neosmart::neosmart_event_t HANDLE;
 #endif
+#ifndef GPP44
+#include <atomic>
+#else
 #include <cstdatomic>
+#endif
 #include <ostream>
 
 class EvtBase

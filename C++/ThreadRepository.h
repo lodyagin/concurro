@@ -123,7 +123,7 @@ void ThreadRepository<Thread, Map, ObjectId>
 //
 ::delete_object_by_id (ObjectId id, bool freeMemory)
 {
-  RThreadBase* th = get_object_by_id (id);
+  RThreadBase* th = this->get_object_by_id (id);
   if (th) 
   {
     th->stop ();

@@ -194,7 +194,7 @@ protected:
   /// This specialization takes the first unused (numeric)
   /// id and ignores Par
   ObjId get_object_id (const ObjectCreationInfo&,
-							  const Par&)
+		       const Par&)
   {
 	 RLOCK(this->objectsM);
 
@@ -249,7 +249,7 @@ public:
 protected:
   /// This specialization takes the key value from pars.
   ObjId get_object_id (const ObjectCreationInfo& oi,
-							  const Par& param)
+		       const Par& param)
   {
 	 RLOCK(this->objectsM);
 
@@ -295,7 +295,9 @@ public:
   }
 protected:
   /// This specialization takes the key value from pars.
-  ObjId get_object_id (const Par& param)
+  ObjId get_object_id 
+	 (const ObjectCreationInfo& oi,
+	  const Par& param)
   {
 	 RLOCK(this->objectsM);
 

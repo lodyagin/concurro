@@ -54,7 +54,7 @@ void test_move_rbuffer()
   CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
 							  (a, RBuffer::dischargedState));
   CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
-							  (a, RBuffer::chargedState));
+							  (b, RBuffer::chargedState));
   CU_ASSERT_EQUAL_FATAL(b.size(), 10);
   CU_ASSERT_EQUAL_FATAL(b.capacity(), 11);
   CU_ASSERT_EQUAL_FATAL(a.size(), 0);

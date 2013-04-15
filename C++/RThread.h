@@ -16,7 +16,11 @@
 #include "RObjectWithStates.h"
 #include "Repository.h"
 #include <string>
+#ifndef GPP44
+#include <atomic>
+#else
 #include <cstdatomic>
+#endif
 #include <thread>
 
 /// An ancestor of all states of a thread.

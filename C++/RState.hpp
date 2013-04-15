@@ -2,7 +2,11 @@
 
 #include "Repository.h"
 #include "RObjectWithStates.h"
+#ifndef GPP44
+#include <atomic>
+#else
 #include <cstdatomic>
+#endif
 
 template<class Axis>
 StateMap* RAxis<Axis>::stateMap = 0;
