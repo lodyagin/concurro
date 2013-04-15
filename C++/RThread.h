@@ -29,7 +29,8 @@ class ThreadAxis : public StateAxis {};
 
 /**
  * It is a base class for RThread. It contains the base
- * implementation which not depends on a particular physical thread.
+ * implementation which not depends on a particular
+ * physical thread.
  */
 class RThreadBase
   : public SNotCopyable,
@@ -182,10 +183,12 @@ class RThread<std::thread> : public RThreadBase
 {
 public:
 
+  class Par;
+
   //! A RepositoryType to use with this RThread
   typedef RepositoryInterface<
 	 RThread<std::thread>, 
-	 RThread<std::thread>::Par, 
+	 Par, 
 	 std::thread::native_handle_type> RepositoryType;
 
   class Par : public RThreadBase::Par

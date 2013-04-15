@@ -62,7 +62,10 @@ protected:
   protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)
 		: SocketThread(oi, p) {}
+	 ~Thread() { destroy(); }
   }* thread;
+
+  DEFAULT_LOGGER(ClientSocket)
 };
 
 #endif

@@ -26,6 +26,13 @@ public:
   typedef std::map<ObjId, Obj*> Map;
 };
 
+template<class Obj, class Par, class ObjId>
+const AbstractRepositoryBase::Traits 
+  RepositoryInterface<Obj, Par, ObjId>::traits
+  ({typeid(Obj).name(), 
+	  typeid(Par).name(), 
+	   typeid(ObjId).name()});
+
 template<
   class Obj, 
   class Par, 
@@ -271,14 +278,14 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
       for (size_t k = 0; k < n; k++)
       { 
         cinfo.objectId.clear();
-        const ObjId objId = get_object_id(cinfo, param);
+        const ObjId objId = this->get_object_id(cinfo, param);
         toString(objId, cinfo.objectId);
 
         // dynamic cast for use with inherited parameters
         obj = dynamic_cast<Obj*>
           (param.create_next_derivation (cinfo));
         SCHECK (obj);
-        insert_object (objId, obj);
+        this->insert_object (objId, obj);
         LOG_TRACE(log, 
 						"Object " << *obj << " is created.");
 		  

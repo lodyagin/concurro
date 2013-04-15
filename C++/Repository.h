@@ -29,7 +29,19 @@ DEFINE_EXCEPTION(InvalidObjectParameters,
 class AbstractRepositoryBase 
 {
 public:
+  struct Traits 
+  {
+	 std::string obj, par, obj_id;
+
+	 bool operator== (const Traits& t) const
+	 {
+		return obj == t.obj && par == t.par 
+		  && obj_id == t.obj_id;
+	 }
+  };
+
   virtual ~AbstractRepositoryBase() {}
+  virtual Traits get_traits() const = 0;
 };
 
 /** It defines an interface for RepositoryBase but
@@ -40,6 +52,9 @@ class RepositoryInterface
   : public AbstractRepositoryBase
 {
 public:
+
+  static const Traits traits;
+
   //! No object with such id exists.
   class NoSuchId : public SException
   {
@@ -71,6 +86,17 @@ public:
 	 const ObjId id;
   };
 
+  //! A method for debug dynamic_cast issues
+  static bool is_compatible
+	 (const AbstractRepositoryBase* r)
+  { 
+	 assert(r);
+	 return r->get_traits() == traits;
+  }
+
+  Traits get_traits() const
+  { return traits; }
+  
   //! Create a new object in the repository by parameters
   //! Par.
   //! \exception InvalidObjectParameters something is

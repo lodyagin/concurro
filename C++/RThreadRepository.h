@@ -18,6 +18,8 @@
 class RThreadFactory
 {
 public:
+  virtual ~RThreadFactory() {}
+
   //! It delegates the call to
   //! RThreadRepository::create_object
   virtual RThreadBase* create_thread

@@ -112,6 +112,7 @@ void TCPSocket::ask_close()
 
 void TCPSocket::Thread::run()
 {
+  ThreadState::move_to(*this, workingState);
   ClientSocket* cli_sock = 0;
   if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
 	 THROW_NOT_IMPLEMENTED;
