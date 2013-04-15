@@ -64,7 +64,7 @@ void RThreadRepository<Thread, Container, ThreadId>
 //
 ::delete_object_by_id (ThreadId id, bool freeMemory)
 {
-  RThreadBase* th = get_object_by_id (id);
+  RThreadBase* th = this->get_object_by_id (id);
   if (th) 
   {
     th->stop ();
