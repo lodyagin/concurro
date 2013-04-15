@@ -26,6 +26,13 @@ public:
   typedef std::map<ObjId, Obj*> Map;
 };
 
+template<class Obj, class Par, class ObjId>
+const AbstractRepositoryBase::Traits 
+  RepositoryInterface<Obj, Par, ObjId>::traits
+  ({typeid(Obj).name(), 
+	  typeid(Par).name(), 
+	   typeid(ObjId).name()});
+
 template<
   class Obj, 
   class Par, 
