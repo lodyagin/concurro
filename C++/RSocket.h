@@ -37,42 +37,23 @@ class RSocketBase
 public:
   virtual ~RSocketBase () {}
 
-#if 0
-  SOCKET get_fd()
-#else
   //! A socket file descriptor.
   const SOCKET fd;
-#endif
-
-#if 0
-  std::string universal_id() const 
-  { return universal_object_id; }
 
 protected:
-  std::string universal_object_id;
-#else
-protected:
-#endif
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
   //! A thread repository to internal threads creation
   RThreadFactory* thread_factory;
 
-  //! This is a 'technical' version. Properly constructed
-  //! RSocket always call RSocketBase(SOCKET) at the end.
-  //RSocketBase() : StdIdMember("0") { THROW_PROGRAM_ERROR;}
-
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
 					const RSocketAddress& addr);
   
-  /*RSocketBase(const ObjectCreationInfo& oi,
-  const Par& par);*/
-  //RSocketBase(SOCKET socket) : fd(socket) {}
-
   //! set blocking mode
   virtual void set_blocking (bool blocking);
+
   //! get blocking mode
   //virtual bool get_blocking () const;
 };

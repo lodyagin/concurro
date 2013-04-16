@@ -119,9 +119,6 @@ void ClientSocket::Thread::run()
 	 getsockopt(fd, SOL_SOCKET, SO_ERROR, &connect_error,
 					&connect_error_len) == 0);
 
-  std::this_thread::sleep_for
-	 (std::chrono::seconds(10));
-
   dynamic_cast<ClientSocket*>(socket)
 	 -> process_connect_error(connect_error);
 }
