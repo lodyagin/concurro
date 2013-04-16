@@ -12,23 +12,32 @@
 #include "StateMap.h"
 #include "RObjectWithStates.hpp"
 #include "Event.h"
+#include <set>
 
+#if 0
 class REventInterface
 {
 public:
+#if 0
   //! Wait for the event on obj for max time msecs.
   //! \return false on timeout.
   virtual bool wait(int time = -1) const = 0;
 
   //! Is it already signalled?
   virtual bool signalled() const = 0;
+#endif
+
+  virtual ~REventInterface() {}
+
+  virtual operator Event& () = 0;
+  virtual operator const Event& () const = 0;
 };
+#endif
 
 template<class Axis>
 class REvent
-: public REventInterface,
-  public Axis,
-  protected UniversalEvent
+: public Axis,
+  public UniversalEvent
 {
 public:
   //! Create a from->to event
@@ -39,34 +48,26 @@ public:
   REvent(RObjectWithEvents<Axis>* obj_ptr, 
 			const char* to);
 
-  bool wait(int time = -1) const;
-  bool signalled() const;
+  bool wait(int time = -1) const
+  { 
+	 return static_cast<const Event&>(*this).wait(time); 
+  }
+
+  bool signalled() const
+  {
+	 return static_cast<const Event&>(*this).signalled();
+  }
+
+  operator Event& () 
+  { assert(evt); return *evt; }
+
+  operator const Event& () const 
+  { assert(evt); return *evt; }
 
 protected:
-  RObjectWithEvents<Axis>* obj;
+  //RObjectWithEvents<Axis>* obj;
+  Event* evt;
 };
-
-class RCompoundEvent
-{
-};
-
-#if 0
-//! Create an event of moving Obj from `before' state to
-//! `after' state.
-const UniversalEvent& operator / 
-  (const UniversalState& before, 
-	const UniversalState& after);
-
-//! Change a state according to an event
-const UniversalState& operator + 
-  (const UniversalState& state, 
-	const UniversalEvent& event);
-#endif
-
-//size_t waitMultiple( HANDLE *, size_t count );
-
-// include shutdown event also
-//size_t waitMultipleSD( HANDLE *, size_t count );
 
 #define DECLARE_EVENT(axis, event) \
 protected: \

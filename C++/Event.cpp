@@ -37,17 +37,60 @@ EvtBase::~EvtBase()
   h = 0; 
 }
 
-void EvtBase::wait() const
+std::ostream&
+operator<< (std::ostream& out, const EvtBase& evt)
 {
+  out << '[' << evt.universal_object_id << ']';
+  return out;
+}
+
+// Event  ===========================================================
+Event::Event(const std::string& id, bool manual, bool init )
+  :
 #ifdef _WIN32
-  wait(INFINITE);
+  Parent(id, CreateEvent(0, manual, init, 0))
 #else
-  //wait(std::numeric_limits<uint64_t>::max());
-  wait(-1);
+  Parent(id, CreateEvent(manual, init)),
+  is_signalled(init), is_manual(manual)
+#endif
+{
+}
+
+void Event::set()
+{
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event "
+				<< universal_object_id << "> set");
+#ifdef _WIN32
+  sWinCheck
+    (SetEvent(h) != 0, 
+     SFORMAT (L"setting event, handle = " << h).c_str ()
+     );
+#else
+  SetEvent(h);
+  is_signalled = true;
 #endif
 }
 
-bool EvtBase::wait(int time) const
+void Event::reset()
+{
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event "
+				<< universal_object_id << "> reset");
+#ifdef _WIN32
+  sWinCheck
+    (ResetEvent(h) != 0, 
+     SFORMAT (L"resetting event, handle = " << h).c_str ()
+     );
+#else
+  is_signalled = false;
+  ResetEvent(h);
+#endif
+}
+
+bool Event::wait_impl(int time) const
 {
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
@@ -95,57 +138,74 @@ bool EvtBase::wait(int time) const
   return true;
 }
 
-std::ostream&
-operator<< (std::ostream& out, const EvtBase& evt)
+CompoundEvent::CompoundEvent()
+  : vector_need_update(false), //<NB>
+	 has_autoreset(false)
+{}
+
+CompoundEvent::CompoundEvent(CompoundEvent&& e)
+  : handle_set(std::move(e.handle_set)),
+	 handle_vec(std::move(e.handle_vec)),
+	 vector_need_update(e.vector_need_update),
+	 has_autoreset(e.has_autoreset)
+{}
+
+
+CompoundEvent::CompoundEvent(const Event& e)
+  : handle_set({e.h}), vector_need_update(true),
+	 has_autoreset(!e.is_manual)
+{}
+
+CompoundEvent& CompoundEvent
+::operator= (CompoundEvent&& e)
 {
-  out << '[' << evt.universal_object_id << ']';
-  return out;
+  handle_set = std::move(e.handle_set);
+  handle_vec = std::move(e.handle_vec);
+  vector_need_update = e.vector_need_update;
+  has_autoreset = e.has_autoreset;
+  return *this;
 }
 
-// Event  ===========================================================
-Event::Event(const std::string& id, bool manual, bool init )
-  :
-#ifdef _WIN32
-  Parent(id, CreateEvent(0, manual, init, 0))
-#else
-  Parent(id, CreateEvent(manual, init)),
-  is_signalled(false), is_manual(manual)
-#endif
+CompoundEvent& CompoundEvent
+::operator|= (const Event& e)
 {
+  handle_set.insert(e.h);
+  vector_need_update = true;
+  has_autoreset = has_autoreset || !e.is_manual;
+  return *this;
 }
 
-void Event::set()
+CompoundEvent& CompoundEvent
+::operator|= (const CompoundEvent& e)
 {
-  LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> set");
-#ifdef _WIN32
-  sWinCheck
-    (SetEvent(h) != 0, 
-     SFORMAT (L"setting event, handle = " << h).c_str ()
-     );
-#else
-  SetEvent(h);
-  is_signalled = true;
-#endif
+  handle_set.insert(e.handle_set.begin(), 
+						  e.handle_set.end());
+  vector_need_update = true;
+  has_autoreset = has_autoreset || e.has_autoreset;
+  return *this;
 }
 
-void Event::reset()
+bool CompoundEvent::wait_impl(int time) const
 {
-  LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> reset");
-#ifdef _WIN32
-  sWinCheck
-    (ResetEvent(h) != 0, 
-     SFORMAT (L"resetting event, handle = " << h).c_str ()
-     );
-#else
-  is_signalled = false;
-  ResetEvent(h);
-#endif
+  update_vector();
+  assert(handle_vec.size());
+
+  return WaitForMultipleEvents(&handle_vec[0], 
+										 handle_vec.size(),
+										 false, // wait for any
+										 time) 
+	 != ETIMEDOUT;
+}
+
+void CompoundEvent::update_vector() const
+{
+  if (!vector_need_update)
+	 return;
+
+  handle_vec.reserve(handle_set.size());
+  std::copy(handle_set.begin(), handle_set.end(),
+				std::back_inserter(handle_vec));
+  vector_need_update = false;
 }
 
 
@@ -164,6 +224,7 @@ void SSemaphore::release( int count )
 
 //====================================================================
 
+#if 0
 size_t waitMultiple( HANDLE * evts, size_t count )
 {
 #ifdef _WIN32
@@ -199,4 +260,4 @@ size_t waitMultipleSD( HANDLE * _evts, size_t count )
   if ( idx == 0 ) xShuttingDown("waitMultipleSD");
   return idx - 1;
 }
-
+#endif

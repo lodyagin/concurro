@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+extern CU_TestInfo EventTests[];
 extern CU_TestInfo RStateTests[];
 extern CU_TestInfo RThreadTests[];
 extern CU_TestInfo RMutexTests[];
@@ -11,6 +12,8 @@ extern CU_TestInfo REventTests[];
 extern CU_TestInfo RBufferTests[];
 extern CU_TestInfo RSocketTests[];
 
+int EventCUInit(void);
+int EventCUClean(void);
 int RStateCUInit(void);
 int RStateCUClean(void);
 int RThreadCUInit(void);
@@ -25,6 +28,8 @@ int RSocketCUInit(void);
 int RSocketCUClean(void);
 
 CU_SuiteInfo suites[] = {	
+  { "Event", EventCUInit, EventCUClean, 0, 0,
+	  EventTests },
   { "RState", RStateCUInit, RStateCUClean, 0, 0,
 	  RStateTests },
   { "REvent", REventCUInit, REventCUClean, 0, 0,

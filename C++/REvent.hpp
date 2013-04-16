@@ -17,36 +17,51 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
 							const char* from, 
 							const char* to)
   : UniversalEvent
-  	   (StateMapRepository::instance()
-		 . get_map_for_axis(typeid(Axis))
-		 -> get_transition_id(from, to)
+  	   (
+#if 0
+       StateMapRepository::instance()
+		 . get_map_for_axis(typeid(Axis)) ->
+#else
+		 RAxis<Axis>::instance().state_map() .
+#endif
+		 get_transition_id(from, to)
 		  ),
-	 obj(obj_ptr)
+//	 obj(obj_ptr),
+	 evt(obj_ptr->create_event((UniversalEvent)*this))
 {
-  SCHECK(obj);
+//  assert(obj);
+  assert(evt);
 }
 
 template<class Axis>
 REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr, 
 							const char* to)
   : UniversalEvent
-  	   (StateMapRepository::instance()
-	    . get_map_for_axis(typeid(Axis))
-		 -> create_state(to), true
+  	   (
+#if 0
+		 StateMapRepository::instance()
+	    . get_map_for_axis(typeid(Axis)) ->
+#else
+		 RAxis<Axis>::instance().state_map() .
+#endif
+		  create_state(to), true
 		  ),
-	 obj(obj_ptr)
+//	 obj(obj_ptr),
+	 evt(obj_ptr->create_event((UniversalEvent)*this))
 {
-  SCHECK(obj);
+//  assert(obj);
+  assert(evt);
 }
 
+#if 0
 template<class Axis>
 bool REvent<Axis>
 //
 ::wait(int time) const
 {
-  assert(obj);
-  const Event* ev = obj->create_event(*this);
+  assert(evt);
 
+#if 0
   if (is_arrival_event()) {
 	 const uint32_t obj_state = obj->current_state();
 	 const uint32_t arrival_state = UniversalState(*this);
@@ -56,8 +71,10 @@ bool REvent<Axis>
 	 if (STATE_IDX(obj_state) == STATE_IDX(arrival_state))
 		return true; // the object is already in that state
   }
+#endif
+
   // wait untill it be
-  return ev->wait(time);
+  return evt->wait(time);
 }
 
 template<class Axis>
@@ -65,8 +82,9 @@ bool REvent<Axis>
 //
 ::signalled() const
 {
-  assert(obj);
-  return obj->get_event(*this)->signalled();
+  assert(evt);
+  return evt->signalled();
 }
+#endif
 
 #endif
