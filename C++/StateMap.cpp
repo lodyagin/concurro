@@ -10,11 +10,63 @@
 #include <atomic>
 #endif
 
+std::string UniversalState::name() const
+{
+  return StateMapRepository::instance()
+	 . get_state_name(the_state);
+}
+
+#if 0
+bool UniversalState::operator== 
+  (uint32_t st) const
+{
+	if (this->state_map != st.state_map)
+		THROW_EXCEPTION(SException, 
+		 "concurro: Comparison of states "
+		 "from different maps is not implemented");
+
+	return this->state_idx == st.state_idx;
+}
+
+bool UniversalState::operator!= 
+  (uint32_t st) const
+{
+	if (this->state_map != st.state_map)
+		THROW_EXCEPTION(SException, 
+		 "concurro: Comparison of states "
+		 "from different maps is not implemented");
+
+	return this->state_idx != st.state_idx;
+}
+#endif
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalState& st)
+{
+  out << st.name();
+  return out;
+}
+
 UniversalEvent::operator UniversalState() const
 {
   if (!is_arrival_event())
 	 throw NeedArrivalType();
   return UniversalState(STATE_IDX(id));
+}
+
+std::string UniversalEvent::name() const
+{
+  if (is_arrival_event())
+	 return UniversalState(as_arrival()).name();
+  else
+	 return "<todo>";
+}
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalEvent& ue)
+{
+  out << ue.name();
+  return out;
 }
 
 InvalidState::InvalidState(UniversalState current,
@@ -179,12 +231,16 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   for (auto tit = par.transitions.begin();
 		 tit != par.transitions.end(); tit++)
   {
-	 TransitionId& old = transitions
-		[name2idx.at(tit->first)][name2idx.at(tit->second)];
+	 const StateIdx st1 = name2idx.at(tit->first);
+	 const StateIdx st2 = name2idx.at(tit->second);
+	 TransitionId& old = transitions[st1][st2];
 
-	 if (!old)
+	 if (!old) {
 		// count only new transitions
 		old = ++(repo->max_trans_id);
+		trans2states[old] = std::pair<StateIdx, StateIdx>
+		  (st1, st2);
+	 }
   }
 }
 
@@ -285,6 +341,15 @@ TransitionId StateMap::get_transition_id
   return transitions[from_idx][to_idx];
 }
 
+void StateMap::get_states(TransitionId trans_id,
+								  uint32_t& from, uint32_t& to)
+{
+  const std::pair<StateIdx, StateIdx>& t =
+	 trans2states.at(trans_id);
+  from = t.first;
+  to = t.second;
+}
+
 void StateMap::check_transition
   (uint32_t from,
    uint32_t to) const
@@ -370,44 +435,6 @@ StateMapId StateMapRepository::get_map_id
 	 return last_map_id;
   }
   else return it->second;
-}
-
-
-#if 0
-bool UniversalState::operator== 
-  (uint32_t st) const
-{
-	if (this->state_map != st.state_map)
-		THROW_EXCEPTION(SException, 
-		 "concurro: Comparison of states "
-		 "from different maps is not implemented");
-
-	return this->state_idx == st.state_idx;
-}
-
-bool UniversalState::operator!= 
-  (uint32_t st) const
-{
-	if (this->state_map != st.state_map)
-		THROW_EXCEPTION(SException, 
-		 "concurro: Comparison of states "
-		 "from different maps is not implemented");
-
-	return this->state_idx != st.state_idx;
-}
-#endif
-
-std::string UniversalState::name() const
-{
-  return StateMapRepository::instance()
-	 . get_state_name(the_state);
-}
-
-std::ostream&
-operator<< (std::ostream& out, const UniversalState& st)
-{
-  out << st.name();
-  return out;
 }
 
 

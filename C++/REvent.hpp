@@ -31,6 +31,7 @@ REvent<Axis>::REvent(const char* to)
 		  )
 {}
 
+#if 0
 template<class Axis>
 Event& REvent<Axis>
 //
@@ -46,12 +47,15 @@ const Event& REvent<Axis>
 {
   return *obj.get_event(*this);
 }
+#endif
 
 template<class Axis>
 bool REvent<Axis>
 //
 ::wait(const RObjectWithEvents<Axis>& obj, int time) const
 {
+  const Event* ev = obj.create_event(*this);
+
   if (is_arrival_event()) {
 	 const uint32_t obj_state = obj.current_state();
 	 const uint32_t arrival_state = UniversalState(*this);
@@ -62,7 +66,7 @@ bool REvent<Axis>
 		return true; // the object is already in that state
   }
   // wait untill it be
-  return event(obj).wait(time);
+  return ev->wait(time);
 }
 
 #endif

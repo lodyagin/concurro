@@ -19,8 +19,11 @@
 typedef uint16_t StateIdx;
 typedef uint16_t TransitionId;
 
+class UniversalEvent;
+
 class UniversalState
 {
+  friend class UniversalEvent;
   friend std::ostream& 
   operator<< (std::ostream& out, const UniversalState& st);
 
@@ -60,8 +63,6 @@ class StateAxis {};
 class UniversalEvent
 {
 public:
-  uint16_t   id;
-
   //! arrival events have this bit set
   enum { Mask = 0x8000 };
   class NeedArrivalType: public SException
@@ -80,11 +81,35 @@ public:
   //! NeedArrivalType. 
   operator UniversalState() const;
 
-  //! Construct a `transitional' type of event
+  //! Construct a `transitional' type of an event
   UniversalEvent(TransitionId trans_id) : id(trans_id) {}
-  //! Construct an `arrival' type of event
-  UniversalEvent(uint32_t state, bool) : id(state|Mask) {}
+  //! Construct an `arrival' type of an event
+  UniversalEvent(uint32_t state, bool) : id(state|Mask) 
+  {
+	 assert(STATE_MAP(id)); //must contain a state_map part
+  }
+
+  //uint16_t local_id() const { return STATE_IDX(id); }
+
+  //! Bot transition and arrival ids are global.
+  uint32_t global_id() const { return id; }
+
+  //! A name as "<state>" or "<state>-><state>"
+  std::string name() const; 
+
+protected:
+  uint32_t   id;
+
+  uint32_t as_arrival() const
+  { 
+	 assert (is_arrival_event());
+	 return id & ~Mask; 
+  }
 };
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalEvent& ue);
+
 
 /* Exceptions */
 
@@ -243,6 +268,10 @@ public:
   TransitionId get_transition_id 
     (const char* from,
      const char* to) const;
+  
+  //! Return states by a transition id
+  void get_states(TransitionId trans_id,
+						uint32_t& from, uint32_t& to);
 
   const std::string universal_object_id;
   const int16_t numeric_id;
@@ -253,11 +282,15 @@ protected:
 	 Name2Idx;
   typedef std::vector<std::string> Idx2Name;
 
+  typedef std::map<TransitionId, 
+	 std::pair<StateIdx, StateIdx>> Transition2States;
+
   const StateIdx n_states;
   Name2Idx     name2idx;
   Idx2Name     idx2name;  
   typedef boost::multi_array<TransitionId, 2> Transitions;
   Transitions transitions;
+  Transition2States trans2states;
   StateMapRepository* repo;
 
   StateMap(const ObjectCreationInfo& oi,

@@ -17,6 +17,17 @@
 #include <atomic>
 #endif
 
+class REventIsUnregistered : public SException
+{
+public:
+  REventIsUnregistered(const UniversalEvent& ue)
+	 : SException(SFORMAT("The event [" << ue 
+								 << "] is unregistered")),
+	 event(ue) {}
+
+  const UniversalEvent event;
+};
+
 //! It can be used as a parent of an object which
 //! introduces new state axis.
 template<class Axis>
@@ -74,24 +85,26 @@ public:
 
 protected:
   //! Query an event object by UniversalEvent. 
-  //! Also create new event object if it doesn't exists.
   Event* get_event(const UniversalEvent& ue)
   {
 	 return get_event_impl(ue);
   }
 
   //! Query an event object by UniversalEvent. 
-  //! Also create new event object if it doesn't exists.
   const Event* get_event(const UniversalEvent& ue) const
   {
 	 return get_event_impl(ue);
   }
 
+  //! Register a new event in the map if it doesn't
+  //! exists. In any case return the event.
+  Event* create_event(const UniversalEvent&) const;
+
   //! Update events due to trans_id to
   void update_events
 	 (TransitionId trans_id, uint32_t to);
 
-  typedef std::map<TransitionId, Event*> EventMap;
+  typedef std::map<uint32_t, Event*> EventMap;
 
   mutable EventMap events;
 

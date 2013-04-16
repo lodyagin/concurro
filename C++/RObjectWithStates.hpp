@@ -34,17 +34,28 @@ Event* RObjectWithEvents<Axis>
 //
 ::get_event_impl(const UniversalEvent& ue) const
 {
+  const auto it = events.find(ue.global_id());
+  if (it == events.end())
+	 THROW_EXCEPTION(REventIsUnregistered, ue);
+
+  return it->second;
+}
+
+template<class Axis>
+Event* RObjectWithEvents<Axis>
+//
+::create_event(const UniversalEvent& ue) const
+{
   Event* ev = 0;
-  const auto it = events.find(ue.id);
+  const auto it = events.find(ue.global_id());
   if (it == events.end()) {
 
 	 ev = new Event
-		(SFORMAT(typeid(*this).name() 
-					<< ":0x" << std::hex << ue.id), 
+		(SFORMAT(typeid(*this).name() << ":" << ue.name()), 
 		 true); // <NB> manual reset
 
 	 events.insert
-		(std::pair<TransitionId, Event*>(ue.id, ev));
+		(std::pair<uint32_t, Event*>(ue.global_id(), ev));
   }
   else 
 	 ev = it->second;
@@ -55,7 +66,7 @@ Event* RObjectWithEvents<Axis>
 struct ResetEventFun
 { 
   void operator()
-  (const std::pair<TransitionId, Event*>& e)
+  (const std::pair<uint32_t, Event*>& e)
 	 { e.second->reset(); }
 };
 
@@ -70,14 +81,14 @@ void RObjectWithEvents<Axis>
 
   { // event on a transition
 	 const UniversalEvent ev(trans_id);
-	 const auto it = events.find(ev.id);
+	 const auto it = events.find(ev.global_id());
 	 if (it != events.end())
 		it->second->set();
   }
 
   { // event on a final destination
-	 const UniversalEvent ev(STATE_IDX(to), true);
-	 const auto it = events.find(ev.id);
+	 const UniversalEvent ev(to, true);
+	 const auto it = events.find(ev.global_id());
 	 if (it != events.end())
 		it->second->set();
   }
