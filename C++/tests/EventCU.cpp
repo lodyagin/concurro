@@ -137,18 +137,19 @@ void test_wait_for_any()
   e2.set();
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
 
-#if 1
   Event e5("e5", true);
+#if 0
   const Event& e5r = e5;
-#if 1
-  const CompoundEvent ce2(Event("e3", false, true)
-								  | Event("e4", false, false)/* | e5r*/);
-  //CompoundEvent ce2_1(ce2);
 #endif
+  const CompoundEvent ce2(Event("e3", false, true)
+								  | Event("e4", false, false)
+								  /*| e5 | e5r */);
+#if 0
+  //CompoundEvent ce2_1(ce2);
   CU_ASSERT_TRUE_FATAL(( Event("e3", false, true)
 								  | Event("e4", false, false) 
 								  | e5r ).wait(TAU));
-  CU_ASSERT_TRUE_FATAL((ce1 | std::move
+  CU_ASSERT_TRUE_FATAL((ce1 | 
 								( Event("e3", false, true)
 								  | Event("e4", false, false) 
 								  | e5r )).wait(TAU));

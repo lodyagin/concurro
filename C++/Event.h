@@ -177,7 +177,16 @@ inline CompoundEvent operator|
 {
   b |= a; return b;
 }
+#endif
 
+inline CompoundEvent operator| 
+  (Event&& a, Event&& b)
+{
+  CompoundEvent ca(a);
+  ca |= b; return ca;
+}
+
+#if 0
 inline CompoundEvent operator| 
   (CompoundEvent a, CompoundEvent&& b)
 {
