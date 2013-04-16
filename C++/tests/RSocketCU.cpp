@@ -67,9 +67,14 @@ void test_client_socket()
 	  (*RSocketAddressRepository()
 		. create_addresses<NetworkProtocol::TCP, IPVer::v4>
 		("localhost", 5555) . front()));
-  LOG_DEBUG(Log::log, 
-				"test_client_socket::cli_sock state: " <<
-				RState<ClientSocketAxis>(*cli_sock));
+  CU_ASSERT_TRUE_FATAL(
+	 ClientSocket::State::state_is
+	 (*cli_sock, ClientSocket::createdState));
+  cli_sock->ask_connect();
+  ClientSocket::is_connection_refused().wait(*cli_sock);
+  CU_ASSERT_TRUE_FATAL(
+	 ClientSocket::State::state_is
+	 (*cli_sock, ClientSocket::connection_refusedState));
 
   std::this_thread::sleep_for
 	 (std::chrono::seconds(200));

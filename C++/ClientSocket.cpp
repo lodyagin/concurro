@@ -40,6 +40,14 @@ DEFINE_STATE_CONST(ClientSocket, State,
 						 destination_unreachable);
 DEFINE_STATE_CONST(ClientSocket, State, destroyed);
 
+DEFINE_EVENT(
+  ClientSocket, ClientSocketAxis, connected);
+DEFINE_EVENT(
+  ClientSocket, ClientSocketAxis, connection_timed_out);
+DEFINE_EVENT(
+  ClientSocket, ClientSocketAxis, connection_refused);
+DEFINE_EVENT(
+  ClientSocket, ClientSocketAxis, destination_unreachable);
 
 ClientSocket::ClientSocket
   (const ObjectCreationInfo& oi, 
@@ -54,7 +62,6 @@ ClientSocket::ClientSocket
 				(Thread::Par(this))))
 {
   SCHECK(thread);
-  ask_connect();
 }
 
 ClientSocket::~ClientSocket()

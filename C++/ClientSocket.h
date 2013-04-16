@@ -16,6 +16,11 @@ class ClientSocketAxis : public StateAxis {};
 class ClientSocket : virtual public RSocketBase,
   public RObjectWithEvents<ClientSocketAxis>
 {
+  DECLARE_EVENT(ClientSocketAxis, connected)
+  DECLARE_EVENT(ClientSocketAxis, connection_timed_out)
+  DECLARE_EVENT(ClientSocketAxis, connection_refused)
+  DECLARE_EVENT(ClientSocketAxis, destination_unreachable)
+
 public:
   DECLARE_STATES(ClientSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
