@@ -13,8 +13,8 @@ CU_TestInfo RThreadTests[] = {
 	test_local_block},
   {"a local without start",
 	test_local_no_start},
-//  {"thread creation in a repository",
-//	test_thread_in_repository},
+  {"thread creation in a repository",
+	test_thread_in_repository},
   CU_TEST_INFO_NULL
 };
 
