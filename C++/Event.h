@@ -113,8 +113,8 @@ public:
 
   CompoundEvent& operator= (CompoundEvent&&);
 
-  CompoundEvent& operator|= (const Event&); //UT+
-  CompoundEvent& operator|= (const CompoundEvent&);
+  const CompoundEvent& operator|= (const Event&); //UT+
+  //CompoundEvent& operator|= (const CompoundEvent&);
 
   bool wait(int time = -1)
   {
@@ -146,19 +146,20 @@ protected:
 
 //hint: use operator& for wait for all
 //! Append events for wait-for-any
-inline CompoundEvent operator| 
+inline const CompoundEvent operator| 
   (const Event& a, const Event& b) //UT+
 {
   CompoundEvent ca(a);
   ca |= b; return ca;
 }
 
-inline CompoundEvent operator| 
+inline const CompoundEvent operator| 
   (CompoundEvent a, const Event& b) //UT+
 {
   a |= b; return a;
 }
 
+#if 0
 inline CompoundEvent operator| 
   (CompoundEvent a, const CompoundEvent& b) //UT+
 {
@@ -182,5 +183,6 @@ inline CompoundEvent operator|
 {
   a |= b; return a;
 }
+#endif
 
 #endif

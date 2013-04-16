@@ -166,7 +166,7 @@ CompoundEvent& CompoundEvent
   return *this;
 }
 
-CompoundEvent& CompoundEvent
+const CompoundEvent& CompoundEvent
 ::operator|= (const Event& e)
 {
   handle_set.insert(e.h);
@@ -175,6 +175,7 @@ CompoundEvent& CompoundEvent
   return *this;
 }
 
+#if 0
 CompoundEvent& CompoundEvent
 ::operator|= (const CompoundEvent& e)
 {
@@ -184,6 +185,7 @@ CompoundEvent& CompoundEvent
   has_autoreset = has_autoreset || e.has_autoreset;
   return *this;
 }
+#endif
 
 bool CompoundEvent::wait_impl(int time) const
 {
