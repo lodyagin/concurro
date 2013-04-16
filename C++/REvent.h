@@ -60,4 +60,15 @@ const UniversalState& operator +
 // include shutdown event also
 //size_t waitMultipleSD( HANDLE *, size_t count );
 
+#define DECLARE_EVENT(axis, event) \
+protected: \
+  static REvent<axis> is_ ## event ## _event; \
+public: \
+  static const REvent<axis>& is_ ## event () \
+  { return is_ ## event ## _event; } \
+private:
+
+#define DEFINE_EVENT(class_, axis, event) \
+  REvent<axis> class_::is_ ## event ## _event(#event);
+
 #endif 
