@@ -76,8 +76,6 @@ public:
 	 return universal_object_id;
   }
 
-  //size_t id () const { return num_id; }
-
   /* 
   It is a group of functions 
   for access from a calling thread 
@@ -97,14 +95,6 @@ public:
 
   // Overrides
   void outString (std::ostream& out) const;
-
-#if 0
-  //! return the stopEvent
-  Event& get_stop_event ()
-  {
-    return stopEvent;
-  }
-#endif
 
   DECLARE_STATES(ThreadAxis, ThreadState);
   DECLARE_STATE_CONST(ThreadState, ready);
@@ -132,7 +122,8 @@ protected:
   //! critical objects prior to _run() exit).
   void destroy();
 
-  void set_state_internal (const ThreadState& state) /* overrides */;
+  /* overrides */
+  void set_state_internal (const ThreadState& state);
 
   void log_from_constructor ();
 
@@ -158,10 +149,6 @@ private:
   //thread terminate its processing
   //Event isTerminatedEvent; 
   Event* externalTerminated;
-
-  // called from Windows
-  // (Access inside the thread)
-  //void _run();
 };
 
 typedef RThreadBase::ThreadState RThreadState;
@@ -190,6 +177,7 @@ public:
 	 RThread<std::thread>, 
 	 Par, 
 	 std::thread::native_handle_type> RepositoryType;
+  typedef std::thread::native_handle_type ThreadId;
 
   class Par : public RThreadBase::Par
   {
@@ -271,6 +259,8 @@ public:
 
     th->join(); 
   }
+
+  //static RThread<std::thread>& current();
 
   DEFAULT_LOGGER(RThread<std::thread>)
 
