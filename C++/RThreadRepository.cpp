@@ -3,13 +3,13 @@
 #include <thread>
 
 template class RThreadRepository<
-  std::thread, 
+  RThread<std::thread>,
   std::unordered_map,
   std::thread::native_handle_type
 >;
 
 template class RThreadRepository<
-  std::thread, 
+	RThread<std::thread>,
   std::map,
   std::thread::native_handle_type
 >;

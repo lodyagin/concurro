@@ -45,7 +45,7 @@ protected:
   //sockets instead of has each socket with its own
   //threads. 
   typedef RThreadRepository<
-	 std::thread, std::unordered_map, 
+	 RThread<std::thread>, std::unordered_map,
 	 std::thread::native_handle_type>
 	 LocalThreadRepository;
 

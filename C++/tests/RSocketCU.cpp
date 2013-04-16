@@ -16,8 +16,8 @@ CU_TestInfo RSocketTests[] = {
 	test_127001_socket_address},
   {"test localhost socket address", 
 	test_localhost_socket_address},
-  {"test Client_Socket",
-	test_client_socket},
+//  {"test Client_Socket",
+//	test_client_socket},
   CU_TEST_INFO_NULL
 };
 
@@ -54,7 +54,7 @@ void test_localhost_socket_address()
 }
 
 static RThreadRepository<
-  std::thread, std::map, std::thread::native_handle_type
+  RThread<std::thread>, std::map, std::thread::native_handle_type
   > thread_repository("RSocketCU:thread_repository", 10);
 
 struct Log { typedef Logger<Log> log; };
@@ -79,4 +79,5 @@ void test_client_socket()
 //  std::this_thread::sleep_for
 //	 (std::chrono::seconds(200));
 }
+
 

@@ -13,8 +13,8 @@ CU_TestInfo RThreadTests[] = {
 	test_local_block},
   {"a local without start",
 	test_local_no_start},
-  {"thread creation in a repository",
-	test_thread_in_repository},
+//  {"thread creation in a repository",
+//	test_thread_in_repository},
   CU_TEST_INFO_NULL
 };
 
@@ -107,7 +107,7 @@ void test_local_no_start()
 }
 
 static RThreadRepository<
-  std::thread, std::map, std::thread::native_handle_type
+  RThread<std::thread>, std::map, std::thread::native_handle_type
   > thread_repository("RThreadCU::thread_repository", 10);
 
 void test_thread_in_repository()
