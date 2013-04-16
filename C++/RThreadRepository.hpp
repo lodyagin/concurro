@@ -11,9 +11,8 @@
 
 #include "RThreadRepository.h"
 
-template<class Thread, 
-			template<class...> class Container, 
-			class ThreadId>
+template<class Thread, template<class...> class Container,
+  class ThreadId>
 void RThreadRepository<Thread, Container, ThreadId>
 //
 ::stop_subthreads ()
@@ -22,7 +21,7 @@ void RThreadRepository<Thread, Container, ThreadId>
     this->objects->begin (),
     this->objects->end (),
     ThreadStopper<typename RepositoryMapType
-	               <RThread<Thread>, ThreadId, Container>
+	               <Thread, ThreadId, Container>
                   ::Map::value_type
                   > ()
     );
@@ -39,7 +38,7 @@ void RThreadRepository<Thread, Container, ThreadId>
     this->objects->begin (),
     this->objects->end (),
     ThreadWaiter<typename RepositoryMapType
-	               <RThread<Thread>, ThreadId, Container>
+	               <Thread, ThreadId, Container>
                   ::Map::value_type
                   > ()
     );
@@ -50,7 +49,7 @@ template<class Thread,
 			class ThreadId>
 void RThreadRepository<Thread, Container, ThreadId>
 //
-::delete_object(RThread<Thread>* thread, bool freeMemory)
+::delete_object(Thread* thread, bool freeMemory)
 {
   thread->stop();
   thread->is_terminated().wait();

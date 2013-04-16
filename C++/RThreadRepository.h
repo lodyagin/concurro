@@ -31,30 +31,20 @@ public:
 	 (RThreadBase* thread) = 0;
 };
 
-template<
-  class Thread, 
-  template<class...> class Container, 
-  class ThreadId
->
-class RThreadRepository 
-: public Repository<
-  RThread<Thread>, 
-  typename RThread<Thread>::Par, 
-  Container,
-  ThreadId >,
-  public RThreadFactory
+template<class Thread, template<class...> class Container,
+  class ThreadId>
+class RThreadRepository : public Repository<Thread,
+typename Thread::Par, Container, ThreadId>, public RThreadFactory
 {
 public:
-  typedef Repository<
-    RThread<Thread>, 
-    typename RThread<Thread>::Par, //<NB>
-    Container,
-    ThreadId> Parent;
-  typedef typename RThread<Thread>::Par Par;
+  typedef Repository<Thread, typename Thread::Par,
+    Container, ThreadId> Parent;
+  typedef typename Thread::Par Par;
 
   RThreadRepository(const std::string& name,
 						  size_t initial_capacity) 
 	 : Parent(name, initial_capacity) {}
+
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
@@ -62,37 +52,28 @@ public:
   //! It overrides RThreadFactory::create_thread
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
-	 return Parent::create_object
-		(dynamic_cast<const typename RThread<Thread>::Par&>
-		 (par));
+	  return Parent::create_object(dynamic_cast<const Par&>(par));
   }
 
   //! It overrides RThreadFactory::delete_thread
   void delete_thread(RThreadBase* thread)
   {
-	 delete_object
-		(dynamic_cast<RThread<Thread>*>(thread), true);
+	 delete_object(dynamic_cast<Thread*>(thread), true);
   }
 
   // Overrides
-  void delete_object
-	 (RThread<Thread>* thread, bool freeMemory);
+  void delete_object(Thread* thread, bool freeMemory);
 
   // Overrides
-  void delete_object_by_id 
-    (ThreadId id, bool freeMemory);
+  void delete_object_by_id(ThreadId id, bool freeMemory);
 
   // Overrides
-  RThread<Thread>* replace_object 
-    (ThreadId id, 
-     const RThreadBase::Par& param,
-     bool freeMemory
-     )
+  Thread* replace_object(ThreadId id,const Par& param,
+  		bool freeMemory)
   {
     THROW_EXCEPTION
-      (SException, 
-       "replace_object is not realised for threads."
-       );
+    (SException,
+    		"replace_object is not realised for threads.");
   }
 };
 
@@ -124,7 +105,7 @@ struct ThreadWaiter
 {
   void operator () (Val th)
   {
-    if (th) th->wait ();
+    if (th) th->is_terminated().wait();
   }
 };
 

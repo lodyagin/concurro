@@ -107,7 +107,7 @@ void test_local_no_start()
 }
 
 static RThreadRepository<
-  std::thread, std::map, std::thread::native_handle_type
+  RThread<std::thread>, std::map, std::thread::native_handle_type
   > thread_repository("RThreadCU::thread_repository", 10);
 
 void test_thread_in_repository()

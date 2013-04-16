@@ -60,7 +60,7 @@ operator<< (std::ostream& out, const RSocketBase& s)
 
 SocketThreadWithPair::SocketThreadWithPair
   (const ObjectCreationInfo& oi, const Par& p) 
-  : SocketThread(oi, p), sock_pair({-1}) 
+  : SocketThread(oi, p), sock_pair{-1}
 {
   rSocketCheck(
 	 ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);

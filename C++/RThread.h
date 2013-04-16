@@ -12,6 +12,7 @@
 #include "RThread.h"
 #include "RMutex.h"
 #include "REvent.h"
+#include "RState.hpp"
 #include "RState.h"
 #include "SCommon.h"
 #include "RObjectWithStates.h"
@@ -90,7 +91,7 @@ public:
   bool is_running () const
   {
     return RAxis<ThreadAxis>::state_is
-		(*this, workingState);
+		(*this, RThreadBase::workingState);
   }
 
   // Overrides
