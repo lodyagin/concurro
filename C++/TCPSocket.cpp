@@ -66,12 +66,10 @@ TCPSocket::TCPSocket
 	  const RSocketAddress& par)
   : 
 	 RSocketBase(oi, par),
-    RObjectWithEvents<TCPAxis> (closedState),
+    RObjectWithEvents<TCPAxis> (createdState),
     tcp_protoent(NULL),
-	 thread_factory(dynamic_cast<RSocketRepository*>
-						 (oi.repository) -> thread_factory),
 	 thread(dynamic_cast<Thread*>
-			  (thread_factory->create_thread
+			  (thread_repository.create_thread
 				(Thread::Par(this))))
 {
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
@@ -82,10 +80,8 @@ TCPSocket::TCPSocket
 TCPSocket::~TCPSocket()
 {
   //ask_close();
-  static REvent<TCPAxis> is_closed("closed");
-  is_closed.wait(*this);
-  assert(thread_factory);
-  thread_factory->delete_thread(thread);
+  REvent<TCPAxis> is_closed(this, "closed");
+  is_closed.wait();
   State::move_to(*this, destroyedState);
 }
 
@@ -119,13 +115,12 @@ void TCPSocket::Thread::run()
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  static REvent<ClientSocketAxis> 
-	 is_connecting("connecting");
-  is_connecting.wait(*cli_sock);
+  REvent<ClientSocketAxis> (cli_sock, "connecting")
+	 . wait();
   TCPSocket::State::move_to(*tcp_sock, syn_sentState);
-  static REvent<ClientSocketAxis> 
-	 is_connected("connected");
-  is_connected.wait(*cli_sock);
+
+  REvent<ClientSocketAxis> (cli_sock, "connected")
+    . wait();
   TCPSocket::State::move_to(*tcp_sock, establishedState);
 }
 

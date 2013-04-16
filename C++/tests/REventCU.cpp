@@ -1,4 +1,4 @@
-#include "REvent.hpp"
+#include "REvent.h"
 #include "CUnit.h"
 #include "RThread.h"
 #include "tests.h"
@@ -78,17 +78,17 @@ void test_arrival_event()
 
   obj.start();
 
-  wt= REvent<CDAxis>("charged").wait(obj, 1);
+  wt= REvent<CDAxis>(&obj, "charged").wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
-  wt = REvent<CDAxis>("charged").wait(obj);
+  wt = REvent<CDAxis>(&obj, "charged").wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::chargedState);
 
-  wt= REvent<CDAxis>("discharged").wait(obj, 1);
+  wt= REvent<CDAxis>(&obj, "discharged").wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::chargedState);
-  wt = REvent<CDAxis>("discharged").wait(obj);
+  wt = REvent<CDAxis>(&obj, "discharged").wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
 }
@@ -100,17 +100,17 @@ void test_transitional_event()
 
   obj.start();
 
-  wt= REvent<CDAxis>("discharged","charged").wait(obj, 1);
+  wt= REvent<CDAxis>(&obj, "discharged","charged").wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
-  wt = REvent<CDAxis>("discharged","charged").wait(obj);
+  wt = REvent<CDAxis>(&obj, "discharged","charged").wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::chargedState);
 
-  wt= REvent<CDAxis>("charged","discharged").wait(obj, 1);
+  wt= REvent<CDAxis>(&obj, "charged","discharged").wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::chargedState);
-  wt = REvent<CDAxis>("charged","discharged").wait(obj);
+  wt = REvent<CDAxis>(&obj, "charged","discharged").wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
 }

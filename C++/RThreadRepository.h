@@ -52,8 +52,9 @@ public:
     ThreadId> Parent;
   typedef typename RThread<Thread>::Par Par;
 
-  RThreadRepository() 
-	 : Parent(typeid(*this).name(), 100) {}
+  RThreadRepository(const std::string& name,
+						  size_t initial_capacity) 
+	 : Parent(name, initial_capacity) {}
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
@@ -134,7 +135,7 @@ struct ThreadWaiter<std::pair<Key, Val>>
   void operator () (std::pair<Key, Val>& p)
   {
     if (p.second) 
-		RThreadBase::is_terminated().wait(*p.second);
+		p.second->is_terminated().wait();
   }
 };
 

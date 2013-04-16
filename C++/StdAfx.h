@@ -23,6 +23,7 @@
 #include "SWinCheck.h"
 #endif
 #include "RMutex.h"
+#include "RState.hpp"
 #include "REvent.hpp"
 #include "SShutdown.h"
 #include "SCheck.h"

@@ -13,35 +13,41 @@
 #include "RObjectWithStates.hpp"
 #include "Event.h"
 
+class REventInterface
+{
+public:
+  //! Wait for the event on obj for max time msecs.
+  //! \return false on timeout.
+  virtual bool wait(int time = -1) const = 0;
+
+  //! Is it already signalled?
+  virtual bool signalled() const = 0;
+};
+
 template<class Axis>
 class REvent
-: public Axis,
+: public REventInterface,
+  public Axis,
   protected UniversalEvent
 {
 public:
   //! Create a from->to event
-  REvent(const char* from, const char* to);
+  REvent(RObjectWithEvents<Axis>* obj_ptr, 
+			const char* from, const char* to);
+
   //! Create a *->to event
-  REvent(const char* to);
+  REvent(RObjectWithEvents<Axis>* obj_ptr, 
+			const char* to);
 
-#if 0
-  Event& event
-	 (RObjectWithEvents<Axis>&);
+  bool wait(int time = -1) const;
+  bool signalled() const;
 
-  const Event& event
-	 (const RObjectWithEvents<Axis>&) const;
-#endif
+protected:
+  RObjectWithEvents<Axis>* obj;
+};
 
-  //! Wait for the event on obj for max time msecs.
-  //! \return false on timeout.
-  bool wait(const RObjectWithEvents<Axis>& obj, 
-            int time = -1) const;
-
-  bool signalled(const RObjectWithEvents<Axis>& obj) const
-  {
-	 return const_cast<REvent<Axis>*>(this)
-		-> event(obj).signalled();
-  }
+class RCompoundEvent
+{
 };
 
 #if 0
@@ -64,13 +70,18 @@ const UniversalState& operator +
 
 #define DECLARE_EVENT(axis, event) \
 protected: \
-  static REvent<axis> is_ ## event ## _event; \
+  REvent<axis> is_ ## event ## _event; \
 public: \
-  static const REvent<axis>& is_ ## event () \
+  const REvent<axis>& is_ ## event () \
   { return is_ ## event ## _event; } \
 private:
 
+#if 0
 #define DEFINE_EVENT(class_, axis, event) \
   REvent<axis> class_::is_ ## event ## _event(#event);
+#else
+#define CONSTRUCT_EVENT(event)		\
+  is_ ## event ## _event(this, #event)
+#endif
 
 #endif 

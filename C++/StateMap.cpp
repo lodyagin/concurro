@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 #include "StateMap.h"
-#include "RState.hpp"
+#include "RState.h"
 #include <assert.h>
 #if __GNUC_MINOR__< 6
 #include <cstdatomic>

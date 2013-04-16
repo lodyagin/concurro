@@ -121,7 +121,10 @@ protected:
 
 
 #define DEFINE_STATES(axis, pars...)	\
-  static RAxis<axis> axis__(StateMapPar<axis>(pars));
+  template class RAxis<axis>; \
+  template class RState<axis>; \
+  template class REvent<axis>; \
+  static RAxis<axis> axis__(StateMapPar<axis>(pars)); 
 
 
 #define DECLARE_STATE_CONST(state_class, state)	\

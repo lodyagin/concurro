@@ -1,9 +1,9 @@
 #include "RSocketAddress.hpp"
 #include "RSocket.hpp"
-#include "RState.hpp"
+#include "RState.h"
 //#include "InSocket.h"
-#include "RThreadRepository.hpp"
-#include "CUnit.h"
+#include "RThreadRepository.h"
+#include "tests.h"
 #include <list>
 #include <thread>
 
@@ -55,13 +55,13 @@ void test_localhost_socket_address()
 
 static RThreadRepository<
   std::thread, std::map, std::thread::native_handle_type
-> thread_repository;
+  > thread_repository("RSocketCU:thread_repository", 10);
 
 struct Log { typedef Logger<Log> log; };
 
 void test_client_socket()
 {
-  RSocketRepository sr (&thread_repository);
+  RSocketRepository sr ("RSocketCU::test_client_socket::sr", 10);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*RSocketAddressRepository()
@@ -71,14 +71,12 @@ void test_client_socket()
 	 ClientSocket::State::state_is
 	 (*cli_sock, ClientSocket::createdState));
   cli_sock->ask_connect();
-  ClientSocket::is_connection_refused().wait(*cli_sock);
+  cli_sock->is_connection_refused().wait();
   CU_ASSERT_TRUE_FATAL(
 	 ClientSocket::State::state_is
 	 (*cli_sock, ClientSocket::connection_refusedState));
 
-  std::this_thread::sleep_for
-	 (std::chrono::seconds(200));
-
-
+//  std::this_thread::sleep_for
+//	 (std::chrono::seconds(200));
 }
 

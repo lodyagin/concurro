@@ -1,4 +1,5 @@
 #include "RState.hpp"
+#include "REvent.hpp"
 #include "RObjectWithStates.hpp"
 #include "CUnit.h"
 

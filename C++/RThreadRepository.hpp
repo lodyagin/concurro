@@ -53,7 +53,7 @@ void RThreadRepository<Thread, Container, ThreadId>
 ::delete_object(RThread<Thread>* thread, bool freeMemory)
 {
   thread->stop();
-  RThreadBase::is_terminated().wait(*thread);
+  thread->is_terminated().wait();
   Parent::delete_object(thread, freeMemory);
 }
 
@@ -68,7 +68,7 @@ void RThreadRepository<Thread, Container, ThreadId>
   if (th) 
   {
     th->stop ();
-	 RThreadBase::is_terminated().wait(*th);
+	 th->is_terminated().wait();
     Parent::delete_object_by_id (id, freeMemory);
   }
 }

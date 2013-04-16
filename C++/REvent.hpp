@@ -10,54 +10,45 @@
 #define CONCURRO_REVENT_HPP_
 
 #include "REvent.h"
-#include "RState.hpp"
+#include "RState.h"
 
 template<class Axis>
-REvent<Axis>::REvent(const char* from, 
+REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr, 
+							const char* from, 
 							const char* to)
   : UniversalEvent
   	   (StateMapRepository::instance()
 		 . get_map_for_axis(typeid(Axis))
 		 -> get_transition_id(from, to)
-		  )
-{}
+		  ),
+	 obj(obj_ptr)
+{
+  SCHECK(obj);
+}
 
 template<class Axis>
-REvent<Axis>::REvent(const char* to)
+REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr, 
+							const char* to)
   : UniversalEvent
   	   (StateMapRepository::instance()
 	    . get_map_for_axis(typeid(Axis))
 		 -> create_state(to), true
-		  )
-{}
-
-#if 0
-template<class Axis>
-Event& REvent<Axis>
-//
-::event(RObjectWithEvents<Axis>& obj)
+		  ),
+	 obj(obj_ptr)
 {
-  return *obj.get_event(*this);
+  SCHECK(obj);
 }
-
-template<class Axis>
-const Event& REvent<Axis>
-//
-::event(const RObjectWithEvents<Axis>& obj) const
-{
-  return *obj.get_event(*this);
-}
-#endif
 
 template<class Axis>
 bool REvent<Axis>
 //
-::wait(const RObjectWithEvents<Axis>& obj, int time) const
+::wait(int time) const
 {
-  const Event* ev = obj.create_event(*this);
+  assert(obj);
+  const Event* ev = obj->create_event(*this);
 
   if (is_arrival_event()) {
-	 const uint32_t obj_state = obj.current_state();
+	 const uint32_t obj_state = obj->current_state();
 	 const uint32_t arrival_state = UniversalState(*this);
 
 	 // TODO they should store state both with or w/o map
@@ -67,6 +58,15 @@ bool REvent<Axis>
   }
   // wait untill it be
   return ev->wait(time);
+}
+
+template<class Axis>
+bool REvent<Axis>
+//
+::signalled() const
+{
+  assert(obj);
+  return obj->get_event(*this)->signalled();
 }
 
 #endif

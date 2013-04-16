@@ -3,9 +3,7 @@
 #include "StdAfx.h"
 #include "RBuffer.h"
 
-//DEFINE_STATES(RBuffer, DataBufferStateAxis, State)
-RAxis<DataBufferStateAxis> data_buffer_state_axis
-({
+DEFINE_STATES(DataBufferStateAxis, 
   {   "charging", // is locked for filling
       "charged", // has data
 		"discharged", // data was red (moved)
@@ -21,17 +19,13 @@ RAxis<DataBufferStateAxis> data_buffer_state_axis
 	 {"welded", "charged"},
     {"charged", "discharged"},
 	 {"discharged", "destroyed"}}
-});
+);
 
 DEFINE_STATE_CONST(RBuffer, State, charged);
 DEFINE_STATE_CONST(RBuffer, State, charging);
 DEFINE_STATE_CONST(RBuffer, State, discharged);
 DEFINE_STATE_CONST(RBuffer, State, destroyed);
 DEFINE_STATE_CONST(RBuffer, State, welded);
-
-REvent<DataBufferStateAxis> RBuffer
-//
-::is_discharged("discharged");
 
 RBuffer::~RBuffer()
 {
@@ -55,7 +49,7 @@ RSingleBuffer::RSingleBuffer(RSingleBuffer&& b)
 
 RSingleBuffer::~RSingleBuffer()
 {
-  is_discharged.wait(*this);
+  is_discharged_event.wait();
   State::move_to(*this, destroyedState);
   delete[] buf;
 }

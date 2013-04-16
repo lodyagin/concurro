@@ -11,6 +11,7 @@
 #define CONCURRO_RBUFFER_H_
 
 #include "RState.h"
+#include "REvent.h"
 #include "RObjectWithStates.h"
 #include <list>
 
@@ -23,27 +24,21 @@ class DataBufferStateAxis : public StateAxis {};
 class RBuffer 
   : public RObjectWithEvents<DataBufferStateAxis>
 {
+  DECLARE_EVENT(DataBufferStateAxis, discharged);
+
 public:
   DECLARE_STATES(DataBufferStateAxis, State);
-#if 0
-  static const RState<DataBufferStateAxis> chargingState;
-  static const RState<DataBufferStateAxis> chargedState;
-  static const RState<DataBufferStateAxis> dischargedState;
-  static const RState<DataBufferStateAxis> destroyedState;
-  static const RState<DataBufferStateAxis> weldedState;
-#else
   DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
   DECLARE_STATE_CONST(State, destroyed);
   DECLARE_STATE_CONST(State, welded);
-#endif
-
-  static REvent<DataBufferStateAxis> is_discharged;
 
   RBuffer() 
   : RObjectWithEvents<DataBufferStateAxis>
-	 (dischargedState) {}
+	 (dischargedState),
+	 CONSTRUCT_EVENT(discharged)
+  {}
 
   //! Move the buffer.
   //RBuffer(RBuffer&& b);

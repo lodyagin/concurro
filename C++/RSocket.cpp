@@ -23,11 +23,11 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
   : StdIdMember(SFORMAT(addr.get_fd())),
 	 fd(addr.get_fd()), 
 	 aw_ptr(addr.get_aw_ptr()),
-	 thread_factory(
-		dynamic_cast<RSocketRepository*const>(oi.repository)
-		-> thread_factory)
+	 thread_repository(
+		SFORMAT("RSocketRepository[RSocket[fd=" 
+				  << addr.get_fd() << "]]"), 
+		5)
 {
-  assert(thread_factory);
   assert(fd >= 0);
   assert(aw_ptr);
   assert(aw_ptr->begin()->ai_addr);
@@ -54,7 +54,7 @@ void RSocketBase::set_blocking (bool blocking)
 std::ostream&
 operator<< (std::ostream& out, const RSocketBase& s)
 {
-  out << "socket(" << s.fd << ')';
+  out << "socket[fd=" << s.fd << ']';
   return out;
 }
 

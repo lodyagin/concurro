@@ -1,4 +1,4 @@
-#include "RThreadRepository.hpp"
+#include "RThreadRepository.h"
 #include "CUnit.h"
 #include "tests.h"
 #include <thread>
@@ -108,7 +108,7 @@ void test_local_no_start()
 
 static RThreadRepository<
   std::thread, std::map, std::thread::native_handle_type
-> thread_repository;
+  > thread_repository("RThreadCU::thread_repository", 10);
 
 void test_thread_in_repository()
 {

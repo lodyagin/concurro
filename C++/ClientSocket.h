@@ -46,8 +46,6 @@ protected:
 
   void process_connect_error(int error);
   
-  RThreadFactory* thread_factory;
-
   class Thread : public SocketThread
   {
   public:

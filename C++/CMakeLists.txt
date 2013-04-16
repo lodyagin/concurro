@@ -15,6 +15,7 @@ set (concurrent_SOURCES
   RSocket.cpp
   RSocketAddress.cpp
   RThread.cpp
+  RThreadRepository.cpp
   SCommon.cpp
   SException.cpp
   SShutdown.cpp

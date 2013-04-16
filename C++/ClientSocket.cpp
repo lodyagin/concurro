@@ -40,25 +40,18 @@ DEFINE_STATE_CONST(ClientSocket, State,
 						 destination_unreachable);
 DEFINE_STATE_CONST(ClientSocket, State, destroyed);
 
-DEFINE_EVENT(
-  ClientSocket, ClientSocketAxis, connected);
-DEFINE_EVENT(
-  ClientSocket, ClientSocketAxis, connection_timed_out);
-DEFINE_EVENT(
-  ClientSocket, ClientSocketAxis, connection_refused);
-DEFINE_EVENT(
-  ClientSocket, ClientSocketAxis, destination_unreachable);
-
 ClientSocket::ClientSocket
   (const ObjectCreationInfo& oi, 
 	const RSocketAddress& par)
   : 
 	 RSocketBase(oi, par),
 	 RObjectWithEvents<ClientSocketAxis>(createdState),
-	 thread_factory(dynamic_cast<RSocketRepository*>
-						 (oi.repository) -> thread_factory),
+	 CONSTRUCT_EVENT(connected),
+	 CONSTRUCT_EVENT(connection_timed_out),
+	 CONSTRUCT_EVENT(connection_refused),
+	 CONSTRUCT_EVENT(destination_unreachable),
 	 thread(dynamic_cast<Thread*>
-			  (thread_factory->create_thread
+			  (thread_repository.create_thread
 				(Thread::Par(this))))
 {
   SCHECK(thread);
@@ -66,8 +59,6 @@ ClientSocket::ClientSocket
 
 ClientSocket::~ClientSocket()
 {
-  assert(thread_factory);
-  thread_factory->delete_thread(thread);
   State::move_to(*this, destroyedState);
 }
 

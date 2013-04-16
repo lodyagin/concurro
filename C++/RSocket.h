@@ -41,11 +41,19 @@ public:
   const SOCKET fd;
 
 protected:
+  //TODO make external threads controlling a group of
+  //sockets instead of has each socket with its own
+  //threads. 
+  typedef RThreadRepository<
+	 std::thread, std::unordered_map, 
+	 std::thread::native_handle_type>
+	 LocalThreadRepository;
+
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
   //! A thread repository to internal threads creation
-  RThreadFactory* thread_factory;
+  LocalThreadRepository thread_repository;
 
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
@@ -93,9 +101,6 @@ protected:
 
 class SocketThreadWithPair: public SocketThread
 { 
-public:
-  //PAR_CREATE_DERIVATION(SocketThreadWithPair, SocketThread,
-//								RThreadBase)
 protected:
   //! indexing sock_pair sockets
   enum {ForSelect = 0, ForSignal = 1};
@@ -105,11 +110,7 @@ protected:
 
   SocketThreadWithPair
 	 (const ObjectCreationInfo& oi, const Par& p);
-
-  //void run() { THROW_NOT_IMPLEMENTED; }
 };
-
-//class InOutSocket : public InSocket, public OutSocket {};
 
 
 /*=============================*/
@@ -165,7 +166,12 @@ inline RSocketBase* RSocketAllocator
    const RSocketAddress& addr);
 
 
-//template<template<class...> class Container>
+#if 1
+typedef Repository<
+  RSocketBase, RSocketAddress, std::map, SOCKET
+  > RSocketRepository;
+  
+#else
 class RSocketRepository
 : public Repository
   <RSocketBase, RSocketAddress, std::map, SOCKET>
@@ -180,8 +186,7 @@ public:
   RSocketRepository(RThreadFactory *const tf)
     : Parent("RSocketRepository", 10),
 	 thread_factory(tf) {}
-
-  
 };
+#endif
 
 #endif

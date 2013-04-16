@@ -43,8 +43,6 @@ protected:
 	 (const ObjectCreationInfo& oi, 
 	  const RSocketAddress& par);
 
-  RThreadFactory* thread_factory;
-
   class Thread : public SocketThread
   {
   public:
