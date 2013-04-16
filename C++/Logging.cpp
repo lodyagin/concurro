@@ -18,7 +18,7 @@ LogBase::LogBase (const std::string& szName)
 							 logger (log4cxx::Logger::getLogger(szName.c_str()))*/
 {
   if (!szName.empty ()) {
-	 LOG_DEBUG(Logger<LOG::Root>,
+	 LOG_TRACE(Logger<LOG::Root>,
 		"Create the [" << szName << "] logger.");
   }
   else {

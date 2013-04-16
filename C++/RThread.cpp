@@ -46,7 +46,7 @@ RThreadBase::RThreadBase
 		 true, false),
 	 externalTerminated (extTerminated)
 {
-  LOG_INFO (log, "New " << *this);
+  LOG_DEBUG (log, "thread " << universal_object_id << "> created");
 }
 
 RThreadBase::RThreadBase
@@ -61,7 +61,7 @@ RThreadBase::RThreadBase
 					true, false),
 	 externalTerminated (p.extTerminated)
 {
-  LOG_INFO (log, "New " << *this);
+  LOG_DEBUG (log, "thread " << oi.objectId << "> created");
 }
 
 void RThreadBase::start ()
@@ -123,7 +123,7 @@ void RThreadBase::destroy()
   isStopRequested.set();
   is_terminated_event.wait(*this);
 
-  LOG_INFO(log, "Destroy " << *this);
+  LOG_DEBUG (log, "thread " << universal_object_id << "> destroyed");
   destructor_delegate_is_called = true;
 }
 
@@ -133,7 +133,7 @@ void RThreadBase::_run()
   is_starting_event.wait(*this);
 
   //TODO check run from current thread
-  LOG_DEBUG(log, (*this) << " started");
+  LOG_DEBUG (log, "thread " << universal_object_id << "> started");
   try
   {
     run();
@@ -144,7 +144,7 @@ void RThreadBase::_run()
   }
   catch ( std::exception & x )
   {
-	 LOG_DEBUG(log, "Exception in thread: " 
+	 LOG_WARN(log, "Exception in thread: " 
 						 << x.what ());
   }
   catch ( ... )
@@ -153,7 +153,7 @@ void RThreadBase::_run()
 		"Unknown type of exception in the thread.");
   }
 
-  LOG_DEBUG(log, *this << " is finished.");
+  LOG_DEBUG (log, "thread " << universal_object_id << "> finished");
 
   if (externalTerminated) 
     externalTerminated->set ();
@@ -162,12 +162,12 @@ void RThreadBase::_run()
   // no code after that (destructor can be called)
 }
 
+#if 0
+
 void RThreadBase::log_from_constructor ()
 {
   LOG_INFO(log, "New " << *this);
 }
-
-#if 0
 
 template<class Thread>
 RThread<Thread> & RThread<Thread>::current()

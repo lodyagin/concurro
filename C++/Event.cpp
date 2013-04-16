@@ -13,9 +13,10 @@ using namespace neosmart;
 EvtBase::EvtBase(const std::string& id, HANDLE h_ ) :
   universal_object_id(id), h(h_)
 {
-  LOG_DEBUG(log, "Thread " << "<todo>"
-				<< " creates the event ["
-				<< universal_object_id << "]");
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event "
+				<< universal_object_id << "> created");
 #ifdef _WIN32
   sWinCheck(h != 0, L"creating an event");
 #endif
@@ -23,8 +24,9 @@ EvtBase::EvtBase(const std::string& id, HANDLE h_ ) :
 
 EvtBase::~EvtBase()
 {
-  LOG_DEBUG(log, "Thread " << "<todo>"
-				<< " closes the event handle [" 
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> closes the event handle [" 
 				<< universal_object_id << "]");
 
 #ifdef _WIN32
@@ -49,16 +51,18 @@ bool EvtBase::wait(int time) const
 {
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
-	 LOG_TRACE(log, "Thread " << "<todo>"
-				  << " waits for the event " << *this
-				  << " for " << time << " msecs"
-		);
+	 LOG_DEBUG(log, "thread " 
+				  << std::this_thread::get_id()
+				  << "> event "
+				  << universal_object_id 
+				  << "> wait " << time << " msecs");
   }
   else {
-	 LOG_TRACE(log, "Thread " << "<todo>"
-				  << " waits for the event " << *this
-				  << " w/o timeout"
-		);
+	 LOG_DEBUG(log, "thread " 
+				  << std::this_thread::get_id()
+				  << "> event "
+				  << universal_object_id 
+				  << "> waits w/o timeout");
   }
 
   HANDLE evts[] = {
@@ -74,8 +78,20 @@ bool EvtBase::wait(int time) const
     sWinErrorCode(code, L"waiting for an event");
 #else
   int code = WaitForEvent(evts[0], time);
-  if (code == ETIMEDOUT) return false;
+  if (code == ETIMEDOUT) {
+	 LOG_DEBUG(log, "thread " 
+				  << std::this_thread::get_id()
+				  << "> event "
+				  << universal_object_id 
+				  << "> wait: timed out");
+	 return false;
+  }
 #endif
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event "
+				<< universal_object_id 
+				<< "> wait: signalled");
   return true;
 }
 
@@ -100,8 +116,10 @@ Event::Event(const std::string& id, bool manual, bool init )
 
 void Event::set()
 {
-  LOG_TRACE(log, "Thread " << "<todo>"
-				<< " is setting the " << *this << " event");
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event "
+				<< universal_object_id << "> set");
 #ifdef _WIN32
   sWinCheck
     (SetEvent(h) != 0, 
@@ -115,8 +133,10 @@ void Event::set()
 
 void Event::reset()
 {
-  LOG_TRACE(log, "Thread " << "<todo>"
-				<< " is resetting the " << *this << " event");
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event "
+				<< universal_object_id << "> reset");
 #ifdef _WIN32
   sWinCheck
     (ResetEvent(h) != 0, 
