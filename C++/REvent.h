@@ -51,19 +51,17 @@ public:
 
   bool wait(int time = -1) const
   { 
-	 return static_cast<const Event&>(*this).wait(time); 
+	 return Event::wait(time); 
   }
 
   bool signalled() const
   {
-	 return static_cast<const Event&>(*this).signalled();
+	 return Event::signalled();
   }
 
-  operator Event () 
-  { /*assert(evt);*/ return *this; }
+  //operator Event () { return *this; }
 
-  operator const Event () const 
-  { /*assert(evt);*/ return *this; }
+  //operator const Event () const { return *this; }
 
 protected:
   //RObjectWithEvents<Axis>* obj;
