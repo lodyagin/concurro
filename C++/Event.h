@@ -200,7 +200,8 @@ class CompoundEvent : public EventInterface
 {
 public:
   CompoundEvent();
-  CompoundEvent(CompoundEvent&&);
+  CompoundEvent(CompoundEvent&&); //UT+
+  CompoundEvent(const CompoundEvent&); //UT+
   explicit CompoundEvent(const Event&); //UT+
   CompoundEvent(std::initializer_list<Event>);
 
@@ -218,6 +219,12 @@ public:
   {
 	 SCHECK(!has_autoreset);
 	 return wait_impl(time);
+  }
+
+  //! A number of unique events inside.
+  size_t size() const
+  {
+	 return handle_set.size();
   }
 
 protected:
@@ -239,14 +246,14 @@ protected:
 
 //hint: use operator& for wait for all
 //! Append events for wait-for-any
-inline const CompoundEvent operator| 
+inline CompoundEvent operator| 
   (const Event& a, const Event& b) //UT+
 {
   CompoundEvent ca(a);
   ca |= b; return ca;
 }
 
-inline const CompoundEvent operator| 
+inline CompoundEvent operator| 
   (CompoundEvent a, const Event& b) //UT+
 {
   a |= b; return a;
@@ -254,19 +261,19 @@ inline const CompoundEvent operator|
 
 #if 0
 inline CompoundEvent operator| 
-  (CompoundEvent a, const CompoundEvent& b) //UT+
+  (CompoundEvent a, const CompoundEvent& b)
 {
   a |= b; return a;
 }
 
 inline CompoundEvent operator| 
-  (const Event& a, CompoundEvent b) //UT+
+  (const Event& a, CompoundEvent b)
 {
   b |= a; return b;
 }
 
 inline CompoundEvent operator| 
-  (const CompoundEvent& a, CompoundEvent b) //UT+
+  (const CompoundEvent& a, CompoundEvent b)
 {
   b |= a; return b;
 }
