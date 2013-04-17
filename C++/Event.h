@@ -24,6 +24,7 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <ostream>
 #include <vector>
 #include <set>
+#include <memory>
 
 class EventInterface
 {
@@ -42,42 +43,15 @@ public:
 
 class EvtBase : public EventInterface
 {
+  friend class Event;
   friend class CompoundEvent;
 public:
+  EvtBase(const EvtBase&) = delete;
   virtual ~EvtBase();
-
-  const std::string universal_object_id;
-protected:
-  typedef Logger<EvtBase> log;
-
-  EvtBase(const std::string& id, HANDLE);
-
-  HANDLE h;
-};
-
-std::ostream&
-operator<< (std::ostream&, const EvtBase&);
-
-//! A windows-like event class.
-class Event : public EvtBase
-{
-  friend class CompoundEvent;
-public:
-
-  typedef EvtBase Parent;
-
-  explicit Event
-	 (const std::string& id, 
-     bool manual, //! manual reset
-	  bool init = false //! initial state
-		);
-
-  virtual void set();
-  virtual void reset();
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
-  virtual bool wait(int time = -1)
+  bool wait(int time = -1)
   { 
 	 return wait_impl(time); 
   }
@@ -85,23 +59,104 @@ public:
   //! Wait for event or time in msecs. This is a const
   //! version  - for manual-reset events only.
   //! \return false on timeout.
-  virtual bool wait(int time = -1) const
+  bool wait(int time = -1) const
   {
 	 SCHECK(is_manual);
 	 return wait_impl(time);
   }
 
+  void set();
+  void reset();
+
   bool signalled() const
   {
 	 SCHECK(is_manual);
-	 return is_signalled;
+	 return wait(0);
+  }
+
+  const std::string universal_object_id;
+protected:
+  typedef Logger<EvtBase> log;
+
+  //std::atomic<bool> is_signalled;
+  const bool is_manual;
+  HANDLE h;
+
+  EvtBase(const std::string& id, bool manual, bool init);
+
+  bool wait_impl(int time) const;
+};
+
+std::ostream&
+operator<< (std::ostream&, const EvtBase&);
+
+//! A windows-like event class.
+class Event : public EventInterface
+{
+  friend class CompoundEvent;
+public:
+
+  //! Share an internal event handler
+  Event(const Event& e) : evt_ptr(e.evt_ptr) {}
+  Event(Event&& e) : evt_ptr(std::move(e.evt_ptr)) {}
+
+  explicit Event
+	 (const std::string& id, 
+     bool manual, //! manual reset
+	  bool init = false //! initial state 
+		)
+	 : evt_ptr(new EvtBase(id, manual, init)) {}
+
+  //! Share an internal event handler
+  Event& operator= (const Event& e)
+  {
+	 evt_ptr = e.evt_ptr;
+	 return *this;
+  }
+
+  Event& operator= (Event&& e)
+  {
+	 evt_ptr = std::move(e.evt_ptr);
+	 return *this;
+  }
+
+  bool operator< (const Event& b) const
+  {
+	 return evt_ptr->h < b.evt_ptr->h;
+  }
+
+  bool wait(int time = -1)
+  { 
+	 return evt_ptr->wait(time); 
+  }
+
+  bool wait(int time = -1) const
+  {
+	 return evt_ptr->wait(time); 
+  }
+
+  void set()
+  {
+	 return evt_ptr->set();
+  }
+
+  void reset()
+  {
+	 return evt_ptr->reset();
+  }
+
+  bool signalled() const
+  {
+	 return evt_ptr->signalled();
+  }
+
+  bool is_manual() const
+  {
+	 return evt_ptr->is_manual;
   }
 
 protected:
-  std::atomic<bool> is_signalled;
-  const bool is_manual;
-
-  bool wait_impl(int time) const;
+  std::shared_ptr<EvtBase> evt_ptr;
 };
 
 class CompoundEvent : public EventInterface
@@ -110,6 +165,7 @@ public:
   CompoundEvent();
   CompoundEvent(CompoundEvent&&);
   explicit CompoundEvent(const Event&); //UT+
+  CompoundEvent(std::initializer_list<Event>);
 
   CompoundEvent& operator= (CompoundEvent&&);
 
@@ -129,7 +185,7 @@ public:
 
 protected:
   //! a set for accumulate handles
-  std::set<HANDLE> handle_set;
+  std::set<Event> handle_set;
   //! a vector to pass to WaitForMultipleEvents
   mutable std::vector<HANDLE> handle_vec;
   //! the vector need to be updated by the set

@@ -137,13 +137,16 @@ void test_wait_for_any()
   e2.set();
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
 
-  Event e5("e5", true);
-#if 0
-  const Event& e5r = e5;
-#endif
-  const CompoundEvent ce2(Event("e3", false, true)
-								  | Event("e4", false, false)
-								  /*| e5 | e5r */);
+  CU_ASSERT_TRUE_FATAL(
+	 (Event("e3", false, true) | Event("e4", false, false))
+	  . wait(TAU));
+
+  CompoundEvent ce2 {e1, e2};
+  CU_ASSERT_FALSE_FATAL(ce2.wait(TAU));
+  e1.set();
+  CU_ASSERT_TRUE_FATAL(ce2.wait(TAU));
+  CU_ASSERT_FALSE_FATAL(ce2.wait(TAU));
+
 #if 0
   //CompoundEvent ce2_1(ce2);
   CU_ASSERT_TRUE_FATAL(( Event("e3", false, true)

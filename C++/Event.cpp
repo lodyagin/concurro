@@ -10,8 +10,16 @@ using namespace neosmart;
 
 // EvtBase  ===============================================
 
-EvtBase::EvtBase(const std::string& id, HANDLE h_ ) :
-  universal_object_id(id), h(h_)
+EvtBase::EvtBase(const std::string& id, 
+					  bool manual, 
+					  bool init )
+  : universal_object_id(id),
+	 /*is_signalled(init),*/ is_manual(manual),
+#ifdef _WIN32
+  h(CreateEvent(0, manual, init, 0))
+#else
+  h(CreateEvent(manual, init))
+#endif
 {
   LOG_DEBUG(log, "thread " 
 				<< std::this_thread::get_id()
@@ -44,19 +52,7 @@ operator<< (std::ostream& out, const EvtBase& evt)
   return out;
 }
 
-// Event  ===========================================================
-Event::Event(const std::string& id, bool manual, bool init )
-  :
-#ifdef _WIN32
-  Parent(id, CreateEvent(0, manual, init, 0))
-#else
-  Parent(id, CreateEvent(manual, init)),
-  is_signalled(init), is_manual(manual)
-#endif
-{
-}
-
-void Event::set()
+void EvtBase::set()
 {
   LOG_DEBUG(log, "thread " 
 				<< std::this_thread::get_id()
@@ -69,11 +65,11 @@ void Event::set()
      );
 #else
   SetEvent(h);
-  is_signalled = true;
+  //is_signalled = true;
 #endif
 }
 
-void Event::reset()
+void EvtBase::reset()
 {
   LOG_DEBUG(log, "thread " 
 				<< std::this_thread::get_id()
@@ -85,12 +81,12 @@ void Event::reset()
      SFORMAT (L"resetting event, handle = " << h).c_str ()
      );
 #else
-  is_signalled = false;
+  //is_signalled = false;
   ResetEvent(h);
 #endif
 }
 
-bool Event::wait_impl(int time) const
+bool EvtBase::wait_impl(int time) const
 {
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
@@ -152,9 +148,21 @@ CompoundEvent::CompoundEvent(CompoundEvent&& e)
 
 
 CompoundEvent::CompoundEvent(const Event& e)
-  : handle_set({e.h}), vector_need_update(true),
-	 has_autoreset(!e.is_manual)
+  : handle_set{e}, vector_need_update(true),
+    has_autoreset(!e.is_manual())
 {}
+
+CompoundEvent::CompoundEvent
+ (std::initializer_list<Event> evs)
+	: vector_need_update(evs.size() > 0),
+	  has_autoreset(false)
+{
+  for (const Event& e : evs) {
+	 handle_set.insert(e);
+	 has_autoreset = has_autoreset || !e.is_manual();
+  }
+}
+
 
 CompoundEvent& CompoundEvent
 ::operator= (CompoundEvent&& e)
@@ -169,9 +177,9 @@ CompoundEvent& CompoundEvent
 const CompoundEvent& CompoundEvent
 ::operator|= (const Event& e)
 {
-  handle_set.insert(e.h);
+  handle_set.insert(e);
   vector_need_update = true;
-  has_autoreset = has_autoreset || !e.is_manual;
+  has_autoreset = has_autoreset || !e.is_manual();
   return *this;
 }
 
@@ -205,8 +213,11 @@ void CompoundEvent::update_vector() const
 	 return;
 
   handle_vec.reserve(handle_set.size());
-  std::copy(handle_set.begin(), handle_set.end(),
-				std::back_inserter(handle_vec));
+  std::transform
+	 (handle_set.begin(), handle_set.end(),
+	  std::back_inserter(handle_vec),
+	  [](const Event& e) { return e.evt_ptr->h; });
+
   vector_need_update = false;
 }
 
