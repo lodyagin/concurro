@@ -59,6 +59,9 @@ void RAxis<Axis>
   uint32_t from;
   TransitionId trans_id;
   auto& current = obj.current_state();
+  auto logger = obj.logger(); 
+  // <NB> get the logger before possible destruction of
+  // obj (i.e. as a result of move to a terminal state)
 
   do {
 	 from = current.load();
@@ -72,7 +75,7 @@ void RAxis<Axis>
 	 p->update_events(trans_id, to);
   }
 
-  LOGGER_DEBUG(obj.logger(), 
+  LOGGER_DEBUG(logger, 
 					"State changed from [" 
 					<< stateMap->get_state_name(from)
 					<< "] to [" 
