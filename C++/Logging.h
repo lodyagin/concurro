@@ -65,6 +65,7 @@ public:
   class Thread {};
   class Concurrency {};
   class States {};
+  class Events {};
 };
 
 /**

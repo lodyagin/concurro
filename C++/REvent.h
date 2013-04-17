@@ -48,6 +48,8 @@ public:
   //! Create a *->to event
   REvent(RObjectWithEvents<Axis>* obj_ptr, 
 			const char* to);
+protected:
+  typedef Logger<LOG::Events> log;
 };
 
 #define DECLARE_EVENT(axis, event) \

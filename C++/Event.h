@@ -94,7 +94,7 @@ public:
 
   const std::string universal_object_id;
 protected:
-  typedef Logger<EvtBase> log;
+  typedef Logger<LOG::Events> log;
 
   //std::atomic<bool> is_signalled;
 
@@ -192,17 +192,27 @@ public:
 	 return evt_ptr->is_manual;
   }
 
+  std::string universal_id() const
+  {
+	 return evt_ptr->universal_object_id;
+  }
+
 protected:
+  typedef Logger<LOG::Events> log;
+
   std::shared_ptr<EvtBase> evt_ptr;
 };
 
 class CompoundEvent : public EventInterface
 {
+  friend std::ostream&
+  operator<< (std::ostream&, const CompoundEvent&);
+
 public:
   CompoundEvent();
   CompoundEvent(CompoundEvent&&); //UT+
   CompoundEvent(const CompoundEvent&); //UT+
-  explicit CompoundEvent(const Event&); //UT+
+  CompoundEvent(const Event&); //UT+
   CompoundEvent(std::initializer_list<Event>);
 
   CompoundEvent& operator= (CompoundEvent&&);
@@ -228,6 +238,8 @@ public:
   }
 
 protected:
+  typedef Logger<LOG::Events> log;
+
   //! a set for accumulate handles
   std::set<Event> handle_set;
   //! a vector to pass to WaitForMultipleEvents
@@ -243,6 +255,9 @@ protected:
   //! == true.
   void update_vector() const;
 };
+
+std::ostream&
+operator<< (std::ostream&, const CompoundEvent&);
 
 //hint: use operator& for wait for all
 //! Append events for wait-for-any

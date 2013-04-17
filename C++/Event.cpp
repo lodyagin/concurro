@@ -215,14 +215,39 @@ CompoundEvent& CompoundEvent
 
 bool CompoundEvent::wait_impl(int time) const
 {
+  if (time != -1) {
+	 LOG_DEBUG(log, "thread " 
+				  << std::this_thread::get_id()
+				  << "> event " << *this
+				  << "> wait " << time << " msecs");
+  }
+  else {
+	 LOG_DEBUG(log, "thread " 
+				  << std::this_thread::get_id()
+				  << "> event " << *this
+				  << "> waits w/o timeout");
+  }
+
   update_vector();
   assert(handle_vec.size());
 
-  return WaitForMultipleEvents(&handle_vec[0], 
-										 handle_vec.size(),
-										 false, // wait for any
-										 time) 
-	 != ETIMEDOUT;
+  const int code = WaitForMultipleEvents(&handle_vec[0], 
+											handle_vec.size(),
+											false, // wait for any
+											time);
+
+  if (code == ETIMEDOUT) {
+	 LOG_DEBUG(log, "thread " 
+				  << std::this_thread::get_id()
+				  << "> event " << *this
+				  << "> wait: timed out");
+	 return false;
+  }
+  LOG_DEBUG(log, "thread " 
+				<< std::this_thread::get_id()
+				<< "> event " << *this
+				<< "> wait: signalled");
+  return true;
 }
 
 void CompoundEvent::update_vector() const
@@ -237,6 +262,19 @@ void CompoundEvent::update_vector() const
 	  [](const Event& e) { return e.evt_ptr->h; });
 
   vector_need_update = false;
+}
+
+std::ostream&
+operator<< (std::ostream& out, const CompoundEvent& ce)
+{
+  out << "{";
+  bool first = true;
+  for (auto& ev : ce.handle_set) {
+	 if (!first) out << " | "; else first = false;
+	 out << ev.universal_id();
+  }
+  out << "}";
+  return out;
 }
 
 
