@@ -224,6 +224,12 @@ public:
 	 return wait_impl(time);
   }
 
+  bool isSignaled(){
+  	for(auto &i : handle_set)
+  		if (i.signalled()) return true;
+  	return false;
+  }
+
   //! A number of unique events inside.
   size_t size() const
   {
