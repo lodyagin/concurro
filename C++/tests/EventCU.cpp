@@ -5,11 +5,13 @@
 void test_manual_reset();
 void test_auto_reset();
 void test_wait_for_any();
+void test_event_2threads();
 
 CU_TestInfo EventTests[] = {
   {"manual reset", test_manual_reset},
   {"auto reset", test_auto_reset},
   {"wait for any", test_wait_for_any},
+  {"2 threads wait while event not set", test_event_2threads},
   CU_TEST_INFO_NULL
 };
 
@@ -183,5 +185,40 @@ void test_wait_for_any()
   e5.reset();
   CU_ASSERT_FALSE_FATAL(ce3 | (e1 | e2)).wait(TAU);
 #endif
+}
+
+void test_event_2threads()
+{
+  static Event e("test_event_2threads::e", true, false);
+
+  struct S: public RT {
+  	S() : RT("T1") {}
+  	~S() { destroy(); }
+  	void run() {
+  		RT::ThreadState::move_to(*this, workingState);
+  		e.set();
+  	}
+  } s1;
+  struct W: public RT {
+  	W() : RT("T2") {}
+  	~W() { destroy(); }
+  	void run() {
+  		RT::ThreadState::move_to(*this, workingState);
+  		e.wait();
+  	}
+  } w1;
+  W w2;
+
+  w1.start();
+  w2.start();
+  USLEEP(100);
+  CU_ASSERT_TRUE_FATAL(w1.is_running());
+  CU_ASSERT_TRUE_FATAL(w2.is_running());
+  CU_ASSERT_FALSE_FATAL(s1.is_running());
+  s1.start();
+  USLEEP(100);
+  CU_ASSERT_FALSE_FATAL(w1.is_running());
+  CU_ASSERT_FALSE_FATAL(w2.is_running());
+  CU_ASSERT_FALSE_FATAL(s1.is_running());
 }
 
