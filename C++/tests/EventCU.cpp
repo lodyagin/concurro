@@ -132,11 +132,17 @@ void test_wait_for_any()
 {
   Event e1("e1", false);
   CompoundEvent ce1(e1);
+  CU_ASSERT_EQUAL_FATAL(ce1.size(), 1);
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   e1.set();
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
   Event e2("e2", false);
   ce1 |= e2;
+  CU_ASSERT_EQUAL_FATAL(ce1.size(), 2);
+  // uniq test
+  ce1 |= e2;
+  ce1 |= e1;
+  CU_ASSERT_EQUAL_FATAL(ce1.size(), 2);
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   e2.set();
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
@@ -150,6 +156,29 @@ void test_wait_for_any()
   e1.set();
   CU_ASSERT_TRUE_FATAL(ce2.wait(TAU));
   CU_ASSERT_FALSE_FATAL(ce2.wait(TAU));
+  
+  Event e3("e3", true);
+  CU_ASSERT_FALSE_FATAL((ce2 | e3).wait(0));
+  e3.set();
+  CU_ASSERT_TRUE_FATAL((ce2 | e3).wait(0));
+  CompoundEvent ce3 = ce2 | e3;
+  CU_ASSERT_TRUE_FATAL(ce3.wait(0));
+  e3.reset();
+  CompoundEvent ce4 = ce2 | e3;
+  CU_ASSERT_FALSE_FATAL(ce4.wait(0));
+  e1.set();
+  CU_ASSERT_TRUE_FATAL(ce4.wait(0));
+  CU_ASSERT_FALSE_FATAL(ce4.wait(0));
+  CU_ASSERT_FALSE_FATAL(ce3.wait(0));
+
+  CompoundEvent ce5 = e1 | e2;
+  CU_ASSERT_FALSE_FATAL(ce5.wait(0));
+  e1.set();
+  CU_ASSERT_TRUE_FATAL(ce5.wait(0));
+  CU_ASSERT_FALSE_FATAL(ce5.wait(0));
+  e2.set();
+  CU_ASSERT_TRUE_FATAL(ce5.wait(0));
+  CU_ASSERT_FALSE_FATAL(ce5.wait(0));
 
 #if 0
   //CompoundEvent ce2_1(ce2);

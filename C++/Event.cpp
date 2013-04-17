@@ -161,6 +161,12 @@ CompoundEvent::CompoundEvent(CompoundEvent&& e)
 	 has_autoreset(e.has_autoreset)
 {}
 
+CompoundEvent::CompoundEvent(const CompoundEvent& e)
+  : handle_set(e.handle_set),
+	 handle_vec(e.handle_vec),
+	 vector_need_update(e.vector_need_update),
+	 has_autoreset(e.has_autoreset)
+{}
 
 CompoundEvent::CompoundEvent(const Event& e)
   : handle_set{e}, vector_need_update(true),
