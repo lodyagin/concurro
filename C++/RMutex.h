@@ -35,7 +35,20 @@ class RMutex : public SNotCopyable
 {
   friend class RMutexArray;
 public:
-
+  class MutexException
+  {
+  public:
+  	MutexException(std::string mxName, std::string exName) :
+  		mutexName(mxName), exceptionName(exName){}
+  	const std::string mutexName;
+  	const std::string exceptionName;
+  	void setMessage(std::string msg){
+  		message = msg;
+  	}
+  	std::string getMessage(){return message;}
+  protected:
+  	std::string message;
+  };
   class Lock;
   class Unlock;
 
@@ -59,6 +72,7 @@ protected:
   
 private:
   std::string name;
+  int acquireCounter;
 };
 
 class RMutexArray
@@ -128,7 +142,7 @@ private:
   }*/
 
 inline RMutex::RMutex(const std::string& the_name) 
-				  : name (the_name)
+				  : name (the_name), acquireCounter(0)
 {
   //InitializeCriticalSection(&cs);
 }
@@ -145,6 +159,7 @@ inline void RMutex::acquire(const log4cxx::spi::LocationInfo& debug_location)
 					 debug_location);
   */
   mx.lock();
+  acquireCounter++;
   /*  LOG_DEBUG_LOC(log, 
 					 "} " << get_name() << ".acquire done",
 					 debug_location);
@@ -157,6 +172,8 @@ inline void RMutex::release(const log4cxx::spi::LocationInfo& debug_location)
 					 << ".release {",
 					 debug_location);
   */
+	if (--acquireCounter < 0)
+	  throw MutexException(name, "mutex overrelease");
   mx.unlock();
   /*  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
 					 debug_location);
