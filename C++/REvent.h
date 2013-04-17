@@ -48,24 +48,6 @@ public:
   //! Create a *->to event
   REvent(RObjectWithEvents<Axis>* obj_ptr, 
 			const char* to);
-
-  bool wait(int time = -1) const
-  { 
-	 return Event::wait(time); 
-  }
-
-  bool signalled() const
-  {
-	 return Event::signalled();
-  }
-
-  //operator Event () { return *this; }
-
-  //operator const Event () const { return *this; }
-
-protected:
-  //RObjectWithEvents<Axis>* obj;
-  //Event evt;
 };
 
 #define DECLARE_EVENT(axis, event) \
@@ -76,12 +58,7 @@ public: \
   { return is_ ## event ## _event; } \
 private:
 
-#if 0
-#define DEFINE_EVENT(class_, axis, event) \
-  REvent<axis> class_::is_ ## event ## _event(#event);
-#else
 #define CONSTRUCT_EVENT(event)		\
   is_ ## event ## _event(this, #event)
-#endif
 
 #endif 

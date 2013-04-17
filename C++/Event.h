@@ -74,11 +74,33 @@ public:
 	 return wait(0);
   }
 
+  bool get_shadow() const
+  {
+	 return shadow;
+  }
+
+  //! It is like wait(int) but return true if shadow is
+  //! true (i.e., the event "was")
+  bool wait_shadow(int time = -1)
+  {
+	 return shadow || wait_impl(time);
+  }
+
+  bool wait_shadow(int time = -1) const
+  {
+	 SCHECK(is_manual);
+	 return shadow || wait_impl(time);
+  }
+
   const std::string universal_object_id;
 protected:
   typedef Logger<EvtBase> log;
 
   //std::atomic<bool> is_signalled;
+
+  //! It is set if the event was occured at least once.
+  std::atomic<bool> shadow;
+
   const bool is_manual;
   HANDLE h;
 
@@ -133,6 +155,21 @@ public:
   bool wait(int time = -1) const
   {
 	 return evt_ptr->wait(time); 
+  }
+
+  bool wait_shadow(int time = -1)
+  {
+	 return evt_ptr->wait_shadow(time); 
+  }
+
+  bool wait_shadow(int time = -1) const
+  {
+	 return evt_ptr->wait_shadow(time); 
+  }
+
+  bool get_shadow() const
+  {
+	 return evt_ptr->get_shadow();
   }
 
   void set()

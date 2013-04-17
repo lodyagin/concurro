@@ -6,12 +6,14 @@ void test_manual_reset();
 void test_auto_reset();
 void test_wait_for_any();
 void test_event_2threads();
+void test_shadow();
 
 CU_TestInfo EventTests[] = {
   {"manual reset", test_manual_reset},
   {"auto reset", test_auto_reset},
   {"wait for any", test_wait_for_any},
   {"2 threads wait while event not set", test_event_2threads},
+  {"test a shadow of an event", test_shadow},
   CU_TEST_INFO_NULL
 };
 
@@ -220,5 +222,30 @@ void test_event_2threads()
   CU_ASSERT_FALSE_FATAL(w1.is_running());
   CU_ASSERT_FALSE_FATAL(w2.is_running());
   CU_ASSERT_FALSE_FATAL(s1.is_running());
+}
+
+void test_shadow()
+{
+  Event ev("EventCU::test_shadow::ev", true);
+  CU_ASSERT_FALSE_FATAL(ev.get_shadow());
+  CU_ASSERT_FALSE_FATAL(ev.wait_shadow(TAU));
+  ev.reset();
+  CU_ASSERT_FALSE_FATAL(ev.get_shadow());
+  ev.wait(TAU);
+  CU_ASSERT_FALSE_FATAL(ev.get_shadow());
+  CU_ASSERT_FALSE_FATAL(ev.wait_shadow(TAU));
+  ev.set();
+  CU_ASSERT_TRUE_FATAL(ev.get_shadow());
+  CU_ASSERT_TRUE_FATAL(ev.get_shadow());
+  CU_ASSERT_TRUE_FATAL(ev.wait_shadow(TAU));
+  CU_ASSERT_TRUE_FATAL(ev.get_shadow());
+  ev.wait(TAU);
+  CU_ASSERT_TRUE_FATAL(ev.get_shadow());
+  ev.reset();
+  CU_ASSERT_TRUE_FATAL(ev.get_shadow());
+  CU_ASSERT_FALSE_FATAL(ev.wait(0));
+  CU_ASSERT_TRUE_FATAL(ev.wait_shadow(0));
+  CU_ASSERT_FALSE_FATAL(ev.wait(TAU));
+  CU_ASSERT_TRUE_FATAL(ev.wait_shadow(TAU));
 }
 

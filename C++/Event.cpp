@@ -1,3 +1,11 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
 #include "REvent.h"
 #include "Logging.h"
@@ -14,7 +22,9 @@ EvtBase::EvtBase(const std::string& id,
 					  bool manual, 
 					  bool init )
   : universal_object_id(id),
-	 /*is_signalled(init),*/ is_manual(manual),
+	 /*is_signalled(init),*/ 
+	 shadow(false),
+	 is_manual(manual),
 #ifdef _WIN32
   h(CreateEvent(0, manual, init, 0))
 #else
@@ -64,8 +74,10 @@ void EvtBase::set()
      SFORMAT (L"setting event, handle = " << h).c_str ()
      );
 #else
-  SetEvent(h);
   //is_signalled = true;
+  shadow = true; //<NB> before SetEvent to prevent a "no
+					  //shadow and no event" case
+  SetEvent(h);
 #endif
 }
 
