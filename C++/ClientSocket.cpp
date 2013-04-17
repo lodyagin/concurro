@@ -8,6 +8,7 @@
 
 #include "StdAfx.h"
 #include "ClientSocket.h"
+#include "Event.h"
 
 DEFINE_STATES(ClientSocketAxis, 
    {"created",
@@ -50,6 +51,14 @@ ClientSocket::ClientSocket
 	 CONSTRUCT_EVENT(connection_timed_out),
 	 CONSTRUCT_EVENT(connection_refused),
 	 CONSTRUCT_EVENT(destination_unreachable),
+
+	 is_terminal_state_event {
+      is_connected_event,
+		is_connection_timed_out_event,
+		is_connection_refused_event,
+		is_destination_unreachable_event
+	 },
+
 	 thread(dynamic_cast<Thread*>
 			  (thread_repository.create_thread
 				(Thread::Par(this))))

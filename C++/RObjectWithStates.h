@@ -85,32 +85,32 @@ public:
 
 protected:
   //! Query an event object by UniversalEvent. 
-  Event* get_event(const UniversalEvent& ue)
+  Event get_event(const UniversalEvent& ue)
   {
 	 return get_event_impl(ue);
   }
 
   //! Query an event object by UniversalEvent. 
-  const Event* get_event(const UniversalEvent& ue) const
+  const Event get_event(const UniversalEvent& ue) const
   {
 	 return get_event_impl(ue);
   }
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
-  Event* create_event(const UniversalEvent&) const;
+  Event create_event(const UniversalEvent&) const;
 
   //! Update events due to trans_id to
   void update_events
 	 (TransitionId trans_id, uint32_t to);
 
-  typedef std::map<uint32_t, Event*> EventMap;
+  typedef std::map<uint32_t, Event> EventMap;
 
   mutable EventMap events;
 
 private:
   //! A common implementation for both get_event
-  Event* get_event_impl(const UniversalEvent&) const;
+  Event get_event_impl(const UniversalEvent&) const;
 };
 
 #endif

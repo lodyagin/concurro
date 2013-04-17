@@ -31,6 +31,8 @@ public:
   DECLARE_STATE_CONST(State, destination_unreachable);
   DECLARE_STATE_CONST(State, destroyed);
 
+  const CompoundEvent is_terminal_state_event;
+
   ~ClientSocket();
 
   //! Start connection to a server. It can result in

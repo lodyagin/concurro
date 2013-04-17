@@ -119,8 +119,8 @@ void TCPSocket::Thread::run()
 	 . wait();
   TCPSocket::State::move_to(*tcp_sock, syn_sentState);
 
-  REvent<ClientSocketAxis> (cli_sock, "connected")
-    . wait();
+  cli_sock->is_terminal_state_event.wait();
+  //... define the state from the set
   TCPSocket::State::move_to(*tcp_sock, establishedState);
 }
 

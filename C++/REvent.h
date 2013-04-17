@@ -37,7 +37,8 @@ public:
 template<class Axis>
 class REvent
 : public Axis,
-  public UniversalEvent
+  public UniversalEvent,
+  public Event
 {
 public:
   //! Create a from->to event
@@ -58,15 +59,15 @@ public:
 	 return static_cast<const Event&>(*this).signalled();
   }
 
-  operator Event& () 
-  { assert(evt); return *evt; }
+  operator Event () 
+  { /*assert(evt);*/ return *this; }
 
-  operator const Event& () const 
-  { assert(evt); return *evt; }
+  operator const Event () const 
+  { /*assert(evt);*/ return *this; }
 
 protected:
   //RObjectWithEvents<Axis>* obj;
-  Event* evt;
+  //Event evt;
 };
 
 #define DECLARE_EVENT(axis, event) \

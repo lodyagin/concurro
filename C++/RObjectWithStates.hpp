@@ -30,7 +30,7 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
 }
 
 template<class Axis>
-Event* RObjectWithEvents<Axis>
+Event RObjectWithEvents<Axis>
 //
 ::get_event_impl(const UniversalEvent& ue) const
 {
@@ -42,33 +42,33 @@ Event* RObjectWithEvents<Axis>
 }
 
 template<class Axis>
-Event* RObjectWithEvents<Axis>
+Event RObjectWithEvents<Axis>
 //
 ::create_event(const UniversalEvent& ue) const
 {
-  Event* ev = 0;
+#if 0
+  // map support for emplace is only in gcc 4.9
+  return *events.emplace
+	 (std::make_pair
+	   (ue.global_id(),
+		 Event(SFORMAT(typeid(*this).name() << ":" 
+							<< ue.name()), 
+				 true) // <NB> manual reset
+		  )).first;
+#else										  
   const auto it = events.find(ue.global_id());
   if (it == events.end()) {
-
-	 ev = new Event
-		(SFORMAT(typeid(*this).name() << ":" << ue.name()), 
-		 true); // <NB> manual reset
-
-	 events.insert
-		(std::pair<uint32_t, Event*>(ue.global_id(), ev));
+	 return events.insert
+		(std::make_pair
+		 (ue.global_id(), 
+		  Event(SFORMAT(typeid(*this).name() << ":" 
+							 << ue.name()), 
+				  true))).first->second;
   }
   else 
-	 ev = it->second;
-
-  return ev;
+	 return it->second;
+#endif
 }
-
-struct ResetEventFun
-{ 
-  void operator()
-  (const std::pair<uint32_t, Event*>& e)
-	 { e.second->reset(); }
-};
 
 template<class Axis>
 void RObjectWithEvents<Axis>
@@ -76,21 +76,20 @@ void RObjectWithEvents<Axis>
 ::update_events(TransitionId trans_id, uint32_t to)
 {
   // reset all events due to a new transition
-  std::for_each(events.begin(), events.end(), 
-					 ResetEventFun());
+  for (auto& p : events) p.second.reset();
 
   { // event on a transition
 	 const UniversalEvent ev(trans_id);
 	 const auto it = events.find(ev.global_id());
 	 if (it != events.end())
-		it->second->set();
+		it->second.set();
   }
 
   { // event on a final destination
 	 const UniversalEvent ev(to, true);
 	 const auto it = events.find(ev.global_id());
 	 if (it != events.end())
-		it->second->set();
+		it->second.set();
   }
 }
 
