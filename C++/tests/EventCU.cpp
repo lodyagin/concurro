@@ -213,6 +213,13 @@ void test_wait_for_any()
   CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   e5.reset();
   CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
+  CU_ASSERT_EQUAL_FATAL(ce1.size(), 2);
+  CU_ASSERT_EQUAL_FATAL(ce2.size(), 2);
+  CU_ASSERT_EQUAL_FATAL(ce2_2.size(), 2);
+  CU_ASSERT_EQUAL_FATAL(ce3.size(), 3);
+  CU_ASSERT_EQUAL_FATAL(ce4.size(), 3);
+  CU_ASSERT_EQUAL_FATAL(ce5.size(), 2);
+  CU_ASSERT_EQUAL_FATAL(ce6.size(), 2);
 }
 
 void test_event_2threads()

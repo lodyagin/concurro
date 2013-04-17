@@ -213,7 +213,6 @@ const CompoundEvent& CompoundEvent
   return *this;
 }
 
-#if 1
 CompoundEvent& CompoundEvent
 ::operator|= (const CompoundEvent& e)
 {
@@ -223,7 +222,6 @@ CompoundEvent& CompoundEvent
   has_autoreset = has_autoreset || e.has_autoreset;
   return *this;
 }
-#endif
 
 bool CompoundEvent::wait_impl(int time) const
 {
@@ -241,7 +239,7 @@ bool CompoundEvent::wait_impl(int time) const
   }
 
   update_vector();
-  assert(handle_vec.size());
+  assert(handle_vec.size() > 0);
 
   const int code = WaitForMultipleEvents(&handle_vec[0], 
 											handle_vec.size(),
@@ -267,6 +265,7 @@ void CompoundEvent::update_vector() const
   if (!vector_need_update)
 	 return;
 
+  handle_vec.clear();
   handle_vec.reserve(handle_set.size());
   std::transform
 	 (handle_set.begin(), handle_set.end(),
@@ -274,6 +273,7 @@ void CompoundEvent::update_vector() const
 	  [](const Event& e) { return e.evt_ptr->h; });
 
   vector_need_update = false;
+  assert(handle_vec.size() == handle_set.size());
 }
 
 std::ostream&

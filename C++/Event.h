@@ -25,6 +25,7 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <vector>
 #include <set>
 #include <memory>
+#include <assert.h>
 
 class EventInterface
 {
@@ -244,6 +245,8 @@ public:
   //! A number of unique events inside.
   size_t size() const
   {
+	 assert(vector_need_update
+			  || handle_vec.size() == handle_set.size());
 	 return handle_set.size();
   }
 
