@@ -24,6 +24,7 @@ EvtBase::EvtBase(const std::string& id,
   : universal_object_id(id),
 	 /*is_signalled(init),*/ 
 	 shadow(false),
+ 	 isSignaled(init),
 	 is_manual(manual),
 #ifdef _WIN32
   h(CreateEvent(0, manual, init, 0))
@@ -79,6 +80,7 @@ void EvtBase::set()
 					  //shadow and no event" case
   SetEvent(h);
 #endif
+  isSignaled = true;
 }
 
 void EvtBase::reset()
@@ -96,6 +98,7 @@ void EvtBase::reset()
   //is_signalled = false;
   ResetEvent(h);
 #endif
+  isSignaled = false;
 }
 
 bool EvtBase::wait_impl(int time) const
