@@ -62,7 +62,9 @@ public:
   bool wait(int time = -1) const
   {
 	 SCHECK(is_manual);
-	 return wait_impl(time);
+	 bool returnValue = wait_impl(time);
+	 isSignaled = is_manual ? isSignaled.load() : false;
+	 return returnValue;
   }
 
   void set();
@@ -70,8 +72,7 @@ public:
 
   bool signalled() const
   {
-	 SCHECK(is_manual);
-	 return wait(0);
+	 return isSignaled;
   }
 
   bool get_shadow() const
@@ -100,6 +101,8 @@ protected:
 
   //! It is set if the event was occured at least once.
   std::atomic<bool> shadow;
+
+  mutable std::atomic_bool isSignaled;
 
   const bool is_manual;
   HANDLE h;
