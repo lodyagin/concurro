@@ -180,8 +180,8 @@ void test_wait_for_any()
   CU_ASSERT_TRUE_FATAL(ce5.wait(0));
   CU_ASSERT_FALSE_FATAL(ce5.wait(0));
 
-#if 0
-  //CompoundEvent ce2_1(ce2);
+  Event e5("e5", true, false);
+  const Event& e5r = e5;
   CU_ASSERT_TRUE_FATAL(( Event("e3", false, true)
 								  | Event("e4", false, false) 
 								  | e5r ).wait(TAU));
@@ -191,8 +191,6 @@ void test_wait_for_any()
 								  | e5r )).wait(TAU));
   CompoundEvent ce2_2;
   ce2_2 = ce2;
-  CU_ASSERT_FALSE_FATAL((ce1 | std::move(ce2_2))
-    . wait(TAU));
   ce1 |= ce2;
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   CU_ASSERT_FALSE_FATAL((ce1 | ce2).wait(TAU));
@@ -206,16 +204,15 @@ void test_wait_for_any()
 	 (Event("e7", false, false) | ce1).wait(TAU));
   CU_ASSERT_FALSE_FATAL(
 	 (Event("e7", true, false) | ce1).wait(TAU));
-  const CompoundEvent ce3(ce1 | ce2);
-  CU_ASSERT_FALSE_FATAL(ce3 | (e1 | e2)).wait(TAU);
+  const CompoundEvent ce6(ce1 | ce2);
+  CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   e2.set();
-  CU_ASSERT_TRUE_FATAL(ce3 | (e1 | e2)).wait(TAU);
-  CU_ASSERT_FALSE_FATAL(ce3 | (e1 | e2)).wait(TAU);
+  CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
+  CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   e5.set();
-  CU_ASSERT_TRUE_FATAL(ce3 | (e1 | e2)).wait(TAU);
+  CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   e5.reset();
-  CU_ASSERT_FALSE_FATAL(ce3 | (e1 | e2)).wait(TAU);
-#endif
+  CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
 }
 
 void test_event_2threads()

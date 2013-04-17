@@ -219,9 +219,10 @@ public:
   CompoundEvent(std::initializer_list<Event>);
 
   CompoundEvent& operator= (CompoundEvent&&);
+  CompoundEvent& operator= (const CompoundEvent&);
 
   const CompoundEvent& operator|= (const Event&); //UT+
-  //CompoundEvent& operator|= (const CompoundEvent&);
+  CompoundEvent& operator|= (const CompoundEvent&);
 
   bool wait(int time = -1)
   {
@@ -283,7 +284,6 @@ inline CompoundEvent operator|
   a |= b; return a;
 }
 
-#if 0
 inline CompoundEvent operator| 
   (CompoundEvent a, const CompoundEvent& b)
 {
@@ -296,6 +296,7 @@ inline CompoundEvent operator|
   b |= a; return b;
 }
 
+#if 0
 inline CompoundEvent operator| 
   (const CompoundEvent& a, CompoundEvent b)
 {
@@ -310,12 +311,10 @@ inline CompoundEvent operator|
   ca |= b; return ca;
 }
 
-#if 0
 inline CompoundEvent operator| 
   (CompoundEvent a, CompoundEvent&& b)
 {
   a |= b; return a;
 }
-#endif
 
 #endif

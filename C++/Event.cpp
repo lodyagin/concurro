@@ -195,6 +195,15 @@ CompoundEvent& CompoundEvent
   return *this;
 }
 
+CompoundEvent& CompoundEvent
+::operator= (const CompoundEvent& e)
+{
+  handle_set = e.handle_set;
+  vector_need_update = true; // <NB>
+  has_autoreset = e.has_autoreset;
+  return *this;
+}
+
 const CompoundEvent& CompoundEvent
 ::operator|= (const Event& e)
 {
@@ -204,7 +213,7 @@ const CompoundEvent& CompoundEvent
   return *this;
 }
 
-#if 0
+#if 1
 CompoundEvent& CompoundEvent
 ::operator|= (const CompoundEvent& e)
 {
