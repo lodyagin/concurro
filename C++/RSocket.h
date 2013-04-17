@@ -21,6 +21,9 @@
 #ifndef _WIN32
 #  define SOCKET int
 #endif
+#include <list>
+
+class SocketBaseAxis : public StateAxis {};
 
 /**
  * An abstract socket base.  In the Concurro library
@@ -35,10 +38,18 @@ class RSocketBase
 	 operator<< (std::ostream&, const RSocketBase&);
 
 public:
+/*
+  DECLARE_STATES(SocketBaseAxis, State);
+  DECLARE_STATE_CONST(RSocketBase, State, working);
+  DECLARE_STATE_CONST(RSocketBase, State, terminated);
+*/
+
   virtual ~RSocketBase () {}
 
   //! A socket file descriptor.
   const SOCKET fd;
+
+  virtual const CompoundEvent is_terminal_state() const= 0;
 
 protected:
   //TODO make external threads controlling a group of
@@ -54,6 +65,11 @@ protected:
   
   //! A thread repository to internal threads creation
   LocalThreadRepository thread_repository;
+
+  // List of all ancestors. Each derived (with a public
+  // virtual base) class append itself here from its
+  // constructor.
+  std::list<RSocketBase*> ancestors;
 
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
@@ -128,10 +144,26 @@ class RSocket : public Bases...
   friend RSocketBase* RSocketAllocator
 	 (const ObjectCreationInfo& oi,
 	  const RSocketAddress& addr);
+
+  const CompoundEvent is_terminal_state() const
+  {
+	 return is_terminal_state_event;
+  }
+
 protected:
+  Event is_terminal_state_event;
+
   RSocket(const ObjectCreationInfo& oi,
 			 const RSocketAddress& addr)
-	 : RSocketBase(oi, addr), Bases(oi, addr)... {}
+	 : RSocketBase(oi, addr), Bases(oi, addr)...,
+	 is_terminal_state_event(
+		SFORMAT(oi.objectId << ":" 
+				  << "is_terminal_state_event"), true)
+	 {}
+
+  //! wait all parts terminated and set
+  //! its own is_terminal_state_event. 
+  ~RSocket();
 
   DEFAULT_LOGGER(RSocket<Bases...>);
 };

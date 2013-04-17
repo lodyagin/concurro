@@ -15,6 +15,17 @@
 //#include "InSocket.h"
 //#include "OutSocket.h"
 
+template<class... Bases>
+RSocket<Bases...>
+//
+::~RSocket()
+{
+  // wait all parts termination
+  for (auto& s : this->ancestors)
+	 s->is_terminal_state().wait();
+  is_terminal_state_event.set();
+}
+
 // temporary empty definitions
 class ServerSocket : public virtual RSocketBase {};
 

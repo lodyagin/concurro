@@ -17,6 +17,16 @@
 /*========== RSocketBase ==========*/
 /*=================================*/
 
+/*
+DEFINE_STATES(
+  RSocketAxis,
+  {"working", "terminated"},
+  {{"working", "terminated"}}
+);
+DEFINE_STATE_CONST(RSocketBase, State, working);
+DEFINE_STATE_CONST(RSocketBase, State, terminated);
+*/
+
 //! This type is only for repository creation
 RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 

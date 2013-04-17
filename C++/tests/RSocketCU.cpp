@@ -54,19 +54,21 @@ void test_localhost_socket_address()
 }
 
 static RThreadRepository<
-  RThread<std::thread>, std::map, std::thread::native_handle_type
+  RThread<std::thread>, std::map, 
+  std::thread::native_handle_type
   > thread_repository("RSocketCU:thread_repository", 10);
 
 struct Log { typedef Logger<Log> log; };
 
 void test_client_socket()
 {
-  RSocketRepository sr ("RSocketCU::test_client_socket::sr", 10);
+  RSocketRepository sr("RSocketCU::test_client_socket::sr",
+							  10);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*RSocketAddressRepository()
 		. create_addresses<NetworkProtocol::TCP, IPVer::v4>
-		("localhost", 5555) . front()));
+		("192.168.10.14", 5555) . front()));
   CU_ASSERT_TRUE_FATAL(
 	 ClientSocket::State::state_is
 	 (*cli_sock, ClientSocket::createdState));

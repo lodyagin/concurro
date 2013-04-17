@@ -14,6 +14,8 @@ class TCPAxis : public StateAxis {};
 class TCPSocket : virtual public RSocketBase
 , public RObjectWithEvents<TCPAxis>
 {
+  DECLARE_EVENT(TCPAxis, closed);
+
 public:
   DECLARE_STATES(TCPAxis, State);
   DECLARE_STATE_CONST(State, created);
@@ -25,11 +27,13 @@ public:
   DECLARE_STATE_CONST(State, accepting);
   DECLARE_STATE_CONST(State, established);
   DECLARE_STATE_CONST(State, closing);
-  DECLARE_STATE_CONST(State, destroyed);
 
   ~TCPSocket();
 
-  //virtual void ask_close();
+  const CompoundEvent is_terminal_state() const
+  {
+	 return is_closed_event;
+  }
 
 protected:
   typedef Logger<TCPSocket> log;

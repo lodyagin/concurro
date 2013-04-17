@@ -29,9 +29,13 @@ public:
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
-  DECLARE_STATE_CONST(State, destroyed);
 
   const CompoundEvent is_terminal_state_event;
+
+  const CompoundEvent is_terminal_state() const
+  {
+	 return is_terminal_state_event;
+  }
 
   ~ClientSocket();
 

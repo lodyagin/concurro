@@ -15,19 +15,15 @@ DEFINE_STATES(ClientSocketAxis,
     "connecting",  
 	 "connected",
 	 "connection_timed_out",
-	 "connection_refused",
-	 "destination_unreachable",
-	 "destroyed" // to check a state in the destructor
+	 "connection_refused", // got RST on SYN
+	 "destination_unreachable"
 	 },
     { 
 		{"created", "connecting"},
 		{"connecting", "connected"},
 		{"connecting", "connection_timed_out"},
 		{"connecting", "connection_refused"},
-		{"connecting", "destination_unreachable"},
-		{"connection_timed_out", "destroyed"},
-		{"connection_refused", "destroyed"},
-		{"destination_unreachable", "destroyed"}
+		{"connecting", "destination_unreachable"}
 	 }
 );
 DEFINE_STATE_CONST(ClientSocket, State, created);
@@ -39,7 +35,6 @@ DEFINE_STATE_CONST(ClientSocket, State,
 						 connection_refused);
 DEFINE_STATE_CONST(ClientSocket, State, 
 						 destination_unreachable);
-DEFINE_STATE_CONST(ClientSocket, State, destroyed);
 
 ClientSocket::ClientSocket
   (const ObjectCreationInfo& oi, 
@@ -53,7 +48,7 @@ ClientSocket::ClientSocket
 	 CONSTRUCT_EVENT(destination_unreachable),
 
 	 is_terminal_state_event {
-      is_connected_event,
+  //is_connected_event,
 		is_connection_timed_out_event,
 		is_connection_refused_event,
 		is_destination_unreachable_event
@@ -64,11 +59,12 @@ ClientSocket::ClientSocket
 				(Thread::Par(this))))
 {
   SCHECK(thread);
+  this->RSocketBase::ancestors.push_back(this);
 }
 
 ClientSocket::~ClientSocket()
 {
-  State::move_to(*this, destroyedState);
+  is_terminal_state_event.wait();
 }
 
 void ClientSocket::ask_connect()

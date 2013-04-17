@@ -25,8 +25,7 @@ DEFINE_STATES(TCPAxis,
 	 //"aborted",   // see RFC793, 3.8 Abort
 	 "connection_timed_out",
 	 "connection_refused",
-	 "destination_unreachable",
-	 "destroyed" // to check a state in the destructor
+	 "destination_unreachable"
 	 },
   {
   {"created", "listen"},      // listen()
@@ -44,8 +43,7 @@ DEFINE_STATES(TCPAxis,
   {"established", "out_closed"},
   {"closing", "closed"},
   {"in_closed", "closed"},
-  {"out_closed", "closed"},
-  {"closed", "destroyed"}
+  {"out_closed", "closed"}
   // TODO ::shutdown
   }
   );
@@ -59,7 +57,6 @@ DEFINE_STATE_CONST(TCPSocket, State, syn_sent);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
 DEFINE_STATE_CONST(TCPSocket, State, established);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
-DEFINE_STATE_CONST(TCPSocket, State, destroyed);
 
 TCPSocket::TCPSocket
 	 (const ObjectCreationInfo& oi, 
@@ -67,6 +64,7 @@ TCPSocket::TCPSocket
   : 
 	 RSocketBase(oi, par),
     RObjectWithEvents<TCPAxis> (createdState),
+	 CONSTRUCT_EVENT(closed),
     tcp_protoent(NULL),
 	 thread(dynamic_cast<Thread*>
 			  (thread_repository.create_thread
@@ -80,9 +78,7 @@ TCPSocket::TCPSocket
 TCPSocket::~TCPSocket()
 {
   //ask_close();
-  REvent<TCPAxis> is_closed(this, "closed");
-  is_closed.wait();
-  State::move_to(*this, destroyedState);
+  is_closed_event.wait();
 }
 
 #if 0
@@ -116,11 +112,20 @@ void TCPSocket::Thread::run()
   assert(tcp_sock);
   
   REvent<ClientSocketAxis> (cli_sock, "connecting")
-	 . wait();
+	 . wait_shadow();
   TCPSocket::State::move_to(*tcp_sock, syn_sentState);
 
-  cli_sock->is_terminal_state_event.wait();
-  //... define the state from the set
-  TCPSocket::State::move_to(*tcp_sock, establishedState);
+  (cli_sock->is_terminal_state_event 
+	| cli_sock->is_connected()) . wait(); 
+  //TODO is_connected as a shadow
+
+  if (cli_sock->is_connected().signalled()) {
+	 TCPSocket::State::move_to
+		(*tcp_sock, establishedState);
+  }
+  else if (cli_sock->is_connection_refused().signalled()){
+	 TCPSocket::State::move_to
+		(*tcp_sock, closedState);
+  }
 }
 
