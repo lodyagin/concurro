@@ -52,21 +52,18 @@ public:
   typedef typename Thread::Par Par;
   typedef typename Thread::Id ThreadId;
 
-  static RepositoryLogParams default_log_params()
-  {
-	 RepositoryLogParams p;
-		// disable NoSuchId logging on 
-		// RThread::current
-	 p.get_object_by_id__no_such_id = false;
-	 return p;
-  }
-
   RThreadRepository(/*const std::string& name,
 							 size_t initial_capacity*/) 
 	 : Parent(typeid(RThreadRepository<Thread>).name(), 
-				 100, // the value is ignored for std::map
-				 default_log_params() 
-		) {}
+				 100 // the value is ignored for std::map
+		) 
+  {
+	 RepositoryBase<
+		Thread, typename Thread::Par,
+		std::map, typename Thread::Id
+		>
+		::log_params.get_object_by_id = false;
+  }
 
 
   virtual void stop_subthreads ();
