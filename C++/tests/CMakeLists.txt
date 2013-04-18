@@ -1,4 +1,5 @@
 set(TestsSrc
+  RepositoryCU.cpp
   EventCU.cpp
   RStateCU.cpp
   RThreadCU.cpp

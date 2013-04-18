@@ -21,6 +21,7 @@
 #include <map>
 #include <unordered_map>
 #include <assert.h>
+#include <atomic>
 
 DEFINE_EXCEPTION(InvalidObjectParameters,
   "Invalid parameters for repository object creation"
@@ -41,6 +42,7 @@ public:
   };
 
   virtual ~AbstractRepositoryBase() {}
+  virtual size_t size() const = 0;
   virtual Traits get_traits() const = 0;
 };
 
@@ -223,6 +225,10 @@ protected:
 
   //! Insert new object into objects
   virtual void insert_object (ObjId, Obj*) = 0;
+  //! Free an object cell. <NB> it is empty in
+  //! RepositoryBase to allow (dummy) calls from
+  //! destructor.
+  virtual void delete_object_id (ObjId) {}
 };
 
 // TODO separate read and write lock
@@ -249,7 +255,8 @@ public:
   //! for vector and size for hash tables.
   Repository(const std::string& repository_name,
 				size_t initial_capacity)
-  : Parent (repository_name) 
+	 : Parent (repository_name),
+	 obj_count(0)
   {
 	 this->objects = new typename RepositoryMapType<Obj,
 		ObjId, ObjMap>::Map (initial_capacity);
@@ -257,9 +264,16 @@ public:
 											 // real objects
   }
 
-  //~Repository() { delete objects; }
+  size_t size() const
+  {
+	 assert(this->objects);
+	 assert(this->objects->size() > obj_count);
+	 return obj_count.load();
+  }
 
 protected:
+  std::atomic<unsigned int> obj_count;
+
   //! This specialization takes the first unused (numeric)
   //! id and ignores Par
   ObjId get_object_id 
@@ -286,8 +300,20 @@ protected:
 
   void insert_object (ObjId id, Obj* obj)
   {
-	 RLOCK(this->objectsM);
-	 this->objects->at(id) = obj;
+	 {
+		RLOCK(this->objectsM);
+		this->objects->at(id) = obj;
+	 }
+	 obj_count++;
+  }
+
+  void delete_object_id (ObjId id)
+  {
+	 {
+		RLOCK(this->objectsM);
+		this->objects->at(id) = 0;
+	 }
+	 obj_count--;
   }
 };
 
@@ -377,6 +403,13 @@ public:
 	 this->objects = new ObjMap (initial_value);
   }
 
+  size_t size() const
+  {
+	 assert(this->objects);
+	 RLOCK(this->objectsM);
+	 return this->objects->size();
+  }
+
 protected:
   //! This specialization takes the key value from pars.
   ObjId get_object_id 
@@ -398,6 +431,14 @@ protected:
 	 RLOCK(this->objectsM);
 	 // will be add new element if id doesn't exists
 	 (*this->objects)[id] = obj;
+  }
+
+  void delete_object_id(ObjId id)
+  {
+	 assert(this->objects);
+	 RLOCK(this->objectsM);
+	 const size_t n = this->objects->erase(id);
+	 assert(n == 1);
   }
 };
 
@@ -425,6 +466,14 @@ public:
   {
 	 this->objects = new ObjMap ();
   }
+
+  size_t size() const
+  {
+	 assert(this->objects);
+	 RLOCK(this->objectsM);
+	 return this->objects->size();
+  }
+
 protected:
   //! This specialization takes the key value from pars.
   ObjId get_object_id 
@@ -446,6 +495,14 @@ protected:
 	 RLOCK(this->objectsM);
 	 // will be add new element if id doesn't exists
 	 (*this->objects)[id] = obj;
+  }
+
+  void delete_object_id(ObjId id)
+  {
+	 assert(this->objects);
+	 RLOCK(this->objectsM);
+	 const size_t n = this->objects->erase(id);
+	 assert(n == 1);
   }
 };
 
@@ -539,6 +596,16 @@ struct Par : public parent::Par \
 	 (const ObjectCreationInfo& oi) const \
   { return new type(oi, *this); } \
 };
+
+#define PAR_DEFAULT_MEMBERS(object) \
+  object* create_derivation \
+	 (const ObjectCreationInfo& oi) const \
+  { return new object(oi, *this); } \
+  \
+  object* transform_object \
+    (const object*) const \
+  { THROW_NOT_IMPLEMENTED; }
+
 
 #endif
 
