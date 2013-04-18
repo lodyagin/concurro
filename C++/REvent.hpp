@@ -27,7 +27,10 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
 		 get_transition_id(from, to)
 		  ),
 	 Event(obj_ptr->create_event((UniversalEvent)*this))
-{}
+{
+  evt_ptr->log_params.set =
+	 evt_ptr->log_params.reset = false;
+}
 
 template<class Axis>
 REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr, 
@@ -43,7 +46,10 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
 		  create_state(to), true
 		  ),
 	 Event(obj_ptr->create_event((UniversalEvent)*this))
-{}
+{
+  evt_ptr->log_params.set =
+	 evt_ptr->log_params.reset = false;
+}
 
 #if 0
 template<class Axis>

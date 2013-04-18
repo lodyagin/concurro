@@ -47,6 +47,11 @@ class EvtBase : public EventInterface
   friend class Event;
   friend class CompoundEvent;
 public:
+  struct LogParams {
+	 bool set, reset;
+    LogParams() : set(true), reset(true) {}
+  } log_params;
+
   EvtBase(const EvtBase&) = delete;
   virtual ~EvtBase();
 

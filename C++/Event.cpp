@@ -65,7 +65,7 @@ operator<< (std::ostream& out, const EvtBase& evt)
 
 void EvtBase::set()
 {
-  LOG_DEBUG(log, "thread " 
+  LOG_DEBUG_PLACE(log, set, "thread " 
 				<< RThread<std::thread>::current_pretty_id()
 				<< ">\t event "
 				<< universal_object_id << ">\t set");
@@ -75,17 +75,16 @@ void EvtBase::set()
      SFORMAT (L"setting event, handle = " << h).c_str ()
      );
 #else
-  //is_signalled = true;
+  isSignaled = true;
   shadow = true; //<NB> before SetEvent to prevent a "no
 					  //shadow and no event" case
   SetEvent(h);
 #endif
-  isSignaled = true;
 }
 
 void EvtBase::reset()
 {
-  LOG_DEBUG(log, "thread " 
+  LOG_DEBUG_PLACE(log, reset, "thread " 
 				<< RThread<std::thread>::current_pretty_id()
 				<< ">\t event "
 				<< universal_object_id << ">\t reset");
