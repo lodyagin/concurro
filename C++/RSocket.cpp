@@ -32,13 +32,12 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
 	 fd(addr.get_fd()), 
-	 aw_ptr(addr.get_aw_ptr()),
-	 thread_repository(
-		SFORMAT("RSocketRepository[RSocket[fd=" 
-				  << addr.get_fd() << "]]"), 
-		5)
+	 repository(dynamic_cast<RSocketRepository*>
+					(oi.repository)),
+	 aw_ptr(addr.get_aw_ptr())
 {
   assert(fd >= 0);
+  assert(repository);
   assert(aw_ptr);
   assert(aw_ptr->begin()->ai_addr);
 

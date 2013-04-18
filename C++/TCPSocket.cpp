@@ -67,8 +67,8 @@ TCPSocket::TCPSocket
 	 CONSTRUCT_EVENT(closed),
     tcp_protoent(NULL),
 	 thread(dynamic_cast<Thread*>
-			  (thread_repository.create_thread
-				(Thread::Par(this))))
+			  (RSocketBase::repository->thread_factory
+				-> create_thread(Thread::Par(this))))
 {
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);

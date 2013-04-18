@@ -55,8 +55,8 @@ ClientSocket::ClientSocket
 	 },
 
 	 thread(dynamic_cast<Thread*>
-			  (thread_repository.create_thread
-				(Thread::Par(this))))
+			  (RSocketBase::repository->thread_factory
+				-> create_thread(Thread::Par(this))))
 {
   SCHECK(thread);
   this->RSocketBase::ancestors.push_back(this);

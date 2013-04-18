@@ -63,7 +63,7 @@ struct Log { typedef Logger<Log> log; };
 void test_client_socket()
 {
   RSocketRepository sr("RSocketCU::test_client_socket::sr",
-							  10);
+							  10, &thread_repository);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*RSocketAddressRepository()

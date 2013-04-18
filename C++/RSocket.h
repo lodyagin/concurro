@@ -25,6 +25,8 @@
 
 class SocketBaseAxis : public StateAxis {};
 
+class RSocketRepository;
+
 /**
  * An abstract socket base.  In the Concurro library
  * each separate RSocket is connected to one an
@@ -52,6 +54,7 @@ public:
   virtual const CompoundEvent is_terminal_state() const= 0;
 
 protected:
+#if 0
   //TODO make external threads controlling a group of
   //sockets instead of has each socket with its own
   //threads. 
@@ -59,12 +62,14 @@ protected:
 	 RThread<std::thread>, std::unordered_map,
 	 std::thread::native_handle_type>
 	 LocalThreadRepository;
+#endif
+  RSocketRepository* repository;
 
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
   //! A thread repository to internal threads creation
-  LocalThreadRepository thread_repository;
+  //LocalThreadRepository thread_repository;
 
   // List of all ancestors. Each derived (with a public
   // virtual base) class append itself here from its
@@ -198,7 +203,7 @@ inline RSocketBase* RSocketAllocator
    const RSocketAddress& addr);
 
 
-#if 1
+#if 0
 typedef Repository<
   RSocketBase, RSocketAddress, std::map, SOCKET
   > RSocketRepository;
@@ -215,8 +220,10 @@ public:
 
   RThreadFactory *const thread_factory;
 
-  RSocketRepository(RThreadFactory *const tf)
-    : Parent("RSocketRepository", 10),
+  RSocketRepository(const std::string& id,
+						  size_t reserved,
+						  RThreadFactory *const tf)
+    : Parent(id, reserved),
 	 thread_factory(tf) {}
 };
 #endif
