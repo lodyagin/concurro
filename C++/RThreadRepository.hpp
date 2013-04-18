@@ -11,9 +11,8 @@
 
 #include "RThreadRepository.h"
 
-template<class Thread, template<class...> class Container,
-  class ThreadId>
-void RThreadRepository<Thread, Container, ThreadId>
+template<class Thread>
+void RThreadRepository<Thread>
 //
 ::stop_subthreads ()
 {
@@ -21,16 +20,14 @@ void RThreadRepository<Thread, Container, ThreadId>
     this->objects->begin (),
     this->objects->end (),
     ThreadStopper<typename RepositoryMapType
-	               <Thread, ThreadId, Container>
+	               <Thread, ThreadId, std::map>
                   ::Map::value_type
                   > ()
     );
 }
 
-template<class Thread, 
-			template<class...> class Container, 
-			class ThreadId>
-void RThreadRepository<Thread, Container, ThreadId>
+template<class Thread>
+void RThreadRepository<Thread>
 //
 ::wait_subthreads ()
 {
@@ -38,16 +35,14 @@ void RThreadRepository<Thread, Container, ThreadId>
     this->objects->begin (),
     this->objects->end (),
     ThreadWaiter<typename RepositoryMapType
-	               <Thread, ThreadId, Container>
+	               <Thread, ThreadId, std::map>
                   ::Map::value_type
                   > ()
     );
 }
 
-template<class Thread, 
-			template<class...> class Container,
-			class ThreadId>
-void RThreadRepository<Thread, Container, ThreadId>
+template<class Thread>
+void RThreadRepository<Thread>
 //
 ::delete_object(Thread* thread, bool freeMemory)
 {
@@ -56,10 +51,8 @@ void RThreadRepository<Thread, Container, ThreadId>
   Parent::delete_object(thread, freeMemory);
 }
 
-template<class Thread, 
-			template<class...> class Container,
-			class ThreadId>
-void RThreadRepository<Thread, Container, ThreadId>
+template<class Thread>
+void RThreadRepository<Thread>
 //
 ::delete_object_by_id (ThreadId id, bool freeMemory)
 {

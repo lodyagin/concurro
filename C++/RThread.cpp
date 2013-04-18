@@ -1,3 +1,10 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ * An unified wrapper over different type of threads (i.e., QThread, posix thread etc.).
+ */
+
 #include "StdAfx.h"
 #include "RThread.h"
 #include "SShutdown.h"
@@ -15,10 +22,15 @@ DEFINE_STATES(
 	 },
   {
     {"ready", "starting"},      // start ()
-    {"starting", "working"},    // from a user-overrided run() method
-    {"working", "terminated"},  // exit from a user-overrided run()
-    //<NB> no ready->terminated, i.e., terminated means the run()
-    //was executed (once and only once)
+
+    {"starting", "working"},    
+    // from a user-overrided run() method
+
+    {"working", "terminated"},  
+    // exit from a user-overrided run() 
+	 // <NB> no ready->terminated, i.e.,
+    // terminated means the run() was executed (once and
+    // only once)
   }
 );
 
@@ -77,12 +89,16 @@ void RThreadBase::stop()
   isStopRequested.set ();
 }
 
-#if 0
-RThread* RThread::get_current ()
+RThread<std::thread>* RThread<std::thread>::current ()
 {
+#ifdef _WIN32
   return reinterpret_cast<RThread*> (_current.get ());
+#else
+  
+#endif
 }
 
+#if 0
 unsigned int __stdcall RThread::_helper( void * p )
 {
   RThread * _this = reinterpret_cast<RThread *>(p);

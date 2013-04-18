@@ -106,17 +106,14 @@ void test_local_no_start()
   t2.stop();
 }
 
-static RThreadRepository<
-  RThread<std::thread>, std::map, std::thread::native_handle_type
-  > thread_repository("RThreadCU::thread_repository", 10);
-
 void test_thread_in_repository()
 {
-  RThreadFactory* tf = &thread_repository;
+  RThreadFactory& tf = 
+	 RThreadRepository<RThread<std::thread>>::instance();
 
   T1* thread = dynamic_cast<T1*>
-	 (tf->create_thread(T1::Par()));
+	 (tf.create_thread(T1::Par()));
   thread->start();
-  tf->delete_thread(thread); //implies stop()
+  tf.delete_thread(thread); //implies stop()
 }
 

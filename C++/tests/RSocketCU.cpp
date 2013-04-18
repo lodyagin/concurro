@@ -53,17 +53,15 @@ void test_localhost_socket_address()
   CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
 }
 
-static RThreadRepository<
-  RThread<std::thread>, std::map, 
-  std::thread::native_handle_type
-  > thread_repository("RSocketCU:thread_repository", 10);
-
 struct Log { typedef Logger<Log> log; };
 
 void test_client_socket()
 {
-  RSocketRepository sr("RSocketCU::test_client_socket::sr",
-							  10, &thread_repository);
+  RSocketRepository sr
+	 ("RSocketCU::test_client_socket::sr",
+	  10, 
+	  &RThreadRepository<RThread<std::thread>>::instance()
+	 );
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
 	 (sr.create_object
 	  (*RSocketAddressRepository()

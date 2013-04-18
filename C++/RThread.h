@@ -171,14 +171,14 @@ class RThread<std::thread> : public RThreadBase
 {
 public:
 
+  typedef std::thread::native_handle_type ThreadId;
+  typedef ThreadId Id;
+
   class Par;
 
   //! A RepositoryType to use with this RThread
   typedef RepositoryInterface<
-	 RThread<std::thread>, 
-	 Par, 
-	 std::thread::native_handle_type> RepositoryType;
-  typedef std::thread::native_handle_type ThreadId;
+	 RThread<std::thread>, Par, ThreadId > RepositoryType;
 
   class Par : public RThreadBase::Par
   {
@@ -261,7 +261,10 @@ public:
     th->join(); 
   }
 
-  //static RThread<std::thread>& current();
+  //! Return ptr to the current thread or nullptr if the
+  //! current thread is not registered in a global
+  //! RThread<std::thread> repository.
+  static RThread<std::thread>* current();
 
   DEFAULT_LOGGER(RThread<std::thread>)
 

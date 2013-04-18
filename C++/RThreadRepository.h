@@ -31,19 +31,32 @@ public:
 	 (RThreadBase* thread) = 0;
 };
 
-template<class Thread, template<class...> class Container,
-  class ThreadId>
-class RThreadRepository : public Repository<Thread,
-typename Thread::Par, Container, ThreadId>, public RThreadFactory
+template<class Thread>
+class RThreadRepository 
+  : public Repository<
+      Thread,
+      typename Thread::Par, 
+      std::map, 
+      typename Thread::Id
+  >,
+  public RThreadFactory,
+  public SAutoSingleton<RThreadRepository<Thread>>
 {
 public:
-  typedef Repository<Thread, typename Thread::Par,
-    Container, ThreadId> Parent;
+  typedef Repository<
+      Thread,
+      typename Thread::Par, 
+      std::map, 
+      typename Thread::Id
+	 > Parent;
   typedef typename Thread::Par Par;
+  typedef typename Thread::Id ThreadId;
 
-  RThreadRepository(const std::string& name,
-						  size_t initial_capacity) 
-	 : Parent(name, initial_capacity) {}
+  RThreadRepository(/*const std::string& name,
+							 size_t initial_capacity*/) 
+	 : Parent(typeid(RThreadRepository<Thread>).name(), 
+				 100 // the value is ignored for std::map
+		) {}
 
 
   virtual void stop_subthreads ();
@@ -52,7 +65,8 @@ public:
   //! It overrides RThreadFactory::create_thread
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
-	  return Parent::create_object(dynamic_cast<const Par&>(par));
+	  return Parent::create_object
+		 (dynamic_cast<const Par&>(par));
   }
 
   //! It overrides RThreadFactory::delete_thread
