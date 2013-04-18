@@ -207,15 +207,27 @@ inline LogBase* Logger<LOG::States>::init_base
 		(log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); \
   } \
 } while (0)
+#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {			\
+ if (LOG4CXX_UNLIKELY(LogParams::place									\
+							 && log::logger()->isDebugEnabled())) {			\
+		::log4cxx::helpers::MessageBuffer oss_;		 	\
+		{ oss_ << stream_expr ; }							  	\
+		log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); \
+  } \
+} while (0)
 #else
 #define LOGGER_DEBUG_PLACE_LOC(log, place, message, loc)
+#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)
 #endif
 
 #define LOG_DEBUG_PLACE_LOC(log, place, message, loc)	\
   LOGGER_DEBUG_PLACE_LOC(log::logger(), place, message, loc)
+//#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)		  LOGGER_DEBUG_STATIC_PLACE_LOC(log::logger(), place, message, loc)
 
 #define LOG_DEBUG_PLACE(log, place, message)					\
   LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+#define LOG_DEBUG_STATIC_PLACE(log, place, message)					\
+  LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 
 #define LOG_TRACE_LOC(log, message, loc)		 \
   LOGGER_TRACE_LOC(log::logger(), message, loc)

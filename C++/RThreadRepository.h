@@ -94,7 +94,7 @@ public:
   {
     THROW_EXCEPTION
     (SException,
-    		"replace_object is not realised for threads.");
+    		"replace_object is not implemented for threads.");
   }
 };
 

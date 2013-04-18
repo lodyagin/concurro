@@ -120,6 +120,10 @@ public:
 
 protected:
 
+  struct LogParams {
+	 static bool current;
+  } log_params;
+
   bool destructor_delegate_is_called;
 
   //! stop is requested

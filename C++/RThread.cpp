@@ -43,6 +43,8 @@ DEFINE_STATE_CONST(RThreadBase, ThreadState, terminated);
 //DEFINE_EVENT(RThreadBase, ThreadAxis, starting);
 //DEFINE_EVENT(RThreadBase, ThreadAxis, terminated);
 
+bool RThreadBase::LogParams::current = false;
+
 RThreadBase::RThreadBase 
 (const std::string& id, 
  Event* extTerminated
@@ -114,9 +116,11 @@ RThread<std::thread>* RThread<std::thread>
   catch (const RThreadRepository<RThread<std::thread>>
 			::NoSuchId&)
   {
-	 LOG_DEBUG(log, "std::thread[native_handle="
-				  << native_handle << "] is not registered "
-				  " in the thread repository");
+	 LOG_DEBUG_STATIC_PLACE(log, current, 
+						  "std::thread[native_handle="
+						  << native_handle 
+						  << "] is not registered "
+						  " in the thread repository");
 	 return nullptr;
   }
 #endif
