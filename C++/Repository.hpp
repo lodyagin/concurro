@@ -170,7 +170,10 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
   catch (const std::out_of_range&)
   {
-	 THROW_EXCEPTION(NoSuchId, id);
+	 if (log_params.get_object_by_id__no_such_id)
+		THROW_EXCEPTION(NoSuchId, id);
+	 else
+		throw NoSuchId(id); // silent throw
   }
 }
 

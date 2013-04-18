@@ -151,6 +151,15 @@ public:
   typedef ObjMap<Obj*> Map;
 };
 
+//! Tune a logging
+struct RepositoryLogParams
+{
+  RepositoryLogParams()
+  : get_object_by_id__no_such_id(true) {}
+
+  bool get_object_by_id__no_such_id;
+};
+
 /**
  * A RepositoryBase contain not-specialized methods of
  * Repository, i.e., methods not dependent on the ObjMap.
@@ -168,10 +177,14 @@ public:
   typedef typename Parent::NoSuchId NoSuchId;
   typedef typename Parent::IdIsAlreadyUsed 
 	 IdIsAlreadyUsed;
-
-  RepositoryBase (const std::string& repo_name) 
+  typedef RepositoryLogParams LogParams;
+  
+  RepositoryBase
+	 (const std::string& repo_name, 
+	  const LogParams& log_params_ = LogParams()) 
 	 : objectsM (SFORMAT(repo_name << ".objectsM")),
-	   objects(0) {}
+	 objects(0), log_params(log_params_)
+	 {}
 
   virtual ~RepositoryBase ();
 
@@ -217,6 +230,7 @@ protected:
   RMutex objectsM;
   typename RepositoryMapType<Obj, ObjId, ObjMap>
 	 ::Map* objects;
+  LogParams log_params;
 
   //! Calculate an id for a new object, possible based on
   //! Par (depending of the Repository type)
@@ -254,8 +268,10 @@ public:
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
   Repository(const std::string& repository_name,
-				size_t initial_capacity)
-	 : Parent (repository_name),
+				 size_t initial_capacity,
+				 const RepositoryLogParams& log_params_ = 
+				 RepositoryLogParams())
+	 : Parent (repository_name, log_params_),
 	 obj_count(0)
   {
 	 this->objects = new typename RepositoryMapType<Obj,
@@ -397,8 +413,9 @@ public:
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
   Repository(const std::string& repository_name, 
-				 size_t initial_value)
-	 : Parent (repository_name)
+				 size_t initial_value,
+				 const RepositoryLogParams& log_params_ = RepositoryLogParams())
+	 : Parent (repository_name, log_params_)
   {
 	 this->objects = new ObjMap (initial_value);
   }
@@ -461,8 +478,9 @@ public:
   //! for vector and size for hash tables.
   Repository 
 	 (const std::string& repository_name, 
-	  size_t initial_value)
-	 : Parent (repository_name)
+	  size_t initial_value,
+		const RepositoryLogParams& log_params_ = RepositoryLogParams())
+	 : Parent (repository_name, log_params_)
   {
 	 this->objects = new ObjMap ();
   }
