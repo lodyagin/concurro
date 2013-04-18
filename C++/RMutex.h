@@ -18,10 +18,10 @@
 #endif
 
 #define MUTEX_ACQUIRE(mutex) \
-  { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
+  do { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
 
 #define MUTEX_RELEASE(mutex) \
-  { (mutex).release(LOG4CXX_LOCATION); } while(0)
+  do { (mutex).release(LOG4CXX_LOCATION); } while(0)
 
 /// RAII version of MUTEX_ACQUIRE
 #define RLOCK(mutex) \
