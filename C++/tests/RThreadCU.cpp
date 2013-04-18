@@ -34,6 +34,8 @@ int RThreadCUClean()
   return 0;
 }
 
+static bool check_my_name(const std::string& n);
+
 class T1Axis : public StateAxis {};
 
 class T1 : public RT, public RObjectWithEvents<T1Axis>
@@ -87,21 +89,21 @@ public:
 
   void run() { 
 	 RT::ThreadState::move_to(*this, workingState);
-	 if (check_my_name())
+	 if (::check_my_name(name))
 		T1::St::move_to(*this, check_passedState);
 	 else
 		T1::St::move_to(*this, check_failedState);
 	 USLEEP(100);
   }
 
-  bool check_my_name() const
-  {
-	 T1* t1 = dynamic_cast<T1*>(RT::current());
-	 return (t1 && t1->name == name);
-  }
-
   const std::string name;
 };
+
+static bool check_my_name(const std::string& n)
+{
+  T1* t1 = dynamic_cast<T1*>(RT::current());
+  return (t1 && t1->name == n);
+}
 
 DEFINE_STATES(T1Axis,
   {
