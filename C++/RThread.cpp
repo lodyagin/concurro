@@ -7,6 +7,7 @@
 
 #include "StdAfx.h"
 #include "RThread.h"
+#include "RThreadRepository.h"
 #include "SShutdown.h"
 #include "Logging.h"
 #include <assert.h>
@@ -94,7 +95,26 @@ RThread<std::thread>* RThread<std::thread>::current ()
 #ifdef _WIN32
   return reinterpret_cast<RThread*> (_current.get ());
 #else
-  
+  // it's ugly, but seams no another way
+  const auto native_handle =
+  fromString<std::thread::native_handle_type>
+	 (toString(std::this_thread::get_id()));
+
+  try
+  {
+	 return dynamic_cast<RThread<std::thread>*>
+		(RThreadRepository<RThread<std::thread>>
+		 ::instance()
+		 . get_object_by_id (native_handle));
+  }
+  catch (const RThreadRepository<RThread<std::thread>>
+			::NoSuchId&)
+  {
+	 LOG_DEBUG(log, "std::thread[native_handle="
+				  << native_handle << "] is not registered "
+				  " in the thread repository");
+	 return nullptr;
+  }
 #endif
 }
 
@@ -180,22 +200,10 @@ void RThreadBase::_run()
   // no code after that (destructor can be called)
 }
 
-#if 0
-
-void RThreadBase::log_from_constructor ()
+void RThread<std::thread>::remove()
 {
-  LOG_INFO(log, "New " << *this);
+  RThreadRepository<RThread<std::thread>>::instance()
+	 . delete_thread(this);
+  //<NB> invalidate itself, a destructor is already called
 }
-
-template<class Thread>
-RThread<Thread> & RThread<Thread>::current()
-{
-  RThread * thread = reinterpret_cast<RThread*> 
-    (RThread::get_current ());
-
-  SCHECK(thread); //FIXME check
-  return *thread;
-}
-#endif
-
 

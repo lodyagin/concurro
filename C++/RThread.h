@@ -261,6 +261,13 @@ public:
     th->join(); 
   }
 
+  //! Create in the repository
+  template<class Thread, class... Args>
+  static Thread* create(Args&&... args);
+
+  //! Destroy in the repository
+  void remove();
+
   //! Return ptr to the current thread or nullptr if the
   //! current thread is not registered in a global
   //! RThread<std::thread> repository.

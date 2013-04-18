@@ -46,9 +46,10 @@ void RThreadRepository<Thread>
 //
 ::delete_object(Thread* thread, bool freeMemory)
 {
-  thread->stop();
-  thread->is_terminated().wait();
-  Parent::delete_object(thread, freeMemory);
+  assert (thread);
+  const ThreadId id = fromString<ThreadId> 
+	 (thread->universal_id());
+  delete_object_by_id(id, freeMemory);
 }
 
 template<class Thread>

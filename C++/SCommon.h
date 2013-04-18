@@ -187,19 +187,19 @@ void toString (const T& object, std::string & s)
 }
 
 template <class T>
-std::string&& toString (const T& object)
+std::string toString (const T& object)
 {
   std::ostringstream os;
   os << object;
-  return std::move(os.str());
+  return os.str();
 }
 
 // FIXME raise exception when the string is not a number
-template <class T>
-T fromString (const std::string& s)
+template <class T, class String>
+T fromString (String&& s)
 {
   T object;
-  std::istringstream is (s);
+  std::istringstream is (std::forward<String>(s));
   is >> object;
   return object;
 }

@@ -1,4 +1,5 @@
 #include "RThreadRepository.h"
+#include "RThread.hpp"
 #include "CUnit.h"
 #include "tests.h"
 #include <thread>
@@ -6,6 +7,7 @@
 void test_local_block();
 void test_local_no_start();
 void test_thread_in_repository();
+void test_current();
 
 CU_TestInfo RThreadTests[] = {
   {"a working thread must prevent exiting "
@@ -15,6 +17,8 @@ CU_TestInfo RThreadTests[] = {
 	test_local_no_start},
   {"thread creation in a repository",
 	test_thread_in_repository},
+  {"test RThread<std::thread>::current()",
+	test_current},
   CU_TEST_INFO_NULL
 };
 
@@ -30,30 +34,89 @@ int RThreadCUClean()
   return 0;
 }
 
-struct T1 : public RT
+class T1Axis : public StateAxis {};
+
+class T1 : public RT, public RObjectWithEvents<T1Axis>
 { 
+  DECLARE_EVENT(T1Axis, check_passed);
+  DECLARE_EVENT(T1Axis, check_failed);
+
+public:
+  DECLARE_STATES(T1Axis, St);
+  DECLARE_STATE_CONST(St, initial);
+  DECLARE_STATE_CONST(St, check_passed);
+  DECLARE_STATE_CONST(St, check_failed);
+
+  DEFAULT_LOGGER(T1);
+
+  const CompoundEvent is_terminal_state() const
+  {
+	 return is_check_passed_event
+		| is_check_failed_event;
+  }
+
   struct Par : public RT::Par
   {
+	 Par(const std::string& name_ = std::string())
+		: name(name_) {}
+	 
 	 RThreadBase* create_derivation
 	   (const ObjectCreationInfo& oi) const
 	 { 
 		return new T1(oi, *this); 
 	 }
+
+	 const std::string name;
   };
 
-  typedef Logger<T1> log;
-
-  T1() : RT("T1") {} 
+  T1() 
+  : RT("T1"), 
+	 RObjectWithEvents<T1Axis>(initialState),
+	 CONSTRUCT_EVENT(check_passed),
+	 CONSTRUCT_EVENT(check_failed)
+  {} 
 
   T1(const ObjectCreationInfo& oi, const Par& par) 
-	 : RT(oi, par) {} 
+	 : RT(oi, par), 
+		RObjectWithEvents<T1Axis>(initialState),
+		CONSTRUCT_EVENT(check_passed),
+		CONSTRUCT_EVENT(check_failed),
+		name(par.name) {} 
 
   ~T1() { destroy(); }
+
   void run() { 
 	 RT::ThreadState::move_to(*this, workingState);
+	 if (check_my_name())
+		T1::St::move_to(*this, check_passedState);
+	 else
+		T1::St::move_to(*this, check_failedState);
 	 USLEEP(100);
   }
+
+  bool check_my_name() const
+  {
+	 T1* t1 = dynamic_cast<T1*>(RT::current());
+	 return (t1 && t1->name == name);
+  }
+
+  const std::string name;
 };
+
+DEFINE_STATES(T1Axis,
+  {
+	 "initial", "check_passed", "check_failed"
+  },
+  {
+	 {"initial", "check_passed"},
+	 {"initial", "check_failed"}
+  }
+);
+		
+DEFINE_STATE_CONST(T1, St, initial);
+DEFINE_STATE_CONST(T1, St, check_passed);
+DEFINE_STATE_CONST(T1, St, check_failed);
+				  
 
 // It creates T1 in run()
 struct T2 : public RT 
@@ -108,12 +171,59 @@ void test_local_no_start()
 
 void test_thread_in_repository()
 {
-  RThreadFactory& tf = 
+  RThreadRepository<RT>& tr =
 	 RThreadRepository<RThread<std::thread>>::instance();
 
-  T1* thread = dynamic_cast<T1*>
+  RThreadFactory& tf = tr;
+
+  // direct repository request
+  {
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+	 T1* thread = dynamic_cast<T1*>
 	 (tf.create_thread(T1::Par()));
-  thread->start();
-  tf.delete_thread(thread); //implies stop()
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 1);
+	 thread->start();
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 1);
+	 tf.delete_thread(thread); //implies stop()
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+  }
+
+  // by create()
+  { 
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+	 T1* thread1 = RT::create<T1>();
+	 T1* thread2 = T1::create<T1>();
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 2);
+	 thread1->start();
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 2);
+	 thread2->start();
+	 thread1->remove();
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 1);
+	 thread2->remove();
+	 CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+  }
+}
+
+void test_current()
+{
+  RThreadRepository<RT>& tr =
+	 RThreadRepository<RThread<std::thread>>::instance();
+
+  // this thread is not registered;
+  CU_ASSERT_PTR_NULL_FATAL(RT::current());
+
+  CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+  T1* thread1 = T1::create<T1>("thread1");
+  T1* thread2 = T1::create<T1>("thread2");
+  thread1->start();
+  thread2->start();
+  thread1->is_terminal_state().wait();
+  thread2->is_terminal_state().wait();
+  CU_ASSERT_TRUE_FATAL(thread1->is_check_passed().signalled());
+  CU_ASSERT_FALSE_FATAL(thread1->is_check_failed().signalled());
+  CU_ASSERT_TRUE_FATAL(thread2->is_check_passed().signalled());
+  CU_ASSERT_FALSE_FATAL(thread2->is_check_failed().signalled());
+  thread1->remove(); // implies stop()
+  thread2->remove();
 }
 
