@@ -64,7 +64,7 @@ ClientSocket::ClientSocket
 
 ClientSocket::~ClientSocket()
 {
-  is_terminal_state_event.wait();
+  RSocketBase::is_terminal_state().wait();
 }
 
 void ClientSocket::ask_connect()

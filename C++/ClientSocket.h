@@ -58,7 +58,10 @@ protected:
 	 struct Par : public SocketThread::Par
 	 { 
 		Par(RSocketBase* sock) 
-		  : SocketThread::Par(sock) {}
+		  : SocketThread::Par(sock) 
+		{
+		  thread_name = SFORMAT("ClientSocket:" << sock->fd);
+		}
 
 		RThreadBase* create_derivation
 		  (const ObjectCreationInfo& oi) const

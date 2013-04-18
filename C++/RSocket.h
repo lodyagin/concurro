@@ -51,7 +51,10 @@ public:
   //! A socket file descriptor.
   const SOCKET fd;
 
-  virtual const CompoundEvent is_terminal_state() const= 0;
+  virtual const CompoundEvent is_terminal_state() 
+  {
+	 return Event("RSocketBase::termial_state", true);
+  }
 
 protected:
 #if 0

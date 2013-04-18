@@ -78,7 +78,8 @@ TCPSocket::TCPSocket
 TCPSocket::~TCPSocket()
 {
   //ask_close();
-  is_closed_event.wait();
+  //is_closed_event.wait();
+  RSocketBase::is_terminal_state().wait();
 }
 
 #if 0
