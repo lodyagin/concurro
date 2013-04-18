@@ -54,6 +54,8 @@ public:
 	   (const ObjectCreationInfo&) const = 0;
 	 virtual RThreadBase* transform_object
 	   (const RThreadBase*) const = 0;
+
+	 std::string thread_name;
   };
 
   //! Contains a common thread execution code. It calls
@@ -61,7 +63,10 @@ public:
   //! public for access from a derived RThread template.
   void _run ();
 
+  //! Id of this thread in a repository
   const std::string universal_object_id;
+  //! A pretty name for logging (if not empty)
+  const std::string thread_name;
 
   RThreadBase 
 	 (const std::string& id,
@@ -75,6 +80,12 @@ public:
   std::string universal_id() const
   {
 	 return universal_object_id;
+  }
+
+  std::string pretty_id() const
+  {
+	 return (thread_name.empty())
+		? universal_object_id : thread_name;
   }
 
   /* 
@@ -273,12 +284,17 @@ public:
   //! RThread<std::thread> repository.
   static RThread<std::thread>* current();
 
+  //! A pretty id of the current thread. 
+  //! \see current()
+  //! \see pretty_id() 
+  static std::string current_pretty_id();
+
   DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
   //! It is for creation from ThreadRepository
   RThread(const ObjectCreationInfo& oi, const Par& par)
-	 : RThreadBase(oi.objectId, par.extTerminated),
+	 : RThreadBase(oi, par),
 	 th(const_cast<Par&>(par).move_thread()) {}
 
   void start_impl () {}

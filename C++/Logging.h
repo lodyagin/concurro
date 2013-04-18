@@ -139,7 +139,7 @@ inline LogBase* Logger<LOG::States>::init_base
 
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOGGER_DEBUG_LOC(log, stream_expr, loc) {										\
+#define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isDebugEnabled())) {							\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -149,7 +149,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
-#define LOGGER_TRACE_LOC(log, stream_expr, loc) {										\
+#define LOGGER_TRACE_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isTraceEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -159,7 +159,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
-#define LOGGER_INFO_LOC(log, stream_expr, loc) {											\
+#define LOGGER_INFO_LOC(log, stream_expr, loc) do {											\
 	 if (LOG4CXX_UNLIKELY((log)->isInfoEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -169,7 +169,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
-#define LOGGER_WARN_LOC(log, stream_expr, loc) {											\
+#define LOGGER_WARN_LOC(log, stream_expr, loc) do {											\
 	 if (LOG4CXX_UNLIKELY((log)->isWarnEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -179,7 +179,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
-#define LOGGER_ERROR_LOC(log, stream_expr, loc) {										\
+#define LOGGER_ERROR_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isErrorEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -189,7 +189,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
-#define LOGGER_FATAL_LOC(log, stream_expr, loc) {										\
+#define LOGGER_FATAL_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isFatalEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\

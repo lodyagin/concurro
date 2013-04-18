@@ -59,7 +59,8 @@ RThreadBase::RThreadBase
 		 true, false),
 	 externalTerminated (extTerminated)
 {
-  LOG_DEBUG (log, "thread " << universal_object_id << "> created");
+  LOG_DEBUG (log, "thread " << pretty_id() 
+				 << ">\t created");
 }
 
 RThreadBase::RThreadBase
@@ -69,6 +70,7 @@ RThreadBase::RThreadBase
 	 CONSTRUCT_EVENT(starting),
 	 CONSTRUCT_EVENT(terminated),
     universal_object_id (oi.objectId),
+	 thread_name(p.thread_name),
 	 destructor_delegate_is_called(false),
     isStopRequested 
 	   (SFORMAT("RThreadBase[id=" << oi.objectId
@@ -76,7 +78,8 @@ RThreadBase::RThreadBase
 					true, false),
 	 externalTerminated (p.extTerminated)
 {
-  LOG_DEBUG (log, "thread " << oi.objectId << "> created");
+  LOG_DEBUG (log, "thread " << pretty_id() 
+				 << ">\t created");
 }
 
 void RThreadBase::start ()
@@ -90,7 +93,8 @@ void RThreadBase::stop()
   isStopRequested.set ();
 }
 
-RThread<std::thread>* RThread<std::thread>::current ()
+RThread<std::thread>* RThread<std::thread>
+::current ()
 {
 #ifdef _WIN32
   return reinterpret_cast<RThread*> (_current.get ());
@@ -117,6 +121,18 @@ RThread<std::thread>* RThread<std::thread>::current ()
   }
 #endif
 }
+
+std::string RThread<std::thread>
+::current_pretty_id()
+{
+  auto* cur = current();
+  if (cur) {
+	 return cur->pretty_id();
+  }
+  else
+	 return toString(std::this_thread::get_id());
+}
+
 
 #if 0
 unsigned int __stdcall RThread::_helper( void * p )
@@ -161,7 +177,7 @@ void RThreadBase::destroy()
   isStopRequested.set();
   is_terminated_event.wait();
 
-  LOG_DEBUG (log, "thread " << universal_object_id << "> destroyed");
+  LOG_DEBUG (log, "thread " << pretty_id() << ">\t destroyed");
   destructor_delegate_is_called = true;
 }
 
@@ -171,7 +187,7 @@ void RThreadBase::_run()
   is_starting_event.wait();
 
   //TODO check run from current thread
-  LOG_DEBUG (log, "thread " << universal_object_id << "> started");
+  LOG_DEBUG (log, "thread " << pretty_id() << ">\t started");
   try
   {
     run();
@@ -191,7 +207,7 @@ void RThreadBase::_run()
 		"Unknown type of exception in the thread.");
   }
 
-  LOG_DEBUG (log, "thread " << universal_object_id << "> finished");
+  LOG_DEBUG (log, "thread " << pretty_id() << ">\t finished");
 
   if (externalTerminated) 
     externalTerminated->set ();

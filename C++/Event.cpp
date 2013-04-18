@@ -33,9 +33,9 @@ EvtBase::EvtBase(const std::string& id,
 #endif
 {
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> created");
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t created");
 #ifdef _WIN32
   sWinCheck(h != 0, L"creating an event");
 #endif
@@ -44,8 +44,8 @@ EvtBase::EvtBase(const std::string& id,
 EvtBase::~EvtBase()
 {
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> closes the event handle [" 
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t closes the event handle [" 
 				<< universal_object_id << "]");
 
 #ifdef _WIN32
@@ -66,9 +66,9 @@ operator<< (std::ostream& out, const EvtBase& evt)
 void EvtBase::set()
 {
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> set");
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t set");
 #ifdef _WIN32
   sWinCheck
     (SetEvent(h) != 0, 
@@ -86,9 +86,9 @@ void EvtBase::set()
 void EvtBase::reset()
 {
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> reset");
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t reset");
 #ifdef _WIN32
   sWinCheck
     (ResetEvent(h) != 0, 
@@ -106,17 +106,17 @@ bool EvtBase::wait_impl(int time) const
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event "
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event "
 				  << universal_object_id 
-				  << "> wait " << time << " msecs");
+				  << ">\t wait " << time << " msecs");
   }
   else {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event "
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event "
 				  << universal_object_id 
-				  << "> waits w/o timeout");
+				  << ">\t waits w/o timeout");
   }
 
   HANDLE evts[] = {
@@ -134,18 +134,18 @@ bool EvtBase::wait_impl(int time) const
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event "
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event "
 				  << universal_object_id 
-				  << "> wait: timed out");
+				  << ">\t wait: timed out");
 	 return false;
   }
 #endif
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
 				<< universal_object_id 
-				<< "> wait: signalled");
+				<< ">\t wait: signalled");
   return true;
 }
 
@@ -227,15 +227,15 @@ bool CompoundEvent::wait_impl(int time) const
 {
   if (time != -1) {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event " << *this
-				  << "> wait " << time << " msecs");
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event " << *this
+				  << ">\t wait " << time << " msecs");
   }
   else {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event " << *this
-				  << "> waits w/o timeout");
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event " << *this
+				  << ">\t waits w/o timeout");
   }
 
   update_vector();
@@ -248,15 +248,15 @@ bool CompoundEvent::wait_impl(int time) const
 
   if (code == ETIMEDOUT) {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event " << *this
-				  << "> wait: timed out");
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event " << *this
+				  << ">\t wait: timed out");
 	 return false;
   }
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event " << *this
-				<< "> wait: signalled");
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event " << *this
+				<< ">\t wait: signalled");
   return true;
 }
 
