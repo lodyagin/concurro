@@ -38,6 +38,14 @@ public:
 
   virtual log4cxx::LoggerPtr logger() const = 0;
 
+  virtual std::string object_name() const
+  {
+	 return SFORMAT(typeid(this).name() 
+						 << ":" << universal_id());
+  }
+
+  virtual std::string universal_id() const = 0;
+
 protected:
 
   virtual std::atomic<uint32_t>& current_state() = 0;

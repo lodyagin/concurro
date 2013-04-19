@@ -158,6 +158,16 @@ class RSocket : public Bases...
 	 return is_terminal_state_event;
   }
 
+  std::string universal_id() const
+  {
+	 return RSocketBase::universal_id();
+  }
+
+  std::string object_name() const
+  {
+	 return SFORMAT("RSocket:" << this->fd);
+  }
+
 protected:
   Event is_terminal_state_event;
 

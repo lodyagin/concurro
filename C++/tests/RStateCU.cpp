@@ -40,6 +40,12 @@ public:
   DECLARE_STATE_CONST(State, s4);
   DECLARE_STATE_CONST(State, s5);
   TestObject() : RObjectWithStates<TestAxis>(s1State) {}
+
+  std::string universal_id() const
+  {
+	 return "?";
+  }
+
 protected:
   DEFAULT_LOGGER(TestObject)
 };

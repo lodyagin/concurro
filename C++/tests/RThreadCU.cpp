@@ -96,6 +96,11 @@ public:
 	 USLEEP(100);
   }
 
+  std::string universal_id() const
+  {
+	 return name;
+  }
+
   const std::string name;
 };
 

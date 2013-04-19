@@ -54,6 +54,11 @@ public:
   //! Move the buffer.
   //RBuffer& operator=(RBuffer&&);
 
+  std::string universal_id() const
+  {
+	 return "?";
+  }
+
 };
 
 class RSingleBuffer : public RBuffer
