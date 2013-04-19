@@ -90,14 +90,14 @@ public:
   //! true (i.e., the event "was")
   bool wait_shadow(int time = -1)
   {
-	 LOG_DEBUG(log, "shadow = " << shadow);
+	 //LOG_DEBUG(log, "shadow = " << shadow);
 	 return shadow || wait_impl(time);
   }
 
   bool wait_shadow(int time = -1) const
   {
 	 SCHECK(is_manual);
-	 LOG_DEBUG(log, "shadow = " << shadow);
+	 //LOG_DEBUG(log, "shadow = " << shadow);
 	 return shadow || wait_impl(time);
   }
 
