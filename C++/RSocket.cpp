@@ -32,6 +32,8 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
 	 fd(addr.get_fd()), 
+	 is_construction_complete_event
+		("RSocketBase::construction_complete", true),
 	 repository(dynamic_cast<RSocketRepository*>
 					(oi.repository)),
 	 aw_ptr(addr.get_aw_ptr())

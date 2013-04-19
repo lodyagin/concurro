@@ -16,6 +16,7 @@ class ClientSocketAxis : public StateAxis {};
 class ClientSocket : virtual public RSocketBase,
   public RObjectWithEvents<ClientSocketAxis>
 {
+  DECLARE_EVENT(ClientSocketAxis, connecting)
   DECLARE_EVENT(ClientSocketAxis, connected)
   DECLARE_EVENT(ClientSocketAxis, connection_timed_out)
   DECLARE_EVENT(ClientSocketAxis, connection_refused)
@@ -32,7 +33,7 @@ public:
 
   const CompoundEvent is_terminal_state_event;
 
-  const CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const
   {
 	 return is_terminal_state_event;
   }

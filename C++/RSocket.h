@@ -51,12 +51,16 @@ public:
   //! A socket file descriptor.
   const SOCKET fd;
 
-  virtual const CompoundEvent is_terminal_state() 
-  {
-	 return Event("RSocketBase::termial_state", true);
-  }
+  virtual CompoundEvent is_terminal_state() const = 0;
+  /*{
+	 return is_terminal_state_event;
+	 }*/
 
+  Event is_construction_complete_event;
 protected:
+  
+  //Event is_terminal_state_event;
+
 #if 0
   //TODO make external threads controlling a group of
   //sockets instead of has each socket with its own
@@ -74,10 +78,10 @@ protected:
   //! A thread repository to internal threads creation
   //LocalThreadRepository thread_repository;
 
-  // List of all ancestors. Each derived (with a public
-  // virtual base) class append itself here from its
-  // constructor.
-  std::list<RSocketBase*> ancestors;
+  //! List of all ancestors terminal events. Each derived
+  //! (with a public virtual base) class appends its
+  //! terminal event here from its constructor.
+  std::list<CompoundEvent> ancestor_terminals;
 
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
@@ -153,9 +157,12 @@ class RSocket : public Bases...
 	 (const ObjectCreationInfo& oi,
 	  const RSocketAddress& addr);
 
-  const CompoundEvent is_terminal_state() const
+public:
+  CompoundEvent is_terminal_state() const
   {
-	 return is_terminal_state_event;
+	 //return RSocketBase::is_terminal_state();
+	 //return is_terminal_state_event;
+	 THROW_NOT_IMPLEMENTED; // or return CompoundEvent()
   }
 
   std::string universal_id() const
@@ -169,15 +176,17 @@ class RSocket : public Bases...
   }
 
 protected:
-  Event is_terminal_state_event;
+  //Event is_terminal_state_event;
 
   RSocket(const ObjectCreationInfo& oi,
 			 const RSocketAddress& addr)
-	 : RSocketBase(oi, addr), Bases(oi, addr)...,
+	 : RSocketBase(oi, addr), Bases(oi, addr).../*,
 	 is_terminal_state_event(
 		SFORMAT(oi.objectId << ":" 
-				  << "is_terminal_state_event"), true)
-	 {}
+		<< "is_terminal_state_event"), true)*/
+  {
+	 RSocketBase::is_construction_complete_event.set();
+  }
 
   //! wait all parts terminated and set
   //! its own is_terminal_state_event. 

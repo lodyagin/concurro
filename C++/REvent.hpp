@@ -28,7 +28,7 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
 		  ),
 	 Event(obj_ptr->create_event((UniversalEvent)*this))
 {
-  evt_ptr->log_params.set =
+  evt_ptr->log_params.set = true;
 	 evt_ptr->log_params.reset = false;
 }
 

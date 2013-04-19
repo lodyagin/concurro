@@ -280,5 +280,7 @@ void test_shadow()
   CU_ASSERT_TRUE_FATAL(ev.wait_shadow(0));
   CU_ASSERT_FALSE_FATAL(ev.wait(TAU));
   CU_ASSERT_TRUE_FATAL(ev.wait_shadow(TAU));
+  const Event ev2 = ev;
+  CU_ASSERT_TRUE_FATAL(ev.wait_shadow(TAU));
 }
 

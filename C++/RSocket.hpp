@@ -21,9 +21,10 @@ RSocket<Bases...>
 ::~RSocket()
 {
   // wait all parts termination
-  for (auto& s : this->ancestors)
-	 s->is_terminal_state().wait();
-  is_terminal_state_event.set();
+  for (auto& te : this->ancestor_terminals)
+	 te.wait();
+  //RSocketBase::is_terminal_state_event.set();
+  LOG_DEBUG(log, "~RSocket()");
 }
 
 // temporary empty definitions

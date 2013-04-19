@@ -30,7 +30,7 @@ public:
 
   ~TCPSocket();
 
-  const CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const
   {
 	 return is_closed_event;
   }

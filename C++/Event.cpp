@@ -69,6 +69,10 @@ void EvtBase::set()
 				<< RThread<std::thread>::current_pretty_id()
 				<< ">\t event "
 				<< universal_object_id << ">\t set");
+  LOG_DEBUG(log, "thread " 
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t set");
 #ifdef _WIN32
   sWinCheck
     (SetEvent(h) != 0, 

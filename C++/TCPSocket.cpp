@@ -70,6 +70,9 @@ TCPSocket::TCPSocket
 			  (RSocketBase::repository->thread_factory
 				-> create_thread(Thread::Par(this))))
 {
+  SCHECK(thread);
+  this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);
   thread->start();
@@ -79,7 +82,8 @@ TCPSocket::~TCPSocket()
 {
   //ask_close();
   //is_closed_event.wait();
-  RSocketBase::is_terminal_state().wait();
+  //RSocketBase::is_terminal_state().wait();
+  LOG_DEBUG(log, "~TCPSocket()");
 }
 
 #if 0
@@ -106,14 +110,14 @@ void TCPSocket::ask_close()
 void TCPSocket::Thread::run()
 {
   ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
   ClientSocket* cli_sock = 0;
   if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
 	 THROW_NOT_IMPLEMENTED;
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  REvent<ClientSocketAxis> (cli_sock, "connecting")
-	 . wait_shadow();
+  cli_sock->is_connecting().wait_shadow();
   TCPSocket::State::move_to(*tcp_sock, syn_sentState);
 
   (cli_sock->is_terminal_state_event 

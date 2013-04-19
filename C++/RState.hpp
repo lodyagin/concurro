@@ -73,6 +73,8 @@ void RAxis<Axis>
   if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
 		(&obj)) {
 	 assert(trans_id > 0);
+	 LOGGER_DEBUG(logger, "update_events(" << trans_id 
+					  << ", " << to << ");");
 	 p->update_events(trans_id, to);
   }
 

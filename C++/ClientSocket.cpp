@@ -42,13 +42,13 @@ ClientSocket::ClientSocket
   : 
 	 RSocketBase(oi, par),
 	 RObjectWithEvents<ClientSocketAxis>(createdState),
+	 CONSTRUCT_EVENT(connecting),
 	 CONSTRUCT_EVENT(connected),
 	 CONSTRUCT_EVENT(connection_timed_out),
 	 CONSTRUCT_EVENT(connection_refused),
 	 CONSTRUCT_EVENT(destination_unreachable),
 
 	 is_terminal_state_event {
-  //is_connected_event,
 		is_connection_timed_out_event,
 		is_connection_refused_event,
 		is_destination_unreachable_event
@@ -59,12 +59,14 @@ ClientSocket::ClientSocket
 				-> create_thread(Thread::Par(this))))
 {
   SCHECK(thread);
-  this->RSocketBase::ancestors.push_back(this);
+  this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());
 }
 
 ClientSocket::~ClientSocket()
 {
-  RSocketBase::is_terminal_state().wait();
+  //RSocketBase::is_terminal_state().wait();
+  LOG_DEBUG(log, "~ClientSocket()");
 }
 
 void ClientSocket::ask_connect()
