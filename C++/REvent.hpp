@@ -30,6 +30,8 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
 {
   evt_ptr->log_params.set = 
 	 evt_ptr->log_params.reset = false;
+  // if you tune it tune it also 
+  // in the second constructor
 }
 
 template<class Axis>
