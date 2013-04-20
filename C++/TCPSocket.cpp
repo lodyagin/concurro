@@ -16,7 +16,7 @@ DEFINE_STATES(TCPAxis,
 	 "in_closed",    // input part of connection is closed
 	 "out_closed",
 	 "listen",       // passive open
-	 "syn_sent",
+//	 "syn_sent",
     "accepting",    // in the middle of a new ServerSocket
 						  // creation
 	 "established",
@@ -29,14 +29,14 @@ DEFINE_STATES(TCPAxis,
 	 },
   {
   {"created", "listen"},      // listen()
-  {"created", "syn_sent"},    // our connect()
+//  {"created", "syn_sent"},    // our connect()
   {"listen", "accepting"}, // connect() from other side
   {"accepting", "listen"},
   {"listen", "closed"},
   // {"listen", "syn_sent"},    // send()
-  {"syn_sent", "established"}, // initial send() is
+  {"created", "established"}, // initial send() is
 										 // recieved by other side
-  {"syn_sent", "closed"},     // close() or timeout 
+  {"created", "closed"},     // close() or timeout 
   {"established", "closing"}, // our close() or FIN from
 										// other side
   {"established", "in_closed"},
@@ -53,7 +53,7 @@ DEFINE_STATE_CONST(TCPSocket, State, closed);
 DEFINE_STATE_CONST(TCPSocket, State, in_closed);
 DEFINE_STATE_CONST(TCPSocket, State, out_closed);
 DEFINE_STATE_CONST(TCPSocket, State, listen);
-DEFINE_STATE_CONST(TCPSocket, State, syn_sent);
+//DEFINE_STATE_CONST(TCPSocket, State, syn_sent);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
 DEFINE_STATE_CONST(TCPSocket, State, established);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
@@ -117,8 +117,8 @@ void TCPSocket::Thread::run()
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  cli_sock->is_connecting().wait_shadow();
-  TCPSocket::State::move_to(*tcp_sock, syn_sentState);
+//  cli_sock->is_connecting().wait_shadow();
+//  TCPSocket::State::move_to(*tcp_sock, syn_sentState);
 
   (cli_sock->is_terminal_state_event 
 	| cli_sock->is_connected()) . wait(); 
