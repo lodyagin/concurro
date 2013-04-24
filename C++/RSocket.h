@@ -26,6 +26,7 @@
 class SocketBaseAxis : public StateAxis {};
 
 class RSocketRepository;
+class SocketThread;
 
 /**
  * An abstract socket base.  In the Concurro library
@@ -56,6 +57,8 @@ public:
 	 return is_terminal_state_event;
 	 }*/
 
+  virtual void flush_out_and_close() = 0;
+
   Event is_construction_complete_event;
 protected:
   
@@ -82,6 +85,10 @@ protected:
   //! (with a public virtual base) class appends its
   //! terminal event here from its constructor.
   std::list<CompoundEvent> ancestor_terminals;
+
+  // TODO
+  //! Temporary: list of threads terminal events
+  std::list<Event> ancestor_threads_terminals;
 
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
@@ -165,6 +172,8 @@ public:
 	 THROW_NOT_IMPLEMENTED; // or return CompoundEvent()
   }
 
+  void flush_out_and_close();
+
   std::string universal_id() const
   {
 	 return RSocketBase::universal_id();
@@ -225,12 +234,6 @@ inline RSocketBase* RSocketAllocator
    const RSocketAddress& addr);
 
 
-#if 0
-typedef Repository<
-  RSocketBase, RSocketAddress, std::map, SOCKET
-  > RSocketRepository;
-  
-#else
 class RSocketRepository
 : public Repository
   <RSocketBase, RSocketAddress, std::map, SOCKET>
@@ -248,6 +251,5 @@ public:
     : Parent(id, reserved),
 	 thread_factory(tf) {}
 };
-#endif
 
 #endif

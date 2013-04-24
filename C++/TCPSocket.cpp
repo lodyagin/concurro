@@ -64,7 +64,10 @@ TCPSocket::TCPSocket
   : 
 	 RSocketBase(oi, par),
     RObjectWithEvents<TCPAxis> (createdState),
+	 CONSTRUCT_EVENT(established),
 	 CONSTRUCT_EVENT(closed),
+	 CONSTRUCT_EVENT(in_closed),
+	 CONSTRUCT_EVENT(out_closed),
     tcp_protoent(NULL),
 	 thread(dynamic_cast<Thread*>
 			  (RSocketBase::repository->thread_factory
@@ -73,6 +76,8 @@ TCPSocket::TCPSocket
   SCHECK(thread);
   this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (thread->is_terminated());
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);
   thread->start();
@@ -107,6 +112,18 @@ void TCPSocket::ask_close()
 }
 #endif
 
+void TCPSocket::close_out()
+{
+  rSocketCheck(
+	 ::shutdown(fd, SHUT_WR) == 0);
+
+  State::compare_and_move
+	 (*this, establishedState, out_closedState)
+	 ||
+  State::compare_and_move
+	 (*this, in_closedState, closedState);
+}
+
 void TCPSocket::Thread::run()
 {
   ThreadState::move_to(*this, workingState);
@@ -131,6 +148,53 @@ void TCPSocket::Thread::run()
   else if (cli_sock->is_connection_refused().signalled()){
 	 TCPSocket::State::move_to
 		(*tcp_sock, closedState);
+	 return;
+  }
+  
+  // wait for close
+  fd_set wfds, rfds;
+  FD_ZERO(&wfds);
+  FD_ZERO(&rfds);
+  const SOCKET fd = socket->fd;
+  SCHECK(fd >= 0);
+
+  for (;;) {
+	 if (TCPSocket::State::state_is
+		  (*tcp_sock, TCPSocket::in_closedState))
+		FD_CLR(fd, &rfds);
+	 else
+		FD_SET(fd, &rfds);
+
+	 /*if (State::state_is(*tcp_sock, out_closedState))
+		FD_CLR(fd, &wfds);
+	 else
+	 FD_SET(fd, &wfds);*/
+
+	 rSocketCheck(
+		::select(fd+1, &rfds, /*&wfds,*/NULL, NULL, NULL) > 0);
+
+	 if (FD_ISSET(fd, &rfds)) {
+		// peek the message size
+		const ssize_t res = ::recv(fd, 0, 1, MSG_PEEK);
+		SCHECK(res >= 0);
+		if (res == 0) {
+		  if (TCPSocket::State::compare_and_move
+				(*tcp_sock, 
+				 TCPSocket::establishedState, 
+				 TCPSocket::in_closedState
+				  )
+				|| 
+				TCPSocket::State::compare_and_move
+				(*tcp_sock, 
+				 TCPSocket::out_closedState, 
+				 TCPSocket::closedState))
+			 break;
+		}
+	 }
+
+	 //if (FD_ISSET(fd, &wfds)) {
+		// FIXME need intercept SIGPIPE
+	 //}
   }
 }
 

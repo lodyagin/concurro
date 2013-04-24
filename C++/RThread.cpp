@@ -167,6 +167,9 @@ void RThreadBase::outString (std::ostream& out) const
 
 RThreadBase::~RThreadBase()
 {
+  LOG_DEBUG(log, "thread "
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t RThreadBase");
   if (!destructor_delegate_is_called)
 	 THROW_PROGRAM_ERROR;
   // must be called from desc. destructors

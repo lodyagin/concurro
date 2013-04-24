@@ -23,6 +23,7 @@ class InSocket
 public:
   DECLARE_STATES(InSocketStateAxis, State);
   DECLARE_STATE_CONST(State, new_data);
+  DECLARE_STATE_CONST(State, error);
   DECLARE_STATE_CONST(State, empty);
   DECLARE_STATE_CONST(State, closed); // a reading side
                                       // was closed
@@ -30,20 +31,36 @@ public:
   virtual void ask_close();
 
 protected:
-  typedef Logger<RSocketBase> log;
+ InSocket
+	 (const ObjectCreationInfo& oi, 
+	  const RSocketAddress& par);
 
-  //! Doing ::select and signalling new_data.
-  class Thread : public SocketThreadWithPair
+  class Thread : public SocketThread
   {
   public:
-	 PAR_CREATE_DERIVATION(Thread, SocketThread, 
-								  RThreadBase)
+	 struct Par : public SocketThread::Par
+	 { 
+		Par(RSocketBase* sock) 
+		  : SocketThread::Par(sock) 
+		{
+		  thread_name = SFORMAT("ClientSocket:" << sock->fd);
+		}
+
+		RThreadBase* create_derivation
+		  (const ObjectCreationInfo& oi) const
+		{ 
+		  return new Thread(oi, *this); 
+		}
+	 };
+
+	 void run();
   protected:
 	 Thread(const ObjectCreationInfo& oi, const Par& p)
-		: SocketThreadWithPair(oi, p) {}
+		: SocketThread(oi, p) {}
 	 ~Thread() { destroy(); }
-	 void run();
-  } thread;
+  }* thread;
+
+  DEFAULT_LOGGER(InSocket)
 
   //! The last received data
   RSingleBuffer msg;
@@ -51,7 +68,7 @@ protected:
   //! Actual size of a socket internal read buffer + 1.
   size_t socket_rd_buf_size;
   
-  InSocket();
+//  InSocket();
   ~InSocket();
 };
 

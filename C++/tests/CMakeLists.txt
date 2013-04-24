@@ -1,3 +1,5 @@
+add_definitions(-DMALLOC_CHECK_=2)
+
 set(TestsSrc
   RepositoryCU.cpp
   EventCU.cpp

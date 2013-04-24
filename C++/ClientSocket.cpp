@@ -9,6 +9,7 @@
 #include "StdAfx.h"
 #include "ClientSocket.h"
 #include "Event.h"
+#include "TCPSocket.h" // TODO remove it
 
 DEFINE_STATES(ClientSocketAxis, 
    {"created",
@@ -16,14 +17,16 @@ DEFINE_STATES(ClientSocketAxis,
 	 "connected",
 	 "connection_timed_out",
 	 "connection_refused", // got RST on SYN
-	 "destination_unreachable"
+	 "destination_unreachable",
+	 "closed"
 	 },
     { 
 		{"created", "connecting"},
 		{"connecting", "connected"},
 		{"connecting", "connection_timed_out"},
 		{"connecting", "connection_refused"},
-		{"connecting", "destination_unreachable"}
+		{"connecting", "destination_unreachable"},
+		{"connected", "closed"}
 	 }
 );
 DEFINE_STATE_CONST(ClientSocket, State, created);
@@ -35,6 +38,7 @@ DEFINE_STATE_CONST(ClientSocket, State,
 						 connection_refused);
 DEFINE_STATE_CONST(ClientSocket, State, 
 						 destination_unreachable);
+DEFINE_STATE_CONST(ClientSocket, State, closed);
 
 ClientSocket::ClientSocket
   (const ObjectCreationInfo& oi, 
@@ -47,11 +51,13 @@ ClientSocket::ClientSocket
 	 CONSTRUCT_EVENT(connection_timed_out),
 	 CONSTRUCT_EVENT(connection_refused),
 	 CONSTRUCT_EVENT(destination_unreachable),
+	 CONSTRUCT_EVENT(closed),
 
 	 is_terminal_state_event {
 		is_connection_timed_out_event,
 		is_connection_refused_event,
-		is_destination_unreachable_event
+		is_destination_unreachable_event,
+		is_closed_event  
 	 },
 
 	 thread(dynamic_cast<Thread*>
@@ -61,6 +67,8 @@ ClientSocket::ClientSocket
   SCHECK(thread);
   this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (thread->is_terminated());
 }
 
 ClientSocket::~ClientSocket()
@@ -113,7 +121,7 @@ void ClientSocket::Thread::run()
   const SOCKET fd = socket->fd;
   SCHECK(fd >= 0);
 
-  // Wait for connection termination
+  // Wait for termination of a connection process
   FD_SET(fd, &wfds);
   rSocketCheck(
 	 ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
@@ -126,4 +134,29 @@ void ClientSocket::Thread::run()
 
   dynamic_cast<ClientSocket*>(socket)
 	 -> process_connect_error(connect_error);
+
+  // TODO move to RSocket
+  auto* tcp_sock = dynamic_cast<TCPSocket*>
+	 (socket);
+  SCHECK(tcp_sock);
+
+  auto* cli_sock = dynamic_cast<ClientSocket*>
+	 (socket);
+  SCHECK(cli_sock);
+
+  (tcp_sock->is_in_closed()
+	| tcp_sock->is_out_closed()
+	| tcp_sock->is_closed()) . wait();
+
+  if (tcp_sock->is_in_closed().signalled()) {
+	 socket->flush_out_and_close();
+	 ClientSocket::State::compare_and_move
+		(*cli_sock, ClientSocket::connectedState, 
+		 ClientSocket::closedState);
+  }
+  else if (tcp_sock->is_in_closed().signalled()) {
+	 THROW_PROGRAM_ERROR;
+  }
 }
+
+

@@ -21,6 +21,7 @@ class ClientSocket : virtual public RSocketBase,
   DECLARE_EVENT(ClientSocketAxis, connection_timed_out)
   DECLARE_EVENT(ClientSocketAxis, connection_refused)
   DECLARE_EVENT(ClientSocketAxis, destination_unreachable)
+  DECLARE_EVENT(ClientSocketAxis, closed)
 
 public:
   DECLARE_STATES(ClientSocketAxis, State);
@@ -30,6 +31,7 @@ public:
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
+  DECLARE_STATE_CONST(State, closed);
 
   const CompoundEvent is_terminal_state_event;
 
