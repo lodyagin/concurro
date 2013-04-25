@@ -83,10 +83,10 @@ void ClientSocket::ask_connect()
 	 (fd, 
 	  aw_ptr->begin()->ai_addr, 
 	  aw_ptr->begin()->ai_addrlen);
-  process_connect_error(errno);
+  process_error(errno);
 }
 
-void ClientSocket::process_connect_error(int error)
+void ClientSocket::process_error(int error)
 {
   switch (error) {
   case EINPROGRESS:
@@ -94,26 +94,34 @@ void ClientSocket::process_connect_error(int error)
 	 // <NB> there are no connecting->connecting transition
 	 thread->start();
 	 return;
-  case ETIMEDOUT:
-	 State::move_to(*this, connection_timed_outState);
-	 return;
-  case ECONNREFUSED:
-	 State::move_to(*this, connection_refusedState);
-	 return;
-  case ENETUNREACH:
-	 State::move_to(*this, destination_unreachableState);
-	 return;
   case 0:
 	 State::move_to(*this, connectedState);
 	 return;
-  default:
-	 THROW_EXCEPTION(RSocketError, error);
+  case ETIMEDOUT:
+	 State::move_to(*this, connection_timed_outState);
+	 break;
+  case ECONNREFUSED:
+	 State::move_to(*this, connection_refusedState);
+	 break;
+  case ENETUNREACH:
+	 State::move_to(*this, destination_unreachableState);
+	 break;
   }
+  RSocketBase::process_error(error);
 }
 
 void ClientSocket::Thread::run()
 {
   ThreadState::move_to(*this, workingState);
+
+  // TODO move to RSocket
+  auto* tcp_sock = dynamic_cast<TCPSocket*>
+	 (socket);
+  SCHECK(tcp_sock);
+
+  auto* cli_sock = dynamic_cast<ClientSocket*>
+	 (socket);
+  SCHECK(cli_sock);
 
   fd_set wfds;
   FD_ZERO(&wfds);
@@ -126,23 +134,14 @@ void ClientSocket::Thread::run()
   rSocketCheck(
 	 ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
 
-  int connect_error = 0;
-  socklen_t connect_error_len = sizeof(connect_error);
+  int error = 0;
+  socklen_t error_len = sizeof(error);
   rSocketCheck(
-	 getsockopt(fd, SOL_SOCKET, SO_ERROR, &connect_error,
-					&connect_error_len) == 0);
+	 getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
+					&error_len) == 0);
 
-  dynamic_cast<ClientSocket*>(socket)
-	 -> process_connect_error(connect_error);
-
-  // TODO move to RSocket
-  auto* tcp_sock = dynamic_cast<TCPSocket*>
-	 (socket);
-  SCHECK(tcp_sock);
-
-  auto* cli_sock = dynamic_cast<ClientSocket*>
-	 (socket);
-  SCHECK(cli_sock);
+  if (error)
+	 cli_sock->process_error(error);
 
   (tcp_sock->is_in_closed()
 	| tcp_sock->is_out_closed()

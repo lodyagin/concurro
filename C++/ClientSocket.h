@@ -53,8 +53,6 @@ protected:
 	 (const ObjectCreationInfo& oi, 
 	  const RSocketAddress& par);
 
-  void process_connect_error(int error);
-  
   class Thread : public SocketThread
   {
   public:
@@ -81,6 +79,8 @@ protected:
   }* thread;
 
   DEFAULT_LOGGER(ClientSocket)
+
+  void process_error(int error);
 };
 
 #endif

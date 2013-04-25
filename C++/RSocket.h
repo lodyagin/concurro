@@ -34,13 +34,21 @@ class SocketThread;
  *
  */
 class RSocketBase 
-: public SNotCopyable, public StdIdMember
+: public SNotCopyable, public StdIdMember,
+  public RObjectWithEvents<SocketBaseAxis>
 {
   friend class RSocketAddress;
   friend std::ostream&
 	 operator<< (std::ostream&, const RSocketBase&);
 
+  //DECLARE_EVENT(SocketBaseAxis, error);
+
 public:
+  DECLARE_STATES(SocketBaseAxis, State);
+  DECLARE_STATE_CONST(State, ok);
+  DECLARE_STATE_CONST(State, error);
+  DECLARE_STATE_CONST(State, closed);
+
   virtual ~RSocketBase () {}
 
   //! A socket file descriptor.
@@ -49,6 +57,11 @@ public:
   virtual CompoundEvent is_terminal_state() const = 0;
 
   virtual void ask_close_out() = 0;
+
+  std::string universal_id() const
+  {
+	 return StdIdMember::universal_id();
+  }
 
   Event is_construction_complete_event;
 
@@ -76,13 +89,15 @@ protected:
 
   //! get blocking mode
   //virtual bool get_blocking () const;
+
+  virtual void process_error(int error);
+
+private:
+  typedef Logger<RSocketBase> log;
 };
 
 std::ostream&
 operator<< (std::ostream&, const RSocketBase&);
-
-class ServerSideSocket : virtual public RSocketBase 
-{};
 
 class SocketThread: public RThread<std::thread>
 { 

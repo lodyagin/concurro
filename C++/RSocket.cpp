@@ -17,10 +17,25 @@
 /*========== RSocketBase ==========*/
 /*=================================*/
 
+DEFINE_STATES(SocketBaseAxis, 
+  {
+  "ok",
+  "closed",
+  "error"
+  },
+  {	{"ok", "error"},
+		{"ok", "closed"}
+  });
+
+DEFINE_STATE_CONST(RSocketBase, State, ok);
+DEFINE_STATE_CONST(RSocketBase, State, error);
+DEFINE_STATE_CONST(RSocketBase, State, closed);
+
 //! This type is only for repository creation
 RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
+	 RObjectWithEvents(okState),
 	 fd(addr.get_fd()), 
 	 is_construction_complete_event
 		("RSocketBase::construction_complete", true),
@@ -50,6 +65,12 @@ void RSocketBase::set_blocking (bool blocking)
 	 opts |= O_NONBLOCK;
   rSocketCheck(fcntl(fd, F_SETFL, opts) != -1);
 #endif
+}
+
+void RSocketBase::process_error(int error)
+{
+  LOG_INFO(log, "Socket error: " << rErrorMsg(error));
+  State::move_to(*this, errorState);
 }
 
 std::ostream&
