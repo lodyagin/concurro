@@ -8,7 +8,9 @@ void rCheck( BOOL );
 void rCheck( BOOL, const wchar_t * fmt, ... );
 void rError( const wchar_t * fmt, ... );
 void rErrorCode( DWORD code, const wchar_t * fmt, ... );
+#define rErrorMsg(err) sWinErrMsg(err)
 #else
+#define rErrorMsg(err) strerror(err)
 #define rCheck rSocketCheck
 #endif
 
@@ -20,12 +22,7 @@ public:
   RSystemError(int err_code, 
 					const std::string& msg = std::string())
   : SException(SFORMAT("System error : " 
-#ifdef _WIN32
-							  << sWinErrMsg(err_code)
-#else
-							  << strerror(err_code)
-#endif
-					<< ' ')),
+							  << rErrorMsg(err_code) << ' ')),
 	 error_code(err_code) {}
 };
 
