@@ -32,16 +32,18 @@ RSocket<Bases...>
   LOG_DEBUG(log, "~RSocket()");
 }
 
+/*
 template<class... Bases>
 void RSocket<Bases...>
 //
-::flush_out_and_close()
+::ask_close_out()
 {
   if (auto* tcp_sock = dynamic_cast<TCPSocket*>(this))
   {
-	 tcp_sock->close_out();
+	 tcp_sock->ask_close_out();
   }
 }
+*/
 
 // temporary empty definitions
 class ServerSocket : public virtual RSocketBase {};
@@ -107,7 +109,7 @@ inline RSocketBase* RSocketAllocator
   (const ObjectCreationInfo& oi,
    const RSocketAddress& addr)
 {
-  return new RSocket</* InSocket, OutSocket,*/ Bases...>
+  return new RSocket<InSocket, /*OutSocket,*/ Bases...>
 	 (oi, addr);
 }
     

@@ -41,46 +41,23 @@ class RSocketBase
 	 operator<< (std::ostream&, const RSocketBase&);
 
 public:
-/*
-  DECLARE_STATES(SocketBaseAxis, State);
-  DECLARE_STATE_CONST(RSocketBase, State, working);
-  DECLARE_STATE_CONST(RSocketBase, State, terminated);
-*/
-
   virtual ~RSocketBase () {}
 
   //! A socket file descriptor.
   const SOCKET fd;
 
   virtual CompoundEvent is_terminal_state() const = 0;
-  /*{
-	 return is_terminal_state_event;
-	 }*/
 
-  virtual void flush_out_and_close() = 0;
+  virtual void ask_close_out() = 0;
 
   Event is_construction_complete_event;
-protected:
-  
-  //Event is_terminal_state_event;
 
-#if 0
-  //TODO make external threads controlling a group of
-  //sockets instead of has each socket with its own
-  //threads. 
-  typedef RThreadRepository<
-	 RThread<std::thread>, std::unordered_map,
-	 std::thread::native_handle_type>
-	 LocalThreadRepository;
-#endif
+protected:
   RSocketRepository* repository;
 
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
-  //! A thread repository to internal threads creation
-  //LocalThreadRepository thread_repository;
-
   //! List of all ancestors terminal events. Each derived
   //! (with a public virtual base) class appends its
   //! terminal event here from its constructor.
@@ -136,15 +113,22 @@ protected:
 
 class SocketThreadWithPair: public SocketThread
 { 
+public:
+  SOCKET get_notify_fd() const
+  {
+	 return sock_pair[ForNotify];
+  }
+
 protected:
   //! indexing sock_pair sockets
-  enum {ForSelect = 0, ForSignal = 1};
+  enum {ForSelect = 0, ForNotify = 1};
 
   //! the pair for ::select call waking-up
   int sock_pair[2];
 
   SocketThreadWithPair
 	 (const ObjectCreationInfo& oi, const Par& p);
+  ~SocketThreadWithPair();
 };
 
 
@@ -172,7 +156,7 @@ public:
 	 THROW_NOT_IMPLEMENTED; // or return CompoundEvent()
   }
 
-  void flush_out_and_close();
+  //void ask_close_out();
 
   std::string universal_id() const
   {

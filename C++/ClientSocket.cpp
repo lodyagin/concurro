@@ -149,7 +149,7 @@ void ClientSocket::Thread::run()
 	| tcp_sock->is_closed()) . wait();
 
   if (tcp_sock->is_in_closed().signalled()) {
-	 socket->flush_out_and_close();
+	 tcp_sock->ask_close_out();
 	 ClientSocket::State::compare_and_move
 		(*cli_sock, ClientSocket::connectedState, 
 		 ClientSocket::closedState);

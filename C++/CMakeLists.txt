@@ -11,7 +11,7 @@ set (concurrent_SOURCES
   ClientSocket.cpp
   Event.cpp
   HasStringView.cpp
-#  InSocket.cpp
+  InSocket.cpp
   Logging.cpp
   RBuffer.cpp
   RMutex.cpp

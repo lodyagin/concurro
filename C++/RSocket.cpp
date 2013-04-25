@@ -17,16 +17,6 @@
 /*========== RSocketBase ==========*/
 /*=================================*/
 
-/*
-DEFINE_STATES(
-  RSocketAxis,
-  {"working", "terminated"},
-  {{"working", "terminated"}}
-);
-DEFINE_STATE_CONST(RSocketBase, State, working);
-DEFINE_STATE_CONST(RSocketBase, State, terminated);
-*/
-
 //! This type is only for repository creation
 RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 
@@ -77,3 +67,8 @@ SocketThreadWithPair::SocketThreadWithPair
 	 ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);
 }
 
+SocketThreadWithPair::~SocketThreadWithPair()
+{
+  rSocketCheck(::close(sock_pair[ForSelect]) == 0);
+  rSocketCheck(::close(sock_pair[ForNotify]) == 0);
+}

@@ -16,7 +16,6 @@ DEFINE_STATES(TCPAxis,
 	 "in_closed",    // input part of connection is closed
 	 "out_closed",
 	 "listen",       // passive open
-//	 "syn_sent",
     "accepting",    // in the middle of a new ServerSocket
 						  // creation
 	 "established",
@@ -29,11 +28,9 @@ DEFINE_STATES(TCPAxis,
 	 },
   {
   {"created", "listen"},      // listen()
-//  {"created", "syn_sent"},    // our connect()
   {"listen", "accepting"}, // connect() from other side
   {"accepting", "listen"},
   {"listen", "closed"},
-  // {"listen", "syn_sent"},    // send()
   {"created", "established"}, // initial send() is
 										 // recieved by other side
   {"created", "closed"},     // close() or timeout 
@@ -44,7 +41,6 @@ DEFINE_STATES(TCPAxis,
   {"closing", "closed"},
   {"in_closed", "closed"},
   {"out_closed", "closed"}
-  // TODO ::shutdown
   }
   );
 
@@ -53,7 +49,6 @@ DEFINE_STATE_CONST(TCPSocket, State, closed);
 DEFINE_STATE_CONST(TCPSocket, State, in_closed);
 DEFINE_STATE_CONST(TCPSocket, State, out_closed);
 DEFINE_STATE_CONST(TCPSocket, State, listen);
-//DEFINE_STATE_CONST(TCPSocket, State, syn_sent);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
 DEFINE_STATE_CONST(TCPSocket, State, established);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
@@ -85,34 +80,10 @@ TCPSocket::TCPSocket
 
 TCPSocket::~TCPSocket()
 {
-  //ask_close();
-  //is_closed_event.wait();
-  //RSocketBase::is_terminal_state().wait();
   LOG_DEBUG(log, "~TCPSocket()");
 }
 
-#if 0
-void TCPSocket::ask_close()
-{
-  State::move_to(*this, closingState);
-
-  const int shutdown_ret = ::shutdown(fd, );
-  //socketCreated.reset();
-  State::move_to(*this, dest);
-  if (close_ret == EWOULDBLOCK)
-    ; // not all data was sent
-  // see http://alas.matf.bg.ac.rs/manuals/lspe/snode=105.html
-  else if (close_ret == 0)
-    State::move_to(*this, closedState); // SO_LINGER guarantees it
-  else 
-    rSocketCheck(false); // another socket error
-
-  if (!State::state_is(*this, closedState))
-    State::move_to(*this, closedState);
-}
-#endif
-
-void TCPSocket::close_out()
+void TCPSocket::ask_close_out()
 {
   rSocketCheck(
 	 ::shutdown(fd, SHUT_WR) == 0);
@@ -175,7 +146,12 @@ void TCPSocket::Thread::run()
 
 	 if (FD_ISSET(fd, &rfds)) {
 		// peek the message size
-		const ssize_t res = ::recv(fd, 0, 1, MSG_PEEK);
+		ssize_t res;
+		// Normally MSG_PEEK not need this buffer, but who
+		// knows? 
+		static char dummy_buf[1];
+		rSocketCheck(
+		  (res = ::recv(fd, &dummy_buf, 1, MSG_PEEK) >=0));
 		SCHECK(res >= 0);
 		if (res == 0) {
 		  if (TCPSocket::State::compare_and_move
