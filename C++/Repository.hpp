@@ -12,20 +12,6 @@
 #include "Repository.h"
 #include <set>
 
-template<class Obj, class ObjId>
-class RepositoryMapType<Obj, ObjId, std::unordered_map>
-{
-public:
-  typedef std::unordered_map<ObjId, Obj*> Map;
-};
-
-template<class Obj, class ObjId>
-class RepositoryMapType<Obj, ObjId, std::map>
-{
-public:
-  typedef std::map<ObjId, Obj*> Map;
-};
-
 template<class Obj, class Par, class ObjId>
 const AbstractRepositoryBase::Traits 
   RepositoryInterface<Obj, Par, ObjId>::traits

@@ -151,6 +151,20 @@ public:
   typedef ObjMap<Obj*> Map;
 };
 
+template<class Obj, class ObjId>
+class RepositoryMapType<Obj, ObjId, std::unordered_map>
+{
+public:
+  typedef std::unordered_map<ObjId, Obj*> Map;
+};
+
+template<class Obj, class ObjId>
+class RepositoryMapType<Obj, ObjId, std::map>
+{
+public:
+  typedef std::map<ObjId, Obj*> Map;
+};
+
 //! Tune a logging
 struct RepositoryLogParams
 {
@@ -615,6 +629,16 @@ struct Par : public parent::Par \
   { return new object(oi, *this); } \
   \
   object* transform_object \
+    (const object*) const \
+  { THROW_NOT_IMPLEMENTED; }
+
+#define PAR_DEFAULT_VIRTUAL_MEMBERS(object) \
+  virtual ~Par() {} \
+  virtual object* create_derivation \
+	 (const ObjectCreationInfo& oi) const \
+  { return new object(oi, *this); } \
+  \
+  virtual object* transform_object \
     (const object*) const \
   { THROW_NOT_IMPLEMENTED; }
 
