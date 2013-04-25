@@ -1,8 +1,16 @@
 cmake_minimum_required(VERSION 2.6.4)
 
-add_definitions(-DMALLOC_CHECK_=2)
+project(concurrent)
 
-set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x -Wall -frtti")
+#set(Boost_USE_STATIC_LIBS OFF)
+#set(Boost_USE_STATIC_RUNTIME OFF)
+#set(CMAKE_PREFIX_PATH /usr/local)
+set(Boost_USE_MULTITHREADED OFF)  
+# it is alwais multithreaded on Linux
+set(Boost_NO_SYSTEM_PATHS TRUE)
+find_package(Boost 1.53 COMPONENTS thread REQUIRED)
+
+set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -Wall")
 
 add_subdirectory(tests)
 
@@ -27,7 +35,10 @@ set (concurrent_SOURCES
   TCPSocket.cpp
 )
 
+#include_directories(/usr/local/lib/boost_1_53_0)
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/PEvents)
+include_directories(../../PEvents)
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_LIBRARY(concurrent ${concurrent_SOURCES})
+#target_link_libraries(${Boost_SYSTEM_LIBRARY})
