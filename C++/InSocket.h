@@ -21,6 +21,7 @@ class InSocket
   virtual public RSocketBase
 {
   DECLARE_EVENT(InSocketAxis, new_data)
+  DECLARE_EVENT(InSocketAxis, error)
   DECLARE_EVENT(InSocketAxis, closed)
 
 public:
@@ -34,7 +35,12 @@ public:
 
   CompoundEvent is_terminal_state() const
   {
-	 return is_closed_event;
+	 return is_closed_event | is_error_event;
+  }
+
+  std::string universal_id() const
+  {
+	 return RSocketBase::universal_id();
   }
 
   //! The last received data

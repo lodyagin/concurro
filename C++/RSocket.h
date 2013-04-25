@@ -169,17 +169,8 @@ public:
   }
 
 protected:
-  //Event is_terminal_state_event;
-
   RSocket(const ObjectCreationInfo& oi,
-			 const RSocketAddress& addr)
-	 : RSocketBase(oi, addr), Bases(oi, addr).../*,
-	 is_terminal_state_event(
-		SFORMAT(oi.objectId << ":" 
-		<< "is_terminal_state_event"), true)*/
-  {
-	 RSocketBase::is_construction_complete_event.set();
-  }
+			 const RSocketAddress& addr);
 
   //! wait all parts terminated and set
   //! its own is_terminal_state_event. 

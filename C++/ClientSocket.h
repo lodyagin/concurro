@@ -48,6 +48,11 @@ public:
   //! states.
   virtual void ask_connect();
 
+  std::string universal_id() const
+  {
+	 return RSocketBase::universal_id();
+  }
+
 protected:
   ClientSocket
 	 (const ObjectCreationInfo& oi, 

@@ -2,7 +2,9 @@
 
 #include "StdAfx.h"
 #ifndef _WIN32
-#  include "AppConfig.h"
+//#  include "AppConfig.h"
+// FIXME
+#define APPCONFIG_PKG_NAME "project"
 #else
 #  include <sys/types.h>
 #  include <unistd.h>

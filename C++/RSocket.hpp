@@ -18,6 +18,18 @@
 template<class... Bases>
 RSocket<Bases...>
 //
+::RSocket(const ObjectCreationInfo& oi,
+			 const RSocketAddress& addr)
+  : RSocketBase(oi, addr), Bases(oi, addr)...
+{
+  
+  RSocketBase::is_construction_complete_event.set();
+}
+
+
+template<class... Bases>
+RSocket<Bases...>
+//
 ::~RSocket()
 {
   // wait all parts termination

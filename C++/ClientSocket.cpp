@@ -69,6 +69,7 @@ ClientSocket::ClientSocket
 	 (is_terminal_state());
   this->RSocketBase::ancestor_threads_terminals.push_back
 	 (thread->is_terminated());
+  thread->start();
 }
 
 ClientSocket::~ClientSocket()
@@ -92,7 +93,6 @@ void ClientSocket::process_connect_error(int error)
   case EINPROGRESS:
 	 State::move_to(*this, connectingState);
 	 // <NB> there are no connecting->connecting transition
-	 thread->start();
 	 return;
   case ETIMEDOUT:
 	 State::move_to(*this, connection_timed_outState);
@@ -114,6 +114,18 @@ void ClientSocket::process_connect_error(int error)
 void ClientSocket::Thread::run()
 {
   ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
+
+  // TODO move to RSocket
+  auto* tcp_sock = dynamic_cast<TCPSocket*>
+	 (socket);
+  SCHECK(tcp_sock);
+
+  auto* cli_sock = dynamic_cast<ClientSocket*>
+	 (socket);
+  SCHECK(cli_sock);
+
+  cli_sock->is_connecting().wait();
 
   fd_set wfds;
   FD_ZERO(&wfds);
@@ -134,15 +146,6 @@ void ClientSocket::Thread::run()
 
   dynamic_cast<ClientSocket*>(socket)
 	 -> process_connect_error(connect_error);
-
-  // TODO move to RSocket
-  auto* tcp_sock = dynamic_cast<TCPSocket*>
-	 (socket);
-  SCHECK(tcp_sock);
-
-  auto* cli_sock = dynamic_cast<ClientSocket*>
-	 (socket);
-  SCHECK(cli_sock);
 
   (tcp_sock->is_in_closed()
 	| tcp_sock->is_out_closed()

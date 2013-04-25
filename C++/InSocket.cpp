@@ -43,6 +43,7 @@ InSocket::InSocket
 	 RSocketBase(oi, par),
 	 RObjectWithEvents<InSocketAxis>(emptyState),
 	 CONSTRUCT_EVENT(new_data),
+	 CONSTRUCT_EVENT(error),
 	 CONSTRUCT_EVENT(closed),
 	 select_thread(dynamic_cast<SelectThread*>
 			  (RSocketBase::repository->thread_factory
@@ -86,6 +87,7 @@ void InSocket::ask_close()
 void InSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
 
   fd_set rfds;
   FD_ZERO(&rfds);
@@ -121,12 +123,14 @@ void InSocket::SelectThread::run()
 		// internal socket rcv buffer + 1)
 
 		in_sock->msg.resize(red);
-		InSocket::State::move_to(*in_sock, new_dataState);
+		if (red > 0) {
+		  InSocket::State::move_to(*in_sock, new_dataState);
 
-		// <NB> do not read more data until a client read
-		// this piece
-		in_sock->msg.is_discharged().wait();
-		InSocket::State::move_to(*in_sock, emptyState);
+		  // <NB> do not read more data until a client read
+		  // this piece
+		  in_sock->msg.is_discharged().wait();
+		  InSocket::State::move_to(*in_sock, emptyState);
+		}
 	 }
 
 	 assert(InSocket::State::state_is
@@ -144,6 +148,7 @@ void InSocket::SelectThread::run()
 void InSocket::WaitThread::run()
 {
   ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
 
   auto* tcp_sock = dynamic_cast<TCPSocket*> (socket);
   SCHECK(tcp_sock);

@@ -12,6 +12,7 @@ DEFINE_STATES(DataBufferStateAxis,
 		},
   { {"discharged", "charging"},
 	 {"charging", "charged"},
+	 {"charging", "discharged"}, // cancel
 	 {"discharged", "welded"},
 	 {"welded", "discharged"},
 	 {"welded", "charged"},
