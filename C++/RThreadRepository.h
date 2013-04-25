@@ -52,19 +52,7 @@ public:
   typedef typename Thread::Par Par;
   typedef typename Thread::Id ThreadId;
 
-  RThreadRepository(/*const std::string& name,
-							 size_t initial_capacity*/) 
-	 : Parent(typeid(RThreadRepository<Thread>).name(), 
-				 100 // the value is ignored for std::map
-		) 
-  {
-	 RepositoryBase<
-		Thread, typename Thread::Par,
-		std::map, typename Thread::Id
-		>
-		::log_params.get_object_by_id = false;
-  }
-
+  RThreadRepository();
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();

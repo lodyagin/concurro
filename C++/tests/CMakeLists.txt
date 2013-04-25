@@ -8,6 +8,7 @@ set(TestsSrc
   REventCU.cpp
   RMutexCU.cpp
   RBufferCU.cpp
+  RSignalCU.cpp
   RSocketCU.cpp
   tests.cpp
 )

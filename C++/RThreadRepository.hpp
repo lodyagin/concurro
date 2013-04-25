@@ -10,6 +10,28 @@
 #define CONCURRO_RTHREADREPOSITORY_HPP_
 
 #include "RThreadRepository.h"
+#include <signal.h>
+
+template<class Thread>
+RThreadRepository<Thread>::RThreadRepository()
+  : Parent(typeid(RThreadRepository<Thread>).name(), 
+			  100 // the value is ignored for std::map
+	 ) 
+{
+  // Disable signals. See RSignalRepository
+  sigset_t ss;
+  rCheck(::sigfillset(&ss) == 0);
+  // enable SIGINT, ^C is useful
+  rCheck(::sigdelset(&ss, SIGINT) == 0);
+  rCheck(::pthread_sigmask(SIG_SETMASK, &ss, NULL) == 0);
+  
+  RepositoryBase<
+  Thread, typename Thread::Par,
+	 std::map, typename Thread::Id
+	 >
+	 ::log_params.get_object_by_id = false;
+}
+
 
 template<class Thread>
 void RThreadRepository<Thread>
