@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6.4)
 
+add_definitions(-DMALLOC_CHECK_=2)
+
 set(CMAKE_CXX_FLAGS "-g -O0 -std=gnu++0x -Wall -frtti")
 
 add_subdirectory(tests)
@@ -9,6 +11,7 @@ set (concurrent_SOURCES
   ClientSocket.cpp
   Event.cpp
   HasStringView.cpp
+  InSocket.cpp
   Logging.cpp
   RBuffer.cpp
   RMutex.cpp

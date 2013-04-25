@@ -32,9 +32,15 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-#define THROW_EXCEPTION(exception_class, par...) { \
+#define THROW_EXCEPTION(exception_class, par...) do { \
   exception_class exc_(par);								  \
   LOG_DEBUG(Logger<LOG::Root>, "Throw " << exc_); \
+  throw exc_; \
+  } while (0)
+
+#define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
+  exception_class exc_(par);								  \
+  LOG_DEBUG_PLACE(Logger<LOG::Root>, place, "Throw " << exc_);	\
   throw exc_; \
   } while (0)
 

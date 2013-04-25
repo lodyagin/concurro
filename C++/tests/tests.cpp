@@ -4,14 +4,18 @@
 #include <map>
 #include <string>
 
+extern CU_TestInfo RepositoryTests[];
 extern CU_TestInfo EventTests[];
 extern CU_TestInfo RStateTests[];
 extern CU_TestInfo RThreadTests[];
 extern CU_TestInfo RMutexTests[];
 extern CU_TestInfo REventTests[];
 extern CU_TestInfo RBufferTests[];
+extern CU_TestInfo RSignalTests[];
 extern CU_TestInfo RSocketTests[];
 
+int RepositoryCUInit(void);
+int RepositoryCUClean(void);
 int EventCUInit(void);
 int EventCUClean(void);
 int RStateCUInit(void);
@@ -24,10 +28,14 @@ int REventCUInit(void);
 int REventCUClean(void);
 int RBufferCUInit(void);
 int RBufferCUClean(void);
+int RSignalCUInit(void);
+int RSignalCUClean(void);
 int RSocketCUInit(void);
 int RSocketCUClean(void);
 
 CU_SuiteInfo suites[] = {	
+  { "Repository", RepositoryCUInit, RepositoryCUClean, 0, 0,
+	  RepositoryTests },
   { "Event", EventCUInit, EventCUClean, 0, 0,
 	  EventTests },
   { "RState", RStateCUInit, RStateCUClean, 0, 0,
@@ -40,6 +48,8 @@ CU_SuiteInfo suites[] = {
 	  RMutexTests },
   { "RBuffer", RBufferCUInit, RBufferCUClean, 0, 0,
 	  RBufferTests },
+  { "RSignal", RSignalCUInit, RSignalCUClean, 0, 0,
+	  RSignalTests },
   { "RSocket", RSocketCUInit, RSocketCUClean, 0, 0,
 	  RSocketTests },
 	CU_SUITE_INFO_NULL

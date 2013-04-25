@@ -1,3 +1,11 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
 #include "REvent.h"
 #include "Logging.h"
@@ -14,7 +22,10 @@ EvtBase::EvtBase(const std::string& id,
 					  bool manual, 
 					  bool init )
   : universal_object_id(id),
-	 /*is_signalled(init),*/ is_manual(manual),
+	 /*is_signalled(init),*/ 
+	 shadow(false),
+ 	 isSignaled(init),
+	 is_manual(manual),
 #ifdef _WIN32
   h(CreateEvent(0, manual, init, 0))
 #else
@@ -22,9 +33,9 @@ EvtBase::EvtBase(const std::string& id,
 #endif
 {
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> created");
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t created");
 #ifdef _WIN32
   sWinCheck(h != 0, L"creating an event");
 #endif
@@ -33,8 +44,8 @@ EvtBase::EvtBase(const std::string& id,
 EvtBase::~EvtBase()
 {
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> closes the event handle [" 
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t closes the event handle [" 
 				<< universal_object_id << "]");
 
 #ifdef _WIN32
@@ -54,27 +65,29 @@ operator<< (std::ostream& out, const EvtBase& evt)
 
 void EvtBase::set()
 {
-  LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> set");
+  LOG_DEBUG_PLACE(log, set, "thread " 
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t set");
 #ifdef _WIN32
   sWinCheck
     (SetEvent(h) != 0, 
      SFORMAT (L"setting event, handle = " << h).c_str ()
      );
 #else
+  isSignaled = true;
+  shadow = true; //<NB> before SetEvent to prevent a "no
+					  //shadow and no event" case
   SetEvent(h);
-  //is_signalled = true;
 #endif
 }
 
 void EvtBase::reset()
 {
-  LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
-				<< universal_object_id << "> reset");
+  LOG_DEBUG_PLACE(log, reset, "thread " 
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
+				<< universal_object_id << ">\t reset");
 #ifdef _WIN32
   sWinCheck
     (ResetEvent(h) != 0, 
@@ -84,6 +97,7 @@ void EvtBase::reset()
   //is_signalled = false;
   ResetEvent(h);
 #endif
+  isSignaled = false;
 }
 
 bool EvtBase::wait_impl(int time) const
@@ -91,17 +105,17 @@ bool EvtBase::wait_impl(int time) const
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event "
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event "
 				  << universal_object_id 
-				  << "> wait " << time << " msecs");
+				  << ">\t wait " << time << " msecs");
   }
   else {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event "
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event "
 				  << universal_object_id 
-				  << "> waits w/o timeout");
+				  << ">\t waits w/o timeout");
   }
 
   HANDLE evts[] = {
@@ -119,18 +133,18 @@ bool EvtBase::wait_impl(int time) const
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
 	 LOG_DEBUG(log, "thread " 
-				  << std::this_thread::get_id()
-				  << "> event "
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event "
 				  << universal_object_id 
-				  << "> wait: timed out");
+				  << ">\t wait: timed out");
 	 return false;
   }
 #endif
   LOG_DEBUG(log, "thread " 
-				<< std::this_thread::get_id()
-				<< "> event "
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event "
 				<< universal_object_id 
-				<< "> wait: signalled");
+				<< ">\t wait: signalled");
   return true;
 }
 
@@ -146,6 +160,12 @@ CompoundEvent::CompoundEvent(CompoundEvent&& e)
 	 has_autoreset(e.has_autoreset)
 {}
 
+CompoundEvent::CompoundEvent(const CompoundEvent& e)
+  : handle_set(e.handle_set),
+	 handle_vec(e.handle_vec),
+	 vector_need_update(e.vector_need_update),
+	 has_autoreset(e.has_autoreset)
+{}
 
 CompoundEvent::CompoundEvent(const Event& e)
   : handle_set{e}, vector_need_update(true),
@@ -174,6 +194,15 @@ CompoundEvent& CompoundEvent
   return *this;
 }
 
+CompoundEvent& CompoundEvent
+::operator= (const CompoundEvent& e)
+{
+  handle_set = e.handle_set;
+  vector_need_update = true; // <NB>
+  has_autoreset = e.has_autoreset;
+  return *this;
+}
+
 const CompoundEvent& CompoundEvent
 ::operator|= (const Event& e)
 {
@@ -183,7 +212,6 @@ const CompoundEvent& CompoundEvent
   return *this;
 }
 
-#if 0
 CompoundEvent& CompoundEvent
 ::operator|= (const CompoundEvent& e)
 {
@@ -193,18 +221,42 @@ CompoundEvent& CompoundEvent
   has_autoreset = has_autoreset || e.has_autoreset;
   return *this;
 }
-#endif
 
 bool CompoundEvent::wait_impl(int time) const
 {
-  update_vector();
-  assert(handle_vec.size());
+  if (time != -1) {
+	 LOG_DEBUG(log, "thread " 
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event " << *this
+				  << ">\t wait " << time << " msecs");
+  }
+  else {
+	 LOG_DEBUG(log, "thread " 
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event " << *this
+				  << ">\t waits w/o timeout");
+  }
 
-  return WaitForMultipleEvents(&handle_vec[0], 
-										 handle_vec.size(),
-										 false, // wait for any
-										 time) 
-	 != ETIMEDOUT;
+  update_vector();
+  assert(handle_vec.size() > 0);
+
+  const int code = WaitForMultipleEvents(&handle_vec[0], 
+											handle_vec.size(),
+											false, // wait for any
+											time);
+
+  if (code == ETIMEDOUT) {
+	 LOG_DEBUG(log, "thread " 
+				  << RThread<std::thread>::current_pretty_id()
+				  << ">\t event " << *this
+				  << ">\t wait: timed out");
+	 return false;
+  }
+  LOG_DEBUG(log, "thread " 
+				<< RThread<std::thread>::current_pretty_id()
+				<< ">\t event " << *this
+				<< ">\t wait: signalled");
+  return true;
 }
 
 void CompoundEvent::update_vector() const
@@ -212,6 +264,7 @@ void CompoundEvent::update_vector() const
   if (!vector_need_update)
 	 return;
 
+  handle_vec.clear();
   handle_vec.reserve(handle_set.size());
   std::transform
 	 (handle_set.begin(), handle_set.end(),
@@ -219,6 +272,20 @@ void CompoundEvent::update_vector() const
 	  [](const Event& e) { return e.evt_ptr->h; });
 
   vector_need_update = false;
+  assert(handle_vec.size() == handle_set.size());
+}
+
+std::ostream&
+operator<< (std::ostream& out, const CompoundEvent& ce)
+{
+  out << "{";
+  bool first = true;
+  for (auto& ev : ce.handle_set) {
+	 if (!first) out << " | "; else first = false;
+	 out << ev.universal_id();
+  }
+  out << "}";
+  return out;
 }
 
 

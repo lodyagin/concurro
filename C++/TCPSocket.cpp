@@ -16,7 +16,6 @@ DEFINE_STATES(TCPAxis,
 	 "in_closed",    // input part of connection is closed
 	 "out_closed",
 	 "listen",       // passive open
-	 "syn_sent",
     "accepting",    // in the middle of a new ServerSocket
 						  // creation
 	 "established",
@@ -25,28 +24,23 @@ DEFINE_STATES(TCPAxis,
 	 //"aborted",   // see RFC793, 3.8 Abort
 	 "connection_timed_out",
 	 "connection_refused",
-	 "destination_unreachable",
-	 "destroyed" // to check a state in the destructor
+	 "destination_unreachable"
 	 },
   {
   {"created", "listen"},      // listen()
-  {"created", "syn_sent"},    // our connect()
   {"listen", "accepting"}, // connect() from other side
   {"accepting", "listen"},
   {"listen", "closed"},
-  // {"listen", "syn_sent"},    // send()
-  {"syn_sent", "established"}, // initial send() is
+  {"created", "established"}, // initial send() is
 										 // recieved by other side
-  {"syn_sent", "closed"},     // close() or timeout 
+  {"created", "closed"},     // close() or timeout 
   {"established", "closing"}, // our close() or FIN from
 										// other side
   {"established", "in_closed"},
   {"established", "out_closed"},
   {"closing", "closed"},
   {"in_closed", "closed"},
-  {"out_closed", "closed"},
-  {"closed", "destroyed"}
-  // TODO ::shutdown
+  {"out_closed", "closed"}
   }
   );
 
@@ -55,11 +49,9 @@ DEFINE_STATE_CONST(TCPSocket, State, closed);
 DEFINE_STATE_CONST(TCPSocket, State, in_closed);
 DEFINE_STATE_CONST(TCPSocket, State, out_closed);
 DEFINE_STATE_CONST(TCPSocket, State, listen);
-DEFINE_STATE_CONST(TCPSocket, State, syn_sent);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
 DEFINE_STATE_CONST(TCPSocket, State, established);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
-DEFINE_STATE_CONST(TCPSocket, State, destroyed);
 
 TCPSocket::TCPSocket
 	 (const ObjectCreationInfo& oi, 
@@ -67,11 +59,20 @@ TCPSocket::TCPSocket
   : 
 	 RSocketBase(oi, par),
     RObjectWithEvents<TCPAxis> (createdState),
+	 CONSTRUCT_EVENT(established),
+	 CONSTRUCT_EVENT(closed),
+	 CONSTRUCT_EVENT(in_closed),
+	 CONSTRUCT_EVENT(out_closed),
     tcp_protoent(NULL),
 	 thread(dynamic_cast<Thread*>
-			  (thread_repository.create_thread
-				(Thread::Par(this))))
+			  (RSocketBase::repository->thread_factory
+				-> create_thread(Thread::Par(this))))
 {
+  SCHECK(thread);
+  this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (thread->is_terminated());
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);
   thread->start();
@@ -79,48 +80,97 @@ TCPSocket::TCPSocket
 
 TCPSocket::~TCPSocket()
 {
-  //ask_close();
-  REvent<TCPAxis> is_closed(this, "closed");
-  is_closed.wait();
-  State::move_to(*this, destroyedState);
+  LOG_DEBUG(log, "~TCPSocket()");
 }
 
-#if 0
-void TCPSocket::ask_close()
+void TCPSocket::ask_close_out()
 {
-  State::move_to(*this, closingState);
+  rSocketCheck(
+	 ::shutdown(fd, SHUT_WR) == 0);
 
-  const int shutdown_ret = ::shutdown(fd, );
-  //socketCreated.reset();
-  State::move_to(*this, dest);
-  if (close_ret == EWOULDBLOCK)
-    ; // not all data was sent
-  // see http://alas.matf.bg.ac.rs/manuals/lspe/snode=105.html
-  else if (close_ret == 0)
-    State::move_to(*this, closedState); // SO_LINGER guarantees it
-  else 
-    rSocketCheck(false); // another socket error
-
-  if (!State::state_is(*this, closedState))
-    State::move_to(*this, closedState);
+  State::compare_and_move
+	 (*this, establishedState, out_closedState)
+	 ||
+  State::compare_and_move
+	 (*this, in_closedState, closedState);
 }
-#endif
 
 void TCPSocket::Thread::run()
 {
   ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
   ClientSocket* cli_sock = 0;
   if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
 	 THROW_NOT_IMPLEMENTED;
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  REvent<ClientSocketAxis> (cli_sock, "connecting")
-	 . wait();
-  TCPSocket::State::move_to(*tcp_sock, syn_sentState);
+//  cli_sock->is_connecting().wait_shadow();
+//  TCPSocket::State::move_to(*tcp_sock, syn_sentState);
 
-  cli_sock->is_terminal_state_event.wait();
-  //... define the state from the set
-  TCPSocket::State::move_to(*tcp_sock, establishedState);
+  (cli_sock->is_terminal_state_event 
+	| cli_sock->is_connected()) . wait(); 
+  //TODO is_connected as a shadow
+
+  if (cli_sock->is_connected().signalled()) {
+	 TCPSocket::State::move_to
+		(*tcp_sock, establishedState);
+  }
+  else if (cli_sock->is_connection_refused().signalled()){
+	 TCPSocket::State::move_to
+		(*tcp_sock, closedState);
+	 return;
+  }
+  
+  // wait for close
+  fd_set wfds, rfds;
+  FD_ZERO(&wfds);
+  FD_ZERO(&rfds);
+  const SOCKET fd = socket->fd;
+  SCHECK(fd >= 0);
+
+  for (;;) {
+	 if (TCPSocket::State::state_is
+		  (*tcp_sock, TCPSocket::in_closedState))
+		FD_CLR(fd, &rfds);
+	 else
+		FD_SET(fd, &rfds);
+
+	 /*if (State::state_is(*tcp_sock, out_closedState))
+		FD_CLR(fd, &wfds);
+	 else
+	 FD_SET(fd, &wfds);*/
+
+	 rSocketCheck(
+		::select(fd+1, &rfds, /*&wfds,*/NULL, NULL, NULL) > 0);
+
+	 if (FD_ISSET(fd, &rfds)) {
+		// peek the message size
+		ssize_t res;
+		// Normally MSG_PEEK not need this buffer, but who
+		// knows? 
+		static char dummy_buf[1];
+		rSocketCheck(
+		  (res = ::recv(fd, &dummy_buf, 1, MSG_PEEK) >=0));
+		SCHECK(res >= 0);
+		if (res == 0) {
+		  if (TCPSocket::State::compare_and_move
+				(*tcp_sock, 
+				 TCPSocket::establishedState, 
+				 TCPSocket::in_closedState
+				  )
+				|| 
+				TCPSocket::State::compare_and_move
+				(*tcp_sock, 
+				 TCPSocket::out_closedState, 
+				 TCPSocket::closedState))
+			 break;
+		}
+	 }
+
+	 //if (FD_ISSET(fd, &wfds)) {
+		// FIXME need intercept SIGPIPE
+	 //}
+  }
 }
 

@@ -1,10 +1,14 @@
+add_definitions(-DMALLOC_CHECK_=2)
+
 set(TestsSrc
+  RepositoryCU.cpp
   EventCU.cpp
   RStateCU.cpp
   RThreadCU.cpp
   REventCU.cpp
   RMutexCU.cpp
   RBufferCU.cpp
+  RSignalCU.cpp
   RSocketCU.cpp
   tests.cpp
 )

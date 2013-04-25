@@ -12,8 +12,38 @@
 #include "RSocket.h"
 #include "ClientSocket.h"
 #include "TCPSocket.h"
-//#include "InSocket.h"
+#include "InSocket.h"
 //#include "OutSocket.h"
+
+template<class... Bases>
+RSocket<Bases...>
+//
+::~RSocket()
+{
+  // wait all parts termination
+  for (auto& te : this->ancestor_terminals)
+	 te.wait();
+
+  // TODO use and-ed events
+  for (auto& teh : this->ancestor_threads_terminals)
+	 teh.wait();
+
+  //RSocketBase::is_terminal_state_event.set();
+  LOG_DEBUG(log, "~RSocket()");
+}
+
+/*
+template<class... Bases>
+void RSocket<Bases...>
+//
+::ask_close_out()
+{
+  if (auto* tcp_sock = dynamic_cast<TCPSocket*>(this))
+  {
+	 tcp_sock->ask_close_out();
+  }
+}
+*/
 
 // temporary empty definitions
 class ServerSocket : public virtual RSocketBase {};
@@ -79,7 +109,7 @@ inline RSocketBase* RSocketAllocator
   (const ObjectCreationInfo& oi,
    const RSocketAddress& addr)
 {
-  return new RSocket</*InSocket, OutSocket,*/ Bases...>
+  return new RSocket<InSocket, /*OutSocket,*/ Bases...>
 	 (oi, addr);
 }
     

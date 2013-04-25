@@ -14,44 +14,104 @@
 #include "RThread.h"
 #include "RState.h"
 
-class InSocketStateAxis : public StateAxis {};
+class InSocketAxis : public StateAxis {};
 
 class InSocket
-: public RObjectWithEvents<InSocketStateAxis>,
+: public RObjectWithEvents<InSocketAxis>,
   virtual public RSocketBase
 {
+  DECLARE_EVENT(InSocketAxis, new_data)
+  DECLARE_EVENT(InSocketAxis, closed)
+
 public:
-  DECLARE_STATES(InSocketStateAxis, State);
+  DECLARE_STATES(InSocketAxis, State);
   DECLARE_STATE_CONST(State, new_data);
+  DECLARE_STATE_CONST(State, error);
   DECLARE_STATE_CONST(State, empty);
   DECLARE_STATE_CONST(State, closed); // a reading side
                                       // was closed
-
   virtual void ask_close();
 
-protected:
-  typedef Logger<RSocketBase> log;
-
-  //! Doing ::select and signalling new_data.
-  class Thread : public SocketThreadWithPair
+  CompoundEvent is_terminal_state() const
   {
-  public:
-	 PAR_CREATE_DERIVATION(Thread, SocketThread, 
-								  RThreadBase)
-  protected:
-	 Thread(const ObjectCreationInfo& oi, const Par& p)
-		: SocketThreadWithPair(oi, p) {}
-	 ~Thread() { destroy(); }
-	 void run();
-  } thread;
+	 return is_closed_event;
+  }
 
   //! The last received data
   RSingleBuffer msg;
 
+protected:
+ InSocket
+	 (const ObjectCreationInfo& oi, 
+	  const RSocketAddress& par);
+
+  class SelectThread : public SocketThreadWithPair
+  {
+  public:
+	 struct Par : public SocketThreadWithPair::Par
+	 { 
+		Par(RSocketBase* sock) 
+		  : SocketThreadWithPair::Par(sock) 
+		{
+		  thread_name = SFORMAT("InSocket(select):" 
+										<< sock->fd);
+		}
+
+		RThreadBase* create_derivation
+		  (const ObjectCreationInfo& oi) const
+		{ 
+		  return new SelectThread(oi, *this); 
+		}
+	 };
+
+	 void run();
+
+  protected:
+	 SelectThread
+		(const ObjectCreationInfo& oi, const Par& p)
+		: SocketThreadWithPair(oi, p) {}
+
+	 ~SelectThread() { destroy(); }
+  }* select_thread;
+
+  class WaitThread : public SocketThread
+  {
+  public:
+	 struct Par : public SocketThread::Par
+	 { 
+		SOCKET notify_fd;
+	   Par(RSocketBase* sock, SOCKET notify) 
+		: SocketThread::Par(sock),
+		  notify_fd(notify)
+		{
+		  thread_name = SFORMAT("InSocket(wait):" 
+										<< sock->fd);
+		}
+
+		RThreadBase* create_derivation
+		  (const ObjectCreationInfo& oi) const
+		{ 
+		  return new WaitThread(oi, *this); 
+		}
+	 };
+
+	 void run();
+
+  protected:
+	 SOCKET notify_fd;
+
+	 WaitThread
+		(const ObjectCreationInfo& oi, const Par& p)
+		: SocketThread(oi, p), notify_fd(p.notify_fd) {}
+	 ~WaitThread() { destroy(); }
+  }* wait_thread;
+
+  DEFAULT_LOGGER(InSocket)
+
   //! Actual size of a socket internal read buffer + 1.
   size_t socket_rd_buf_size;
+  SOCKET notify_fd;
   
-  InSocket();
   ~InSocket();
 };
 

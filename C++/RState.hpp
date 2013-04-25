@@ -10,6 +10,7 @@
 #define CONCURRO_RSTATE_HPP_
 
 #include "RState.h"
+#include "RThread.h"
 #include "Repository.hpp"
 #include "RObjectWithStates.hpp"
 #if __GNUC_MINOR__< 6
@@ -72,15 +73,20 @@ void RAxis<Axis>
   if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
 		(&obj)) {
 	 assert(trans_id > 0);
+	 /*LOGGER_DEBUG(logger, "update_events(" << trans_id 
+		<< ", " << to << ");");*/
 	 p->update_events(trans_id, to);
   }
 
   LOGGER_DEBUG(logger, 
-					"State changed from [" 
+					"thread " 
+					<< RThread<std::thread>::current_pretty_id()
+					<< ">\t object " << obj.object_name()
+					<< ">\t " //state is changed from [" 
 					<< stateMap->get_state_name(from)
-					<< "] to [" 
-					<< stateMap->get_state_name(to)
-					<< "]");
+					<< " -> " //"] to [" 
+					<< stateMap->get_state_name(to));
+					//<< "]");
 }
 
 template<class Axis>
@@ -109,12 +115,15 @@ bool RAxis<Axis>
 	 p->update_events(trans_id, to);
   }
 
-  LOGGER_DEBUG(obj.logger(), 
-					"State changed from [" 
+  LOG_DEBUG(log, 
+					"thread " 
+					<< RThread<std::thread>::current_pretty_id()
+					<< ">\t object " << obj.object_name()
+					<< ">\t " //state is changed from [" 
 					<< stateMap->get_state_name(from)
-					<< "] to [" 
-					<< stateMap->get_state_name(to)
-					<< "]");
+					<< " -> " //"] to [" 
+					<< stateMap->get_state_name(to));
+					//<< "]");
   return true;
 }
 
@@ -149,12 +158,15 @@ bool RAxis<Axis>
 	 p->update_events(trans_id, to);
   }
 
-  LOGGER_DEBUG(obj.logger(), 
-					"State changed from [" 
+  LOG_DEBUG(log, 
+					"thread " 
+					<< RThread<std::thread>::current_pretty_id()
+					<< ">\t object " << obj.object_name()
+					<< ">\t " //state is changed from [" 
 					<< stateMap->get_state_name(from)
-					<< "] to [" 
-					<< stateMap->get_state_name(to)
-					<< "]");
+					<< " -> " //"] to [" 
+					<< stateMap->get_state_name(to));
+					//<< "]");
   return true;
 }
 

@@ -54,6 +54,11 @@ public:
 	 State::move_to(*this, dischargedState);
   }
 
+  std::string universal_id() const
+  {
+	 return RT::universal_id();
+  }
+
   DEFAULT_LOGGER(Test)
 };
 

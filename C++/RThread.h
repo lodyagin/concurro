@@ -12,7 +12,6 @@
 #include "RThread.h"
 #include "RMutex.h"
 #include "REvent.h"
-#include "RState.hpp"
 #include "RState.h"
 #include "SCommon.h"
 #include "RObjectWithStates.h"
@@ -54,6 +53,8 @@ public:
 	   (const ObjectCreationInfo&) const = 0;
 	 virtual RThreadBase* transform_object
 	   (const RThreadBase*) const = 0;
+
+	 std::string thread_name;
   };
 
   //! Contains a common thread execution code. It calls
@@ -61,7 +62,10 @@ public:
   //! public for access from a derived RThread template.
   void _run ();
 
+  //! Id of this thread in a repository
   const std::string universal_object_id;
+  //! A pretty name for logging (if not empty)
+  const std::string thread_name;
 
   RThreadBase 
 	 (const std::string& id,
@@ -75,6 +79,12 @@ public:
   std::string universal_id() const
   {
 	 return universal_object_id;
+  }
+
+  std::string pretty_id() const
+  {
+	 return (thread_name.empty())
+		? universal_object_id : thread_name;
   }
 
   /* 
@@ -108,6 +118,10 @@ public:
   DEFAULT_LOGGER(RThreadBase)
 
 protected:
+
+  struct LogParams {
+	 static bool current;
+  } log_params;
 
   bool destructor_delegate_is_called;
 
@@ -171,14 +185,14 @@ class RThread<std::thread> : public RThreadBase
 {
 public:
 
+  typedef std::thread::native_handle_type ThreadId;
+  typedef ThreadId Id;
+
   class Par;
 
   //! A RepositoryType to use with this RThread
   typedef RepositoryInterface<
-	 RThread<std::thread>, 
-	 Par, 
-	 std::thread::native_handle_type> RepositoryType;
-  typedef std::thread::native_handle_type ThreadId;
+	 RThread<std::thread>, Par, ThreadId > RepositoryType;
 
   class Par : public RThreadBase::Par
   {
@@ -261,14 +275,29 @@ public:
     th->join(); 
   }
 
-  //static RThread<std::thread>& current();
+  //! Create in the repository
+  template<class Thread, class... Args>
+  static Thread* create(Args&&... args);
+
+  //! Destroy in the repository
+  void remove();
+
+  //! Return ptr to the current thread or nullptr if the
+  //! current thread is not registered in a global
+  //! RThread<std::thread> repository.
+  static RThread<std::thread>* current();
+
+  //! A pretty id of the current thread. 
+  //! \see current()
+  //! \see pretty_id() 
+  static std::string current_pretty_id();
 
   DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
   //! It is for creation from ThreadRepository
   RThread(const ObjectCreationInfo& oi, const Par& par)
-	 : RThreadBase(oi.objectId, par.extTerminated),
+	 : RThreadBase(oi, par),
 	 th(const_cast<Par&>(par).move_thread()) {}
 
   void start_impl () {}

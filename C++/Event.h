@@ -25,6 +25,7 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <vector>
 #include <set>
 #include <memory>
+#include <assert.h>
 
 class EventInterface
 {
@@ -46,6 +47,11 @@ class EvtBase : public EventInterface
   friend class Event;
   friend class CompoundEvent;
 public:
+  struct LogParams {
+	 bool set, reset;
+    LogParams() : set(true), reset(true) {}
+  } log_params;
+
   EvtBase(const EvtBase&) = delete;
   virtual ~EvtBase();
 
@@ -62,7 +68,9 @@ public:
   bool wait(int time = -1) const
   {
 	 SCHECK(is_manual);
-	 return wait_impl(time);
+	 bool returnValue = wait_impl(time);
+	 isSignaled = is_manual ? isSignaled.load() : false;
+	 return returnValue;
   }
 
   void set();
@@ -70,15 +78,40 @@ public:
 
   bool signalled() const
   {
+	 return isSignaled;
+  }
+
+  bool get_shadow() const
+  {
+	 return shadow;
+  }
+
+  //! It is like wait(int) but return true if shadow is
+  //! true (i.e., the event "was")
+  bool wait_shadow(int time = -1)
+  {
+	 //LOG_DEBUG(log, "shadow = " << shadow);
+	 return shadow || wait_impl(time);
+  }
+
+  bool wait_shadow(int time = -1) const
+  {
 	 SCHECK(is_manual);
-	 return wait(0);
+	 //LOG_DEBUG(log, "shadow = " << shadow);
+	 return shadow || wait_impl(time);
   }
 
   const std::string universal_object_id;
 protected:
-  typedef Logger<EvtBase> log;
+  typedef Logger<LOG::Events> log;
 
   //std::atomic<bool> is_signalled;
+
+  //! It is set if the event was occured at least once.
+  std::atomic<bool> shadow;
+
+  mutable std::atomic_bool isSignaled;
+
   const bool is_manual;
   HANDLE h;
 
@@ -135,6 +168,21 @@ public:
 	 return evt_ptr->wait(time); 
   }
 
+  bool wait_shadow(int time = -1)
+  {
+	 return evt_ptr->wait_shadow(time); 
+  }
+
+  bool wait_shadow(int time = -1) const
+  {
+	 return evt_ptr->wait_shadow(time); 
+  }
+
+  bool get_shadow() const
+  {
+	 return evt_ptr->get_shadow();
+  }
+
   void set()
   {
 	 return evt_ptr->set();
@@ -155,22 +203,34 @@ public:
 	 return evt_ptr->is_manual;
   }
 
+  std::string universal_id() const
+  {
+	 return evt_ptr->universal_object_id;
+  }
+
 protected:
+  typedef Logger<LOG::Events> log;
+
   std::shared_ptr<EvtBase> evt_ptr;
 };
 
 class CompoundEvent : public EventInterface
 {
+  friend std::ostream&
+  operator<< (std::ostream&, const CompoundEvent&);
+
 public:
   CompoundEvent();
-  CompoundEvent(CompoundEvent&&);
-  explicit CompoundEvent(const Event&); //UT+
+  CompoundEvent(CompoundEvent&&); //UT+
+  CompoundEvent(const CompoundEvent&); //UT+
+  CompoundEvent(const Event&); //UT+
   CompoundEvent(std::initializer_list<Event>);
 
   CompoundEvent& operator= (CompoundEvent&&);
+  CompoundEvent& operator= (const CompoundEvent&);
 
   const CompoundEvent& operator|= (const Event&); //UT+
-  //CompoundEvent& operator|= (const CompoundEvent&);
+  CompoundEvent& operator|= (const CompoundEvent&);
 
   bool wait(int time = -1)
   {
@@ -183,7 +243,23 @@ public:
 	 return wait_impl(time);
   }
 
+  bool isSignaled(){
+  	for(auto &i : handle_set)
+  		if (i.signalled()) return true;
+  	return false;
+  }
+
+  //! A number of unique events inside.
+  size_t size() const
+  {
+	 assert(vector_need_update
+			  || handle_vec.size() == handle_set.size());
+	 return handle_set.size();
+  }
+
 protected:
+  typedef Logger<LOG::Events> log;
+
   //! a set for accumulate handles
   std::set<Event> handle_set;
   //! a vector to pass to WaitForMultipleEvents
@@ -200,36 +276,39 @@ protected:
   void update_vector() const;
 };
 
+std::ostream&
+operator<< (std::ostream&, const CompoundEvent&);
+
 //hint: use operator& for wait for all
 //! Append events for wait-for-any
-inline const CompoundEvent operator| 
+inline CompoundEvent operator| 
   (const Event& a, const Event& b) //UT+
 {
   CompoundEvent ca(a);
   ca |= b; return ca;
 }
 
-inline const CompoundEvent operator| 
+inline CompoundEvent operator| 
   (CompoundEvent a, const Event& b) //UT+
 {
   a |= b; return a;
 }
 
-#if 0
 inline CompoundEvent operator| 
-  (CompoundEvent a, const CompoundEvent& b) //UT+
+  (CompoundEvent a, const CompoundEvent& b)
 {
   a |= b; return a;
 }
 
 inline CompoundEvent operator| 
-  (const Event& a, CompoundEvent b) //UT+
+  (const Event& a, CompoundEvent b)
 {
   b |= a; return b;
 }
 
+#if 0
 inline CompoundEvent operator| 
-  (const CompoundEvent& a, CompoundEvent b) //UT+
+  (const CompoundEvent& a, CompoundEvent b)
 {
   b |= a; return b;
 }
@@ -242,12 +321,10 @@ inline CompoundEvent operator|
   ca |= b; return ca;
 }
 
-#if 0
 inline CompoundEvent operator| 
   (CompoundEvent a, CompoundEvent&& b)
 {
   a |= b; return a;
 }
-#endif
 
 #endif

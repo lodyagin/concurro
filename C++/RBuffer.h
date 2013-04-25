@@ -31,13 +31,13 @@ public:
   DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
-  DECLARE_STATE_CONST(State, destroyed);
   DECLARE_STATE_CONST(State, welded);
 
   RBuffer() 
   : RObjectWithEvents<DataBufferStateAxis>
 	 (dischargedState),
-	 CONSTRUCT_EVENT(discharged)
+	 CONSTRUCT_EVENT(discharged),
+	 destructor_is_called(false)
   {}
 
   //! Move the buffer.
@@ -54,6 +54,13 @@ public:
   //! Move the buffer.
   //RBuffer& operator=(RBuffer&&);
 
+  std::string universal_id() const
+  {
+	 return "?";
+  }
+
+protected:
+  bool destructor_is_called;
 };
 
 class RSingleBuffer : public RBuffer

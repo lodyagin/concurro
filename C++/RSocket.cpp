@@ -22,13 +22,14 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
 	 fd(addr.get_fd()), 
-	 aw_ptr(addr.get_aw_ptr()),
-	 thread_repository(
-		SFORMAT("RSocketRepository[RSocket[fd=" 
-				  << addr.get_fd() << "]]"), 
-		5)
+	 is_construction_complete_event
+		("RSocketBase::construction_complete", true),
+	 repository(dynamic_cast<RSocketRepository*>
+					(oi.repository)),
+	 aw_ptr(addr.get_aw_ptr())
 {
   assert(fd >= 0);
+  assert(repository);
   assert(aw_ptr);
   assert(aw_ptr->begin()->ai_addr);
 
@@ -66,3 +67,8 @@ SocketThreadWithPair::SocketThreadWithPair
 	 ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);
 }
 
+SocketThreadWithPair::~SocketThreadWithPair()
+{
+  rSocketCheck(::close(sock_pair[ForSelect]) == 0);
+  rSocketCheck(::close(sock_pair[ForNotify]) == 0);
+}

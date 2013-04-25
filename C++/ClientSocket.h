@@ -16,10 +16,12 @@ class ClientSocketAxis : public StateAxis {};
 class ClientSocket : virtual public RSocketBase,
   public RObjectWithEvents<ClientSocketAxis>
 {
+  DECLARE_EVENT(ClientSocketAxis, connecting)
   DECLARE_EVENT(ClientSocketAxis, connected)
   DECLARE_EVENT(ClientSocketAxis, connection_timed_out)
   DECLARE_EVENT(ClientSocketAxis, connection_refused)
   DECLARE_EVENT(ClientSocketAxis, destination_unreachable)
+  DECLARE_EVENT(ClientSocketAxis, closed)
 
 public:
   DECLARE_STATES(ClientSocketAxis, State);
@@ -29,9 +31,14 @@ public:
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
-  DECLARE_STATE_CONST(State, destroyed);
+  DECLARE_STATE_CONST(State, closed);
 
   const CompoundEvent is_terminal_state_event;
+
+  CompoundEvent is_terminal_state() const
+  {
+	 return is_terminal_state_event;
+  }
 
   ~ClientSocket();
 
@@ -54,7 +61,10 @@ protected:
 	 struct Par : public SocketThread::Par
 	 { 
 		Par(RSocketBase* sock) 
-		  : SocketThread::Par(sock) {}
+		  : SocketThread::Par(sock) 
+		{
+		  thread_name = SFORMAT("ClientSocket:" << sock->fd);
+		}
 
 		RThreadBase* create_derivation
 		  (const ObjectCreationInfo& oi) const

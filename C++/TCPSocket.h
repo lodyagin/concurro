@@ -14,6 +14,11 @@ class TCPAxis : public StateAxis {};
 class TCPSocket : virtual public RSocketBase
 , public RObjectWithEvents<TCPAxis>
 {
+  DECLARE_EVENT(TCPAxis, established);
+  DECLARE_EVENT(TCPAxis, closed);
+  DECLARE_EVENT(TCPAxis, in_closed);
+  DECLARE_EVENT(TCPAxis, out_closed);
+
 public:
   DECLARE_STATES(TCPAxis, State);
   DECLARE_STATE_CONST(State, created);
@@ -21,15 +26,19 @@ public:
   DECLARE_STATE_CONST(State, in_closed);
   DECLARE_STATE_CONST(State, out_closed);
   DECLARE_STATE_CONST(State, listen);
-  DECLARE_STATE_CONST(State, syn_sent);
   DECLARE_STATE_CONST(State, accepting);
   DECLARE_STATE_CONST(State, established);
   DECLARE_STATE_CONST(State, closing);
-  DECLARE_STATE_CONST(State, destroyed);
 
   ~TCPSocket();
 
-  //virtual void ask_close();
+  CompoundEvent is_terminal_state() const
+  {
+	 return is_closed_event;
+  }
+
+  //! Ask to close an outbound part
+  void ask_close_out();
 
 protected:
   typedef Logger<TCPSocket> log;
@@ -49,7 +58,10 @@ protected:
 	 struct Par : public SocketThread::Par
 	 {
 	   Par(RSocketBase* sock) 
-		  : SocketThread::Par(sock) {}
+		  : SocketThread::Par(sock)
+		{
+		  thread_name = SFORMAT("TCPSocket:" << sock->fd);
+		}
 
 		RThreadBase* create_derivation
 		  (const ObjectCreationInfo& oi) const

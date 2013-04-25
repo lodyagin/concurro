@@ -21,6 +21,12 @@
 #ifndef _WIN32
 #  define SOCKET int
 #endif
+#include <list>
+
+class SocketBaseAxis : public StateAxis {};
+
+class RSocketRepository;
+class SocketThread;
 
 /**
  * An abstract socket base.  In the Concurro library
@@ -40,20 +46,26 @@ public:
   //! A socket file descriptor.
   const SOCKET fd;
 
+  virtual CompoundEvent is_terminal_state() const = 0;
+
+  virtual void ask_close_out() = 0;
+
+  Event is_construction_complete_event;
+
 protected:
-  //TODO make external threads controlling a group of
-  //sockets instead of has each socket with its own
-  //threads. 
-  typedef RThreadRepository<
-	 RThread<std::thread>, std::unordered_map,
-	 std::thread::native_handle_type>
-	 LocalThreadRepository;
+  RSocketRepository* repository;
 
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
-  //! A thread repository to internal threads creation
-  LocalThreadRepository thread_repository;
+  //! List of all ancestors terminal events. Each derived
+  //! (with a public virtual base) class appends its
+  //! terminal event here from its constructor.
+  std::list<CompoundEvent> ancestor_terminals;
+
+  // TODO
+  //! Temporary: list of threads terminal events
+  std::list<Event> ancestor_threads_terminals;
 
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
@@ -101,15 +113,22 @@ protected:
 
 class SocketThreadWithPair: public SocketThread
 { 
+public:
+  SOCKET get_notify_fd() const
+  {
+	 return sock_pair[ForNotify];
+  }
+
 protected:
   //! indexing sock_pair sockets
-  enum {ForSelect = 0, ForSignal = 1};
+  enum {ForSelect = 0, ForNotify = 1};
 
   //! the pair for ::select call waking-up
   int sock_pair[2];
 
   SocketThreadWithPair
 	 (const ObjectCreationInfo& oi, const Par& p);
+  ~SocketThreadWithPair();
 };
 
 
@@ -128,10 +147,43 @@ class RSocket : public Bases...
   friend RSocketBase* RSocketAllocator
 	 (const ObjectCreationInfo& oi,
 	  const RSocketAddress& addr);
+
+public:
+  CompoundEvent is_terminal_state() const
+  {
+	 //return RSocketBase::is_terminal_state();
+	 //return is_terminal_state_event;
+	 THROW_NOT_IMPLEMENTED; // or return CompoundEvent()
+  }
+
+  //void ask_close_out();
+
+  std::string universal_id() const
+  {
+	 return RSocketBase::universal_id();
+  }
+
+  std::string object_name() const
+  {
+	 return SFORMAT("RSocket:" << this->fd);
+  }
+
 protected:
+  //Event is_terminal_state_event;
+
   RSocket(const ObjectCreationInfo& oi,
 			 const RSocketAddress& addr)
-	 : RSocketBase(oi, addr), Bases(oi, addr)... {}
+	 : RSocketBase(oi, addr), Bases(oi, addr).../*,
+	 is_terminal_state_event(
+		SFORMAT(oi.objectId << ":" 
+		<< "is_terminal_state_event"), true)*/
+  {
+	 RSocketBase::is_construction_complete_event.set();
+  }
+
+  //! wait all parts terminated and set
+  //! its own is_terminal_state_event. 
+  ~RSocket();
 
   DEFAULT_LOGGER(RSocket<Bases...>);
 };
@@ -166,12 +218,6 @@ inline RSocketBase* RSocketAllocator
    const RSocketAddress& addr);
 
 
-#if 1
-typedef Repository<
-  RSocketBase, RSocketAddress, std::map, SOCKET
-  > RSocketRepository;
-  
-#else
 class RSocketRepository
 : public Repository
   <RSocketBase, RSocketAddress, std::map, SOCKET>
@@ -183,10 +229,11 @@ public:
 
   RThreadFactory *const thread_factory;
 
-  RSocketRepository(RThreadFactory *const tf)
-    : Parent("RSocketRepository", 10),
+  RSocketRepository(const std::string& id,
+						  size_t reserved,
+						  RThreadFactory *const tf)
+    : Parent(id, reserved),
 	 thread_factory(tf) {}
 };
-#endif
 
 #endif

@@ -8,97 +8,150 @@
 
 #include "StdAfx.h"
 #include "InSocket.h"
+#include "TCPSocket.h"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <algorithm>
 
-RAxis<InSocketStateAxis> in_socket_state_axis
+RAxis<InSocketAxis> in_socket_state_axis
 ({
   {   "new_data",  // new data or an error
       "empty",
       "closed",
-		"error",
-		"destroyed"
+		"error"
+//		"destroyed"
   },
   { {"new_data", "empty"},
   {"empty", "new_data"},
   {"new_data", "closed"},
   {"empty", "closed"},
   {"empty", "error"},
-  {"error", "closed"},
-  {"closed", "destroyed"}
+  {"error", "closed"}//,
+//  {"closed", "destroyed"}
   }
 });
 DEFINE_STATE_CONST(InSocket, State, new_data);
 DEFINE_STATE_CONST(InSocket, State, empty);
 DEFINE_STATE_CONST(InSocket, State, closed);
+DEFINE_STATE_CONST(InSocket, State, error);
 
 
-InSocket::InSocket()
-  : RObjectWithEvents<InSocketStateAxis>(emptyState)
+InSocket::InSocket
+  (const ObjectCreationInfo& oi, 
+	const RSocketAddress& par)
+: 
+	 RSocketBase(oi, par),
+	 RObjectWithEvents<InSocketAxis>(emptyState),
+	 CONSTRUCT_EVENT(new_data),
+	 CONSTRUCT_EVENT(closed),
+	 select_thread(dynamic_cast<SelectThread*>
+			  (RSocketBase::repository->thread_factory
+				-> create_thread(SelectThread::Par(this)))),
+	 wait_thread(
+		dynamic_cast<WaitThread*>
+		(RSocketBase::repository->thread_factory
+		 -> create_thread
+		 (WaitThread::Par
+		  (this, 
+			select_thread->get_notify_fd()))))
 {
+  SCHECK(select_thread && wait_thread);
+  this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (select_thread->is_terminated());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (wait_thread->is_terminated());
+  
   socklen_t m = sizeof(socket_rd_buf_size);
   getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
      &socket_rd_buf_size, &m);
-  socket_rd_buf_size++; // to allow catch an overflow error
+  socket_rd_buf_size++; //to allow catch an overflow error
   LOG_DEBUG(log, "socket_rd_buf_size = " 
                << socket_rd_buf_size);
   msg.reserve(socket_rd_buf_size);
+  select_thread->start();
+  wait_thread->start();
 }
 
 InSocket::~InSocket()
 {
+  LOG_DEBUG(log, "~InSocket()");
 }
 
 void InSocket::ask_close()
 {
 }
 
-void InSocket::Thread::run()
+void InSocket::SelectThread::run()
 {
+  ThreadState::move_to(*this, workingState);
+
   fd_set rfds;
   FD_ZERO(&rfds);
 
   const SOCKET fd = socket->fd;
   SCHECK(fd >= 0);
 
-  static REvent<DataBufferStateAxis> buf_discharged
-	 ("discharged");
+  auto* in_sock = dynamic_cast<InSocket*>
+	 (socket);
+  SCHECK(in_sock);
 
   for(;;) {
     // Wait for new data
-    FD_SET(sock_pair[ForSelect], &rfds);
+	 // The second socket for close report
+	 FD_SET(sock_pair[ForSelect], &rfds);
     FD_SET(fd, &rfds);
-	 const int maxfd = max(sock_pair[ForSelect], fd) + 1;
+	 const int maxfd = std::max(sock_pair[ForSelect], fd)
+		+ 1;
     rSocketCheck(
 		 ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
 
 	 if (FD_ISSET(fd, &rfds)) {
-		const ssize_t red = ::read(fd, socket->msg.data(),
-											socket->msg.capacity());
+		const ssize_t red = ::read(fd, in_sock->msg.data(),
+											in_sock->msg.capacity());
 		if (red < 0) {
-		  State::move_to(*socket, errorState);
+		  InSocket::State::move_to(*in_sock, errorState);
 		  // TODO add the error code
 		  break;
 		}
 
-		SCHECK((size_t) red < socket->socket_rd_buf_size); 
+		SCHECK((size_t) red < in_sock->socket_rd_buf_size); 
 		// to make sure we always read all (rd_buf_size =
 		// internal socket rcv buffer + 1)
 
-		socket->msg.resize(red);
-		InSocket::State::move_to(*socket, new_dataState);
-	 }
-...
-    if (red == 0) { // EOF
-      InSocket::State::move_to(*socket, closedState);
-      break;
-    }
+		in_sock->msg.resize(red);
+		InSocket::State::move_to(*in_sock, new_dataState);
 
-    // <NB> do not read more data until a client read this
-    // piece 
-    buf_discharged.wait(socket->msg);
-    InSocket::State::move_to(*socket, emptyState);
+		// <NB> do not read more data until a client read
+		// this piece
+		in_sock->msg.is_discharged().wait();
+		InSocket::State::move_to(*in_sock, emptyState);
+	 }
+
+	 assert(InSocket::State::state_is
+			  (*in_sock, emptyState));
+
+	 // <NB> wait for buffer discharging
+	 if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
+		InSocket::State::move_to (*in_sock, closedState);
+		break;
+	 }
   }
 }
 
+
+void InSocket::WaitThread::run()
+{
+  ThreadState::move_to(*this, workingState);
+
+  auto* tcp_sock = dynamic_cast<TCPSocket*> (socket);
+  SCHECK(tcp_sock);
+  auto* in_sock = dynamic_cast<InSocket*> (socket);
+  SCHECK(in_sock);
+
+  tcp_sock->is_closed().wait();
+  static char dummy_buf[1] = {1};
+  rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
+}
 

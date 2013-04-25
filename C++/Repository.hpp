@@ -12,20 +12,6 @@
 #include "Repository.h"
 #include <set>
 
-template<class Obj, class ObjId>
-class RepositoryMapType<Obj, ObjId, std::unordered_map>
-{
-public:
-  typedef std::unordered_map<ObjId, Obj*> Map;
-};
-
-template<class Obj, class ObjId>
-class RepositoryMapType<Obj, ObjId, std::map>
-{
-public:
-  typedef std::map<ObjId, Obj*> Map;
-};
-
 template<class Obj, class Par, class ObjId>
 const AbstractRepositoryBase::Traits 
   RepositoryInterface<Obj, Par, ObjId>::traits
@@ -63,11 +49,9 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
 ::create_object (const Par& param)
 {
-  /*if (SThread::current ().is_stop_requested ())
-       ::xShuttingDown 
-        (L"Stop request from the owner thread.");*/
   Obj* obj = 0;
-  // <NB> cinfo.objectId is empty at the first call to param
+  // <NB> cinfo.objectId is empty at the first call to
+  // param
   ObjectCreationInfo cinfo;
   cinfo.repository = this;
   { 
@@ -149,10 +133,9 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
     RLOCK(objectsM);
 
 	 try {
-		Obj*& r = objects->at (id);
-		ptr = r;
-		if (r == 0) THROW_PROGRAM_ERROR;
-		r = 0;
+		ptr = objects->at (id);
+		delete_object_id(id);
+		if (ptr == 0) THROW_PROGRAM_ERROR;
 	 }
 	 catch (const std::out_of_range&) {
 		THROW_EXCEPTION(NoSuchId, id);
@@ -173,7 +156,7 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
   catch (const std::out_of_range&)
   {
-	 THROW_EXCEPTION(NoSuchId, id);
+	 THROW_EXCEPTION_PLACE(get_object_by_id, NoSuchId, id);
   }
 }
 
