@@ -35,7 +35,8 @@ EvtBase::EvtBase(const std::string& id,
   LOG_DEBUG(log, "thread " 
 				<< RThread<std::thread>::current_pretty_id()
 				<< ">\t event "
-				<< universal_object_id << ">\t created");
+				<< universal_object_id 
+				<< ">\t created in state " << init);
 #ifdef _WIN32
   sWinCheck(h != 0, L"creating an event");
 #endif
