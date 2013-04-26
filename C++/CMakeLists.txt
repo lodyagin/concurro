@@ -26,6 +26,7 @@ set (concurrent_SOURCES
   RMutex.cpp
   RSocket.cpp
   RSocketAddress.cpp
+  RSocketConnection.cpp
   RThread.cpp
   RThreadRepository.cpp
   SCommon.cpp
