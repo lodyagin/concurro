@@ -16,9 +16,10 @@ void test_client_socket_connection_timed_out();
 void test_client_socket_destination_unreachable();
 void test_client_socket_connected();
 void test_in_socket_new_msg();
+void test_out_socket_login();
 
 CU_TestInfo RSocketTests[] = {
-#if 0
+#if 1
   {"test 127.0.0.1:5555 address", 
 	test_127001_socket_address},
   {"test localhost socket address", 
@@ -27,10 +28,11 @@ CU_TestInfo RSocketTests[] = {
   test_client_socket_connection_refused},
   {"test Client_Socket connected",
 	test_client_socket_connected},
-#else
   {"test InSocket new msg",
 	test_in_socket_new_msg},
 #endif
+  {"test OutSocket login",
+	test_out_socket_login},
 #if 0
   {"test Client_Socket destination unreachable",
 	test_client_socket_destination_unreachable},
@@ -215,6 +217,57 @@ void test_in_socket_new_msg()
   CU_ASSERT_TRUE_FATAL(
 	 RBuffer::State::state_is(
 		in_sock->msg, RBuffer::dischargedState));
+}
+
+void test_out_socket_login()
+{
+  typedef Logger<LOG::Root> log;
+
+  RSocketRepository sr
+	 ("RSocketCU::test_out_socket_login::sr",
+	  10, 
+	  &RThreadRepository<RThread<std::thread>>::instance()
+	 );
+
+  auto* in_sock = dynamic_cast<InSocket*>
+	 (sr.create_object
+	  (*RSocketAddressRepository()
+		. create_addresses<NetworkProtocol::TCP, IPVer::v4>
+		("192.168.25.240", 31001) . front()));
+  auto* out_sock = dynamic_cast<OutSocket*> (in_sock);
+  auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);
+  auto* cli_sock = dynamic_cast<ClientSocket*> (in_sock);
+
+  cli_sock->ask_connect();
+
+  in_sock->is_new_data().wait();
+  const char* tst_string = "+Soup2.0\n";
+  CU_ASSERT_EQUAL_FATAL(
+	 in_sock->msg.size(), strlen(tst_string));
+  CU_ASSERT_NSTRING_EQUAL_FATAL(
+	 in_sock->msg.cdata(), tst_string,
+	 in_sock->msg.size());
+  in_sock->msg.clear();
+
+  const char* login_request = 
+	 "Labcdef12345678902H23456789         1\n";
+  const size_t login_request_len = strlen(login_request);
+  out_sock->msg.reserve(login_request_len);
+  strncpy((char*)out_sock->msg.data(), login_request,
+			 login_request_len);
+  out_sock->msg.resize(login_request_len);
+  out_sock->msg.is_discharged().wait();
+
+  in_sock->is_new_data().wait();
+  std::unique_ptr<char[]> resp1
+	 (new char[in_sock->msg.size() + 1]); 
+  strncpy(resp1.get(), (const char*)in_sock->msg.cdata(), 
+			 in_sock->msg.size());
+  resp1[in_sock->msg.size()] = 0;
+  LOG_DEBUG(log, "=[" << resp1.get() << "]=");
+
+  tcp_sock->ask_close_out();
+  in_sock->msg.clear();
 }
 
 

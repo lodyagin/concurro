@@ -197,6 +197,20 @@ void TCPSocket::Thread::run()
 			 break;
 		  }
 		}
+		else {
+		  if (RSocketBase::State::state_in
+				(*socket, {RSocketBase::closedState,
+					 RSocketBase::errorState})) {
+			 // FIXME input message discarded here
+			 TCPSocket::State::move_to
+				(*tcp_sock, TCPSocket::closedState);
+			 break;
+		  }
+		  else {
+			 // peek other thread data, allow switch to it
+			 std::this_thread::yield();
+		  }
+		}
 	 }
 
 	 //if (FD_ISSET(fd, &wfds)) {

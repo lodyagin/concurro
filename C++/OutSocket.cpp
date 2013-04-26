@@ -93,6 +93,9 @@ void OutSocket::SelectThread::run()
 	 return;
   }
 
+  OutSocket::State::move_to
+	 (*out_sock, OutSocket::busyState);
+
   fd_set wfds, rfds;
   FD_ZERO(&wfds);
 
