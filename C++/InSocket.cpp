@@ -126,6 +126,7 @@ void InSocket::SelectThread::run()
 		+ 1;
     rSocketCheck(
 		 ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
+	 LOG_DEBUG(log, "InSocket>\t ::select");
 
 	 if (FD_ISSET(fd, &rfds)) {
 		const ssize_t red = ::read(fd, in_sock->msg.data(),

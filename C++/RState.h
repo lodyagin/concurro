@@ -12,6 +12,7 @@
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 
+#if 0
 class RaceConditionInStates
   : public SException
 {
@@ -26,6 +27,7 @@ public:
 				 << " while we incorrectly set " << to))
   {}
 };
+#endif
 
 
 template<class Axis>

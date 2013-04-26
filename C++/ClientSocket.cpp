@@ -136,6 +136,7 @@ void ClientSocket::Thread::run()
   FD_SET(fd, &wfds);
   rSocketCheck(
 	 ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
+  LOG_DEBUG(log, "ClientSocket>\t ::select");
 
   int error = 0;
   socklen_t error_len = sizeof(error);
@@ -156,19 +157,10 @@ void ClientSocket::Thread::run()
   RSocketBase::State::move_to
 	 (*socket, RSocketBase::readyState);
 
-  (tcp_sock->is_in_closed()
-	| tcp_sock->is_out_closed()
-	| tcp_sock->is_closed()) . wait();
-
-  if (tcp_sock->is_in_closed().signalled()) {
-	 tcp_sock->ask_close_out();
-	 ClientSocket::State::compare_and_move
-		(*cli_sock, ClientSocket::connectedState, 
-		 ClientSocket::closedState);
-  }
-  else if (tcp_sock->is_in_closed().signalled()) {
-	 THROW_PROGRAM_ERROR;
-  }
+  socket->is_closed().wait();
+  ClientSocket::State::compare_and_move
+	 (*cli_sock, ClientSocket::connectedState, 
+	  ClientSocket::closedState);
 }
 
 

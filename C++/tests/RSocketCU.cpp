@@ -28,9 +28,9 @@ CU_TestInfo RSocketTests[] = {
   {"test Client_Socket connected",
 	test_client_socket_connected},
 #endif
-#if 0
   {"test InSocket new msg",
 	test_in_socket_new_msg},
+#if 0
   {"test Client_Socket destination unreachable",
 	test_client_socket_destination_unreachable},
   {"test Client_Socket connection_timed_out",
@@ -197,7 +197,7 @@ void test_in_socket_new_msg()
   CU_ASSERT_EQUAL_FATAL(
 	 in_sock->msg.size(), strlen(tst_string));
   CU_ASSERT_NSTRING_EQUAL_FATAL(
-	 in_sock->msg.data(), tst_string,
+	 in_sock->msg.cdata(), tst_string,
 	 in_sock->msg.size());
 
   tcp_sock->ask_close_out();

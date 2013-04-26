@@ -85,8 +85,10 @@ TCPSocket::~TCPSocket()
 
 void TCPSocket::ask_close_out()
 {
+  LOG_DEBUG(log, "ask_close_out()");
   rSocketCheck(
 	 ::shutdown(fd, SHUT_WR) == 0);
+  LOG_DEBUG(log, "shutdown(" << fd << ", SHUT_WR)");
 
   if (State::compare_and_move
 		(*this, establishedState, out_closedState)
@@ -146,16 +148,20 @@ void TCPSocket::Thread::run()
 
 	 rSocketCheck(
 		::select(fd+1, &rfds, /*&wfds,*/NULL, NULL, NULL) > 0);
+	 LOG_DEBUG(log, "TCPSocket>\t ::select");
 
 	 if (FD_ISSET(fd, &rfds)) {
 		// peek the message size
-		ssize_t res;
 		// Normally MSG_PEEK not need this buffer, but who
 		// knows? 
 		static char dummy_buf[1];
-		rSocketCheck(
-		  (res = ::recv(fd, &dummy_buf, 1, MSG_PEEK)) >=0);
-		SCHECK(res >= 0);
+		const ssize_t res = ::recv
+		  (fd, &dummy_buf, 1, MSG_PEEK);
+		LOG_DEBUG(log, "TCPSocket>\t ::recv");
+		if (res < 0 && errno == EAGAIN) 
+		  continue; // no data available
+		rSocketCheck(res >=0);
+		assert(res >= 0);
 		if (res == 0) {
 		  if (TCPSocket::State::compare_and_move
 				(*tcp_sock, 
@@ -170,6 +176,11 @@ void TCPSocket::Thread::run()
 		  {
 			 RSocketBase::State::move_to
 				(*socket, RSocketBase::closedState);
+			 // TODO do not get out_closed yet
+			 TCPSocket::State::compare_and_move
+				(*tcp_sock, 
+				 TCPSocket::in_closedState, 
+				 TCPSocket::closedState);
 			 break;
 		  }
 		}
