@@ -21,6 +21,7 @@ DEFINE_STATES(ClientSocketAxis,
 	 "closed"
 	 },
     { 
+		{"created", "closed"},
 		{"created", "connecting"},
 		{"connecting", "connected"},
 		{"connecting", "connection_timed_out"},
@@ -124,7 +125,18 @@ void ClientSocket::Thread::run()
 	 (socket);
   SCHECK(cli_sock);
 
-  cli_sock->is_connecting().wait();
+  ( cli_sock->is_connecting()
+  | socket->is_closed()
+  | socket->is_error()
+  ) . wait();
+
+  if (socket->is_closed().signalled()
+		|| socket->is_error().signalled())
+  {
+	 ClientSocket::State::move_to
+		(*cli_sock, ClientSocket::closedState);
+	 return;
+  }
 
   fd_set wfds;
   FD_ZERO(&wfds);

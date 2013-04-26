@@ -13,6 +13,8 @@
 #include "RSocket.h"
 #include <string>
 #include <memory>
+#include <vector>
+#include <iostream>
 
 //class ConnectionAxis : public StateAxis {};
 
@@ -22,14 +24,10 @@ class RSocketConnection
 {
 public:
   struct Par {
-	 RSocketRepository* socket_rep;
-
 	 //! Available addresses for socket(s)
 	 std::unique_ptr<RSocketAddressRepository> sar;
 
-    Par(RSocketRepository* sock_rep) 
-	 : socket_rep(sock_rep),
-		sar(new RSocketAddressRepository)
+    Par() : sar(new RSocketAddressRepository)
 	 {
 		assert(sar);
 	 }
@@ -51,30 +49,26 @@ public:
 	 uint16_t port;
 
     InetClientPar(const std::string& a_host,
-						uint16_t a_port,
-						RSocketRepository* sock_rep) 
-		: Par(sock_rep),
-		host(a_host), port(a_port)
+						uint16_t a_port) 
+		: host(a_host), port(a_port)
 	 {
 		sar->create_addresses<proto, ip_ver>
 		  (host, port);
 	 }
   };
 
+  virtual ~RSocketConnection() {}
+
 protected:
   RSocketConnection
 	 (const ObjectCreationInfo& oi,
-	  const Par& par)
-	 : StdIdMember(oi.objectId),
-	 socket_rep(par.socket_rep)
-  {
-	 assert(socket_rep);
-  }
-
-  virtual ~RSocketConnection() {}
+	  const Par& par);
 
   RSocketRepository* socket_rep;
 };
+
+std::ostream&
+operator<< (std::ostream&, const RSocketConnection&);
 
 //! A connection which always uses only one socket
 class RSingleSocketConnection : public RSocketConnection
@@ -84,8 +78,8 @@ public:
   {
 	 RSocketAddress* sock_addr;
 
-	 Par(RSocketRepository* sock_rep)
-		: RSocketConnection::Par(sock_rep),
+	 Par()
+		: 
 	 sock_addr(0) // desc. must init it by an address
 		           // from the address repository (sar)
 	 {}
@@ -97,11 +91,9 @@ public:
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
     InetClientPar(const std::string& a_host,
-						uint16_t a_port,
-						RSocketRepository* sock_rep) 
-		: Par(sock_rep),
-	     RSocketConnection::InetClientPar<proto, ip_ver>
-		     (a_host, a_port, sock_rep)
+						uint16_t a_port) 
+		: RSocketConnection::InetClientPar<proto, ip_ver>
+		     (a_host, a_port)
 	 {}
   };
 
@@ -112,6 +104,29 @@ protected:
   ~RSingleSocketConnection();
 
   RSocketBase* socket;
+};
+
+class RConnectionRepository
+: public Repository<
+    RSocketConnection, 
+	 RSocketConnection::Par,
+	 std::vector,
+	 size_t>
+{
+public:
+  typedef Repository<
+    RSocketConnection, 
+	 RSocketConnection::Par,
+	 std::vector,
+	 size_t> Parent;
+
+  RConnectionRepository(const std::string& id,
+								size_t reserved,
+								RSocketRepository* sr)
+	 : Parent(id, reserved), sock_rep(sr)
+  {}
+
+  RSocketRepository *const sock_rep;
 };
 
 #endif

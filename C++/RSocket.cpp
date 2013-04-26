@@ -25,6 +25,7 @@ DEFINE_STATES(SocketBaseAxis,
   "error"
   },
   { {"created", "ready"},
+	 {"created", "closed"},
     {"created", "error"},
     {"ready", "error"},
 	 {"ready", "closed"},

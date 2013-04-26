@@ -17,6 +17,7 @@ set(TestsSrc
   RBufferCU.cpp
   RSignalCU.cpp
   RSocketCU.cpp
+  RConnectionCU.cpp
   tests.cpp
 )
 

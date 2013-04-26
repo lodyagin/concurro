@@ -32,6 +32,9 @@ RSocket<Bases...>
 //
 ::~RSocket()
 {
+  RSocketBase::State::move_to
+	 (*this, RSocketBase::closedState);
+
   // wait all parts termination
   for (auto& te : this->ancestor_terminals)
 	 te.wait();
