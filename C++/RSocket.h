@@ -41,11 +41,14 @@ class RSocketBase
   friend std::ostream&
 	 operator<< (std::ostream&, const RSocketBase&);
 
-  //DECLARE_EVENT(SocketBaseAxis, error);
+  DECLARE_EVENT(SocketBaseAxis, ready);
+  DECLARE_EVENT(SocketBaseAxis, closed);
+  DECLARE_EVENT(SocketBaseAxis, error);
 
 public:
   DECLARE_STATES(SocketBaseAxis, State);
-  DECLARE_STATE_CONST(State, ok);
+  DECLARE_STATE_CONST(State, created);
+  DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, error);
   DECLARE_STATE_CONST(State, closed);
 

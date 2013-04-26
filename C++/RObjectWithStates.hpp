@@ -46,6 +46,9 @@ Event RObjectWithEvents<Axis>
 //
 ::create_event(const UniversalEvent& ue) const
 {
+  const UniversalEvent current_event
+	 (this->current_state(), true);
+  const bool initial_state = ue == current_event;
 #if 0
   // map support for emplace is only in gcc 4.9
   return *events.emplace
@@ -53,7 +56,7 @@ Event RObjectWithEvents<Axis>
 	   (ue.global_id(),
 		 Event(SFORMAT(typeid(*this).name() << ":" 
 							<< ue.name()), 
-				 true) // <NB> manual reset
+				 true, initial_state) // <NB> manual reset
 		  )).first;
 #else										  
   const auto it = events.find(ue.global_id());
@@ -63,7 +66,7 @@ Event RObjectWithEvents<Axis>
 		 (ue.global_id(), 
 		  Event(SFORMAT(typeid(*this).name() << ":" 
 							 << ue.name()), 
-				  true))).first->second;
+				  true, initial_state))).first->second;
   }
   else 
 	 return it->second;

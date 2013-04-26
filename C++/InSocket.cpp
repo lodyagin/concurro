@@ -87,17 +87,31 @@ void InSocket::ask_close()
 void InSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
-  socket->is_construction_complete_event.wait();
+
+  ( socket->is_ready()
+  | socket->is_closed()
+  | socket->is_error()) . wait();
+
+  auto* in_sock = dynamic_cast<InSocket*>
+	 (socket);
+  SCHECK(in_sock);
+
+  if (socket->is_closed().signalled()) {
+	 InSocket::State::move_to
+		(*in_sock, InSocket::closedState);
+	 return;
+  }
+  else if (socket->is_error().signalled()) {
+	 InSocket::State::move_to
+		(*in_sock, InSocket::errorState);
+	 return;
+  }
 
   fd_set rfds;
   FD_ZERO(&rfds);
 
   const SOCKET fd = socket->fd;
   SCHECK(fd >= 0);
-
-  auto* in_sock = dynamic_cast<InSocket*>
-	 (socket);
-  SCHECK(in_sock);
 
   for(;;) {
     // Wait for new data
@@ -113,7 +127,7 @@ void InSocket::SelectThread::run()
 		const ssize_t red = ::read(fd, in_sock->msg.data(),
 											in_sock->msg.capacity());
 		if (red < 0) {
-		  InSocket::State::move_to(*in_sock, errorState);
+		  in_sock->process_error(errno);
 		  // TODO add the error code
 		  break;
 		}

@@ -46,6 +46,7 @@ RSingleBuffer::~RSingleBuffer()
 {
   is_discharged_event.wait();
   delete[] buf;
+  destructor_is_called = true;
 }
 
 RSingleBuffer& RSingleBuffer

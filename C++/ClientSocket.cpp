@@ -146,6 +146,14 @@ void ClientSocket::Thread::run()
   if (error)
 	 cli_sock->process_error(error);
 
+  if (!ClientSocket::State::state_is
+		(*cli_sock, ClientSocket::connectedState))
+	 return;
+
+  // TODO move to RSocket
+  RSocketBase::State::move_to
+	 (*socket, RSocketBase::readyState);
+
   (tcp_sock->is_in_closed()
 	| tcp_sock->is_out_closed()
 	| tcp_sock->is_closed()) . wait();

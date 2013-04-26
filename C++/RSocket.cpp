@@ -19,15 +19,19 @@
 
 DEFINE_STATES(SocketBaseAxis, 
   {
-  "ok",
+  "created",
+  "ready",
   "closed",
   "error"
   },
-  {	{"ok", "error"},
-		{"ok", "closed"}
+  { {"created", "ready"},
+    {"created", "error"},
+    {"ready", "error"},
+	 {"ready", "closed"}
   });
 
-DEFINE_STATE_CONST(RSocketBase, State, ok);
+DEFINE_STATE_CONST(RSocketBase, State, created);
+DEFINE_STATE_CONST(RSocketBase, State, ready);
 DEFINE_STATE_CONST(RSocketBase, State, error);
 DEFINE_STATE_CONST(RSocketBase, State, closed);
 
@@ -35,7 +39,10 @@ DEFINE_STATE_CONST(RSocketBase, State, closed);
 RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 								 const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
-	 RObjectWithEvents(okState),
+	 RObjectWithEvents(createdState),
+	 CONSTRUCT_EVENT(ready),
+	 CONSTRUCT_EVENT(closed),
+	 CONSTRUCT_EVENT(error),
 	 fd(addr.get_fd()), 
 	 is_construction_complete_event
 		("RSocketBase::construction_complete", true),

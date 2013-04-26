@@ -81,6 +81,16 @@ public:
   //! NeedArrivalType. 
   operator UniversalState() const;
 
+  bool operator==(UniversalEvent b) const
+  {
+	 return id == b.id;
+  }
+
+  bool operator!=(UniversalEvent b) const
+  {
+	 return id != b.id;
+  }
+
   //! Construct a `transitional' type of an event
   UniversalEvent(TransitionId trans_id) : id(trans_id) {}
   //! Construct an `arrival' type of an event
