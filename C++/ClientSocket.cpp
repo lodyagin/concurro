@@ -146,8 +146,10 @@ void ClientSocket::Thread::run()
   if (error)
 	 cli_sock->process_error(error);
 
-  if (!ClientSocket::State::state_is
-		(*cli_sock, ClientSocket::connectedState))
+  if (!ClientSocket::State::compare_and_move
+		(*cli_sock, 
+		 ClientSocket::connectingState,
+		 ClientSocket::connectedState))
 	 return;
 
   // TODO move to RSocket

@@ -115,9 +115,13 @@ void InSocket::SelectThread::run()
 
   for(;;) {
     // Wait for new data
+	 if (RSocketBase::State::state_is
+		  (*socket, RSocketBase::readyState))
+		FD_SET(fd, &rfds);
+	 else
+		FD_CLR(fd, &rfds);
 	 // The second socket for close report
 	 FD_SET(sock_pair[ForSelect], &rfds);
-    FD_SET(fd, &rfds);
 	 const int maxfd = std::max(sock_pair[ForSelect], fd)
 		+ 1;
     rSocketCheck(
@@ -164,12 +168,12 @@ void InSocket::WaitThread::run()
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
 
-  auto* tcp_sock = dynamic_cast<TCPSocket*> (socket);
-  SCHECK(tcp_sock);
+  //auto* tcp_sock = dynamic_cast<TCPSocket*> (socket);
+  //SCHECK(tcp_sock);
   auto* in_sock = dynamic_cast<InSocket*> (socket);
   SCHECK(in_sock);
 
-  tcp_sock->is_closed().wait();
+  (socket->is_closed() | socket->is_error()).wait();
   static char dummy_buf[1] = {1};
   rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }

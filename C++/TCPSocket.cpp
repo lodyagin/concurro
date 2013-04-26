@@ -88,11 +88,14 @@ void TCPSocket::ask_close_out()
   rSocketCheck(
 	 ::shutdown(fd, SHUT_WR) == 0);
 
-  State::compare_and_move
-	 (*this, establishedState, out_closedState)
-	 ||
-  State::compare_and_move
-	 (*this, in_closedState, closedState);
+  if (State::compare_and_move
+		(*this, establishedState, out_closedState)
+		||
+		State::compare_and_move
+		(*this, in_closedState, closedState)
+	 )
+	 RSocketBase::State::move_to
+		(*this, RSocketBase::closedState);
 }
 
 void TCPSocket::Thread::run()
@@ -151,7 +154,7 @@ void TCPSocket::Thread::run()
 		// knows? 
 		static char dummy_buf[1];
 		rSocketCheck(
-		  (res = ::recv(fd, &dummy_buf, 1, MSG_PEEK) >=0));
+		  (res = ::recv(fd, &dummy_buf, 1, MSG_PEEK)) >=0);
 		SCHECK(res >= 0);
 		if (res == 0) {
 		  if (TCPSocket::State::compare_and_move
@@ -164,7 +167,11 @@ void TCPSocket::Thread::run()
 				(*tcp_sock, 
 				 TCPSocket::out_closedState, 
 				 TCPSocket::closedState))
+		  {
+			 RSocketBase::State::move_to
+				(*socket, RSocketBase::closedState);
 			 break;
+		  }
 		}
 	 }
 

@@ -25,13 +25,12 @@ CU_TestInfo RSocketTests[] = {
 	test_localhost_socket_address},
   {"test Client_Socket connection_refused",
   test_client_socket_connection_refused},
-#else
   {"test Client_Socket connected",
 	test_client_socket_connected},
-  {"test InSocket new msg",
-	test_in_socket_new_msg},
 #endif
 #if 0
+  {"test InSocket new msg",
+	test_in_socket_new_msg},
   {"test Client_Socket destination unreachable",
 	test_client_socket_destination_unreachable},
   {"test Client_Socket connection_timed_out",

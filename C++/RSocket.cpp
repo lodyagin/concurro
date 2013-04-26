@@ -27,7 +27,8 @@ DEFINE_STATES(SocketBaseAxis,
   { {"created", "ready"},
     {"created", "error"},
     {"ready", "error"},
-	 {"ready", "closed"}
+	 {"ready", "closed"},
+	 {"closed", "closed"}
   });
 
 DEFINE_STATE_CONST(RSocketBase, State, created);
