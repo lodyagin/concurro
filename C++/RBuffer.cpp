@@ -24,6 +24,14 @@ DEFINE_STATE_CONST(RBuffer, State, charging);
 DEFINE_STATE_CONST(RBuffer, State, discharged);
 DEFINE_STATE_CONST(RBuffer, State, welded);
 
+RBuffer::RBuffer() 
+: RObjectWithEvents<DataBufferStateAxis>
+	 (dischargedState),
+  CONSTRUCT_EVENT(charged),
+  CONSTRUCT_EVENT(discharged),
+  destructor_is_called(false)
+{}
+
 RBuffer::~RBuffer()
 {
   SCHECK(destructor_is_called);

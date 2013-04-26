@@ -104,15 +104,13 @@ void TCPSocket::Thread::run()
 {
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
-  ClientSocket* cli_sock = 0;
-  if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
-	 THROW_NOT_IMPLEMENTED;
+  //ClientSocket* cli_sock = 0;
+  //if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
+  // THROW_NOT_IMPLEMENTED;
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-//  cli_sock->is_connecting().wait_shadow();
-//  TCPSocket::State::move_to(*tcp_sock, syn_sentState);
-
+#if 0
   (cli_sock->is_terminal_state_event 
 	| cli_sock->is_connected()) . wait(); 
   //TODO is_connected as a shadow
@@ -126,6 +124,21 @@ void TCPSocket::Thread::run()
 		(*tcp_sock, closedState);
 	 return;
   }
+#else
+  ( socket->is_ready()
+  | socket->is_closed()
+  | socket->is_error()) . wait();
+
+  if (socket->is_ready().signalled()) {
+	 TCPSocket::State::move_to
+		(*tcp_sock, establishedState);
+  }
+  else {
+	 TCPSocket::State::move_to
+		(*tcp_sock, closedState);
+	 return;
+  }
+#endif
   
   // wait for close
   fd_set wfds, rfds;

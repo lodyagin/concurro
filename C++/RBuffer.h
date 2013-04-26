@@ -24,6 +24,7 @@ class DataBufferStateAxis : public StateAxis {};
 class RBuffer 
   : public RObjectWithEvents<DataBufferStateAxis>
 {
+  DECLARE_EVENT(DataBufferStateAxis, charged);
   DECLARE_EVENT(DataBufferStateAxis, discharged);
 
 public:
@@ -33,12 +34,7 @@ public:
   DECLARE_STATE_CONST(State, discharged);
   DECLARE_STATE_CONST(State, welded);
 
-  RBuffer() 
-  : RObjectWithEvents<DataBufferStateAxis>
-	 (dischargedState),
-	 CONSTRUCT_EVENT(discharged),
-	 destructor_is_called(false)
-  {}
+  RBuffer();
 
   //! Move the buffer.
   //RBuffer(RBuffer&& b);

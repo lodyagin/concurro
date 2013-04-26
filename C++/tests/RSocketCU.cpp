@@ -18,7 +18,7 @@ void test_client_socket_connected();
 void test_in_socket_new_msg();
 
 CU_TestInfo RSocketTests[] = {
-#if 1
+#if 0
   {"test 127.0.0.1:5555 address", 
 	test_127001_socket_address},
   {"test localhost socket address", 
@@ -27,9 +27,10 @@ CU_TestInfo RSocketTests[] = {
   test_client_socket_connection_refused},
   {"test Client_Socket connected",
 	test_client_socket_connected},
-#endif
+#else
   {"test InSocket new msg",
 	test_in_socket_new_msg},
+#endif
 #if 0
   {"test Client_Socket destination unreachable",
 	test_client_socket_destination_unreachable},

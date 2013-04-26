@@ -9,19 +9,161 @@
 #include "StdAfx.h"
 #include "OutSocket.h"
 
-//DEFINE_STATES(OutSocket, OutSocketStateAxis, State)
-RAxis<OutSocketStateAxis> out_socket_state_axis
+RAxis<OutSocketAxis> out_socket_state_axis
 ({
   {   "wait_you",  // write buf watermark or an error
 		"busy",
-		"closed"      },
+		"closed",
+		"error"
+  },
   { {"wait_you", "busy"},
 	 {"busy", "wait_you"},
 	 {"wait_you", "closed"},
+	 {"wait_you", "error"},
+	 {"error", "closed"},
 	 {"busy", "closed"} }
 });
 
 DEFINE_STATE_CONST(OutSocket, State, wait_you);
 DEFINE_STATE_CONST(OutSocket, State, busy);
 DEFINE_STATE_CONST(OutSocket, State, closed);
+DEFINE_STATE_CONST(OutSocket, State, error);
+
+OutSocket::OutSocket
+  (const ObjectCreationInfo& oi, 
+	const RSocketAddress& par)
+: 
+	 RSocketBase(oi, par),
+	 RObjectWithEvents<OutSocketAxis>(wait_youState),
+	 CONSTRUCT_EVENT(wait_you),
+	 CONSTRUCT_EVENT(error),
+	 CONSTRUCT_EVENT(closed),
+	 select_thread(dynamic_cast<SelectThread*>
+			  (RSocketBase::repository->thread_factory
+				-> create_thread(SelectThread::Par(this)))),
+	 wait_thread(
+		dynamic_cast<WaitThread*>
+		(RSocketBase::repository->thread_factory
+		 -> create_thread
+		 (WaitThread::Par
+		  (this, 
+			select_thread->get_notify_fd()))))
+{
+  SCHECK(select_thread && wait_thread);
+  this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (select_thread->is_terminated());
+  this->RSocketBase::ancestor_threads_terminals.push_back
+	 (wait_thread->is_terminated());
+  select_thread->start();
+  wait_thread->start();
+}
+
+OutSocket::~OutSocket()
+{
+  LOG_DEBUG(log, "~OutSocket()");
+}
+
+void OutSocket::SelectThread::run()
+{
+  ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
+
+  auto* out_sock = dynamic_cast<OutSocket*>
+	 (socket);
+  SCHECK(out_sock);
+
+  ( socket->is_ready()
+  | socket->is_closed()
+  | socket->is_error()) . wait();
+
+  ( out_sock->msg.is_charged()
+  | socket->is_closed()
+  | socket->is_error()) . wait();
+
+  if (socket->is_closed().signalled()) {
+	 OutSocket::State::move_to
+		(*out_sock, OutSocket::closedState);
+	 return;
+  }
+  else if (socket->is_error().signalled()) {
+	 OutSocket::State::move_to
+		(*out_sock, OutSocket::errorState);
+	 return;
+  }
+
+  fd_set wfds, rfds;
+  FD_ZERO(&wfds);
+
+  const SOCKET fd = socket->fd;
+  SCHECK(fd >= 0);
+
+  for(;;) {
+    // Wait for buffer space
+	 if (RSocketBase::State::state_is
+		  (*socket, RSocketBase::readyState))
+		FD_SET(fd, &wfds);
+	 else
+		FD_CLR(fd, &wfds);
+	 // The second socket for close report
+	 FD_SET(sock_pair[ForSelect], &rfds);
+	 const int maxfd = std::max(sock_pair[ForSelect], fd)
+		+ 1;
+    rSocketCheck(
+		 ::select(maxfd, &rfds, &wfds, NULL, NULL) > 0);
+	 LOG_DEBUG(log, "OutSocket>\t ::select");
+
+	 if (FD_ISSET(fd, &wfds)) {
+		const ssize_t written = 
+		  ::write(fd, out_sock->msg.cdata(),
+					 out_sock->msg.size());
+		if (written < 0) {
+		  out_sock->process_error(errno);
+		  // TODO add the error code
+		  break;
+		}
+
+		assert(written <= (ssize_t) out_sock->msg.size());
+		if (written < (ssize_t) out_sock->msg.size())
+		  THROW_NOT_IMPLEMENTED;
+		
+		out_sock->msg.clear();
+		OutSocket::State::move_to
+		  (*out_sock, OutSocket::wait_youState);
+		( out_sock->msg.is_charged() 
+      | socket->is_closed()) . wait();
+		if (socket->is_closed().signalled()) {
+		  out_sock->msg.is_discharged().wait();
+		  OutSocket::State::move_to
+			 (*out_sock, OutSocket::closedState);
+		  break;
+		}
+		OutSocket::State::move_to
+		  (*out_sock, OutSocket::busyState);
+	 }
+
+	 assert(OutSocket::State::state_is
+			  (*out_sock, OutSocket::busyState));
+
+	 if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
+		// TODO actual state - closed/error (is error
+		// needed?) 
+		OutSocket::State::move_to 
+		  (*out_sock, OutSocket::closedState);
+		break;
+	 }
+  }
+}
+
+
+void OutSocket::WaitThread::run()
+{
+  ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
+
+  (socket->is_closed() | socket->is_error()).wait();
+  static char dummy_buf[1] = {1};
+  rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
+}
 

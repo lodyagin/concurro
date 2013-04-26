@@ -132,6 +132,7 @@ void InSocket::SelectThread::run()
 		const ssize_t red = ::read(fd, in_sock->msg.data(),
 											in_sock->msg.capacity());
 		if (red < 0) {
+		  if (errno == EAGAIN) continue;
 		  in_sock->process_error(errno);
 		  // TODO add the error code
 		  break;
@@ -157,6 +158,8 @@ void InSocket::SelectThread::run()
 
 	 // <NB> wait for buffer discharging
 	 if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
+		// TODO actual state - closed/error (is error
+		// needed?) 
 		InSocket::State::move_to (*in_sock, closedState);
 		break;
 	 }
@@ -168,11 +171,6 @@ void InSocket::WaitThread::run()
 {
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
-
-  //auto* tcp_sock = dynamic_cast<TCPSocket*> (socket);
-  //SCHECK(tcp_sock);
-  auto* in_sock = dynamic_cast<InSocket*> (socket);
-  SCHECK(in_sock);
 
   (socket->is_closed() | socket->is_error()).wait();
   static char dummy_buf[1] = {1};

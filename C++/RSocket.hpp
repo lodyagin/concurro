@@ -13,7 +13,7 @@
 #include "ClientSocket.h"
 #include "TCPSocket.h"
 #include "InSocket.h"
-//#include "OutSocket.h"
+#include "OutSocket.h"
 
 template<class... Bases>
 RSocket<Bases...>
@@ -121,7 +121,7 @@ inline RSocketBase* RSocketAllocator
   (const ObjectCreationInfo& oi,
    const RSocketAddress& addr)
 {
-  return new RSocket<InSocket, /*OutSocket,*/ Bases...>
+  return new RSocket<InSocket, OutSocket, Bases...>
 	 (oi, addr);
 }
     
