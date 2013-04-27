@@ -292,6 +292,14 @@ public:
   //! \see pretty_id() 
   static std::string current_pretty_id();
 
+  //! Store an id of a current thread as a main thread
+  static void this_is_main_thread()
+  {
+	 if (main_thread_id != std::thread::id())
+		THROW_PROGRAM_ERROR; // already set
+	 main_thread_id = std::this_thread::get_id();
+  }
+
   DEFAULT_LOGGER(RThread<std::thread>)
 
 protected:
@@ -303,6 +311,8 @@ protected:
   void start_impl () {}
 
   std::unique_ptr<std::thread> th;
+
+  static std::thread::id main_thread_id;
 };
 
 #endif

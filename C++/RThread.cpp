@@ -95,6 +95,9 @@ void RThreadBase::stop()
   isStopRequested.set ();
 }
 
+std::thread::id RThread<std::thread>::main_thread_id; 
+// the default value not represents a thread
+
 RThread<std::thread>* RThread<std::thread>
 ::current ()
 {
@@ -129,6 +132,9 @@ RThread<std::thread>* RThread<std::thread>
 std::string RThread<std::thread>
 ::current_pretty_id()
 {
+  if (std::this_thread::get_id() == main_thread_id)
+	 return std::string("main");
+
   auto* cur = current();
   if (cur) {
 	 return cur->pretty_id();
