@@ -14,7 +14,7 @@ set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -Wall")
 
 add_subdirectory(tests)
 
-project (concurrent)
+#project (concurrent)
 set (concurrent_SOURCES 
   ClientSocket.cpp
   Event.cpp

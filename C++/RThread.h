@@ -295,7 +295,9 @@ public:
   //! Store an id of a current thread as a main thread
   static void this_is_main_thread()
   {
-	 if (main_thread_id != std::thread::id())
+	 if (!(main_thread_id == std::thread::id()
+			 || main_thread_id == std::this_thread::get_id()
+			 ))
 		THROW_PROGRAM_ERROR; // already set
 	 main_thread_id = std::this_thread::get_id();
   }

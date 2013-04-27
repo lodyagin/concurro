@@ -319,3 +319,10 @@ operator<< (std::ostream& out, const RSocketAddress& sa)
   RSocketAddress::outString(out, sa.ai->ai_addr);
   return out;
 }
+
+template std::list<RSocketAddress*> 
+RSocketAddressRepository
+//
+::create_addresses<NetworkProtocol::TCP, IPVer::v4>
+    (const std::string& host, uint16_t port);
+;

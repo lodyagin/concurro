@@ -32,8 +32,12 @@ RSocket<Bases...>
 //
 ::~RSocket()
 {
-  if (!STATE(RSocketBase, state_is, error))
-	 STATE(RSocketBase, move_to, closed);
+  RSocketBase::State::compare_and_move
+	 (*this, 
+	  { RSocketBase::createdState,
+		 RSocketBase::readyState 
+	  },
+	  RSocketBase::closedState);
 
   // wait all parts termination
   for (auto& te : this->ancestor_terminals)
