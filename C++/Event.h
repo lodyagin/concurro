@@ -243,7 +243,7 @@ public:
 	 return wait_impl(time);
   }
 
-  bool isSignaled(){
+  bool isSignalled(){
   	for(auto &i : handle_set)
   		if (i.signalled()) return true;
   	return false;

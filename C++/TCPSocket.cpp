@@ -71,7 +71,7 @@ TCPSocket::TCPSocket
   SCHECK(thread);
   this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());
-  this->RSocketBase::ancestor_threads_terminals.push_back
+  this->RSocketBase::threads_terminals.push_back
 	 (thread->is_terminated());
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);
@@ -110,21 +110,6 @@ void TCPSocket::Thread::run()
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-#if 0
-  (cli_sock->is_terminal_state_event 
-	| cli_sock->is_connected()) . wait(); 
-  //TODO is_connected as a shadow
-
-  if (cli_sock->is_connected().signalled()) {
-	 TCPSocket::State::move_to
-		(*tcp_sock, establishedState);
-  }
-  else if (cli_sock->is_connection_refused().signalled()){
-	 TCPSocket::State::move_to
-		(*tcp_sock, closedState);
-	 return;
-  }
-#else
   ( socket->is_ready()
   | socket->is_closed()
   | socket->is_error()) . wait();
@@ -138,7 +123,6 @@ void TCPSocket::Thread::run()
 		(*tcp_sock, closedState);
 	 return;
   }
-#endif
   
   // wait for close
   fd_set wfds, rfds;
@@ -210,7 +194,12 @@ void TCPSocket::Thread::run()
 		  }
 		  else {
 			 // peek other thread data, allow switch to it
+#if 0
 			 std::this_thread::yield();
+#else
+			 std::this_thread::sleep_for
+				(std::chrono::milliseconds(100));
+#endif
 		  }
 		}
 	 }

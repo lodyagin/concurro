@@ -68,7 +68,7 @@ ClientSocket::ClientSocket
   SCHECK(thread);
   this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());
-  this->RSocketBase::ancestor_threads_terminals.push_back
+  this->RSocketBase::threads_terminals.push_back
 	 (thread->is_terminated());
   thread->start();
 }

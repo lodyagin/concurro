@@ -29,6 +29,7 @@ set (concurrent_SOURCES
   RSocketConnection.cpp
   RThread.cpp
   RThreadRepository.cpp
+  RWindow.cpp
   SCommon.cpp
   SException.cpp
   SShutdown.cpp

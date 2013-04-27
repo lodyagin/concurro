@@ -59,9 +59,9 @@ InSocket::InSocket
   SCHECK(select_thread && wait_thread);
   this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());
-  this->RSocketBase::ancestor_threads_terminals.push_back
+  this->RSocketBase::threads_terminals.push_back
 	 (select_thread->is_terminated());
-  this->RSocketBase::ancestor_threads_terminals.push_back
+  this->RSocketBase::threads_terminals.push_back
 	 (wait_thread->is_terminated());
   
   socklen_t m = sizeof(socket_rd_buf_size);

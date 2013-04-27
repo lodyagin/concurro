@@ -8,6 +8,9 @@
 
 #include "StdAfx.h"
 #include "RSocketConnection.h"
+#include "OutSocket.h"
+#include "ClientSocket.h"
+//#include "TCPSocket.h"
 
 std::ostream&
 operator<< (std::ostream& out, const RSocketConnection& c)
@@ -36,6 +39,33 @@ RSingleSocketConnection::RSingleSocketConnection
 
 RSingleSocketConnection::~RSingleSocketConnection()
 {
+  //TODO not only TCP
+  //dynamic_cast<TCPSocket*>(socket)->ask_close();
+  socket->ask_close_out();
   socket_rep->delete_object(socket, true);
 }
 
+RSocketConnection& RSingleSocketConnection
+::operator<< (const std::string str)
+{
+  auto* out_sock = dynamic_cast<OutSocket*>(socket);
+  SCHECK(out_sock);
+
+  out_sock->msg.is_discharged().wait();
+  out_sock->msg.reserve(str.size());
+  ::strncpy((char*)out_sock->msg.data(), str.c_str(),
+				str.size());
+  out_sock->msg.resize(str.size());
+  return *this;
+}
+
+void RSingleSocketConnection::ask_connect()
+{
+  dynamic_cast<ClientSocket*>(socket)->ask_connect();
+}
+
+void RSingleSocketConnection::ask_close()
+{
+  socket->ask_close_out();
+//  (socket->is_closed() | socket->is_error()) . wait();
+}

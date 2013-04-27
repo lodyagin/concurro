@@ -1,6 +1,7 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
 #include "RSocketConnection.h"
+#include "RWindow.h"
 #include "tests.h"
 
 void test_connection();
@@ -14,6 +15,7 @@ CU_TestInfo RConnectionTests[] = {
 // init the test suite
 int RConnectionCUInit() 
 {
+  RThread<std::thread>::this_is_main_thread();
   return 0;
 }
 
@@ -66,16 +68,18 @@ void test_connection()
 	  (TestConnection::Par("192.168.25.240", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
-#if 0
-  RWindow w(*con);
+  RWindow w(con);
+  con->ask_connect();
 
   *con << "Labcdef12345678902H23456789         1\n";
-  w.set_size(1);
+  w.forward_top(1);
   w.is_filled().wait();
-  CU_ASSERT_EQUAL_FATAL(w[0], 'A');
-  w.set_size(22);
+  CU_ASSERT_EQUAL_FATAL(w[0], '+');
+  const std::string answer("Soup2.0\n");
+  w.forward_top(answer.size());
   w.is_filled().wait();
-  const std::string login_accept_packet (&w[0], w.size());
-  LOG_DEBUG(log, "=[" << login_accept_packet << "]=");
-#endif
+  const std::string a (&w[0], w.size());
+  CU_ASSERT_EQUAL_FATAL(answer, a);
+  con->ask_close();
+  w.skip_rest();
 }

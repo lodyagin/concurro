@@ -37,8 +37,10 @@ public:
   RBuffer();
 
   //! Move the buffer.
-  //RBuffer(RBuffer&& b);
+  RBuffer(RBuffer&& b);
   virtual ~RBuffer();
+
+  RBuffer& operator=(RBuffer&& b);
 
   //! Prepare the buffer to charging.
   virtual void start_charging() = 0;
@@ -86,7 +88,7 @@ public:
   void* data();
   //! Return the buffer data as a constant. Not imply
   //! start_charging().
-  const void* cdata() { return buf; }
+  const void* cdata() const { return buf; }
   //! Return used buffer size
   size_t size() const { return size_; }
   //! Mark the buffer as holding data. Also set filled.

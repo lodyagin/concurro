@@ -59,6 +59,12 @@ public:
 
   virtual ~RSocketConnection() {}
 
+  virtual RSocketConnection&
+  operator<< (const std::string) = 0;
+
+  //! Non-blocking close
+  virtual void ask_close() = 0;
+
 protected:
   RSocketConnection
 	 (const ObjectCreationInfo& oi,
@@ -73,6 +79,7 @@ operator<< (std::ostream&, const RSocketConnection&);
 //! A connection which always uses only one socket
 class RSingleSocketConnection : public RSocketConnection
 {
+  friend class RWindow;
 public:
   struct Par : public virtual RSocketConnection::Par
   {
@@ -96,6 +103,14 @@ public:
 		     (a_host, a_port)
 	 {}
   };
+
+  RSocketConnection&
+  operator<< (const std::string);
+
+  // TODO move to separate (client side) class
+  void ask_connect();
+
+  void ask_close();
 
 protected:
   RSingleSocketConnection

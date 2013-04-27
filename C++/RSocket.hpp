@@ -40,7 +40,7 @@ RSocket<Bases...>
 	 te.wait();
 
   // TODO use and-ed events
-  for (auto& teh : this->ancestor_threads_terminals)
+  for (auto& teh : this->threads_terminals)
 	 teh.wait();
 
   //RSocketBase::is_terminal_state_event.set();

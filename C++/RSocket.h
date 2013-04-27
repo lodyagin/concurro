@@ -79,10 +79,12 @@ protected:
   //! terminal event here from its constructor.
   std::list<CompoundEvent> ancestor_terminals;
 
+public:
   // TODO
   //! Temporary: list of threads terminal events
-  std::list<Event> ancestor_threads_terminals;
+  std::list<Event> threads_terminals;
 
+protected:
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
 					const RSocketAddress& addr);
