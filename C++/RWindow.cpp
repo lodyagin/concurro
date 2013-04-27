@@ -118,6 +118,12 @@ void RWindow::run()
 		STATE(RWindow, move_to, filled);
 	 } while (top < buf.size());
 
+	 ( is_filling_event
+	 | is_skipping_event) . wait();
+		if (is_skipping_event.signalled()) 
+		  goto LSkipping;
+	 buf.clear();
+
 	 if (socket->InSocket::is_terminal_state().isSignalled())
 		break;
   }
