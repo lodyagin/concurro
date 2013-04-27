@@ -166,10 +166,11 @@ void ClientSocket::Thread::run()
 	 return;
 
   // TODO move to RSocket
-  RSocketBase::State::move_to
-	 (*socket, RSocketBase::readyState);
+  RSocketBase::State::compare_and_move
+	 (*socket, RSocketBase::createdState,
+	  RSocketBase::readyState);
 
-  socket->is_closed().wait();
+  (socket->is_closed() | socket->is_error()).wait();
   ClientSocket::State::compare_and_move
 	 (*cli_sock, ClientSocket::connectedState, 
 	  ClientSocket::closedState);

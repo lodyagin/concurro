@@ -33,14 +33,15 @@ DEFINE_STATES(TCPAxis,
   {"listen", "closed"},
   {"created", "established"}, // initial send() is
 										 // recieved by other side
-  {"created", "closed"},     // close() or timeout 
+  {"created", "closed"},     // ask close() or timeout 
   {"established", "closing"}, // our close() or FIN from
 										// other side
   {"established", "in_closed"},
   {"established", "out_closed"},
   {"closing", "closed"},
   {"in_closed", "closed"},
-  {"out_closed", "closed"}
+  {"out_closed", "closed"},
+  {"closed", "closed"}
   }
   );
 
@@ -89,8 +90,19 @@ void TCPSocket::ask_close_out()
   LOG_DEBUG(log, "shutdown(" << fd << ", SHUT_WR)");
   int res = ::shutdown(fd, SHUT_WR);
   if (res < 0) {
-	 if (! errno == ENOTCONN)
+	 if (! errno == ENOTCONN) {
 		rSocketCheck(false);
+	 }
+	 else {
+		STATE(TCPSocket, move_to, closed);
+		RSocketBase::State::compare_and_move
+		  (*this, 
+			{ RSocketBase::readyState,
+			  RSocketBase::createdState
+			}, 
+			RSocketBase::closedState);
+		return;
+	 }
   }
 
   if (State::compare_and_move
