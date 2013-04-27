@@ -19,7 +19,6 @@ void test_in_socket_new_msg();
 void test_out_socket_login();
 
 CU_TestInfo RSocketTests[] = {
-#if 1
   {"test 127.0.0.1:5555 address", 
 	test_127001_socket_address},
   {"test localhost socket address", 
@@ -30,7 +29,6 @@ CU_TestInfo RSocketTests[] = {
 	test_client_socket_connected},
   {"test InSocket new msg",
 	test_in_socket_new_msg},
-#endif
   {"test OutSocket login",
 	test_out_socket_login},
 #if 0
@@ -45,6 +43,7 @@ CU_TestInfo RSocketTests[] = {
 // init the test suite
 int RSocketCUInit() 
 {
+  RThread<std::thread>::this_is_main_thread();
   return 0;
 }
 

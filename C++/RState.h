@@ -137,4 +137,10 @@ protected:
   const RState<class_::state_class::axis>					\
     class_::state ## State(#state);
 
+#define STATE_OBJ(class_, action, object, state) \
+  class_::State::action((object), class_::state ## State)
+
+#define STATE(class_, action, state) \
+  STATE_OBJ(class_, action, *this, state)
+
 #endif

@@ -118,6 +118,13 @@ void RSingleBuffer::start_charging()
 {
   size_ = 0;
   if (!buf)
-	 buf = new char[reserved_];
+	 try {
+		buf = new char[reserved_];
+	 }
+	 catch (const std::bad_alloc& ex) {
+		LOG_ERROR(log, "Unable to allocate RSingleBuffer "
+					 << "of size " << reserved_);
+		throw ex;
+	 }
   State::move_to(*this, chargingState);
 }

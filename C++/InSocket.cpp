@@ -65,8 +65,9 @@ InSocket::InSocket
 	 (wait_thread->is_terminated());
   
   socklen_t m = sizeof(socket_rd_buf_size);
-  getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
-     &socket_rd_buf_size, &m);
+  rSocketCheck(
+	 getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
+					&socket_rd_buf_size, &m) == 0);
   socket_rd_buf_size++; //to allow catch an overflow error
   LOG_DEBUG(log, "socket_rd_buf_size = " 
                << socket_rd_buf_size);
@@ -138,7 +139,7 @@ void InSocket::SelectThread::run()
 		  break;
 		}
 
-		SCHECK((size_t) red < in_sock->socket_rd_buf_size); 
+		SCHECK( red < in_sock->socket_rd_buf_size); 
 		// to make sure we always read all (rd_buf_size =
 		// internal socket rcv buffer + 1)
 

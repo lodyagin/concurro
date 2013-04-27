@@ -82,7 +82,8 @@ void RAxis<Axis>
 					"thread " 
 					<< RThread<std::thread>::current_pretty_id()
 					<< ">\t object " << obj.object_name()
-					<< ">\t " //state is changed from [" 
+					<< ">\t axis " << typeid(Axis).name()
+					<< ">\t "
 					<< stateMap->get_state_name(from)
 					<< " -> " //"] to [" 
 					<< stateMap->get_state_name(to));
@@ -119,7 +120,8 @@ bool RAxis<Axis>
 					"thread " 
 					<< RThread<std::thread>::current_pretty_id()
 					<< ">\t object " << obj.object_name()
-					<< ">\t " //state is changed from [" 
+					<< ">\t axis " << typeid(Axis).name()
+					<< ">\t "
 					<< stateMap->get_state_name(from)
 					<< " -> " //"] to [" 
 					<< stateMap->get_state_name(to));
@@ -162,7 +164,8 @@ bool RAxis<Axis>
 					"thread " 
 					<< RThread<std::thread>::current_pretty_id()
 					<< ">\t object " << obj.object_name()
-					<< ">\t " //state is changed from [" 
+					<< ">\t axis " << typeid(Axis).name()
+					<< ">\t "
 					<< stateMap->get_state_name(from)
 					<< " -> " //"] to [" 
 					<< stateMap->get_state_name(to));

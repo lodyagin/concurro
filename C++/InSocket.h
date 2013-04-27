@@ -115,7 +115,7 @@ protected:
   DEFAULT_LOGGER(InSocket)
 
   //! Actual size of a socket internal read buffer + 1.
-  size_t socket_rd_buf_size;
+  int socket_rd_buf_size;
   SOCKET notify_fd;
   
   ~InSocket();

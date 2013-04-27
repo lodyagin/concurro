@@ -148,8 +148,10 @@ void TCPSocket::Thread::run()
   SCHECK(fd >= 0);
 
   for (;;) {
-	 if (TCPSocket::State::state_is
-		  (*tcp_sock, TCPSocket::in_closedState))
+	 if (STATE_OBJ(TCPSocket, state_is, *tcp_sock, 
+						in_closed)
+		  || STATE_OBJ(TCPSocket, state_is, *tcp_sock,
+							closed))
 		FD_CLR(fd, &rfds);
 	 else
 		FD_SET(fd, &rfds);
