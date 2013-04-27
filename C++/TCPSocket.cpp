@@ -86,9 +86,12 @@ TCPSocket::~TCPSocket()
 void TCPSocket::ask_close_out()
 {
   LOG_DEBUG(log, "ask_close_out()");
-  rSocketCheck(
-	 ::shutdown(fd, SHUT_WR) == 0);
   LOG_DEBUG(log, "shutdown(" << fd << ", SHUT_WR)");
+  int res = ::shutdown(fd, SHUT_WR);
+  if (res < 0) {
+	 if (! errno == ENOTCONN)
+		rSocketCheck(false);
+  }
 
   if (State::compare_and_move
 		(*this, establishedState, out_closedState)

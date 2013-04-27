@@ -6,6 +6,7 @@
 *.so
 *.so.*
 *.vpp.work*
+core
 CMakeCache.txt
 log4cxx.properties
 Makefile
