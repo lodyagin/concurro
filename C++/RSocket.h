@@ -23,7 +23,7 @@
 #endif
 #include <list>
 
-class SocketBaseAxis : public StateAxis {};
+DECLARE_AXIS(SocketBaseAxis, StateAxis);
 
 class RSocketRepository;
 class SocketThread;

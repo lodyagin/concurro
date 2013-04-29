@@ -9,7 +9,7 @@
 #include "Logging.h"
 #include <netdb.h>
 
-class TCPAxis : public StateAxis {};
+DECLARE_AXIS(TCPAxis, StateAxis);
 
 class TCPSocket : virtual public RSocketBase
 , public RObjectWithEvents<TCPAxis>

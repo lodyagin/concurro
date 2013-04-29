@@ -36,7 +36,7 @@ int RThreadCUClean()
 
 static bool check_my_name(const std::string& n);
 
-class T1Axis : public StateAxis {};
+DECLARE_AXIS(T1Axis, StateAxis);
 
 class T1 : public RT, public RObjectWithEvents<T1Axis>
 { 

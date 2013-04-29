@@ -9,8 +9,7 @@
 #include "StdAfx.h"
 #include "OutSocket.h"
 
-RAxis<OutSocketAxis> out_socket_state_axis
-({
+DEFINE_STATES(OutSocketAxis,
   {   "wait_you",  // write buf watermark or an error
 		"busy",
 		"closed",
@@ -22,7 +21,7 @@ RAxis<OutSocketAxis> out_socket_state_axis
 	 {"wait_you", "error"},
 	 {"error", "closed"},
 	 {"busy", "closed"} }
-});
+);
 
 DEFINE_STATE_CONST(OutSocket, State, wait_you);
 DEFINE_STATE_CONST(OutSocket, State, busy);

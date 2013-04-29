@@ -25,7 +25,7 @@
 #include <thread>
 
 //! An ancestor of all states of a thread.
-class ThreadAxis : public StateAxis {};
+DECLARE_AXIS(ThreadAxis, StateAxis);
 
 /**
  * It is a base class for RThread. It contains the base

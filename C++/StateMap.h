@@ -46,11 +46,20 @@ class StateMap;
 //class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
-//! inherited. <NB> StateAxises can't be "extended". Like
-//! x, y, x in decart coordinates they are "finite". But
-//! on RState inheritance new states on the same axes can
-//! be added.
-class StateAxis {};
+//! inherited.
+struct StateAxis {
+  //! For is_ancestor check
+  static StateAxis self_;
+};
+
+//! Return true if DerivedAxis is same or derived from
+//! Axis
+template<class Axis, class DerivedAxis>
+inline constexpr bool is_ancestor()
+{
+  return dynamic_cast<const Axis*>(&DerivedAxis::self_) 
+	 != nullptr;
+}
 
 #define STATE_MAP_MASK 0x7fff0000
 #define STATE_MAP_SHIFT 16
@@ -173,13 +182,16 @@ public:
   std::initializer_list<const char*> states;
   std::initializer_list<
     std::pair<const char*, const char*>> transitions;
+  StateMapId parent_map;
 
   StateMapParBase (
 	 std::initializer_list<const char*> states_,
 	 std::initializer_list<
-	   std::pair<const char*, const char*>> transitions_
+	 std::pair<const char*, const char*>> transitions_,
+	 StateMapId parent_map_
 	 )
-	 : states(states_), transitions(transitions_) {}
+	 : states(states_), transitions(transitions_),
+	 parent_map(parent_map_) {}
 
   virtual StateMap* create_derivation
     (const ObjectCreationInfo& oi) const;
@@ -200,13 +212,15 @@ template<class Axis>
 class StateMapPar : public StateMapParBase
 {
 public:
-  // TODO add complex states (with severas axises).
+  // TODO add complex states (with several axises).
   StateMapPar (
 	 std::initializer_list<const char*> states,
 	 std::initializer_list<
-	   std::pair<const char*, const char*>> transitions
+	 std::pair<const char*, const char*>> transitions,
+	 StateMapId parent_map_ = 0 // default is top level
 	 )
-	 : StateMapParBase(states, transitions) {}
+	 : StateMapParBase(states, transitions, parent_map_) 
+  {}
 
   StateMapId get_id(ObjectCreationInfo& oi) const;
 };
@@ -220,6 +234,7 @@ class StateMap : public HasStringView,
   public SNotCopyable
 {
   friend class StateMapParBase;
+  friend class StateMapRepository;
 public:
   class BadParameters : public SException
   {
@@ -260,7 +275,7 @@ public:
 
   virtual bool is_empty_map () const
   {
-	 return false;
+	 return parent == nullptr;
   }
 
   // overrides
@@ -295,6 +310,7 @@ protected:
   typedef std::map<TransitionId, 
 	 std::pair<StateIdx, StateIdx>> Transition2States;
 
+  StateMap* parent;
   const StateIdx n_states;
   Name2Idx     name2idx;
   Idx2Name     idx2name;  
@@ -305,6 +321,9 @@ protected:
 
   StateMap(const ObjectCreationInfo& oi,
 			  const StateMapParBase& par);
+
+  //! Empty map
+  StateMap();
 
 private:
   typedef Logger<LOG::States> log;
@@ -336,6 +355,9 @@ public:
 	 : Parent("StateMapRepository", 50), 
 	 max_trans_id(0), last_map_id(0) {}
 
+  //! For id == 0 return empty map.
+  StateMap* get_object_by_id(StateMapId id) const override;
+
   //! Return max used transition id
   TransitionId max_transition_id() const
   { return max_trans_id; }
@@ -343,19 +365,21 @@ public:
   //! Return a state map by a state axis
   StateMap* get_map_for_axis(const std::type_info& axis);
 
-  std::string get_state_name(uint32_t state) const;
-
-protected:
   //! Return a map id by an axis type.
   //! It creates new StateMapId 
   //! if it is new (unregistered) axis.
   StateMapId get_map_id(const std::type_info& axis);
 
+  std::string get_state_name(uint32_t state) const;
+
+protected:
   //! It is incremented in a StateMap constructor.
   std::atomic<TransitionId> max_trans_id;
 
   StateMapId last_map_id;
   std::map<std::string, StateMapId> axis2map_id;
+
+  static StateMap* empty_map;
 };
 
 

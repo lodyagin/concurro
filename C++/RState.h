@@ -43,27 +43,45 @@ public:
   std::string name () const;
 };
 
-template<class Axis>
-std::ostream&
-operator<< (std::ostream&, const RState<Axis>&);
+template<class Axis, class Axis2> 
+class RMixedAxis;
 
 template<class Axis>
-class RAxis : public Axis, public SSingleton<RAxis<Axis>>
+using RAxis = RMixedAxis<Axis, Axis>;
+
+
+//! Server stateMap for RMixedAxis
+//! (only one map per main Axis)
+template<class Axis>
+struct StateMapInstance
+{
+  static StateMap* stateMap;
+  //! initialize the stateMap member if it is nullptr
+  static void init(const StateMapPar<Axis>& par);
+};
+
+template<class Axis, class Axis2>
+class RMixedAxis : public Axis, 
+  public SSingleton<RAxis<Axis>>
 {
 public:
   typedef Axis axis;
 
-  RAxis(const StateMapPar<Axis>& par);
+  RMixedAxis(
+	 std::initializer_list<const char*> states,
+	 std::initializer_list<
+	 std::pair<const char*, const char*>> transitions
+	 );
 
   //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
-	 (const ObjectWithStatesInterface<Axis>& obj, 
-	  const RState<Axis>& to);
+	 (const ObjectWithStatesInterface<Axis2>& obj, 
+	  const UniversalState& to);
 
   //! Atomic move obj to a new state
   static void move_to
-	 (ObjectWithStatesInterface<Axis>& obj, 
-	  const RState<Axis>& to);
+	 (ObjectWithStatesInterface<Axis2>& obj, 
+	  const UniversalState& to);
 
   //! Atomic compare-and-change the state
   //! \return true if the object in the `from' state and
@@ -72,9 +90,9 @@ public:
   //! transition from->to and the object is in the `from'
   //! state.  
   static bool compare_and_move
-	 (ObjectWithStatesInterface<Axis>& obj, 
-	  const RState<Axis>& from,
-	  const RState<Axis>& to);
+	 (ObjectWithStatesInterface<Axis2>& obj, 
+	  const UniversalState& from,
+	  const UniversalState& to);
 	 
   //! Atomic compare-and-change the state which uses a set
   //! of possible from-states.
@@ -84,49 +102,59 @@ public:
   //! transition current->to and the current state is in
   //! the `from' set.
   static bool compare_and_move
-	 (ObjectWithStatesInterface<Axis>& obj, 
+	 (ObjectWithStatesInterface<Axis2>& obj, 
 	  const std::set<RState<Axis>>& from_set,
-	  const RState<Axis>& to);
+	  const UniversalState& to);
 	 
   static uint32_t state
-	 (const ObjectWithStatesInterface<Axis>& obj);
+	 (const ObjectWithStatesInterface<Axis2>& obj);
 
   //! Atomic check the object state
   static bool state_is
-	  (const ObjectWithStatesInterface<Axis>& obj, 
-		const RState<Axis>& st);
+	  (const ObjectWithStatesInterface<Axis2>& obj, 
+		const UniversalState& st);
 
   //! Atomic check the obj state is in the set
   static bool state_in
-	  (const ObjectWithStatesInterface<Axis>& obj, 
+	  (const ObjectWithStatesInterface<Axis2>& obj, 
 		const std::initializer_list<RState<Axis>>& set);
 
   //! Raise InvalidState when a state is not expected.
   static void ensure_state
-	  (const ObjectWithStatesInterface<Axis>& obj, 
-		const RState<Axis>& expected);
+	  (const ObjectWithStatesInterface<Axis2>& obj, 
+		const UniversalState& expected);
 
   static const StateMap& state_map() 
   { 
-	 return *stateMap; 
+	 static_assert(is_ancestor<Axis2, Axis>(), 
+						"This state mixing is invalid.");
+	 return *StateMapInstance<Axis>::stateMap; 
   }
 protected:
   typedef Logger<RAxis<Axis>> log;
 
-  static StateMap* stateMap;
   std::atomic_flag changed;
+
+  RMixedAxis(const StateMapPar<Axis>& par);
 };
+
+#define DECLARE_AXIS(axis, parent) \
+struct axis : public parent \
+{ \
+  typedef parent Parent; \
+  static axis self_; \
+};			
 
 #define DECLARE_STATES(axis, state_class)	\
   typedef RAxis<axis> state_class; \
-  friend class RAxis<axis>;
+  friend RAxis<axis>;
 
 
 #define DEFINE_STATES(axis, pars...)	\
-  template class RAxis<axis>; \
+  template class RMixedAxis<axis, axis>;				\
   template class RState<axis>; \
   template class REvent<axis>; \
-  static RAxis<axis> axis__(StateMapPar<axis>(pars)); 
+  static RAxis<axis> raxis__ ## axis (pars); 
 
 
 #define DECLARE_STATE_CONST(state_class, state)	\

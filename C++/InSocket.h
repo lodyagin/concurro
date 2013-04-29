@@ -14,7 +14,7 @@
 #include "RThread.h"
 #include "RState.h"
 
-class InSocketAxis : public StateAxis {};
+DECLARE_AXIS(InSocketAxis, StateAxis);
 
 class InSocket
 : public RObjectWithEvents<InSocketAxis>,

@@ -6,6 +6,7 @@
 void test_move_to();
 void test_compare_and_move_single();
 void test_compare_and_move_set();
+void test_derived_axis();
 
 CU_TestInfo RStateTests[] = {
   {"RState::move_to(obj, to)", test_move_to},
@@ -13,8 +14,17 @@ CU_TestInfo RStateTests[] = {
 	test_compare_and_move_single},
   {"RState::compare_and_move(obj, from_set, to)", 
 	test_compare_and_move_set},
+  {"derived axis", 
+	test_derived_axis},
   CU_TEST_INFO_NULL
 };
+
+struct A {
+  static A axis_;
+};
+DECLARE_AXIS( B, A);
+DECLARE_AXIS(C, B);
+DECLARE_AXIS(D, A);
 
 // init the test suite
 int RStateCUInit() 
@@ -28,8 +38,7 @@ int RStateCUClean()
   return 0;
 }
 
-class TestAxis : public StateAxis {};
-
+DECLARE_AXIS(TestAxis, StateAxis);
 class TestObject : public RObjectWithStates<TestAxis>
 {
 public:
@@ -50,6 +59,14 @@ protected:
   DEFAULT_LOGGER(TestObject)
 };
 
+DECLARE_AXIS(DerivedAxis, TestAxis);
+class DerivedObject : public TestObject
+{
+public:
+  DECLARE_STATES(DerivedAxis, State);
+  DECLARE_STATE_CONST(State, q1);
+};
+
 DEFINE_STATES(
   TestAxis,
   {"s1", "s2", "s3", "s4", "s5"},
@@ -64,6 +81,13 @@ DEFINE_STATE_CONST(TestObject, State, s2);
 DEFINE_STATE_CONST(TestObject, State, s3);
 DEFINE_STATE_CONST(TestObject, State, s4);
 DEFINE_STATE_CONST(TestObject, State, s5);
+
+DEFINE_STATES(
+  DerivedAxis,
+  {"q1"},
+  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"} });
+
+DEFINE_STATE_CONST(DerivedObject, State, q1);
 
 void test_move_to()
 {
@@ -181,5 +205,38 @@ void test_compare_and_move_set()
 	 TestObject::State::state_is(obj, TestObject::s4State)); 
 }
 
+void test_derived_axis()
+{
+  TestObject orig;
+  DerivedObject derived;
+
+  STATE_OBJ(TestObject, move_to, orig, s2);
+  STATE_OBJ(TestObject, move_to, derived, s2);
+  STATE_OBJ(TestObject, move_to, orig, s4);
+  STATE_OBJ(TestObject, move_to, derived, s4);
+  try {
+	 STATE_OBJ(TestObject, move_to, orig, s1);
+	 CU_FAIL_FATAL("No transition s4->s1 for orig");
+  }
+  catch (const InvalidStateTransition&) {}
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, TestObject::s1State);
+  //STATE_OBJ(TestObject, move_to, derived, s1);
+  // orig movement
+  STATE_OBJ(TestObject, move_to, orig, s5);
+  try {
+	 TestObject::State::move_to
+		(orig, DerivedObject::q1State);
+	 CU_FAIL_FATAL("No state q1 for orig");
+  }
+  catch (const InvalidState&) {}
+  // derived movement
+  STATE_OBJ(TestObject, move_to, derived, s2);
+  STATE_OBJ(TestObject, move_to, derived, s3);
+  STATE_OBJ(TestObject, move_to, derived, s5);
+  TestObject::State::move_to
+	 (derived, DerivedObject::q1State);
+  STATE_OBJ(TestObject, move_to, derived, s3);
+}
 
 

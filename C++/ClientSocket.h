@@ -11,7 +11,7 @@
 
 #include "RSocket.h"
 
-class ClientSocketAxis : public StateAxis {};
+DECLARE_AXIS(ClientSocketAxis, StateAxis);
 
 class ClientSocket : virtual public RSocketBase,
   public RObjectWithEvents<ClientSocketAxis>

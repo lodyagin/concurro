@@ -72,7 +72,8 @@ class RObjectWithEvents
 {
   friend class REvent<Axis>;
   friend class RState<Axis>;
-  friend class RAxis<Axis>;
+  template<class Axis1, class Axis2> 
+	 friend class RMixedAxis;
 public:
   typedef RObjectWithStates<Axis> Parent;
   typedef typename Parent::State State;

@@ -68,18 +68,17 @@ void test_connection()
 	  (TestConnection::Par("192.168.25.240", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
-  RWindow w(con);
   con->ask_connect();
 
   *con << "Labcdef12345678902H23456789         1\n";
-  w.forward_top(1);
-  w.is_filled().wait();
-  CU_ASSERT_EQUAL_FATAL(w[0], '+');
+  con->win.forward_top(1);
+  con->win.is_filled().wait();
+  CU_ASSERT_EQUAL_FATAL(con->win[0], '+');
   const std::string answer("Soup2.0\n");
-  w.forward_top(answer.size());
-  w.is_filled().wait();
-  const std::string a (&w[0], w.size());
+  con->win.forward_top(answer.size());
+  con->win.is_filled().wait();
+  const std::string a (&con->win[0], con->win.size());
   CU_ASSERT_EQUAL_FATAL(answer, a);
   con->ask_close();
-  w.skip_rest();
+  con->win.skip_rest();
 }

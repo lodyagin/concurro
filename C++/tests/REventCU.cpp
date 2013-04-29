@@ -32,7 +32,7 @@ typedef RThread<std::thread> RT;
 
 static const std::chrono::milliseconds ms100(100);
 
-class CDAxis : public StateAxis {};
+DECLARE_AXIS(CDAxis, StateAxis);
 class Test : public RObjectWithEvents<CDAxis>,
 				 public RT
 {

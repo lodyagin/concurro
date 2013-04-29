@@ -34,8 +34,17 @@ RSingleSocketConnection::RSingleSocketConnection
   (const ObjectCreationInfo& oi,
    const Par& par)
  : RSocketConnection(oi, par),
-   socket(socket_rep->create_object(*par.sock_addr))
-{}
+   socket(dynamic_cast<InSocket*>
+			 (socket_rep->create_object(*par.sock_addr))),
+	thread(dynamic_cast<SocketThread*>
+			 (RThreadRepository<RThread<std::thread>>
+			  ::instance().create_thread
+			  (*par.get_thread_par(this)))),
+	win(SFORMAT("RSingleSocketConnection:" << socket->fd))
+{
+  SCHECK(thread);
+  thread->start();
+}
 
 RSingleSocketConnection::~RSingleSocketConnection()
 {
@@ -77,5 +86,59 @@ void RSingleSocketConnection::ask_connect()
 void RSingleSocketConnection::ask_close()
 {
   socket->ask_close_out();
-//  (socket->is_closed() | socket->is_error()) . wait();
+}
+
+void RSingleSocketConnection::run()
+{
+  socket->is_construction_complete_event.wait();
+
+  for (;;) {
+	 ( socket->msg.is_charged()
+		| win.is_skipping() ). wait();
+
+	 if (win.is_skipping().signalled()) 
+		goto LSkipping;
+
+	 win.buf.reset(new RSingleBuffer
+						(std::move(socket->msg)));
+	 // content of the buffer will be cleared after
+	 // everybody stops using it
+	 win.buf->set_autoclear(true);
+	 win.top = 0;
+
+	 do {
+		( win.is_filling()
+		| win.is_skipping()) . wait();
+
+		if (win.is_skipping().signalled()) 
+		  goto LSkipping;
+
+		win.move_forward();
+
+	 } while (win.top < win.buf->size());
+
+	 ( win.is_filling()
+		| win.is_skipping()) . wait();
+		if (win.is_skipping().signalled()) 
+		  goto LSkipping;
+	 win.buf.reset();
+
+	 if (socket->InSocket::is_terminal_state().isSignalled())
+		break;
+  }
+
+LSkipping:
+  win.is_skipping().wait();
+  socket->InSocket::is_terminal_state().wait();
+  // No sence to start skipping while a socket is working
+
+  if (win.buf) {
+	 assert(win.buf->get_autoclear());
+	 win.buf.reset();
+  }
+  if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
+					  discharged))
+	 socket->msg.clear();
+
+  STATE_OBJ(RWindow, move_to, win, destroyed);
 }

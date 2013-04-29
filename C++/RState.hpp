@@ -20,10 +20,11 @@
 #endif
 
 template<class Axis>
-StateMap* RAxis<Axis>::stateMap = 0;
+StateMap* StateMapInstance<Axis>::stateMap = nullptr;
 
 template<class Axis>
-RAxis<Axis>::RAxis(const StateMapPar<Axis>& par)
+void StateMapInstance<Axis>::init
+(const StateMapPar<Axis>& par)
 {
   if (!stateMap) {
 	 try {
@@ -38,25 +39,57 @@ RAxis<Axis>::RAxis(const StateMapPar<Axis>& par)
   }
 }
 
-template<class Axis>
-void RAxis<Axis>
+template<class Axis, class Axis2>
+RMixedAxis<Axis, Axis2>
 //
-::check_moving_to(
-  const ObjectWithStatesInterface<Axis>& obj, 
-  const RState<Axis>& to)
+::RMixedAxis(
+  std::initializer_list<const char*> states,
+  std::initializer_list<
+  std::pair<const char*, const char*>> transitions
+  ) :
+  RMixedAxis<Axis, Axis2>(StateMapPar<Axis>(
+	 states, transitions, 
+	 StateMapRepository::instance()
+	 . get_map_id(typeid(typename Axis::Parent))))
 {
-  const uint32_t from = 
-	 const_cast<ObjectWithStatesInterface<Axis>&> (obj)
-	 . current_state().load();
-  stateMap->check_transition (from, to);
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
 }
 
-template<class Axis>
-void RAxis<Axis>
+template<class Axis, class Axis2>
+RMixedAxis<Axis, Axis2>
 //
-::move_to(ObjectWithStatesInterface<Axis>& obj, 
-			 const RState<Axis>& to)
+::RMixedAxis(const StateMapPar<Axis>& par)
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
+  StateMapInstance<Axis>::init(par);
+}
+
+template<class Axis, class Axis2>
+void RMixedAxis<Axis, Axis2>
+//
+::check_moving_to(
+  const ObjectWithStatesInterface<Axis2>& obj, 
+  const UniversalState& to)
+{
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
+  const uint32_t from = 
+	 const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
+	 . current_state().load();
+  StateMapInstance<Axis>::stateMap
+	 -> check_transition (from, to);
+}
+
+template<class Axis, class Axis2>
+void RMixedAxis<Axis, Axis2>
+//
+::move_to(ObjectWithStatesInterface<Axis2>& obj, 
+			 const UniversalState& to)
+{
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   uint32_t from;
   TransitionId trans_id;
   auto& current = obj.current_state();
@@ -66,7 +99,7 @@ void RAxis<Axis>
 
   do {
 	 from = current.load();
-	 if (!(trans_id= stateMap->get_transition_id(from,to)))
+	 if (!(trans_id= StateMapInstance<Axis>::stateMap->get_transition_id(from,to)))
 		throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
 
@@ -84,26 +117,28 @@ void RAxis<Axis>
 					<< ">\t object " << obj.object_name()
 					<< ">\t axis " << typeid(Axis).name()
 					<< ">\t "
-					<< stateMap->get_state_name(from)
+					<< StateMapInstance<Axis>::stateMap->get_state_name(from)
 					<< " -> " //"] to [" 
-					<< stateMap->get_state_name(to));
+					<< StateMapInstance<Axis>::stateMap->get_state_name(to));
 					//<< "]");
 }
 
-template<class Axis>
-bool RAxis<Axis>
+template<class Axis, class Axis2>
+bool RMixedAxis<Axis, Axis2>
 //
-::compare_and_move(ObjectWithStatesInterface<Axis>& obj, 
-						 const RState<Axis>& from,
-						 const RState<Axis>& to)
+::compare_and_move(ObjectWithStatesInterface<Axis2>& obj, 
+						 const UniversalState& from,
+						 const UniversalState& to)
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   TransitionId trans_id;
   auto& current = obj.current_state();
   
   if (current != from)
 	 return false;
 
-  if (!(trans_id= stateMap->get_transition_id(from,to)))
+  if (!(trans_id= StateMapInstance<Axis>::stateMap->get_transition_id(from,to)))
 	 throw InvalidStateTransition(from, to);
 
   uint32_t expected = from;
@@ -122,21 +157,23 @@ bool RAxis<Axis>
 					<< ">\t object " << obj.object_name()
 					<< ">\t axis " << typeid(Axis).name()
 					<< ">\t "
-					<< stateMap->get_state_name(from)
+					<< StateMapInstance<Axis>::stateMap->get_state_name(from)
 					<< " -> " //"] to [" 
-					<< stateMap->get_state_name(to));
+					<< StateMapInstance<Axis>::stateMap->get_state_name(to));
 					//<< "]");
   return true;
 }
 
-template<class Axis>
-bool RAxis<Axis>
+template<class Axis, class Axis2>
+bool RMixedAxis<Axis, Axis2>
 //
 ::compare_and_move
-  (ObjectWithStatesInterface<Axis>& obj, 
+  (ObjectWithStatesInterface<Axis2>& obj, 
 	const std::set<RState<Axis>>& from_set,
-	const RState<Axis>& to)
+	const UniversalState& to)
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   TransitionId trans_id;
   uint32_t from;
 
@@ -149,7 +186,7 @@ bool RAxis<Axis>
 		return false;
 
 	 // check the from_set correctness
-	 if (!(trans_id= stateMap->get_transition_id(from,to)))
+	 if (!(trans_id= StateMapInstance<Axis>::stateMap->get_transition_id(from,to)))
 		throw InvalidStateTransition(from, to);
 
   } while(!current.compare_exchange_strong(from, to));
@@ -166,45 +203,51 @@ bool RAxis<Axis>
 					<< ">\t object " << obj.object_name()
 					<< ">\t axis " << typeid(Axis).name()
 					<< ">\t "
-					<< stateMap->get_state_name(from)
+					<< StateMapInstance<Axis>::stateMap->get_state_name(from)
 					<< " -> " //"] to [" 
-					<< stateMap->get_state_name(to));
+					<< StateMapInstance<Axis>::stateMap->get_state_name(to));
 					//<< "]");
   return true;
 }
 
-template<class Axis>
-uint32_t RAxis<Axis>
+template<class Axis, class Axis2>
+uint32_t RMixedAxis<Axis, Axis2>
 //
-::state(const ObjectWithStatesInterface<Axis>& obj)
+::state(const ObjectWithStatesInterface<Axis2>& obj)
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   uint32_t us =
-	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	 const_cast<ObjectWithStatesInterface<Axis2>&>(obj)
 	 . current_state().load();
   //assert(STATE_MAP(us) == STATE_MAP(the_state));
   return us;
 }
 
-template<class Axis>
-bool RAxis<Axis>
+template<class Axis, class Axis2>
+bool RMixedAxis<Axis, Axis2>
 //
-::state_is (const ObjectWithStatesInterface<Axis>& obj, 
-				const RState<Axis>& st)
+::state_is (const ObjectWithStatesInterface<Axis2>& obj, 
+				const UniversalState& st)
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   return
-	 const_cast<ObjectWithStatesInterface<Axis>&>(obj)
+	 const_cast<ObjectWithStatesInterface<Axis2>&>(obj)
 	 . current_state().load() == /*(UniversalState)*/ st;
 }
 
-template<class Axis>
-bool RAxis<Axis>
+template<class Axis, class Axis2>
+bool RMixedAxis<Axis, Axis2>
 //
 ::state_in(
-  const ObjectWithStatesInterface<Axis>& obj, 
+  const ObjectWithStatesInterface<Axis2>& obj, 
   const std::initializer_list<RState<Axis>>& set )
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   const auto current = 
-	 const_cast<ObjectWithStatesInterface<Axis>&> (obj)
+	 const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
 	 . current_state() . load();
   for (auto it = set.begin(); it != set.end(); it++)
   {
@@ -214,16 +257,18 @@ bool RAxis<Axis>
   return false;
 }
 
-template<class Axis>
-void RAxis<Axis>
+template<class Axis, class Axis2>
+void RMixedAxis<Axis, Axis2>
 //
 ::ensure_state
-  (const ObjectWithStatesInterface<Axis>& obj, 
-	const RState<Axis>& expected)
+  (const ObjectWithStatesInterface<Axis2>& obj, 
+	const UniversalState& expected)
 {
+  static_assert(is_ancestor<Axis2, Axis>(), 
+					 "This state mixing is invalid.");
   if (!state_is(obj, expected)) {
 	 const auto current = 
-		const_cast<ObjectWithStatesInterface<Axis>&> (obj)
+		const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
 		. current_state() . load();
 
 	 throw InvalidState(current, expected);
@@ -259,14 +304,6 @@ std::string RState<Axis>::name () const
 {
   return RAxis<Axis>::instance().state_map()
 	 .get_state_name(*this);
-}
-
-template<class Axis>
-std::ostream&
-operator<< (std::ostream& out, const RState<Axis>& st)
-{
-  out << st.name();
-  return out;
 }
 
 #endif

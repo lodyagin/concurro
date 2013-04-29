@@ -11,12 +11,11 @@
 
 #include "Repository.h"
 #include "RSocket.h"
+#include "RWindow.h"
 #include <string>
 #include <memory>
 #include <vector>
 #include <iostream>
-
-//class ConnectionAxis : public StateAxis {};
 
 class RSocketConnection 
 : //public RObjectWithEvents<ConnectionAxis>,
@@ -73,26 +72,74 @@ protected:
 	 (const ObjectCreationInfo& oi,
 	  const Par& par);
 
-  RSocketRepository* socket_rep;
+  RSocketRepository *const socket_rep;
 };
 
 std::ostream&
 operator<< (std::ostream&, const RSocketConnection&);
 
+class InSocket;
+
+template<class Connection>
+class ConnectionThread : public SocketThread
+{
+public:
+  struct Par : public SocketThread::Par
+  {
+    Par(Connection* c) 
+		: SocketThread::Par(c->socket), con(c)
+	 {
+		thread_name = SFORMAT(
+		  typeid(Connection).name() << socket->fd);
+	 }
+
+	 RThreadBase* create_derivation
+		(const ObjectCreationInfo& oi) const
+	 { 
+		return new ConnectionThread(oi, *this); 
+	 }
+
+	 Connection* con;
+  };
+
+protected:
+  ConnectionThread(const ObjectCreationInfo& oi, 
+						 const Par& p)
+	 : SocketThread(oi, p), con(p.con) {}
+  ~ConnectionThread() { destroy(); }
+
+  void run()
+  {
+	 ThreadState::move_to(*this, workingState);
+	 con->run();
+  }
+
+  Connection* con;
+};
+
 //! A connection which always uses only one socket
 class RSingleSocketConnection : public RSocketConnection
 {
-  friend class RWindow;
 public:
+  typedef ConnectionThread<RSingleSocketConnection>
+	 Thread;
+  friend Thread;
+
   struct Par : public virtual RSocketConnection::Par
   {
 	 RSocketAddress* sock_addr;
 
 	 Par()
-		: 
-	 sock_addr(0) // desc. must init it by an address
-		           // from the address repository (sar)
+		: sock_addr(0) // desc. must init it by an address
+		               // from the address repository (sar)
 	 {}
+
+	 std::unique_ptr<SocketThread::Par> 
+	 get_thread_par(RSingleSocketConnection* c) const
+	 {
+		return std::unique_ptr<Thread::Par>
+		  (new Thread::Par(c));
+	 }
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
@@ -126,7 +173,16 @@ protected:
 	  const Par& par);
   ~RSingleSocketConnection();
 
-  RSocketBase* socket;
+  // <NB> not virtual
+  void run();
+
+  //RSocketBase* socket;
+  InSocket* socket;
+  SocketThread* thread;
+
+public:
+  //! A current window
+  RWindow win;
 };
 
 class RConnectionRepository
@@ -148,9 +204,6 @@ public:
 								RSocketRepository* sr)
 	 : Parent(id, reserved), sock_rep(sr)
   {}
-
-  //FIXME on deleting object must also delete all windows
-  //& buffers
 
   RSocketRepository *const sock_rep;
 };

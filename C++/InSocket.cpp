@@ -13,8 +13,7 @@
 #include <sys/socket.h>
 #include <algorithm>
 
-RAxis<InSocketAxis> in_socket_state_axis
-({
+DEFINE_STATES(InSocketAxis,
   {   "new_data",  // new data or an error
       "empty",
       "closed",
@@ -29,7 +28,7 @@ RAxis<InSocketAxis> in_socket_state_axis
   {"error", "closed"}//,
 //  {"closed", "destroyed"}
   }
-});
+);
 DEFINE_STATE_CONST(InSocket, State, new_data);
 DEFINE_STATE_CONST(InSocket, State, empty);
 DEFINE_STATE_CONST(InSocket, State, closed);

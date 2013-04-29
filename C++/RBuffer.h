@@ -16,7 +16,7 @@
 #include <list>
 
 //! A data buffer states axis
-class DataBufferStateAxis : public StateAxis {};
+DECLARE_AXIS(DataBufferStateAxis, StateAxis);
 
 /**
  * A data buffer.

@@ -14,14 +14,16 @@
 #include "RState.h"
 #include "RThread.h"
 #include "RObjectWithStates.h"
-#include "RSocketConnection.h"
+//#include "RSocketConnection.h"
 
-class WindowAxis : public StateAxis {};
+DECLARE_AXIS(WindowAxis, StateAxis);
 
 class RWindow
-: public RObjectWithEvents<WindowAxis>
-  //  public StdIdMember
+: public RObjectWithEvents<WindowAxis>,
+  StdIdMember
 {
+  friend class RSingleSocketConnection;
+
   DECLARE_EVENT(WindowAxis, filling);
   DECLARE_EVENT(WindowAxis, filled);
   DECLARE_EVENT(WindowAxis, skipping);
@@ -35,68 +37,44 @@ public:
   DECLARE_STATE_CONST(State, skipping);
   DECLARE_STATE_CONST(State, destroyed);
 
-  RWindow(RSingleSocketConnection* c);
+  RWindow(const std::string& id);
+//  RWindow(RSingleSocketConnection* c);
   virtual ~RWindow();
 
   void forward_top(size_t);
   size_t size() const;
 
-  const char& operator[](size_t) const;
+  virtual const char& operator[](size_t) const;
 
   //! Skip all data
   void skip_rest();
 
   std::string universal_id() const
   {
-	 return SFORMAT("RWindow:" << socket->fd);
+	 return universal_object_id;
   }
+
 protected:
   DEFAULT_LOGGER(RWindow);
 
-  class Thread : public SocketThread
-  {
-  public:
-	 struct Par : public SocketThread::Par
-	 {
-		RWindow* win;
-
-	   Par(RWindow* w) 
-		  : SocketThread::Par(w->con->socket),
-		  win(w)
-		{
-		  assert(win);
-		  thread_name = SFORMAT("RWindow:" << socket->fd);
-		}
-
-		RThreadBase* create_derivation
-		  (const ObjectCreationInfo& oi) const
-		{ 
-		  return new Thread(oi, *this); 
-		}
-	 };
-  protected:
-	 Thread(const ObjectCreationInfo& oi, const Par& p)
-		: SocketThread(oi, p), win(p.win) {}
-	 ~Thread() { destroy(); }
-	 void run();
-
-	 RWindow* win;
-  };
-
-  RSingleSocketConnection* con;
-  InSocket* socket;
+  //RSingleSocketConnection* con;
+  //InSocket* socket;
   std::shared_ptr<RSingleBuffer> buf;
   size_t bottom;
   size_t top;
   size_t sz;
-  SocketThread* thread;
+  //SocketThread* thread;
 
   //! It allows substitute a working thread from derived
   //! classes.
-  RWindow(RSingleSocketConnection* c, bool no_thread);
+  //RWindow(RSingleSocketConnection* c, bool no_thread);
 
   // <NB> not virtual
-  void run();
+  //void run();
+
+  // A logic block reading implementation. It must set
+  // a filled state at the end. 
+  virtual void move_forward();
 };
 
 #endif

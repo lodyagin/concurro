@@ -23,7 +23,7 @@ DEFINE_STATES(
   {
 	 {"ready", "filling"},
     {"filling", "filled"},
-	 {"filled", "filling"},
+	 {"filled", "ready"}, // by std::move
 	 {"ready", "skipping"},
     {"filling", "skipping"},
 	 {"filled", "skipping"},
@@ -37,38 +37,15 @@ DEFINE_STATE_CONST(RWindow, State, filled);
 DEFINE_STATE_CONST(RWindow, State, skipping);
 DEFINE_STATE_CONST(RWindow, State, destroyed);
 
-RWindow::RWindow(RSingleSocketConnection* c)
+RWindow::RWindow(const std::string& id)
   : RObjectWithEvents<WindowAxis>(readyState),
+	 StdIdMember(id),
 	 CONSTRUCT_EVENT(filling),
 	 CONSTRUCT_EVENT(filled),
 	 CONSTRUCT_EVENT(skipping),
 	 CONSTRUCT_EVENT(destroyed),
-	 con(c),
-	 socket(dynamic_cast<InSocket*>(c->socket)),
-	 bottom(0), top(0), sz(0),
-	 thread(Thread::create<Thread>(this))
-{
-  assert(thread);
-  SCHECK(socket);
-  socket->RSocketBase::threads_terminals.push_back
-	 (thread->is_terminated());
-  thread->start();
-}
-
-RWindow::RWindow(RSingleSocketConnection* c,
-                 bool no_thread)
-  : RObjectWithEvents<WindowAxis>(readyState),
-	 CONSTRUCT_EVENT(filling),
-	 CONSTRUCT_EVENT(filled),
-	 CONSTRUCT_EVENT(skipping),
-	 CONSTRUCT_EVENT(destroyed),
-	 con(c),
-	 socket(dynamic_cast<InSocket*>(c->socket)),
-	 bottom(0), top(0), sz(0),
-	 thread(0)
-{
-  SCHECK(socket);
-}
+	 bottom(0), top(0), sz(0)
+{}
 
 RWindow::~RWindow()
 {
@@ -104,67 +81,13 @@ void RWindow::skip_rest()
   STATE(RWindow, move_to, skipping);
 }
 
-void RWindow::run()
+void RWindow::move_forward()
 {
-  socket->is_construction_complete_event.wait();
-
-  for (;;) {
-	 ( socket->msg.is_charged()
-	 | is_skipping_event ). wait();
-
-	 if (is_skipping_event.signalled()) 
-		goto LSkipping;
-
-	 buf.reset(new RSingleBuffer(std::move(socket->msg)));
-	 // content of the buffer will be cleared after
-	 // everybody stops using it
-	 buf->set_autoclear(true);
-	 top = 0;
-
-	 do {
-		( is_filling_event
-		| is_skipping_event) . wait();
-
-		if (is_skipping_event.signalled()) 
-		  goto LSkipping;
-
-		bottom = top;
-		top = bottom + sz;
-		if (top > buf->size())
-		  THROW_NOT_IMPLEMENTED;
-		STATE(RWindow, move_to, filled);
-	 } while (top < buf->size());
-
-	 ( is_filling_event
-	 | is_skipping_event) . wait();
-		if (is_skipping_event.signalled()) 
-		  goto LSkipping;
-	 buf.reset();
-
-	 if (socket->InSocket::is_terminal_state().isSignalled())
-		break;
-  }
-
-LSkipping:
-  is_skipping_event.wait();
-  socket->InSocket::is_terminal_state().wait();
-  // No sence to start skipping while a socket is working
-
-  if (buf) {
-	 assert(buf->get_autoclear());
-	 buf.reset();
-  }
-  if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
-					  discharged))
-	 socket->msg.clear();
-
-  STATE(RWindow, move_to, destroyed);
-}
-
-void RWindow::Thread::run()
-{
-  ThreadState::move_to(*this, workingState);
-  win->run();
+  bottom = top;
+  top = bottom + sz;
+  if (top > buf->size())
+	 THROW_NOT_IMPLEMENTED;
+  STATE(RWindow, move_to, filled);
 }
 
 					 

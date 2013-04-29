@@ -100,19 +100,6 @@ StateMapId StateMapParBase::get_map_id
 }
 
 
-#if 0
-StateMap* EmptyStateMapPar::create_derivation
-  (const ObjectCreationInfo& oi) const
-{
-  return new EmptyStateMap();
-}
-
-StateMap* StateAxis::get_state_map()
-{
-  return &EmptyStateMap::instance();
-}
-#endif
-
 std::ostream& operator<< 
 (std::ostream& out, const StateMapParBase& par)
 {
@@ -136,65 +123,59 @@ std::ostream& operator<<
   return out;
 }
 
-/*
 StateMap::StateMap()
-  : n_states(0),
-	 universal_object_id("<empty map>"),
-	 numeric_id(?)
+  : 
+    universal_object_id("0"),
+	 numeric_id(0),
+	 parent(nullptr),
+    n_states(0),
+	 idx2name(1),
+	 repo(&StateMapRepository::instance())
 {
+  idx2name[0] = std::string();
 }
-*/
 
 StateMap::StateMap(const ObjectCreationInfo& oi,
 						 const StateMapParBase& par)
   : 
 	 universal_object_id(oi.objectId),
 	 numeric_id(fromString<int16_t>(oi.objectId)),
+	 parent(StateMapRepository::instance()
+			  . get_object_by_id(par.parent_map)),
     n_states(par.states.size()
-#ifdef PARENT_MAP
 				 + parent->get_n_states()
-#endif
 				 ),
 	 name2idx(n_states * 2 + 2),
     idx2name(n_states+1),
 	 transitions(boost::extents
 					 [Transitions::extent_range(1,n_states+1)]
 					 [Transitions::extent_range(1,n_states+1)]),
-	 //max_transition_id(0),
 	 repo(dynamic_cast<StateMapRepository*>(oi.repository))
 {
   // TODO check numeric_id overflow
 
-#ifdef PARENT_MAP
   const StateIdx n_parent_states = parent->get_n_states();
 
   if (parent) {
 	 LOG_DEBUG(log, "Create a new map with the parent: "
-				  << *parent << "and new_states: "
-				  << new_states);
+				  << *parent << "and new_states: " << par);
   }
   else {
-#endif
-	 LOG_DEBUG(log, "Create a new top-level map with states: "
+	 LOG_DEBUG(log, 
+				  "Create a new top-level map with states: "
 				  << par);
-#ifdef PARENT_MAP
   }
-#endif
 
   // Merge the maps: copy old states first
   idx2name[0] = std::string();
-#ifdef PARENT_MAP
-  std::copy(parent->idx2name.begin(), 
+  std::copy(parent->idx2name.begin() + 1, 
 				parent->idx2name.end(),
 				idx2name.begin() + 1);
-#endif
   // append new states
   std::copy(par.states.begin(), 
 				par.states.end(),
 				idx2name.begin() + 1 
-#ifdef PARENT_MAP
 				+ n_parent_states
-#endif
 );
 
   // Fill name2idx and check repetitions
@@ -214,17 +195,15 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   std::fill(transitions.data(), 
 				transitions.data() + transitions.size(), 
 				0);
-#ifdef PARENT_MAP
   if (!parent->is_empty_map()) {
 	 // fill parent (nested) transitions 
 	 typedef Transitions::index_range range;
 	 Transitions::array_view<2>::type parent_transitions =
-		transitions[boost::indices[range(1,n_parent_states)]
-						[range(1,n_parent_states)]];
+		transitions[boost::indices
+						[range(1,n_parent_states+1)]
+						[range(1,n_parent_states+1)]];
 	 parent_transitions = parent->transitions;
-	 max_transition_id = parent->max_transition_id();
   }
-#endif
   // add new transitions
   // TODO add range checking and exception
   // (now it asserts)
@@ -408,6 +387,20 @@ void StateMap::outString (std::ostream& out) const
 #endif
 }
 
+StateMap* StateMapRepository::empty_map = nullptr;
+
+StateMap* StateMapRepository
+::get_object_by_id(StateMapId id) const
+{
+  if (id != 0)
+	 return Parent::get_object_by_id(id);
+  else {
+	 if (!empty_map)
+		empty_map = new StateMap();
+	 return empty_map;
+  }
+}
+
 StateMap* StateMapRepository::get_map_for_axis
   (const std::type_info& axis)
 {
@@ -426,6 +419,9 @@ std::string StateMapRepository
 StateMapId StateMapRepository::get_map_id
   (const std::type_info& axis)
 {
+  if (axis == typeid(StateAxis))
+	 return 0; // empty map for the abstract axis
+
   const std::string& name = axis.name();
   auto it = axis2map_id.find(name);
   if (it == axis2map_id.end()) {
