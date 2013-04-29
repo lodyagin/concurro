@@ -249,7 +249,7 @@ void test_out_socket_login()
   in_sock->msg.clear();
 
   const char* login_request = 
-	 "Labcdef12345678902H23456789         1\n";
+	 "Labcdeg12345678902H23456789         1\n";
   const size_t login_request_len = strlen(login_request);
   out_sock->msg.reserve(login_request_len);
   strncpy((char*)out_sock->msg.data(), login_request,

@@ -59,6 +59,16 @@ RSocketConnection& RSingleSocketConnection
   return *this;
 }
 
+RSocketConnection& RSingleSocketConnection
+::operator<< (RSingleBuffer&& buf)
+{
+  auto* out_sock = dynamic_cast<OutSocket*>(socket);
+  SCHECK(out_sock);
+
+  out_sock->msg = std::move(buf);
+  return *this;
+}
+
 void RSingleSocketConnection::ask_connect()
 {
   dynamic_cast<ClientSocket*>(socket)->ask_connect();

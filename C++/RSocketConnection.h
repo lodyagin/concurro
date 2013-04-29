@@ -62,6 +62,9 @@ public:
   virtual RSocketConnection&
   operator<< (const std::string) = 0;
 
+  virtual RSocketConnection& 
+  operator<< (RSingleBuffer&&) = 0;
+
   //! Non-blocking close
   virtual void ask_close() = 0;
 
@@ -104,13 +107,24 @@ public:
 	 {}
   };
 
-  RSocketConnection&
-  operator<< (const std::string);
+  RSocketConnection& operator<< (const std::string);
+  RSocketConnection& operator<< (RSingleBuffer&&);
 
   // TODO move to separate (client side) class
   void ask_connect();
 
   void ask_close();
+
+  RSocketBase* get_socket()
+  {
+	 return socket;
+  }
+  
+  /*template <class Socket>
+  Socket* get_socket()
+  {
+	 return dynamic_cast<Socket*>(socket);
+	 }*/
 
 protected:
   RSingleSocketConnection

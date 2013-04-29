@@ -55,6 +55,21 @@ RWindow::RWindow(RSingleSocketConnection* c)
   thread->start();
 }
 
+RWindow::RWindow(RSingleSocketConnection* c,
+                 bool no_thread)
+  : RObjectWithEvents<WindowAxis>(readyState),
+	 CONSTRUCT_EVENT(filling),
+	 CONSTRUCT_EVENT(filled),
+	 CONSTRUCT_EVENT(skipping),
+	 CONSTRUCT_EVENT(destroyed),
+	 con(c),
+	 socket(dynamic_cast<InSocket*>(c->socket)),
+	 bottom(0), top(0), sz(0),
+	 thread(0)
+{
+  SCHECK(socket);
+}
+
 RWindow::~RWindow()
 {
   is_destroyed_event.wait();

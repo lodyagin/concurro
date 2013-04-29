@@ -2,7 +2,6 @@
 
 /**
  * @file
- * A data buffer.
  *
  * @author Sergei Lodyagin
  */
@@ -54,13 +53,6 @@ public:
 protected:
   DEFAULT_LOGGER(RWindow);
 
-  RSingleSocketConnection* con;
-  InSocket* socket;
-  RSingleBuffer buf;
-  size_t bottom;
-  size_t top;
-  size_t sz;
-
   class Thread : public SocketThread
   {
   public:
@@ -89,8 +81,21 @@ protected:
 	 void run();
 
 	 RWindow* win;
-  }* thread;
+  };
 
+  RSingleSocketConnection* con;
+  InSocket* socket;
+  RSingleBuffer buf;
+  size_t bottom;
+  size_t top;
+  size_t sz;
+  SocketThread* thread;
+
+  //! It allows substitute a working thread from derived
+  //! classes.
+  RWindow(RSingleSocketConnection* c, bool no_thread);
+
+  // <NB> not virtual
   void run();
 };
 
