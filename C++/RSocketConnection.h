@@ -120,12 +120,6 @@ public:
 	 return socket;
   }
   
-  /*template <class Socket>
-  Socket* get_socket()
-  {
-	 return dynamic_cast<Socket*>(socket);
-	 }*/
-
 protected:
   RSingleSocketConnection
 	 (const ObjectCreationInfo& oi,
@@ -154,6 +148,9 @@ public:
 								RSocketRepository* sr)
 	 : Parent(id, reserved), sock_rep(sr)
   {}
+
+  //FIXME on deleting object must also delete all windows
+  //& buffers
 
   RSocketRepository *const sock_rep;
 };

@@ -84,7 +84,6 @@ void RWindow::forward_top(size_t s)
 
 size_t RWindow::size() const
 {
-//  STATE(RWindow, ensure_state, 
   return sz;
 }
 
@@ -97,7 +96,7 @@ const char& RWindow::operator[] (size_t idx) const
 		(SFORMAT("RWindow: index " << idx 
 					<< " is out of range (max="
 					<< top - bottom - 1 << ")"));
-  return *((const char*)buf.cdata() + idx2);
+  return *((const char*)buf->cdata() + idx2);
 }
 
 void RWindow::skip_rest()
@@ -116,7 +115,10 @@ void RWindow::run()
 	 if (is_skipping_event.signalled()) 
 		goto LSkipping;
 
-	 buf = std::move(socket->msg);
+	 buf.reset(new RSingleBuffer(std::move(socket->msg)));
+	 // content of the buffer will be cleared after
+	 // everybody stops using it
+	 buf->set_autoclear(true);
 	 top = 0;
 
 	 do {
@@ -128,16 +130,16 @@ void RWindow::run()
 
 		bottom = top;
 		top = bottom + sz;
-		if (top > buf.size())
+		if (top > buf->size())
 		  THROW_NOT_IMPLEMENTED;
 		STATE(RWindow, move_to, filled);
-	 } while (top < buf.size());
+	 } while (top < buf->size());
 
 	 ( is_filling_event
 	 | is_skipping_event) . wait();
 		if (is_skipping_event.signalled()) 
 		  goto LSkipping;
-	 buf.clear();
+	 buf.reset();
 
 	 if (socket->InSocket::is_terminal_state().isSignalled())
 		break;
@@ -148,8 +150,10 @@ LSkipping:
   socket->InSocket::is_terminal_state().wait();
   // No sence to start skipping while a socket is working
 
-  if (!STATE_OBJ(RBuffer, state_is, buf, discharged))
-	 buf.clear();
+  if (buf) {
+	 assert(buf->get_autoclear());
+	 buf.reset();
+  }
   if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
 					  discharged))
 	 socket->msg.clear();

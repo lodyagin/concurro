@@ -57,8 +57,20 @@ public:
 	 return "?";
   }
 
+  //! Autoclear means call clear() in the destructor
+  void set_autoclear(bool autocl)
+  {
+	 autoclear = autocl;
+  }
+
+  bool get_autoclear() const
+  {
+	 return autoclear;
+  }
+
 protected:
   bool destructor_is_called;
+  std::atomic<bool> autoclear;
 };
 
 class RSingleBuffer : public RBuffer

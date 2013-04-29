@@ -29,7 +29,8 @@ RBuffer::RBuffer()
 	 (dischargedState),
   CONSTRUCT_EVENT(charged),
   CONSTRUCT_EVENT(discharged),
-  destructor_is_called(false)
+  destructor_is_called(false),
+  autoclear(false)
 {}
 
 RBuffer::~RBuffer()
@@ -52,7 +53,10 @@ RSingleBuffer::RSingleBuffer(RSingleBuffer&& b)
 
 RSingleBuffer::~RSingleBuffer()
 {
-  is_discharged_event.wait();
+  if (autoclear)
+	 clear();
+  else
+	 is_discharged_event.wait();
   delete[] buf;
   destructor_is_called = true;
 }

@@ -85,7 +85,7 @@ protected:
 
   RSingleSocketConnection* con;
   InSocket* socket;
-  RSingleBuffer buf;
+  std::shared_ptr<RSingleBuffer> buf;
   size_t bottom;
   size_t top;
   size_t sz;
