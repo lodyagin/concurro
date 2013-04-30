@@ -98,7 +98,7 @@ public:
 
   std::string universal_id() const
   {
-	 return name;
+	 return universal_object_id;
   }
 
   const std::string name;
