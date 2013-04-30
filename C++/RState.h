@@ -12,23 +12,17 @@
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 
-#if 0
-class RaceConditionInStates
-  : public SException
+template<class Axis>
+struct UnitializedAxis : public SException
 {
-public:
-  RaceConditionInStates
-    (uint32_t old, 
-	  uint32_t from, 
-     uint32_t to)
-    : SException 
-    (SFORMAT("Somebody had time to change "
-				 << to << "->" << old
-				 << " while we incorrectly set " << to))
+  UnitializedAxis()
+	 : SException(SFORMAT(
+						 "The axis " << typeid(Axis).name()
+						 << " must be initialized before usage"
+						 ))
   {}
+  
 };
-#endif
-
 
 template<class Axis>
 class RState : public UniversalState
@@ -41,6 +35,9 @@ public:
   RState(uint32_t);
   RState(const ObjectWithStatesInterface<Axis>& obj);
   std::string name () const;
+
+  template<class DerivedAxis>
+  operator RState<DerivedAxis> () const;
 };
 
 template<class Axis, class Axis2> 
@@ -76,12 +73,12 @@ public:
   //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
 	 (const ObjectWithStatesInterface<Axis2>& obj, 
-	  const UniversalState& to);
+	  const RState<Axis>& to);
 
   //! Atomic move obj to a new state
   static void move_to
 	 (ObjectWithStatesInterface<Axis2>& obj, 
-	  const UniversalState& to);
+	  const RState<Axis>& to);
 
   //! Atomic compare-and-change the state
   //! \return true if the object in the `from' state and
@@ -91,8 +88,8 @@ public:
   //! state.  
   static bool compare_and_move
 	 (ObjectWithStatesInterface<Axis2>& obj, 
-	  const UniversalState& from,
-	  const UniversalState& to);
+	  const RState<Axis>& from,
+	  const RState<Axis>& to);
 	 
   //! Atomic compare-and-change the state which uses a set
   //! of possible from-states.
@@ -104,7 +101,7 @@ public:
   static bool compare_and_move
 	 (ObjectWithStatesInterface<Axis2>& obj, 
 	  const std::set<RState<Axis>>& from_set,
-	  const UniversalState& to);
+	  const RState<Axis>& to);
 	 
   static uint32_t state
 	 (const ObjectWithStatesInterface<Axis2>& obj);
@@ -112,7 +109,7 @@ public:
   //! Atomic check the object state
   static bool state_is
 	  (const ObjectWithStatesInterface<Axis2>& obj, 
-		const UniversalState& st);
+		const RState<Axis>& st);
 
   //! Atomic check the obj state is in the set
   static bool state_in
@@ -122,7 +119,7 @@ public:
   //! Raise InvalidState when a state is not expected.
   static void ensure_state
 	  (const ObjectWithStatesInterface<Axis2>& obj, 
-		const UniversalState& expected);
+		const RState<Axis>& expected);
 
   static const StateMap& state_map() 
   { 
@@ -133,7 +130,7 @@ public:
 protected:
   typedef Logger<RAxis<Axis>> log;
 
-  std::atomic_flag changed;
+  //std::atomic_flag changed;
 
   RMixedAxis(const StateMapPar<Axis>& par);
 };

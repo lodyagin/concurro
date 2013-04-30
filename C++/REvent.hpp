@@ -18,13 +18,8 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
 							const char* to)
   : UniversalEvent
   	   (
-#if 0
-       StateMapRepository::instance()
-		 . get_map_for_axis(typeid(Axis)) ->
-#else
-		 RAxis<Axis>::instance().state_map() .
-#endif
-		 get_transition_id(from, to)
+		 StateMapInstance<Axis>::stateMap
+		  -> get_transition_id(from, to)
 		  ),
 	 Event(obj_ptr->create_event((UniversalEvent)*this))
 {

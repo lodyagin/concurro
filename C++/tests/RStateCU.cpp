@@ -85,7 +85,8 @@ DEFINE_STATE_CONST(TestObject, State, s5);
 DEFINE_STATES(
   DerivedAxis,
   {"q1"},
-  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"} });
+  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"},
+										  {"s3", "s2"}});
 
 DEFINE_STATE_CONST(DerivedObject, State, q1);
 
@@ -221,22 +222,43 @@ void test_derived_axis()
   catch (const InvalidStateTransition&) {}
   RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (derived, TestObject::s1State);
-  //STATE_OBJ(TestObject, move_to, derived, s1);
   // orig movement
   STATE_OBJ(TestObject, move_to, orig, s5);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (orig, DerivedObject::q1State);
+  // unable to move orig in TestAxis now
   try {
-	 TestObject::State::move_to
-		(orig, DerivedObject::q1State);
-	 CU_FAIL_FATAL("No state q1 for orig");
+	 STATE_OBJ(TestObject, move_to, orig, s3);
   }
-  catch (const InvalidState&) {}
+  catch (const InvalidState& ex) {
+	 CU_ASSERT_EQUAL_FATAL(ex.state, 
+								  DerivedObject::q1State);
+  }
+  // but in DerivedAxis is possible
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (orig, TestObject::s3State);
+  // no is possible to move in TestAxis again
+  try {
+	 STATE_OBJ(TestObject, move_to, orig, s2);
+	 CU_FAIL_FATAL("No transition s3->s2 for orig");
+  }
+  catch (const InvalidStateTransition&) {}
+  STATE_OBJ(TestObject, move_to, orig, s5);
+  CU_ASSERT_TRUE_FATAL(
+	 STATE_OBJ(TestObject, state_is, orig, s5));
   // derived movement
   STATE_OBJ(TestObject, move_to, derived, s2);
   STATE_OBJ(TestObject, move_to, derived, s3);
   STATE_OBJ(TestObject, move_to, derived, s5);
-  TestObject::State::move_to
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (derived, DerivedObject::q1State);
-  STATE_OBJ(TestObject, move_to, derived, s3);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, DerivedObject::s3State);
+  CU_ASSERT_TRUE_FATAL(
+	 STATE_OBJ(TestObject, state_is, derived, s3));
+  CU_ASSERT_TRUE_FATAL(
+	 TestObject::State::state_in
+	 (derived, {TestObject::s3State}));
 }
 
 

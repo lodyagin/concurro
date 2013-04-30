@@ -73,8 +73,15 @@ InvalidState::InvalidState(UniversalState current,
 									UniversalState expected)
   : SException
 	 (SFORMAT("Invalid state [" << current
-				 << "] when expected [" << expected << "]"))
-  {}
+				 << "] when expected [" << expected << "]")),
+	 state(current)
+{}
+
+InvalidState::InvalidState(UniversalState st,
+									const std::string& msg)
+  : SException(msg),
+	 state(st)
+{}
 
 NoStateWithTheName::NoStateWithTheName
   (const std::string& name, 
@@ -157,12 +164,14 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   const StateIdx n_parent_states = parent->get_n_states();
 
   if (parent) {
-	 LOG_DEBUG(log, "Create a new map with the parent: "
+	 LOG_DEBUG(log, "Create a new map "
+				  << universal_id() << " with the parent: "
 				  << *parent << "and new_states: " << par);
   }
   else {
 	 LOG_DEBUG(log, 
-				  "Create a new top-level map with states: "
+				  "Create a new top-level map "
+				  << universal_id() << " with states: "
 				  << par);
   }
 
@@ -308,15 +317,22 @@ TransitionId StateMap::get_transition_id
 }
 
 TransitionId StateMap::get_transition_id 
-  (uint32_t from,
-   uint32_t to) const
+  (uint32_t from, uint32_t to) const
 {
-  if (!is_compatible (from) || !is_compatible (to))
-    throw IncompatibleMap ();
+  /*if (!is_compatible (from) || !is_compatible (to))
+    throw IncompatibleMap ();*/
 
   const StateIdx from_idx = STATE_IDX(from);
   const StateIdx to_idx = STATE_IDX(to);
 
+  if (from_idx > transitions.shape()[0])
+	 throw InvalidState(from,
+		SFORMAT("State " << UniversalState(from).name()
+				  << " is invalid in the map " << *this));
+  if (to_idx > transitions.shape()[1])
+	 throw InvalidState(to,
+		SFORMAT("State " << UniversalState(to).name()
+				  << " is invalid in the map " << *this));
   return transitions[from_idx][to_idx];
 }
 
@@ -339,7 +355,13 @@ void StateMap::check_transition
 
 bool StateMap::is_compatible(uint32_t state) const
 {
+#if 1
   return STATE_MAP(state) == (uint32_t) numeric_id;
+#else
+  const uint32_t map_id = STATE_MAP(state);
+  return map_id == 0
+	 || map_id == (uint32_t) numeric_id;
+#endif
 }
 
 std::string StateMap::get_state_name

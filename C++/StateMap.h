@@ -32,10 +32,12 @@ public:
   UniversalState(uint32_t st) : the_state(st) {}
   operator uint32_t() const { return the_state; }
 
+  //! Never use it if you already know a map (it makes a
+  //! map-lookup). StateMap::get_state_name suit for most
+  //! cases. 
+  std::string name() const; 
 protected:
   uint32_t the_state;
-
-  std::string name() const; 
 };
 
 std::ostream&
@@ -55,10 +57,13 @@ struct StateAxis {
 //! Return true if DerivedAxis is same or derived from
 //! Axis
 template<class Axis, class DerivedAxis>
-inline constexpr bool is_ancestor()
+constexpr bool is_ancestor()
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress"
   return dynamic_cast<const Axis*>(&DerivedAxis::self_) 
 	 != nullptr;
+#pragma GCC diagnostic pop
 }
 
 #define STATE_MAP_MASK 0x7fff0000
@@ -137,8 +142,9 @@ class InvalidState : public SException
 public:
   InvalidState(UniversalState current,
 					UniversalState expected);
-  InvalidState(const std::string& msg)
-	 : SException(msg) {}
+  InvalidState(UniversalState st,
+					const std::string& msg);
+  const UniversalState state;
 };
 
 class InvalidStateTransition 
@@ -149,8 +155,8 @@ public:
     (UniversalState from_, 
      UniversalState to_)
     : InvalidState
-    (SFORMAT("Invalid state transition from ["
-				 << from_ << "] to [" << to_ << "].")) ,
+    (to_, SFORMAT("Invalid state transition from ["
+						<< from_ << "] to [" << to_ << "].")) ,
 	 from(from_), to(to_)
   {}
 
