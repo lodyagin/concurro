@@ -1,18 +1,22 @@
 #include "REvent.h"
 #include "CUnit.h"
 #include "RThread.h"
+#include "state_objects.h"
 #include "tests.h"
 #include <string>
 #include <thread>
 
 void test_arrival_event();
 void test_transitional_event();
+void test_inheritance();
 
 CU_TestInfo REventTests[] = {
   {"an arrival event test",
    test_arrival_event},
   {"a transitional event test",
    test_transitional_event},
+  {"test inheritance",
+	test_inheritance},
   CU_TEST_INFO_NULL
 };
 
@@ -119,3 +123,74 @@ void test_transitional_event()
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
 }
+
+#define TAU 100
+#define CAST 0
+
+void test_inheritance()
+{
+  TestObject origin;
+  DerivedObject derived;
+
+  REvent<TestAxis> testS1(&origin, "s1");
+#if CAST
+  REvent<DerivedAxis> derivedS1(&origin, "s1");
+  REvent<DerivedAxis> Q1(&origin, "s1");
+#endif
+
+#if CAST
+  CU_ASSERT_TRUE_FATAL(testS1.wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derivedS1.wait(TAU));
+#endif
+  CU_ASSERT_TRUE_FATAL(derived.is_s1().wait(TAU));
+
+  // s1 -> s2
+  STATE_OBJ(TestObject, move_to, origin, s2);
+  //RMixedAxis<DerivedAxis, TestAxis>::move_to
+  //(derived, DerivedObject::s2State);
+  STATE_OBJ(DerivedObject, move_to, derived, s2);
+#if CAST
+  CU_ASSERT_FALSE_FATAL(testS1.wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derivedS1.wait(TAU));
+#endif
+  CU_ASSERT_FALSE_FATAL(derived.is_s1().wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derived.is_s1().wait(TAU));
+
+  // s2 -> s3
+  STATE_OBJ(TestObject, move_to, origin, s3);
+  STATE_OBJ(DerivedObject, move_to, derived, s3);
+  CU_ASSERT_TRUE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derived.is_s3().wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derived.is_s1().wait(TAU));
+
+  // s3 -> s5
+  STATE_OBJ(TestObject, move_to, origin, s5);
+  STATE_OBJ(DerivedObject, move_to, derived, s5);
+  CU_ASSERT_FALSE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derived.is_s3().wait(TAU));
+
+  // s5 -> q1
+  STATE_OBJ(DerivedObject, move_to, origin, q1);
+  //RMixedAxis<DerivedObject, TestObject>::move_to
+//	 (origin, DerivedObject::q1State);
+  STATE_OBJ(DerivedObject, move_to, derived, q1);
+#if CAST
+  CU_ASSERT_TRUE_FATAL(Q1.wait(TAU));
+#endif
+  CU_ASSERT_TRUE_FATAL(derived.is_q1().wait(TAU));
+
+  // q1 -> s3
+  STATE_OBJ(DerivedObject, move_to, origin, s3);
+//  RMixedAxis<DerivedObject, TestObject>::move_to
+//	 (origin, DerivedObject::q1State);
+  STATE_OBJ(DerivedObject, move_to, derived, s3);
+#if CAST
+  CU_ASSERT_FALSE_FATAL(Q1.wait(TAU));
+#endif
+  CU_ASSERT_FALSE_FATAL(derived.is_q1().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derived.is_s3().wait(TAU));
+}
+
+
+

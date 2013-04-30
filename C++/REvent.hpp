@@ -12,8 +12,10 @@
 #include "REvent.h"
 #include "RState.h"
 
-template<class Axis>
-REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr, 
+template<class Axis, class Axis2>
+RMixedEvent<Axis, Axis2>
+//
+::RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
 							const char* from, 
 							const char* to)
   : UniversalEvent
@@ -29,18 +31,15 @@ REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr,
   // in the second constructor
 }
 
-template<class Axis>
-REvent<Axis>::REvent(RObjectWithEvents<Axis>* obj_ptr, 
+template<class Axis, class Axis2>
+RMixedEvent<Axis, Axis2>
+//
+::RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
 							const char* to)
   : UniversalEvent
   	   (
-#if 0
-		 StateMapRepository::instance()
-	    . get_map_for_axis(typeid(Axis)) ->
-#else
-		 RAxis<Axis>::instance().state_map() .
-#endif
-		  create_state(to), true
+		 StateMapInstance<Axis>::stateMap
+		 -> create_state(to), true
 		  ),
 	 Event(obj_ptr->create_event((UniversalEvent)*this))
 {

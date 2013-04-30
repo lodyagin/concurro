@@ -1,6 +1,7 @@
 #include "RState.hpp"
 #include "REvent.hpp"
 #include "RObjectWithStates.hpp"
+#include "state_objects.h"
 #include "CUnit.h"
 
 void test_move_to();
@@ -37,35 +38,6 @@ int RStateCUClean()
 {
   return 0;
 }
-
-DECLARE_AXIS(TestAxis, StateAxis);
-class TestObject : public RObjectWithStates<TestAxis>
-{
-public:
-  DECLARE_STATES(TestAxis, State);
-  DECLARE_STATE_CONST(State, s1);
-  DECLARE_STATE_CONST(State, s2);
-  DECLARE_STATE_CONST(State, s3);
-  DECLARE_STATE_CONST(State, s4);
-  DECLARE_STATE_CONST(State, s5);
-  TestObject() : RObjectWithStates<TestAxis>(s1State) {}
-
-  std::string universal_id() const
-  {
-	 return "?";
-  }
-
-protected:
-  DEFAULT_LOGGER(TestObject)
-};
-
-DECLARE_AXIS(DerivedAxis, TestAxis);
-class DerivedObject : public TestObject
-{
-public:
-  DECLARE_STATES(DerivedAxis, State);
-  DECLARE_STATE_CONST(State, q1);
-};
 
 DEFINE_STATES(
   TestAxis,

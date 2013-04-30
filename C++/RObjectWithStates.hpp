@@ -34,7 +34,7 @@ Event RObjectWithEvents<Axis>
 //
 ::get_event_impl(const UniversalEvent& ue) const
 {
-  const auto it = events.find(ue.global_id());
+  const auto it = events.find(ue.local_id());
   if (it == events.end())
 	 THROW_EXCEPTION(REventIsUnregistered, ue);
 
@@ -48,22 +48,23 @@ Event RObjectWithEvents<Axis>
 {
   const UniversalEvent current_event
 	 (this->current_state(), true);
-  const bool initial_state = ue == current_event;
+  const bool initial_state = 
+	 ue.local_id() == current_event.local_id();
 #if 0
   // map support for emplace is only in gcc 4.9
   return *events.emplace
 	 (std::make_pair
-	   (ue.global_id(),
+	   (ue.local_id(),
 		 Event(SFORMAT(typeid(*this).name() << ":" 
 							<< ue.name()), 
 				 true, initial_state) // <NB> manual reset
 		  )).first;
 #else										  
-  const auto it = events.find(ue.global_id());
+  const auto it = events.find(ue.local_id());
   if (it == events.end()) {
 	 return events.insert
 		(std::make_pair
-		 (ue.global_id(), 
+		 (ue.local_id(), 
 		  Event(SFORMAT(typeid(*this).name() << ":" 
 							 << ue.name()), 
 				  true, initial_state))).first->second;
@@ -83,14 +84,14 @@ void RObjectWithEvents<Axis>
 
   { // event on a transition
 	 const UniversalEvent ev(trans_id);
-	 const auto it = events.find(ev.global_id());
+	 const auto it = events.find(ev.local_id());
 	 if (it != events.end())
 		it->second.set();
   }
 
   { // event on a final destination
 	 const UniversalEvent ev(to, true);
-	 const auto it = events.find(ev.global_id());
+	 const auto it = events.find(ev.local_id());
 	 if (it != events.end())
 		it->second.set();
   }

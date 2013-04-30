@@ -64,13 +64,14 @@ protected:
 class UniversalEvent;
 
 template<class Axis>
-class REvent;
+using REvent = RMixedEvent<Axis, Axis>;
 
 template<class Axis>
 class RObjectWithEvents
   : public RObjectWithStates<Axis>
 {
-  friend class REvent<Axis>;
+  template<class Axis1, class Axis2> 
+	 friend class RMixedEvent;
   friend class RState<Axis>;
   template<class Axis1, class Axis2> 
 	 friend class RMixedAxis;
@@ -107,6 +108,7 @@ protected:
 
   typedef std::map<uint32_t, Event> EventMap;
 
+  //! It maps a local event id to an Event object
   mutable EventMap events;
 
 private:

@@ -94,7 +94,7 @@ void TCPSocket::ask_close_out()
 		rSocketCheck(false);
 	 }
 	 else {
-		STATE(TCPSocket, move_to, closed);
+		A_STATE(TCPSocket, TCPAxis, move_to, closed);
 		RSocketBase::State::compare_and_move
 		  (*this, 
 			{ RSocketBase::readyState,
@@ -147,10 +147,10 @@ void TCPSocket::Thread::run()
   SCHECK(fd >= 0);
 
   for (;;) {
-	 if (STATE_OBJ(TCPSocket, state_is, *tcp_sock, 
-						in_closed)
-		  || STATE_OBJ(TCPSocket, state_is, *tcp_sock,
-							closed))
+	 if (A_STATE_OBJ(TCPSocket, TCPAxis, state_is, 
+						  *tcp_sock, in_closed)
+		  || A_STATE_OBJ(TCPSocket, TCPAxis, state_is, 
+							  *tcp_sock, closed))
 		FD_CLR(fd, &rfds);
 	 else
 		FD_SET(fd, &rfds);

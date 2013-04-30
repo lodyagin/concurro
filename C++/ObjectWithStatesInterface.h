@@ -13,7 +13,7 @@
 
 template<class Axis1, class Axis2> class RMixedAxis;
 template<class Axis> class RState;
-template<class Axis> class REvent;
+template<class Axis1, class Axis2> class RMixedEvent;
 
 /// An interface which should be implemented in each
 /// state-aware class.
@@ -23,8 +23,10 @@ class ObjectWithStatesInterface
   template<class Axis1, class Axis2> 
 	 friend class RMixedAxis;
   friend class RState<Axis>;
-  friend class REvent<Axis>;
+  template<class Axis1, class Axis2> 
+	 friend class RMixedEvent;
 public:
+  typedef Axis axis;
   typedef RState<Axis> State;
 
   virtual ~ObjectWithStatesInterface() {}

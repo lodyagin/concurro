@@ -150,7 +150,7 @@ struct axis : public parent \
 #define DEFINE_STATES(axis, pars...)	\
   template class RMixedAxis<axis, axis>;				\
   template class RState<axis>; \
-  template class REvent<axis>; \
+  template class RMixedEvent<axis, axis>;			\
   static RAxis<axis> raxis__ ## axis (pars); 
 
 
@@ -163,9 +163,18 @@ struct axis : public parent \
     class_::state ## State(#state);
 
 #define STATE_OBJ(class_, action, object, state) \
-  class_::State::action((object), class_::state ## State)
+  RMixedAxis<typename class_::State::axis, \
+             typename class_::axis>::action \
+	 ((object), class_::state ## State)
+
+#define A_STATE_OBJ(class_, axis_, action, object, state) \
+  RAxis<axis_>::action \
+	 ((object), class_::state ## State)
 
 #define STATE(class_, action, state) \
   STATE_OBJ(class_, action, *this, state)
+
+#define A_STATE(class_, axis_, action, state)			\
+  A_STATE_OBJ(class_, axis_, action, *this, state)
 
 #endif

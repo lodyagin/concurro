@@ -14,51 +14,37 @@
 #include "Event.h"
 #include <set>
 
-#if 0
-class REventInterface
-{
-public:
-#if 0
-  //! Wait for the event on obj for max time msecs.
-  //! \return false on timeout.
-  virtual bool wait(int time = -1) const = 0;
-
-  //! Is it already signalled?
-  virtual bool signalled() const = 0;
-#endif
-
-  virtual ~REventInterface() {}
-
-  virtual operator Event& () = 0;
-  virtual operator const Event& () const = 0;
-};
-#endif
-
-template<class Axis>
-class REvent
+template<class Axis, class Axis2>
+class RMixedEvent
 : public Axis,
   public UniversalEvent,
   public Event
 {
 public:
   //! Create a from->to event
-  REvent(RObjectWithEvents<Axis>* obj_ptr, 
-			const char* from, const char* to);
+  RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
+				  const char* from, const char* to);
 
   //! Create a *->to event
-  REvent(RObjectWithEvents<Axis>* obj_ptr, 
-			const char* to);
+  RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
+				  const char* to);
 protected:
   typedef Logger<LOG::Events> log;
 };
 
-#define DECLARE_EVENT(axis, event) \
+template<class Axis>
+using REvent = RMixedEvent<Axis, Axis>;
+
+#define A_DECLARE_EVENT(axis_, axis_2, event)		\
 protected: \
-  REvent<axis> is_ ## event ## _event; \
+RMixedEvent<axis_, axis_2> is_ ## event ## _event;	\
 public: \
-  const REvent<axis>& is_ ## event () \
+  const RMixedEvent<axis_, axis_2>& is_ ## event ()	\
   { return is_ ## event ## _event; } \
 private:
+
+#define DECLARE_EVENT(axis_, event) \
+  A_DECLARE_EVENT(axis_, axis_, event)
 
 #define CONSTRUCT_EVENT(event)		\
   is_ ## event ## _event(this, #event)

@@ -69,10 +69,12 @@ constexpr bool is_ancestor()
 #define STATE_MAP_MASK 0x7fff0000
 #define STATE_MAP_SHIFT 16
 #define STATE_IDX_MASK 0x7fff
+#define EVENT_IDX_MASK 0xffff
 //! Return a state map id by a state.
 #define STATE_MAP(state) \
   (((state) & STATE_MAP_MASK) >> STATE_MAP_SHIFT)
 #define STATE_IDX(state) ((state) & STATE_IDX_MASK)
+#define EVENT_IDX(state) ((state) & EVENT_IDX_MASK)
 
 class UniversalEvent
 {
@@ -113,9 +115,10 @@ public:
 	 assert(STATE_MAP(id)); //must contain a state_map part
   }
 
-  //uint16_t local_id() const { return STATE_IDX(id); }
+  //! Both transition and arrival ids without a map.
+  uint16_t local_id() const { return EVENT_IDX(id); }
 
-  //! Bot transition and arrival ids are global.
+  //! Both transition and arrival ids with a map.
   uint32_t global_id() const { return id; }
 
   //! A name as "<state>" or "<state>-><state>"

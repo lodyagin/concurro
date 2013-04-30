@@ -105,7 +105,7 @@ void RMixedAxis<Axis, Axis2>
 		throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
 
-  if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
 		(&obj)) {
 	 assert(trans_id > 0);
 	 /*LOGGER_DEBUG(logger, "update_events(" << trans_id 
@@ -145,7 +145,7 @@ bool RMixedAxis<Axis, Axis2>
   if (!current.compare_exchange_strong(expected, to))
 	 return false;
   
-  if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
 		(&obj)) {
 	 assert(trans_id > 0);
 	 p->update_events(trans_id, to);
@@ -189,7 +189,7 @@ bool RMixedAxis<Axis, Axis2>
 
   } while(!current.compare_exchange_strong(from, to));
 
-  if (auto p = dynamic_cast<RObjectWithEvents<Axis>*>
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
 		(&obj)) {
 	 assert(trans_id > 0);
 	 p->update_events(trans_id, to);
