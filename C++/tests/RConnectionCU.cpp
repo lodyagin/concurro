@@ -62,6 +62,7 @@ void test_connection()
 	 );
   RConnectionRepository con_rep
 	 ("RConnectionCU::test_connection::sr", 10, &sr);
+  RWindow wc;
 
   auto* con = dynamic_cast<TestConnection*>
 	 (con_rep.create_object
@@ -71,14 +72,28 @@ void test_connection()
   con->ask_connect();
 
   *con << "Labcdef12345678902H23456789         1\n";
-  con->win.forward_top(1);
-  con->win.is_filled().wait();
-  CU_ASSERT_EQUAL_FATAL(con->win[0], '+');
-  const std::string answer("Soup2.0\n");
+  const std::string answer("+Soup2.0\n");
   con->win.forward_top(answer.size());
   con->win.is_filled().wait();
-  const std::string a (&con->win[0], con->win.size());
+  const std::string a(&con->win[0], con->win.size());
   CU_ASSERT_EQUAL_FATAL(answer, a);
+
+  // just take a copy
+  wc = con->win;
+  const std::string a2(&wc[0], wc.size());
+  CU_ASSERT_EQUAL_FATAL(answer, a2);
+  CU_ASSERT_TRUE_FATAL(
+	 STATE_OBJ(RConnectedWindow, state_is, con->win,
+				  filled));
+  CU_ASSERT_TRUE_FATAL(
+	 STATE_OBJ(RWindow, state_is, wc, filled));
+
+  // move whole content
+  wc = std::move(con->win);
+  const std::string a3(&wc[0], wc.size());
+  CU_ASSERT_EQUAL_FATAL(answer, a3);
+  CU_ASSERT_TRUE_FATAL(
+	 STATE_OBJ(RWindow, state_is, wc, filled));
   con->ask_close();
   con->win.skip_rest();
 }

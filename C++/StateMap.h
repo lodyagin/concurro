@@ -52,6 +52,9 @@ class StateMap;
 struct StateAxis {
   //! For is_ancestor check
   static StateAxis self_;
+
+  //! To make this type polymorphic
+  virtual ~StateAxis() {} 
 };
 
 //! Return true if DerivedAxis is same or derived from

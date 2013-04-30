@@ -14,7 +14,6 @@
 #include "RState.h"
 #include "RThread.h"
 #include "RObjectWithStates.h"
-//#include "RSocketConnection.h"
 
 DECLARE_AXIS(WindowAxis, StateAxis);
 
@@ -22,34 +21,27 @@ class RWindow
 : public RObjectWithEvents<WindowAxis>,
   StdIdMember
 {
-  friend class RSingleSocketConnection;
-
-  DECLARE_EVENT(WindowAxis, filling);
-  DECLARE_EVENT(WindowAxis, filled);
-  DECLARE_EVENT(WindowAxis, skipping);
-  DECLARE_EVENT(WindowAxis, destroyed);
-
 public:
   DECLARE_STATES(WindowAxis, State);
   DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, filling);
   DECLARE_STATE_CONST(State, filled);
-  DECLARE_STATE_CONST(State, skipping);
-  DECLARE_STATE_CONST(State, destroyed);
+  DECLARE_STATE_CONST(State, welded);
 
-  RWindow(const std::string& id);
-//  RWindow(RSingleSocketConnection* c);
-  virtual ~RWindow();
+  RWindow(const std::string& = std::string("RWindow"));
+  RWindow(RWindow&);
+  RWindow(RWindow&&);
 
-  void forward_top(size_t);
+  virtual ~RWindow() {}
+
   size_t size() const;
+
+  RWindow& operator= (RWindow&);
+  RWindow& operator= (RWindow&&);
 
   virtual const char& operator[](size_t) const;
 
-  //! Skip all data
-  void skip_rest();
-
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return universal_object_id;
   }
@@ -57,23 +49,48 @@ public:
 protected:
   DEFAULT_LOGGER(RWindow);
 
-  //RSingleSocketConnection* con;
-  //InSocket* socket;
   std::shared_ptr<RSingleBuffer> buf;
   size_t bottom;
   size_t top;
   size_t sz;
-  //SocketThread* thread;
+};
 
-  //! It allows substitute a working thread from derived
-  //! classes.
-  //RWindow(RSingleSocketConnection* c, bool no_thread);
+DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
 
-  // <NB> not virtual
-  //void run();
+//! A window which have live connection access.
+class RConnectedWindow : public RWindow
+{
+  friend class RSingleSocketConnection;
 
-  // A logic block reading implementation. It must set
-  // a filled state at the end. 
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
+						filling);
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+						filled);
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+						skipping);
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+						destroyed);
+
+public:
+  DECLARE_STATES(ConnectedWindowAxis, State);
+  DECLARE_STATE_CONST(State, skipping);
+  DECLARE_STATE_CONST(State, destroyed);
+
+  RConnectedWindow(const std::string& id);
+  virtual ~RConnectedWindow();
+
+  void forward_top(size_t);
+
+  const char& operator[](size_t) const override;
+
+  //! Skip all data
+  void skip_rest();
+
+protected:
+  DEFAULT_LOGGER(RConnectedWindow);
+
+  //! A logic block reading implementation. It must set
+  //! a filled state at the end. 
   virtual void move_forward();
 };
 

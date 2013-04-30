@@ -140,5 +140,5 @@ LSkipping:
 					  discharged))
 	 socket->msg.clear();
 
-  STATE_OBJ(RWindow, move_to, win, destroyed);
+  STATE_OBJ(RConnectedWindow, move_to, win, destroyed);
 }

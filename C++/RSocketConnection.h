@@ -182,7 +182,7 @@ protected:
 
 public:
   //! A current window
-  RWindow win;
+  RConnectedWindow win;
 };
 
 class RConnectionRepository
