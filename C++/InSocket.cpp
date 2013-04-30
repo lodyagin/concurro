@@ -142,14 +142,18 @@ void InSocket::SelectThread::run()
 		// to make sure we always read all (rd_buf_size =
 		// internal socket rcv buffer + 1)
 
-		in_sock->msg.resize(red);
 		if (red > 0) {
+		  in_sock->msg.resize(red);
 		  InSocket::State::move_to(*in_sock, new_dataState);
 
 		  // <NB> do not read more data until a client read
 		  // this piece
 		  in_sock->msg.is_discharged().wait();
 		  InSocket::State::move_to(*in_sock, emptyState);
+		}
+		else {
+		  in_sock->msg.resize(1);
+		  in_sock->msg.resize(0);
 		}
 	 }
 

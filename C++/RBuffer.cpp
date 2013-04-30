@@ -12,7 +12,8 @@ DEFINE_STATES(DataBufferStateAxis,
 		},
   { {"discharged", "charging"},
 	 {"charging", "charged"},
-	 {"charging", "discharged"}, // cancel
+		//{"charging", "discharged"}, 
+		// there is a week control if its enabled
 	 {"discharged", "welded"},
 	 {"welded", "discharged"},
 	 {"welded", "charged"},
