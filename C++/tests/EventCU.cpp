@@ -194,9 +194,9 @@ void test_wait_for_any()
   ce1 |= ce2;
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   CU_ASSERT_FALSE_FATAL((ce1 | ce2).wait(TAU));
-  e5.set();
+  e1.set();
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
-  e5.reset();
+  e1.reset();
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   CU_ASSERT_TRUE_FATAL(
 	 (Event("e6", false, true) | ce1).wait(TAU));
@@ -209,9 +209,9 @@ void test_wait_for_any()
   e2.set();
   CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
-  e5.set();
+  e1.set();
   CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
-  e5.reset();
+  e1.reset();
   CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   CU_ASSERT_EQUAL_FATAL(ce1.size(), 2);
   CU_ASSERT_EQUAL_FATAL(ce2.size(), 2);
