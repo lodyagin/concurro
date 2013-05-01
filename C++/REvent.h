@@ -22,11 +22,11 @@ class RMixedEvent
 {
 public:
   //! Create a from->to event
-  RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
+  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
 				  const char* from, const char* to);
 
   //! Create a *->to event
-  RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
+  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
 				  const char* to);
 protected:
   typedef Logger<LOG::Events> log;

@@ -32,11 +32,11 @@ DEFINE_STATE_CONST(RWindow, State, filling);
 DEFINE_STATE_CONST(RWindow, State, filled);
 DEFINE_STATE_CONST(RWindow, State, welded);
 
+#if 0
 DEFINE_STATES(
   ConnectedWindowAxis,
   {
-	 "skipping",
-	 "destroyed" // as a final point for "skipping"
+	 //"destroyed" // as a final point for "skipping"
   },
   {
 	 {"ready", "skipping"},
@@ -46,8 +46,8 @@ DEFINE_STATES(
   }
   );
 
-DEFINE_STATE_CONST(RConnectedWindow, State, skipping);
 DEFINE_STATE_CONST(RConnectedWindow, State, destroyed);
+#endif
 
 RWindow::RWindow(const std::string& id)
 : RObjectWithEvents<WindowAxis>(readyState),
@@ -134,6 +134,7 @@ RWindow& RWindow
 
 const char& RWindow::operator[] (size_t idx) const
 {
+  STATE(RConnectedWindow, ensure_state, filled);
   size_t idx2 = bottom + idx;
   if (idx2 >= top) 
 	 throw std::out_of_range
@@ -145,18 +146,23 @@ const char& RWindow::operator[] (size_t idx) const
 
 // RConnectedWindow
 
-RConnectedWindow::RConnectedWindow(const std::string& id)
+RConnectedWindow::RConnectedWindow(RSocketBase* sock)
   : 
-	 RWindow(id),
+    RWindow(SFORMAT("RConnectedWindow:" << sock->fd)),
+	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(filling),
-	 CONSTRUCT_EVENT(filled),
-	 CONSTRUCT_EVENT(skipping),
-	 CONSTRUCT_EVENT(destroyed)
+	 CONSTRUCT_EVENT(filled)
+{}
+
+RConnectedWindow::RConnectedWindow
+  (const ObjectCreationInfo& oi,
+	const Par& par)
+ : RConnectedWindow(par.socket)
 {}
 
 RConnectedWindow::~RConnectedWindow()
 {
-  is_destroyed_event.wait();
+  is_ready_event.wait();
 }
 
 void RConnectedWindow::forward_top(size_t s)
@@ -166,25 +172,31 @@ void RConnectedWindow::forward_top(size_t s)
   STATE(RConnectedWindow, move_to, filling);
 }
 
-const char& RConnectedWindow
-::operator[] (size_t idx) const
-{
-  STATE(RConnectedWindow, ensure_state, filled);
-  return RWindow::operator[] (idx);
-}
-
-void RConnectedWindow::skip_rest()
-{
-  STATE(RConnectedWindow, move_to, skipping);
-}
-
 void RConnectedWindow::move_forward()
 {
   bottom = top;
   top = bottom + sz;
   if (top > buf->size())
 	 THROW_NOT_IMPLEMENTED;
-  STATE(RConnectedWindow, move_to, filled);
+}
+
+std::ostream&
+operator<< (std::ostream& out, 
+				const RConnectedWindow& win)
+{
+  out << "RConnectedWindow("
+		   "bottom=" << win.bottom
+		<< ", top=" << win.top
+		<< ", sz=" << win.sz
+		<< ", buf=";
+
+  if (win.buf)
+	 out << win.buf->cdata();
+  else
+	 out << "unallocated";
+
+  out << ", state=" << RState<WindowAxis>(win) << ")";
+  return out;
 }
 
 					 

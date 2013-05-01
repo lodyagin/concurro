@@ -15,7 +15,7 @@
 template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
-::RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
+::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
 							const char* from, 
 							const char* to)
   : UniversalEvent
@@ -34,7 +34,7 @@ RMixedEvent<Axis, Axis2>
 template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
-::RMixedEvent(RObjectWithEvents<Axis2>* obj_ptr, 
+::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
 							const char* to)
   : UniversalEvent
   	   (

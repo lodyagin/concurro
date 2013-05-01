@@ -61,38 +61,56 @@ DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
 class RConnectedWindow : public RWindow
 {
   friend class RSingleSocketConnection;
+  friend std::ostream&
+	 operator<<(std::ostream&, const RConnectedWindow&);
 
+
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
+						ready);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
 						filling);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
 						filled);
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
-						skipping);
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
-						destroyed);
 
 public:
-  DECLARE_STATES(ConnectedWindowAxis, State);
-  DECLARE_STATE_CONST(State, skipping);
-  DECLARE_STATE_CONST(State, destroyed);
+  struct Par {
+	 RSocketBase* socket;
+    Par(RSocketBase* sock) : socket(sock) {}
+	 PAR_DEFAULT_VIRTUAL_MEMBERS(RConnectedWindow)
+	 SOCKET get_id(const ObjectCreationInfo& oi) const 
+	 { return socket->fd; }
+  };
 
-  RConnectedWindow(const std::string& id);
+  //DECLARE_STATES(ConnectedWindowAxis, State);
+  //DECLARE_STATE_CONST(State, destroyed);
+
+  RConnectedWindow(RSocketBase* sock);
   virtual ~RConnectedWindow();
 
   void forward_top(size_t);
 
-  const char& operator[](size_t) const override;
-
-  //! Skip all data
-  void skip_rest();
-
 protected:
   DEFAULT_LOGGER(RConnectedWindow);
+
+  RConnectedWindow(const ObjectCreationInfo& oi,
+						 const Par& par);
 
   //! A logic block reading implementation. It must set
   //! a filled state at the end. 
   virtual void move_forward();
 };
+
+std::ostream&
+operator<<(std::ostream&, const RConnectedWindow&);
+
+typedef Repository
+<
+RConnectedWindow,
+RConnectedWindow::Par,
+std::unordered_map,
+SOCKET
+>
+RConnectedWindowRepository;
 
 #endif
 

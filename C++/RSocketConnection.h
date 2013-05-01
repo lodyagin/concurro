@@ -11,6 +11,7 @@
 
 #include "Repository.h"
 #include "RSocket.h"
+#include "ClientSocket.h"
 #include "RWindow.h"
 #include <string>
 #include <memory>
@@ -25,8 +26,11 @@ public:
   struct Par {
 	 //! Available addresses for socket(s)
 	 std::unique_ptr<RSocketAddressRepository> sar;
+	 size_t win_rep_capacity;
 
-    Par() : sar(new RSocketAddressRepository)
+    Par() 
+	 : sar(new RSocketAddressRepository),
+		win_rep_capacity(3)
 	 {
 		assert(sar);
 	 }
@@ -67,6 +71,12 @@ public:
   //! Non-blocking close
   virtual void ask_close() = 0;
 
+  //! Skip all data (blocking)
+  virtual void abort() = 0;
+
+  //! A window repostiry
+  RConnectedWindowRepository win_rep;
+
 protected:
   RSocketConnection
 	 (const ObjectCreationInfo& oi,
@@ -94,7 +104,7 @@ public:
 	 }
 
 	 RThreadBase* create_derivation
-		(const ObjectCreationInfo& oi) const
+		(const ObjectCreationInfo& oi) const override
 	 { 
 		return new ConnectionThread(oi, *this); 
 	 }
@@ -105,7 +115,12 @@ public:
 protected:
   ConnectionThread(const ObjectCreationInfo& oi, 
 						 const Par& p)
-	 : SocketThread(oi, p), con(p.con) {}
+	 : SocketThread(oi, p), con(p.con) 
+  {
+	 con->socket->threads_terminals.push_back
+		(this->is_terminated());
+  }
+
   ~ConnectionThread() { destroy(); }
 
   void run()
@@ -117,10 +132,19 @@ protected:
   Connection* con;
 };
 
+DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
+
 //! A connection which always uses only one socket
-class RSingleSocketConnection : public RSocketConnection
+class RSingleSocketConnection 
+: public RSocketConnection,
+  public RStatesDelegator
+  <ClientSocketAxis, ClientConnectionAxis>
 {
 public:
+  DECLARE_STATES(ClientConnectionAxis, State);
+  DECLARE_STATE_CONST(State, skipping);
+  DECLARE_STATE_CONST(State, aborted);
+
   typedef ConnectionThread<RSingleSocketConnection>
 	 Thread;
   friend Thread;
@@ -130,16 +154,28 @@ public:
 	 RSocketAddress* sock_addr;
 
 	 Par()
-		: sock_addr(0) // desc. must init it by an address
+		: sock_addr(0), // descendats must init it by an
+		                // address
 		               // from the address repository (sar)
+		socket(0) // descendant must create it in
+					 // create_derivation 
 	 {}
 
-	 std::unique_ptr<SocketThread::Par> 
+	 virtual std::unique_ptr<SocketThread::Par> 
 	 get_thread_par(RSingleSocketConnection* c) const
 	 {
 		return std::unique_ptr<Thread::Par>
 		  (new Thread::Par(c));
 	 }
+
+	 virtual std::unique_ptr<RConnectedWindow::Par>
+	 get_window_par(RSocketBase* sock) const
+	 {
+		return std::unique_ptr<RConnectedWindow::Par>
+		  (new RConnectedWindow::Par(sock));
+	 }
+
+	 mutable RSocketBase* socket;
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
@@ -160,13 +196,25 @@ public:
   // TODO move to separate (client side) class
   void ask_connect();
 
-  void ask_close();
+  void ask_close() override;
+
+  void abort() override;
 
   RSocketBase* get_socket()
   {
 	 return socket;
   }
+
+  CompoundEvent is_can_abort() 
+  { 
+	 return is_can_abort_event; 
+  }
   
+  std::string universal_id() const override
+  {
+	 return universal_object_id;
+  }
+
 protected:
   RSingleSocketConnection
 	 (const ObjectCreationInfo& oi,
@@ -178,11 +226,43 @@ protected:
 
   //RSocketBase* socket;
   InSocket* socket;
+  ClientSocket* cli_sock;
   SocketThread* thread;
+  RConnectedWindow* in_win;
 
+  DEFAULT_LOGGER(RSingleSocketConnection);
+
+  // delegating events to socket
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, created);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						connected);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						connection_timed_out);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						connection_refused);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						destination_unreachable);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						closed);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						skipping);
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+						ClientSocketAxis, 
+						aborted);
+
+protected:
+  CompoundEvent is_can_abort_event;
 public:
   //! A current window
-  RConnectedWindow win;
+  //std::unique_ptr<RConnectedWindow> win;
+  RConnectedWindow& iw() { return *in_win; }
 };
 
 class RConnectionRepository

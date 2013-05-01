@@ -10,7 +10,17 @@
 #include "RSocketConnection.h"
 #include "OutSocket.h"
 #include "ClientSocket.h"
-//#include "TCPSocket.h"
+
+DEFINE_STATES(
+  ClientConnectionAxis,
+  { "skipping", // skiping data and closing buffers
+	 "aborted"   // after skipping
+  },
+  { { "connected", "skipping" },
+	 { "skipping", "aborted" }
+  }
+);
+
 
 std::ostream&
 operator<< (std::ostream& out, const RSocketConnection& c)
@@ -23,6 +33,8 @@ RSocketConnection::RSocketConnection
   (const ObjectCreationInfo& oi,
    const Par& par)
   : StdIdMember(oi.objectId),
+	 win_rep("RSocketConnection::win_rep", 
+				par.win_rep_capacity),
 	 socket_rep(dynamic_cast<RConnectionRepository*>
 					(oi.repository)->sock_rep)
 {
@@ -34,15 +46,43 @@ RSingleSocketConnection::RSingleSocketConnection
   (const ObjectCreationInfo& oi,
    const Par& par)
  : RSocketConnection(oi, par),
-   socket(dynamic_cast<InSocket*>
-			 (socket_rep->create_object(*par.sock_addr))),
+	RStatesDelegator
+	 (dynamic_cast<ClientSocket*>(par.socket), 
+	  ClientSocket::createdState),
+   socket(dynamic_cast<InSocket*>(par.socket)),
+	cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
 	thread(dynamic_cast<SocketThread*>
 			 (RThreadRepository<RThread<std::thread>>
 			  ::instance().create_thread
 			  (*par.get_thread_par(this)))),
-	win(SFORMAT("RSingleSocketConnection:" << socket->fd))
+	in_win(win_rep.create_object
+			 (*par.get_window_par(cli_sock))),
+
+	is_created_event(cli_sock, "created"),
+	is_connected_event(cli_sock, "connected"),
+	is_connection_timed_out_event
+	  (cli_sock, "connection_timed_out"),
+	is_connection_refused_event
+	  (cli_sock, "connection_refused"),
+	is_destination_unreachable_event
+	  (cli_sock, "destination_unreachable"),
+	is_closed_event(cli_sock, "closed"),
+	is_skipping_event(this, "skipping"),
+	is_aborted_event(this, "aborted"),
+
+	is_can_abort_event { 
+    is_created_event,
+	 is_connected_event, 
+	 is_connection_timed_out_event,
+	 is_connection_refused_event, 
+	 is_destination_unreachable_event,
+    is_closed_event
+	}
 {
+  assert(socket);
+  assert(cli_sock);
   SCHECK(thread);
+  SCHECK(in_win);
   thread->start();
 }
 
@@ -94,51 +134,67 @@ void RSingleSocketConnection::run()
 
   for (;;) {
 	 ( socket->msg.is_charged()
-		| win.is_skipping() ). wait();
+		| is_skipping() ). wait();
 
-	 if (win.is_skipping().signalled()) 
+	 if (is_skipping().signalled()) 
 		goto LSkipping;
 
-	 win.buf.reset(new RSingleBuffer
+	 iw().buf.reset(new RSingleBuffer
 						(std::move(socket->msg)));
 	 // content of the buffer will be cleared after
 	 // everybody stops using it
-	 win.buf->set_autoclear(true);
-	 win.top = 0;
+	 iw().buf->set_autoclear(true);
+	 iw().top = 0;
 
 	 do {
-		( win.is_filling()
-		| win.is_skipping()) . wait();
+		( iw().is_filling()
+		| is_skipping()) . wait();
 
-		if (win.is_skipping().signalled()) 
+		if (is_skipping().signalled()) 
 		  goto LSkipping;
 
-		win.move_forward();
+		iw().move_forward();
+		STATE_OBJ(RConnectedWindow, move_to, iw(), filled);
 
-	 } while (win.top < win.buf->size());
+	 } while (iw().top < iw().buf->size());
 
-	 ( win.is_filling()
-		| win.is_skipping()) . wait();
-		if (win.is_skipping().signalled()) 
+	 ( iw().is_filling()
+		| is_skipping()) . wait();
+		if (is_skipping().signalled()) 
 		  goto LSkipping;
-	 win.buf.reset();
+	 iw().buf.reset();
 
-	 if (socket->InSocket::is_terminal_state().isSignalled())
+	 if (socket->InSocket::is_terminal_state()
+		  . isSignalled())
 		break;
   }
 
 LSkipping:
-  win.is_skipping().wait();
+  // FIXME normal close
+  is_skipping().wait();
   socket->InSocket::is_terminal_state().wait();
   // No sence to start skipping while a socket is working
 
-  if (win.buf) {
-	 assert(win.buf->get_autoclear());
-	 win.buf.reset();
+  if (iw().buf) {
+	 assert(iw().buf->get_autoclear());
+	 iw().buf.reset();
   }
   if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
 					  discharged))
 	 socket->msg.clear();
 
-  STATE_OBJ(RConnectedWindow, move_to, win, destroyed);
+  STATE(RSingleSocketConnection, move_to, aborted);
+}
+
+void RSingleSocketConnection::abort()
+{
+  // we block because no connecting -> skipping transition
+  // (need change ClientSocket to allow it)
+  is_can_abort().wait();
+
+  if (RMixedAxis<ClientConnectionAxis, ClientSocketAxis>
+		::compare_and_move
+		(*this, ClientSocket::connectedState,
+		 RSingleSocketConnection::skippingState))
+	 is_aborted().wait();
 }

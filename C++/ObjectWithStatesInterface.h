@@ -31,14 +31,6 @@ public:
 
   virtual ~ObjectWithStatesInterface() {}
 
-#if 0
-  /// set state to the current state of the object
-  virtual void state(State& state) const = 0;
-
-  /// return bool if the object state is state
-  virtual bool state_is(const State& state) const = 0;
-#endif
-
   virtual log4cxx::LoggerPtr logger() const = 0;
 
   virtual std::string object_name() const
@@ -52,13 +44,34 @@ public:
 protected:
 
   virtual std::atomic<uint32_t>& current_state() = 0;
+  virtual const std::atomic<uint32_t>& 
+	 current_state() const = 0;
+};
 
-#if 0
-  /// Set the object state without transition cheking (do
-  /// not use directly).
-  virtual void set_state_internal 
-	 (const State& state) = 0;
-#endif
+template<class Axis>
+class ObjectWithEventsInterface
+{
+  template<class Axis1, class Axis2> 
+	 friend class RMixedEvent;
+  friend class RState<Axis>;
+  template<class Axis1, class Axis2> 
+	 friend class RMixedAxis;
+protected:
+  //! Query an event object by UniversalEvent. 
+  virtual Event get_event(const UniversalEvent& ue) = 0;
+
+  //! Query an event object by UniversalEvent. 
+  virtual const Event get_event
+	 (const UniversalEvent& ue) const = 0;
+
+  //! Register a new event in the map if it doesn't
+  //! exists. In any case return the event.
+  virtual Event create_event
+	 (const UniversalEvent&) const = 0;
+
+  //! Update events due to trans_id to
+  virtual void update_events
+	 (TransitionId trans_id, uint32_t to) = 0;
 };
 
 #endif

@@ -48,12 +48,13 @@ public:
 
 protected:
 
-  std::atomic<uint32_t>& current_state()
+  std::atomic<uint32_t>& current_state() override
   {
 	 return currentState;
   }
 
-  const std::atomic<uint32_t>& current_state() const
+  const std::atomic<uint32_t>& 
+	 current_state() const override
   {
 	 return currentState;
   }
@@ -68,7 +69,8 @@ using REvent = RMixedEvent<Axis, Axis>;
 
 template<class Axis>
 class RObjectWithEvents
-  : public RObjectWithStates<Axis>
+: public RObjectWithStates<Axis>,
+  public ObjectWithEventsInterface<Axis>
 {
   template<class Axis1, class Axis2> 
 	 friend class RMixedEvent;
@@ -87,20 +89,22 @@ public:
 
 protected:
   //! Query an event object by UniversalEvent. 
-  Event get_event(const UniversalEvent& ue)
+  Event get_event(const UniversalEvent& ue) override
   {
 	 return get_event_impl(ue);
   }
 
   //! Query an event object by UniversalEvent. 
-  const Event get_event(const UniversalEvent& ue) const
+  const Event get_event
+	 (const UniversalEvent& ue) const override
   {
 	 return get_event_impl(ue);
   }
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
-  Event create_event(const UniversalEvent&) const;
+  Event create_event
+	 (const UniversalEvent&) const override;
 
   //! Update events due to trans_id to
   void update_events
@@ -114,6 +118,49 @@ protected:
 private:
   //! A common implementation for both get_event
   Event get_event_impl(const UniversalEvent&) const;
+};
+
+//! It delegates a part of states and eventsto another
+//! class.
+template<class Axis, class DerivedAxis>
+class RStatesDelegator 
+  : public ObjectWithStatesInterface<Axis>,
+    public ObjectWithEventsInterface<Axis>
+{
+public:
+  typedef typename ObjectWithStatesInterface<Axis>
+	 ::State State;
+  
+  //! Construct a delegator to delegate all states not
+  //! covered by DerivedAxis.
+  RStatesDelegator
+	 (ObjectWithStatesInterface<Axis>* a_delegate,
+	  //const RState<DerivedAxis>& not_delegate_from,
+	  const State& initial_state);
+  RStatesDelegator(const RStatesDelegator&) = delete;
+
+  RStatesDelegator* operator=
+	 (const RStatesDelegator&) = delete;
+
+  std::atomic<uint32_t>& current_state() override;
+
+  const std::atomic<uint32_t>&
+	 current_state() const override;
+
+  Event get_event(const UniversalEvent& ue) override;
+
+  const Event get_event
+	 (const UniversalEvent& ue) const override;
+
+  Event create_event
+	 (const UniversalEvent&) const override;
+
+  void update_events
+	 (TransitionId trans_id, uint32_t to) override;
+
+protected:
+  ObjectWithStatesInterface<Axis>* delegate;
+  uint16_t not_delegate;
 };
 
 #endif
