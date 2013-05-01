@@ -633,7 +633,6 @@ struct Par : public parent::Par \
   { THROW_NOT_IMPLEMENTED; }
 
 #define PAR_DEFAULT_VIRTUAL_MEMBERS(object) \
-  virtual ~Par() {} \
   virtual object* create_derivation \
 	 (const ObjectCreationInfo& oi) const \
   { return new object(oi, *this); } \
