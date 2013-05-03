@@ -47,38 +47,4 @@ RMixedEvent<Axis, Axis2>
 	 evt_ptr->log_params.reset = false;
 }
 
-#if 0
-template<class Axis>
-bool REvent<Axis>
-//
-::wait(int time) const
-{
-  assert(evt);
-
-#if 0
-  if (is_arrival_event()) {
-	 const uint32_t obj_state = obj->current_state();
-	 const uint32_t arrival_state = UniversalState(*this);
-
-	 // TODO they should store state both with or w/o map
-	 // id (no STATE_IDX is actually needed)
-	 if (STATE_IDX(obj_state) == STATE_IDX(arrival_state))
-		return true; // the object is already in that state
-  }
-#endif
-
-  // wait untill it be
-  return evt->wait(time);
-}
-
-template<class Axis>
-bool REvent<Axis>
-//
-::signalled() const
-{
-  assert(evt);
-  return evt->signalled();
-}
-#endif
-
 #endif

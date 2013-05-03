@@ -28,11 +28,53 @@ public:
   const UniversalEvent event;
 };
 
+#if 0
+class RStateChangeSubscriber
+{
+public:
+  //! the "update parent" callback on state changing in
+  //! the `object'.
+  virtual void state_changed
+	 (AbstractObjectWithStates* object) = 0;
+  //! Terminal state means 
+  //! 1) no more state activity;
+  //! 2) the object can be deleted (there are no more
+  //! dependencies on it).
+  virtual CompoundEvent is_terminal_state() const = 0;
+};
+#endif
+
+class RObjectWithStatesBase
+{
+public:
+  virtual ~RObjectWithStatesBase();
+  //void register_subscriber(RStateChangeSubscriber*);
+  void register_subscriber(RObjectWithStatesBase*);
+  //! the "update parent" callback on state changing in
+  //! the `object'.
+  void state_changed(AbstractObjectWithStates* object);
+  //! Terminal state means 
+  //! 1) no more state activity;
+  //! 2) the object can be deleted (there are no more
+  //! dependencies on it).
+  virtual CompoundEvent is_terminal_state() const = 0;
+protected:
+  //! No more changes in subscribers list
+  std::atomic<bool> is_frozen;
+  std::atomic<bool> is_changing;
+  //! Registered subscribers
+  //std::set<RStateChangeSubscriber*> subscribers;
+  std::set<RObjectWithStatesBase*> subscribers;
+  //! All subscribers terminal states.
+  std::set<CompoundEvent> subscribers_terminals;
+};
+
 //! It can be used as a parent of an object which
 //! introduces new state axis.
 template<class Axis>
 class RObjectWithStates 
-  : public ObjectWithStatesInterface<Axis>
+: public virtual ObjectWithStatesInterface<Axis>,
+  public RObjectWithStatesBase
 {
 public:
   typedef typename ObjectWithStatesInterface<Axis>
@@ -45,6 +87,12 @@ public:
   virtual ~RObjectWithStates() {}
 
   RObjectWithStates& operator=(const RObjectWithStates&);
+
+  void state_changed(AbstractObjectWithStates* object) 
+	 override
+  {
+	 RObjectWithStatesBase::state_changed(object);
+  }
 
 protected:
 
@@ -70,13 +118,15 @@ using REvent = RMixedEvent<Axis, Axis>;
 template<class Axis>
 class RObjectWithEvents
 : public RObjectWithStates<Axis>,
-  public ObjectWithEventsInterface<Axis>
+  public virtual ObjectWithEventsInterface<Axis>
 {
   template<class Axis1, class Axis2> 
 	 friend class RMixedEvent;
   friend class RState<Axis>;
   template<class Axis1, class Axis2> 
 	 friend class RMixedAxis;
+  template<class Axis1, class Axis2> 
+	 friend class RStateSplitter;
 public:
   typedef RObjectWithStates<Axis> Parent;
   typedef typename Parent::State State;
@@ -95,7 +145,7 @@ protected:
   }
 
   //! Query an event object by UniversalEvent. 
-  const Event get_event
+  Event get_event
 	 (const UniversalEvent& ue) const override
   {
 	 return get_event_impl(ue);
@@ -120,37 +170,64 @@ private:
   Event get_event_impl(const UniversalEvent&) const;
 };
 
-//! It delegates a part of states and eventsto another
-//! class.
-template<class Axis, class DerivedAxis>
-class RStatesDelegator 
-  : public ObjectWithStatesInterface<Axis>,
-    public ObjectWithEventsInterface<Axis>
+template <class Axis>
+class RStateDelegator
+: public virtual ObjectWithStatesInterface<Axis>
 {
 public:
-  typedef typename ObjectWithStatesInterface<Axis>
+  RStateDelegator(RObjectWithStates<Axis>* a_delegate)
+	 : delegate(a_delegate) {}
+
+  std::atomic<uint32_t>& current_state() override
+  {
+	 return delegate->current_state();
+  }
+
+  const std::atomic<uint32_t>& current_state() const 
+	 override
+  {
+	 return delegate->current_state();
+  }
+
+protected:
+  RObjectWithStates<Axis>* delegate;
+};
+
+//! It can maintain two states or delegate a "parent"
+//! part of states and events to another class ("parent"
+//! states are states from DerivedAxis). SplitAxis changes will arrive
+//! to us by state_change() notification. DerivedAxis
+//! changes are local and not propagated to a delegate yet
+//! (TODO).
+//! <NB> Both delegate and splitter maintain different and
+//! not intersected sets of events. It is also possible to have
+//! 2 events set on different axes on the same time.
+
+template<class DerivedAxis, class SplitAxis>
+class RStateSplitter 
+  : public RObjectWithEvents<DerivedAxis>,
+  public RStateDelegator<SplitAxis>,
+  public virtual ObjectWithEventsInterface<SplitAxis>
+{
+public:
+  typedef typename ObjectWithStatesInterface<DerivedAxis>
 	 ::State State;
   
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
-  RStatesDelegator
-	 (ObjectWithStatesInterface<Axis>* a_delegate,
-	  //const RState<DerivedAxis>& not_delegate_from,
+  RStateSplitter
+	 (RObjectWithEvents<SplitAxis>* a_delegate,
 	  const State& initial_state);
-  RStatesDelegator(const RStatesDelegator&) = delete;
 
-  RStatesDelegator* operator=
-	 (const RStatesDelegator&) = delete;
+  RStateSplitter(const RStateSplitter&) = delete;
 
-  std::atomic<uint32_t>& current_state() override;
+  RStateSplitter* operator=
+	 (const RStateSplitter&) = delete;
 
-  const std::atomic<uint32_t>&
-	 current_state() const override;
-
+protected:
   Event get_event(const UniversalEvent& ue) override;
 
-  const Event get_event
-	 (const UniversalEvent& ue) const override;
+  Event get_event(const UniversalEvent& ue) const override;
 
   Event create_event
 	 (const UniversalEvent&) const override;
@@ -158,9 +235,15 @@ public:
   void update_events
 	 (TransitionId trans_id, uint32_t to) override;
 
-protected:
-  ObjectWithStatesInterface<Axis>* delegate;
-  uint16_t not_delegate;
+  //! Select this or delegate depending on the event.
+  //! \return true if it is from DerivedAxis
+  bool is_this_event_store
+	 (const UniversalEvent& ue) const;
+
+  RObjectWithEvents<SplitAxis>* delegate;
+  //uint16_t not_delegate;
+  const uint16_t split_state_id;
+  const TransitionId split_transition_id;
 };
 
 #endif

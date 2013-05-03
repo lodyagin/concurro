@@ -158,6 +158,11 @@ public:
 	 return evt_ptr->h < b.evt_ptr->h;
   }
 
+  bool operator== (const Event& b) const
+  {
+	 return evt_ptr == b.evt_ptr;
+  }
+
   bool wait(int time = -1)
   { 
 	 return evt_ptr->wait(time); 
@@ -229,6 +234,13 @@ public:
   CompoundEvent& operator= (CompoundEvent&&);
   CompoundEvent& operator= (const CompoundEvent&);
 
+  bool operator== (const CompoundEvent& b) const
+  {
+	 return handle_set == b.handle_set;
+  }
+
+  bool operator< (const CompoundEvent& b) const;
+
   const CompoundEvent& operator|= (const Event&); //UT+
   CompoundEvent& operator|= (const CompoundEvent&);
 
@@ -243,11 +255,7 @@ public:
 	 return wait_impl(time);
   }
 
-  bool isSignalled(){
-  	for(auto &i : handle_set)
-  		if (i.signalled()) return true;
-  	return false;
-  }
+  bool isSignalled();
 
   //! A number of unique events inside.
   size_t size() const

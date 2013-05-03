@@ -34,6 +34,12 @@ public:
 
   virtual ~RWindow() {}
 
+  CompoundEvent is_terminal_state() const
+  {
+	 //<NB> it is always terminal
+	 return CompoundEvent();
+  }
+
   size_t size() const;
 
   RWindow& operator= (RWindow&);
@@ -86,6 +92,11 @@ public:
 
   RConnectedWindow(RSocketBase* sock);
   virtual ~RConnectedWindow();
+
+  CompoundEvent is_terminal_state() const
+  {
+	 return is_ready_event;
+  }
 
   void forward_top(size_t);
 

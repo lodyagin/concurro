@@ -223,6 +223,32 @@ CompoundEvent& CompoundEvent
   return *this;
 }
 
+bool CompoundEvent
+::operator< (const CompoundEvent& b) const
+{
+  const int diff = handle_set.size() - b.handle_set.size();
+  if (diff < 0)
+	 return true;
+  else if (diff > 0)
+	 return false;
+  
+  auto mis = std::mismatch(handle_set.begin(), 
+									handle_set.end(),
+									b.handle_set.begin());
+  return *mis.first < *mis.second;
+}
+
+bool CompoundEvent::isSignalled()
+{
+  if (handle_set.empty())
+	 return true;
+  for(auto &i : handle_set) {
+	 if (i.signalled()) 
+		return true;
+  }
+  return false;
+}
+
 bool CompoundEvent::wait_impl(int time) const
 {
   if (time != -1) {
@@ -237,6 +263,10 @@ bool CompoundEvent::wait_impl(int time) const
 				  << ">\t event " << *this
 				  << ">\t waits w/o timeout");
   }
+
+  // an empty event is always signalled
+  if (handle_set.empty())
+	 return true;
 
   update_vector();
   assert(handle_vec.size() > 0);

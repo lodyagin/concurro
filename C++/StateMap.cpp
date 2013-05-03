@@ -57,7 +57,7 @@ UniversalEvent::operator UniversalState() const
 std::string UniversalEvent::name() const
 {
   if (is_arrival_event())
-	 return UniversalState(as_arrival()).name();
+	 return UniversalState(as_state_of_arrival()).name();
   else
 	 return "<todo>";
 }
@@ -137,7 +137,8 @@ StateMap::StateMap()
 	 parent(nullptr),
     n_states(0),
 	 idx2name(1),
-	 repo(&StateMapRepository::instance())
+	 repo(&StateMapRepository::instance()),
+	 max_transition_id(0)
 {
   idx2name[0] = std::string();
 }
@@ -157,7 +158,8 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 	 transitions(boost::extents
 					 [Transitions::extent_range(1,n_states+1)]
 					 [Transitions::extent_range(1,n_states+1)]),
-	 repo(dynamic_cast<StateMapRepository*>(oi.repository))
+	 repo(dynamic_cast<StateMapRepository*>(oi.repository)),
+	 max_transition_id(parent->get_max_transition_id())
 {
   // TODO check numeric_id overflow
 
@@ -184,8 +186,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   std::copy(par.states.begin(), 
 				par.states.end(),
 				idx2name.begin() + 1 
-				+ n_parent_states
-);
+				+ n_parent_states);
 
   // Fill name2idx and check repetitions
   for (StateIdx k = 0; k < idx2name.size(); k++)
@@ -230,59 +231,8 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 		  (st1, st2);
 	 }
   }
+  max_transition_id = repo->max_trans_id;
 }
-
-/*
-void StateMap::add_transitions 
-  (const StateTransition transitions[], 
-   int nTransitions)
-{
-  int transId = 1;
-
-  // Loop through all transitions and fill the tables
-  for (int i = 0; i < nTransitions; i++)
-  {
-    // Search 'from' state index by the name
-    const Name2Idx::const_iterator fromIdxIt = 
-      name2idx.find(transitions[i].from);
-
-    if (fromIdxIt == name2idx.end ())
-      throw BadParameters 
-      (std::string ("Invalid state name is [")
-      + transitions[i].from + ']'
-      );
-
-    // Search 'to' state index by the name
-    const Name2Idx::const_iterator toIdxIt = 
-      name2idx.find(transitions[i].to);
-
-    if (toIdxIt == name2idx.end ())
-      throw BadParameters 
-      (std::string ("Invalid state name is [")
-      + transitions[i].to + ']'
-      );
-
-    const StateIdx fromIdx = fromIdxIt->second;
-    const StateIdx toIdx = toIdxIt->second;
-
-    // Fill the transition code by two states lookup
-    // table.
-    if (trans2number.at (fromIdx-1).at (toIdx-1) == 0)
-    {
-      trans2number.at (fromIdx-1).at (toIdx-1) = transId;
-      number2trans.at (transId).from = fromIdx;
-      number2trans.at (transId).to = toIdx;
-      transId++;
-    }
-    else
-      LOG_WARN (log,
-		  "Transition " << transitions[i].from
-		  << " -> " << transitions[i].to
-		  << " is registered already."
-        );
-  }
-}
-*/
 
 uint32_t StateMap::create_state (const char* name) const
 {

@@ -57,6 +57,11 @@ public:
 	 std::string thread_name;
   };
 
+  CompoundEvent is_terminal_state() const
+  {
+	 return is_terminated_event;
+  }
+
   //! Contains a common thread execution code. It calls
   //! user-defined run(). It should be protected but is
   //! public for access from a derived RThread template.

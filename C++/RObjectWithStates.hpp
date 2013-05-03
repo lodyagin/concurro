@@ -10,6 +10,7 @@
 #define CONCURRO_ROBJECTWITHSTATES_HPP_
 
 #include "RObjectWithStates.h"
+#include "RState.h"
 #include <algorithm>
 
 template<class Axis>
@@ -95,6 +96,91 @@ void RObjectWithEvents<Axis>
 	 if (it != events.end())
 		it->second.set();
   }
+}
+
+template<class DerivedAxis, class SplitAxis>
+RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
+  (RObjectWithEvents<SplitAxis>* a_delegate,
+   const State& initial_state)
+  : RObjectWithEvents<DerivedAxis>(initial_state),
+	 delegate(a_delegate),
+	 split_state_id(StateMapInstance<SplitAxis>
+						 ::stateMap -> size()),
+	 split_transition_id(
+		StateMapInstance<SplitAxis>
+		::stateMap -> get_max_transition_id())
+{
+  delegate->register_subscriber(this);
+}
+
+#if 0
+template<class DerivedAxis, class SplitAxis>
+std::atomic<uint32_t>& 
+RStateSplitter<DerivedAxis, SplitAxis>
+::current_state()
+{
+}
+
+template<class DerivedAxis, class SplitAxis>
+const std::atomic<uint32_t>&
+RStateSplitter<DerivedAxis, SplitAxis>
+::current_state() const
+{
+}
+#endif
+
+template<class DerivedAxis, class SplitAxis>
+Event RStateSplitter<DerivedAxis, SplitAxis>
+::get_event(const UniversalEvent& ue)
+{
+  if (!is_this_event_store(ue))
+	 return delegate->get_event(ue);
+  else
+	 return this->RObjectWithEvents<DerivedAxis>
+		::get_event(ue);
+}
+
+template<class DerivedAxis, class SplitAxis>
+Event RStateSplitter<DerivedAxis, SplitAxis>
+::get_event (const UniversalEvent& ue) const
+{
+  if (!is_this_event_store(ue))
+	 return delegate->get_event(ue);
+  else
+	 return this->RObjectWithEvents<DerivedAxis>
+		::get_event(ue);
+}
+
+template<class DerivedAxis, class SplitAxis>
+Event RStateSplitter<DerivedAxis, SplitAxis>
+::create_event (const UniversalEvent& ue) const
+{
+  if (!is_this_event_store(ue))
+	 return delegate->create_event(ue);
+  else
+	 return this->RObjectWithEvents<DerivedAxis>
+		::create_event(ue);
+}
+
+template<class DerivedAxis, class SplitAxis>
+void RStateSplitter<DerivedAxis, SplitAxis>
+::update_events(TransitionId trans_id, uint32_t to) 
+{
+  if (!is_this_event_store(UniversalEvent(trans_id)))
+	 delegate->update_events(trans_id, to);
+  else
+	 return this->RObjectWithEvents<DerivedAxis>
+		::update_events (trans_id, to);
+}
+
+template<class DerivedAxis, class SplitAxis>
+bool RStateSplitter<DerivedAxis, SplitAxis>
+::is_this_event_store(const UniversalEvent& ue) const
+{
+  if (ue.is_arrival_event()) 
+	 return ue.as_state_of_arrival() > split_state_id;
+  else 
+	 return ue.as_transition_id() > split_transition_id;
 }
 
 #endif

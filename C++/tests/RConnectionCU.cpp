@@ -43,6 +43,13 @@ public:
 	   (const ObjectCreationInfo& oi) const
 	 {
 		assert(sock_addr);
+		socket_rep.reset(
+		  new RSocketRepository(
+			 SFORMAT("TestConnection:" << oi.objectId
+						<< ":RSocketRepository"),
+			 1,
+			 dynamic_cast<RConnectionRepository*>
+			 (oi.repository)->thread_factory));
 		socket = socket_rep->create_object(*sock_addr);
 		return new TestConnection(oi, *this);
 	 }
@@ -57,13 +64,11 @@ void test_connection()
 {
   typedef Logger<LOG::Root> log;
 
-  RSocketRepository sr
-	 ("RConnectionCU::test_connection::sr",
-	  10, 
-	  &RThreadRepository<RThread<std::thread>>::instance()
-	 );
   RConnectionRepository con_rep
-	 ("RConnectionCU::test_connection::sr", 10, &sr);
+	 ("RConnectionCU::test_connection::sr", 10, 
+	  &RThreadRepository<RThread<std::thread>>::instance()
+		);
+
   RWindow wc;
 
   auto* con = dynamic_cast<TestConnection*>
@@ -96,6 +101,5 @@ void test_connection()
   CU_ASSERT_EQUAL_FATAL(answer, a3);
   CU_ASSERT_TRUE_FATAL(
 	 STATE_OBJ(RWindow, state_is, wc, filled));
-  con->ask_close();
-  con->iw().skip_rest();
+  con->ask_abort();
 }

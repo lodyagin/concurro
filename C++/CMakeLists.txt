@@ -24,6 +24,7 @@ set (concurrent_SOURCES
   OutSocket.cpp
   RBuffer.cpp
   RMutex.cpp
+  RObjectWithStates.cpp
   RSocket.cpp
   RSocketAddress.cpp
   RSocketConnection.cpp

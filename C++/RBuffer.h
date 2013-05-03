@@ -42,6 +42,11 @@ public:
 
   RBuffer& operator=(RBuffer&& b);
 
+  CompoundEvent is_terminal_state() const
+  {
+	 return is_discharged_event;
+  }
+
   //! Prepare the buffer to charging.
   virtual void start_charging() = 0;
   virtual void clear() = 0;

@@ -41,6 +41,11 @@ public:
 	 virtual RSocketConnection* transform_object
 	   (const RSocketConnection*) const
 	 { THROW_NOT_IMPLEMENTED; }
+
+	 //! Must be inited from derived classes. We can
+	 //! maintain any scope of a socket repository: per
+	 //! connection, per connection type, global etc.
+	 mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
 
   //! Parameters to create client side of an Internet
@@ -71,8 +76,8 @@ public:
   //! Non-blocking close
   virtual void ask_close() = 0;
 
-  //! Skip all data (blocking)
-  virtual void abort() = 0;
+  //! Skip all data (non-blocking)
+  virtual void ask_abort() = 0;
 
   //! A window repostiry
   RConnectedWindowRepository win_rep;
@@ -82,7 +87,7 @@ protected:
 	 (const ObjectCreationInfo& oi,
 	  const Par& par);
 
-  RSocketRepository *const socket_rep;
+  std::shared_ptr<RSocketRepository> socket_rep;
 };
 
 std::ostream&
@@ -137,12 +142,12 @@ DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
 //! A connection which always uses only one socket
 class RSingleSocketConnection 
 : public RSocketConnection,
-  public RStatesDelegator
-  <ClientSocketAxis, ClientConnectionAxis>
+  public RStateSplitter
+  <ClientSocketAxis, ClientSocketAxis>
 {
 public:
   DECLARE_STATES(ClientConnectionAxis, State);
-  DECLARE_STATE_CONST(State, skipping);
+  DECLARE_STATE_CONST(State, aborting);
   DECLARE_STATE_CONST(State, aborted);
 
   typedef ConnectionThread<RSingleSocketConnection>
@@ -198,16 +203,17 @@ public:
 
   void ask_close() override;
 
-  void abort() override;
+  void ask_abort() override;
 
   RSocketBase* get_socket()
   {
 	 return socket;
   }
 
-  CompoundEvent is_can_abort() 
-  { 
-	 return is_can_abort_event; 
+
+  CompoundEvent is_terminal_state() const override
+  {
+	 return is_terminal_state_event;
   }
   
   std::string universal_id() const override
@@ -232,33 +238,16 @@ protected:
 
   DEFAULT_LOGGER(RSingleSocketConnection);
 
-  // delegating events to socket
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, created);
   A_DECLARE_EVENT(ClientConnectionAxis, 
 						ClientSocketAxis, 
-						connected);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						connection_timed_out);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						connection_refused);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						destination_unreachable);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						closed);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						skipping);
+						aborting);
   A_DECLARE_EVENT(ClientConnectionAxis, 
 						ClientSocketAxis, 
 						aborted);
 
 protected:
-  CompoundEvent is_can_abort_event;
+  CompoundEvent is_terminal_state_event;
+
 public:
   //! A current window
   //std::unique_ptr<RConnectedWindow> win;
@@ -279,13 +268,13 @@ public:
 	 std::vector,
 	 size_t> Parent;
 
+  RThreadFactory *const thread_factory;
+
   RConnectionRepository(const std::string& id,
 								size_t reserved,
-								RSocketRepository* sr)
-	 : Parent(id, reserved), sock_rep(sr)
+								RThreadFactory *const tf)
+	 : Parent(id, reserved), thread_factory(tf)
   {}
-
-  RSocketRepository *const sock_rep;
 };
 
 #endif

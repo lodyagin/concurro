@@ -61,6 +61,7 @@ DEFINE_STATES(
 										  {"s3", "s2"}});
 
 DEFINE_STATE_CONST(DerivedObject, State, q1);
+DEFINE_STATE_CONST(SplittedStateObject, State, q1);
 
 void test_move_to()
 {
@@ -209,12 +210,12 @@ void test_derived_axis()
   // but in DerivedAxis is possible
   RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (orig, TestObject::s3State);
-  // no is possible to move in TestAxis again
   try {
 	 STATE_OBJ(TestObject, move_to, orig, s2);
 	 CU_FAIL_FATAL("No transition s3->s2 for orig");
   }
   catch (const InvalidStateTransition&) {}
+  // now it is possible to move in TestAxis again
   STATE_OBJ(TestObject, move_to, orig, s5);
   CU_ASSERT_TRUE_FATAL(
 	 STATE_OBJ(TestObject, state_is, orig, s5));
@@ -231,6 +232,68 @@ void test_derived_axis()
   CU_ASSERT_TRUE_FATAL(
 	 TestObject::State::state_in
 	 (derived, {TestObject::s3State}));
+}
+
+#define TEST_SPLITTED(st1, st2) \
+{ \
+  CU_ASSERT_TRUE_FATAL( \
+    STATE_OBJ(TestObject, state_is, original, s4)); \
+  CU_ASSERT_TRUE_FATAL( \
+    STATE_OBJ(TestObject, state_is, derived, s1)); \
+} while(0)
+
+void test_splitted_axis()
+{
+  TestObject original;
+  SplittedStateObject derived(&original);
+
+  STATE_OBJ(TestObject, move_to, derived, s2);
+  STATE_OBJ(TestObject, move_to, derived, s4);
+  TEST_SPLITTED(s4, s4);
+  STATE_OBJ(TestObject, move_to, derived, s1);
+  TEST_SPLITTED(s4, s1); // a state is splitted
+
+  // orig movement
+  STATE_OBJ(TestObject, move_to, original, s5);
+  TEST_SPLITTED(s5, s5); // due to state_changed
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (original, DerivedObject::q1State);
+  TEST_SPLITTED(q1, q1);
+  // unable to move orig in TestAxis now
+  try {
+	 STATE_OBJ(TestObject, move_to, original, s3);
+  }
+  catch (const InvalidState& ex) {
+	 CU_ASSERT_EQUAL_FATAL(ex.state, 
+								  DerivedObject::q1State);
+  }
+  TEST_SPLITTED(q1, q1);
+  // but in DerivedAxis is possible
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (original, TestObject::s3State);
+  TEST_SPLITTED(s3, s3);
+  try {
+	 STATE_OBJ(TestObject, move_to, original, s2);
+	 CU_FAIL_FATAL("No transition s3->s2 for orig");
+  }
+  catch (const InvalidStateTransition&) {}
+  TEST_SPLITTED(s3, s3);
+  // now it is possible to move in TestAxis again
+  STATE_OBJ(TestObject, move_to, original, s5);
+  TEST_SPLITTED(s5, s5);
+  // derived movement
+  STATE_OBJ(TestObject, move_to, derived, s2);
+  TEST_SPLITTED(s5, s2);
+  STATE_OBJ(TestObject, move_to, derived, s3);
+  TEST_SPLITTED(s5, s3);
+  STATE_OBJ(TestObject, move_to, derived, s5);
+  TEST_SPLITTED(s5, s5);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, DerivedObject::q1State);
+  TEST_SPLITTED(s5, q1);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, DerivedObject::s3State);
+  TEST_SPLITTED(s5, s3);
 }
 
 

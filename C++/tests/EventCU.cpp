@@ -7,6 +7,7 @@ void test_auto_reset();
 void test_wait_for_any();
 void test_event_2threads();
 void test_shadow();
+void test_empty_compound();
 
 CU_TestInfo EventTests[] = {
   {"manual reset", test_manual_reset},
@@ -14,6 +15,7 @@ CU_TestInfo EventTests[] = {
   {"wait for any", test_wait_for_any},
   {"2 threads wait while event not set", test_event_2threads},
   {"test a shadow of an event", test_shadow},
+  {"an empty compound event", test_empty_compound},
   CU_TEST_INFO_NULL
 };
 
@@ -284,3 +286,9 @@ void test_shadow()
   CU_ASSERT_TRUE_FATAL(ev.wait_shadow(TAU));
 }
 
+void test_empty_compound()
+{
+  CompoundEvent ce;
+  CU_ASSERT_TRUE_FATAL(ce.wait(TAU));
+  CU_ASSERT_TRUE_FATAL(ce.isSignalled());
+}

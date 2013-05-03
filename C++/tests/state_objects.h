@@ -1,6 +1,8 @@
 #ifndef SOUPTCP_TESTS_STATE_OBJECTS_H_
 #define SOUPTCP_TESTS_STATE_OBJECTS_H_
 
+#include "CUnit.h"
+
 DECLARE_AXIS(TestAxis, StateAxis);
 class TestObject : public RObjectWithEvents<TestAxis>
 {
@@ -23,6 +25,11 @@ public:
 	 return "?";
   }
 
+  CompoundEvent is_terminal_state() const override
+  {
+	 return CompoundEvent();
+  }
+
 protected:
   DEFAULT_LOGGER(TestObject)
 };
@@ -40,6 +47,45 @@ public:
 	 : CONSTRUCT_EVENT(s1),
 	 CONSTRUCT_EVENT(q1)
   {}
+};
+
+class SplittedStateObject : 
+public RStateSplitter<DerivedAxis, TestAxis>
+{
+public:
+  DECLARE_STATES(DerivedAxis, State);
+  DECLARE_STATE_CONST(State, q1);
+
+  SplittedStateObject(TestObject* orig)
+	 : RStateSplitter<DerivedAxis, TestAxis>
+	 (orig, q1State) 
+  {}
+
+  // sync a state delegate -> this
+  void state_changed(AbstractObjectWithStates* object) 
+	 override
+  {
+	 if (object != this) {
+		auto* obj1 = dynamic_cast<TestObject*>(object);
+		auto* obj2 = dynamic_cast<TestObject*>(delegate);
+		CU_ASSERT_PTR_EQUAL_FATAL(obj1, obj2);
+		CU_ASSERT_PTR_NOT_NULL_FATAL(obj1);
+		RAxis<DerivedAxis>::move_to(
+		  *this, RState<TestAxis>(*obj1));
+	 }
+  }
+
+  CompoundEvent is_terminal_state() const override
+  {
+	 return CompoundEvent();
+  }
+
+  std::string universal_id() const override
+  {
+	 return "?";
+  }
+
+  DEFAULT_LOGGER(SplittedStateObject);
 };
 
 #endif

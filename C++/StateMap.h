@@ -127,14 +127,20 @@ public:
   //! A name as "<state>" or "<state>-><state>"
   std::string name() const; 
 
-protected:
-  uint32_t   id;
-
-  uint32_t as_arrival() const
+  uint32_t as_state_of_arrival() const
   { 
 	 assert (is_arrival_event());
 	 return id & ~Mask; 
   }
+
+  TransitionId as_transition_id() const
+  {
+	 assert(!is_arrival_event());
+	 return id;
+  }
+
+protected:
+  uint32_t   id;
 };
 
 std::ostream&
@@ -310,6 +316,11 @@ public:
   void get_states(TransitionId trans_id,
 						uint32_t& from, uint32_t& to);
 
+  TransitionId get_max_transition_id() const
+  {
+	 return max_transition_id;
+  }
+
   const std::string universal_object_id;
   const int16_t numeric_id;
 
@@ -330,6 +341,8 @@ protected:
   Transitions transitions;
   Transition2States trans2states;
   StateMapRepository* repo;
+  //! Max transition id in this map
+  TransitionId max_transition_id;
 
   StateMap(const ObjectCreationInfo& oi,
 			  const StateMapParBase& par);

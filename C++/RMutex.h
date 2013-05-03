@@ -44,6 +44,7 @@ public:
 
   void acquire(const log4cxx::spi::LocationInfo& debug_location);
   void release(const log4cxx::spi::LocationInfo& debug_location);
+  bool is_locked();
 
   const std::string get_name () const { return name; }
 
@@ -161,6 +162,11 @@ inline void RMutex::release(const log4cxx::spi::LocationInfo& debug_location)
   /*  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
 					 debug_location);
   */
+}
+
+inline bool RMutex::is_locked()
+{
+  return !mx.try_lock();
 }
 
 // RMutex::Lock  =====================================================

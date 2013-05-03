@@ -35,7 +35,7 @@ public:
 
   const CompoundEvent is_terminal_state_event;
 
-  CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
 	 return is_terminal_state_event;
   }

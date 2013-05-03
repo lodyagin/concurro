@@ -63,6 +63,11 @@ public:
 	 return RT::universal_id();
   }
 
+  CompoundEvent is_terminal_state() const
+  {
+	 return CompoundEvent();
+  }
+
   DEFAULT_LOGGER(Test)
 };
 

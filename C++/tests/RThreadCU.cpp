@@ -51,7 +51,7 @@ public:
 
   DEFAULT_LOGGER(T1);
 
-  const CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
 	 return is_check_passed_event
 		| is_check_failed_event;
