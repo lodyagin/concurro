@@ -54,7 +54,15 @@ struct StateMapInstance
 {
   static StateMap* stateMap;
   //! initialize the stateMap member if it is nullptr
-  static void init(const StateMapPar<Axis>& par);
+  static StateMapId init();
+};
+
+//! Dummy StateAxis specialization of StateMapInstance
+//! (to alloc recursive init).
+template<>
+struct StateMapInstance<StateAxis> 
+{
+  static StateMapId init() { return 0; }
 };
 
 template<class Axis, class Axis2>
@@ -64,11 +72,13 @@ class RMixedAxis : public Axis,
 public:
   typedef Axis axis;
 
-  RMixedAxis(
+  RMixedAxis();
+
+  /*RMixedAxis(
 	 std::initializer_list<const char*> states,
 	 std::initializer_list<
 	 std::pair<const char*, const char*>> transitions
-	 );
+	 );*/
 
   //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
@@ -135,24 +145,28 @@ protected:
   RMixedAxis(const StateMapPar<Axis>& par);
 };
 
-#define DECLARE_AXIS(axis, parent) \
+#define DECLARE_AXIS(axis, parent, pars...)		\
 struct axis : public parent \
 { \
   typedef parent Parent; \
   static axis self_; \
-};			
+  static StateMapPar<axis> get_state_map_par() \
+  {	\
+	 return StateMapPar<axis>(pars, \
+	   StateMapInstance<typename axis::Parent>::init()); \
+  } \
+};	\
+template class RMixedAxis<axis, axis>;	\
+template class RState<axis>; \
+template class RMixedEvent<axis, axis>;		
+	
 
 #define DECLARE_STATES(axis, state_class)	\
   typedef RAxis<axis> state_class; \
   friend RAxis<axis>;
 
-
-#define DEFINE_STATES(axis, pars...)	\
-  template class RMixedAxis<axis, axis>;				\
-  template class RState<axis>; \
-  template class RMixedEvent<axis, axis>;			\
-  static RAxis<axis> raxis__ ## axis (pars); 
-
+#define DEFINE_STATES(axis)				\
+  static RAxis<axis> raxis__ ## axis; 
 
 #define DECLARE_STATE_CONST(state_class, state)	\
   static const RState<state_class::axis> state ## State;

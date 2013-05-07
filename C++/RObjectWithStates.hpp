@@ -100,18 +100,28 @@ void RObjectWithEvents<Axis>
 
 template<class DerivedAxis, class SplitAxis>
 RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
-  (RObjectWithEvents<SplitAxis>* a_delegate,
-   const State& initial_state)
+(//RObjectWithEvents<SplitAxis>* a_delegate,
+   const State& initial_state/*,
+										 const CompoundEvent& terminal_event*/)
   : RObjectWithEvents<DerivedAxis>(initial_state),
-	 delegate(a_delegate),
+	 delegate(nullptr),
 	 split_state_id(StateMapInstance<SplitAxis>
 						 ::stateMap -> size()),
 	 split_transition_id(
 		StateMapInstance<SplitAxis>
 		::stateMap -> get_max_transition_id())
 {
+  //delegate->register_subscriber(that, terminal_event);
+}
+
+template<class DerivedAxis, class SplitAxis>
+void RStateSplitter<DerivedAxis, SplitAxis>
+::add_delegate(RObjectWithEvents<SplitAxis>* a_delegate)
+{
+  delegate = a_delegate;
   delegate->register_subscriber(this);
 }
+
 
 #if 0
 template<class DerivedAxis, class SplitAxis>

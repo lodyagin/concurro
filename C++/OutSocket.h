@@ -14,7 +14,19 @@
 #include "RThread.h"
 #include "RState.h"
 
-DECLARE_AXIS(OutSocketAxis, StateAxis);
+DECLARE_AXIS(OutSocketAxis, StateAxis,
+  {   "wait_you",  // write buf watermark or an error
+		"busy",
+		"closed",
+		"error"
+  },
+  { {"wait_you", "busy"},
+	 {"busy", "wait_you"},
+	 {"wait_you", "closed"},
+	 {"wait_you", "error"},
+	 {"error", "closed"},
+	 {"busy", "closed"} }
+);
 
 class OutSocket
 : public RObjectWithEvents<OutSocketAxis>,

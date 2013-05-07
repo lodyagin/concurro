@@ -23,7 +23,21 @@
 #endif
 #include <list>
 
-DECLARE_AXIS(SocketBaseAxis, StateAxis);
+DECLARE_AXIS(SocketBaseAxis, StateAxis,
+  {
+  "created",
+  "ready",
+  "closed",
+  "error"
+  },
+  { {"created", "ready"},
+	 {"created", "closed"},
+    {"created", "error"},
+    {"ready", "error"},
+	 {"ready", "closed"},
+	 {"closed", "closed"},
+	 {"closed", "error"}
+  });
 
 class RSocketRepository;
 class SocketThread;

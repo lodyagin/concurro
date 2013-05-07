@@ -10,40 +10,7 @@
 #include "TCPSocket.h"
 #include "ClientSocket.h"
 
-DEFINE_STATES(TCPAxis, 
-   {"created",
-    "closed",  
-	 "in_closed",    // input part of connection is closed
-	 "out_closed",
-	 "listen",       // passive open
-    "accepting",    // in the middle of a new ServerSocket
-						  // creation
-	 "established",
-	 "closing",      // fin-wait, time-wait, closing,
-						  // close-wait, last-ack
-	 //"aborted",   // see RFC793, 3.8 Abort
-	 "connection_timed_out",
-	 "connection_refused",
-	 "destination_unreachable"
-	 },
-  {
-  {"created", "listen"},      // listen()
-  {"listen", "accepting"}, // connect() from other side
-  {"accepting", "listen"},
-  {"listen", "closed"},
-  {"created", "established"}, // initial send() is
-										 // recieved by other side
-  {"created", "closed"},     // ask close() or timeout 
-  {"established", "closing"}, // our close() or FIN from
-										// other side
-  {"established", "in_closed"},
-  {"established", "out_closed"},
-  {"closing", "closed"},
-  {"in_closed", "closed"},
-  {"out_closed", "closed"},
-  {"closed", "closed"}
-  }
-  );
+DEFINE_STATES(TCPAxis);
 
 DEFINE_STATE_CONST(TCPSocket, State, created);
 DEFINE_STATE_CONST(TCPSocket, State, closed);

@@ -8,6 +8,7 @@ void test_move_to();
 void test_compare_and_move_single();
 void test_compare_and_move_set();
 void test_derived_axis();
+void test_splitted_axis();
 
 CU_TestInfo RStateTests[] = {
   {"RState::move_to(obj, to)", test_move_to},
@@ -15,17 +16,10 @@ CU_TestInfo RStateTests[] = {
 	test_compare_and_move_single},
   {"RState::compare_and_move(obj, from_set, to)", 
 	test_compare_and_move_set},
-  {"derived axis", 
-	test_derived_axis},
+  {"derived axis", test_derived_axis},
+  {"splitted axis", test_splitted_axis},
   CU_TEST_INFO_NULL
 };
-
-struct A {
-  static A axis_;
-};
-DECLARE_AXIS( B, A);
-DECLARE_AXIS(C, B);
-DECLARE_AXIS(D, A);
 
 // init the test suite
 int RStateCUInit() 
@@ -39,14 +33,7 @@ int RStateCUClean()
   return 0;
 }
 
-DEFINE_STATES(
-  TestAxis,
-  {"s1", "s2", "s3", "s4", "s5"},
-  { {"s1", "s2"},
-	 {"s2", "s3"},
-	 {"s2", "s4"},
-	 {"s3", "s5"},
-	 {"s4", "s5"}});
+DEFINE_STATES(TestAxis);
 
 DEFINE_STATE_CONST(TestObject, State, s1);
 DEFINE_STATE_CONST(TestObject, State, s2);
@@ -54,13 +41,10 @@ DEFINE_STATE_CONST(TestObject, State, s3);
 DEFINE_STATE_CONST(TestObject, State, s4);
 DEFINE_STATE_CONST(TestObject, State, s5);
 
-DEFINE_STATES(
-  DerivedAxis,
-  {"q1"},
-  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"},
-										  {"s3", "s2"}});
+DEFINE_STATES(DerivedAxis);
 
 DEFINE_STATE_CONST(DerivedObject, State, q1);
+DEFINE_STATE_CONST(SplittedStateObject, State, s1);
 DEFINE_STATE_CONST(SplittedStateObject, State, q1);
 
 void test_move_to()
@@ -234,13 +218,25 @@ void test_derived_axis()
 	 (derived, {TestObject::s3State}));
 }
 
+#if 1
 #define TEST_SPLITTED(st1, st2) \
 { \
   CU_ASSERT_TRUE_FATAL( \
-    STATE_OBJ(TestObject, state_is, original, s4)); \
+    STATE_OBJ(TestObject, state_is, original, st1)); \
   CU_ASSERT_TRUE_FATAL( \
-    STATE_OBJ(TestObject, state_is, derived, s1)); \
+    STATE_OBJ(TestObject, state_is, derived, st2)); \
 } while(0)
+#else
+#define TEST_SPLITTED(st1, st2) \
+{ \
+  CU_ASSERT_TRUE_FATAL( \
+    RMixedAxis<DerivedAxis, TestAxis>::state_is \
+      (Derived
+  ); \
+  CU_ASSERT_TRUE_FATAL( \
+    STATE_OBJ(TestObject, state_is, derived, st2)); \
+} while(0)
+#endif
 
 void test_splitted_axis()
 {
@@ -248,17 +244,26 @@ void test_splitted_axis()
   SplittedStateObject derived(&original);
 
   STATE_OBJ(TestObject, move_to, derived, s2);
+  TEST_SPLITTED(s1, s2); // a state is splitted
   STATE_OBJ(TestObject, move_to, derived, s4);
-  TEST_SPLITTED(s4, s4);
-  STATE_OBJ(TestObject, move_to, derived, s1);
-  TEST_SPLITTED(s4, s1); // a state is splitted
+  TEST_SPLITTED(s1, s4);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, TestObject::s1State);
+  TEST_SPLITTED(s1, s1); 
 
   // orig movement
+  STATE_OBJ(TestObject, move_to, original, s2);
+  STATE_OBJ(TestObject, move_to, original, s3);
   STATE_OBJ(TestObject, move_to, original, s5);
   TEST_SPLITTED(s5, s5); // due to state_changed
   RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (original, DerivedObject::q1State);
-  TEST_SPLITTED(q1, q1);
+
+  RMixedAxis<DerivedAxis, TestAxis>::state_is(original, 
+									 DerivedObject::q1State);
+  RMixedAxis<DerivedAxis, TestAxis>::state_is(derived, 
+									 DerivedObject::q1State);
+
   // unable to move orig in TestAxis now
   try {
 	 STATE_OBJ(TestObject, move_to, original, s3);
@@ -267,7 +272,10 @@ void test_splitted_axis()
 	 CU_ASSERT_EQUAL_FATAL(ex.state, 
 								  DerivedObject::q1State);
   }
-  TEST_SPLITTED(q1, q1);
+  RMixedAxis<DerivedAxis, TestAxis>::state_is(original, 
+									 DerivedObject::q1State);
+  RMixedAxis<DerivedAxis, TestAxis>::state_is(derived, 
+									 DerivedObject::q1State);
   // but in DerivedAxis is possible
   RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (original, TestObject::s3State);
@@ -290,7 +298,10 @@ void test_splitted_axis()
   TEST_SPLITTED(s5, s5);
   RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (derived, DerivedObject::q1State);
-  TEST_SPLITTED(s5, q1);
+  RAxis<TestAxis>::state_is(original, 
+									 DerivedObject::s5State);
+  RMixedAxis<DerivedAxis, TestAxis>::state_is(derived, 
+									 DerivedObject::q1State);
   RMixedAxis<DerivedAxis, TestAxis>::move_to
 	 (derived, DerivedObject::s3State);
   TEST_SPLITTED(s5, s3);

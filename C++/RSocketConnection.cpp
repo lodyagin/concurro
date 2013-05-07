@@ -11,15 +11,7 @@
 #include "OutSocket.h"
 #include "ClientSocket.h"
 
-DEFINE_STATES(
-  ClientConnectionAxis,
-  { "aborting", // skiping data and closing buffers
-	 "aborted"   // after aborting
-  },
-  { { "connected", "aborting" },
-	 { "aborting", "aborted" }
-  }
-);
+DEFINE_STATES(ClientConnectionAxis);
 
 DEFINE_STATE_CONST(RSingleSocketConnection, State, 
 						 aborting);
@@ -50,8 +42,9 @@ RSingleSocketConnection::RSingleSocketConnection
    const Par& par)
  : RSocketConnection(oi, par),
 	RStateSplitter
-	 (dynamic_cast<ClientSocket*>(par.socket), 
-	  ClientSocket::createdState),
+	(
+	 ClientSocket::createdState
+	  ),
    socket(dynamic_cast<InSocket*>(par.socket)),
 	cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
 	thread(dynamic_cast<SocketThread*>
@@ -88,6 +81,7 @@ RSingleSocketConnection::RSingleSocketConnection
   assert(cli_sock);
   SCHECK(thread);
   SCHECK(in_win);
+  add_delegate(dynamic_cast<ClientSocket*>(par.socket));
   thread->start();
 }
 

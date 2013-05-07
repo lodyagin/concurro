@@ -23,8 +23,7 @@ template<class Axis>
 StateMap* StateMapInstance<Axis>::stateMap = nullptr;
 
 template<class Axis>
-void StateMapInstance<Axis>::init
-(const StateMapPar<Axis>& par)
+StateMapId StateMapInstance<Axis>::init()
 {
   if (!stateMap) {
 	 try {
@@ -34,11 +33,14 @@ void StateMapInstance<Axis>::init
 	 catch(const StateMapRepository::NoSuchId&)
 	 {
 		stateMap = StateMapRepository::instance()
-		  . create_object(par);
+		  . create_object(Axis::get_state_map_par());
 	 }
   }
+  assert(stateMap);
+  return stateMap->numeric_id;
 }
 
+#if 0
 template<class Axis, class Axis2>
 RMixedAxis<Axis, Axis2>
 //
@@ -55,15 +57,16 @@ RMixedAxis<Axis, Axis2>
   static_assert(is_ancestor<Axis2, Axis>(), 
 					 "This state mixing is invalid.");
 }
+#endif
 
 template<class Axis, class Axis2>
 RMixedAxis<Axis, Axis2>
 //
-::RMixedAxis(const StateMapPar<Axis>& par)
+::RMixedAxis(/*const StateMapPar<Axis>& par*/)
 {
   static_assert(is_ancestor<Axis2, Axis>(), 
 					 "This state mixing is invalid.");
-  StateMapInstance<Axis>::init(par);
+  StateMapInstance<Axis>::init();
 }
 
 template<class Axis, class Axis2>

@@ -11,25 +11,8 @@
 #include "Event.h"
 #include "TCPSocket.h" // TODO remove it
 
-DEFINE_STATES(ClientSocketAxis, 
-   {"created",
-    "connecting",  
-	 "connected",
-	 "connection_timed_out",
-	 "connection_refused", // got RST on SYN
-	 "destination_unreachable",
-	 "closed"
-	 },
-    { 
-		{"created", "closed"},
-		{"created", "connecting"},
-		{"connecting", "connected"},
-		{"connecting", "connection_timed_out"},
-		{"connecting", "connection_refused"},
-		{"connecting", "destination_unreachable"},
-		{"connected", "closed"}
-	 }
-);
+DEFINE_STATES(ClientSocketAxis);
+
 DEFINE_STATE_CONST(ClientSocket, State, created);
 DEFINE_STATE_CONST(ClientSocket, State, connecting);
 DEFINE_STATE_CONST(ClientSocket, State, connected);

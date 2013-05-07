@@ -1,8 +1,8 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
 /**
- * @file
- * An unified wrapper over different type of threads (i.e., QThread, posix thread etc.).
+ * @file An unified wrapper over different type of threads
+ * (i.e., QThread, posix thread etc.).
  */
 
 #ifndef CONCURRO_RTHREAD_H_
@@ -25,7 +25,25 @@
 #include <thread>
 
 //! An ancestor of all states of a thread.
-DECLARE_AXIS(ThreadAxis, StateAxis);
+DECLARE_AXIS(ThreadAxis, StateAxis,
+  {  "ready",         // after creation
+	 "starting",      
+	 "working",       
+	 "terminated"
+	 },
+  {
+    {"ready", "starting"},      // start ()
+
+    {"starting", "working"},    
+    // from a user-overrided run() method
+
+    {"working", "terminated"},  
+    // exit from a user-overrided run() 
+	 // <NB> no ready->terminated, i.e.,
+    // terminated means the run() was executed (once and
+    // only once)
+  }
+);
 
 /**
  * It is a base class for RThread. It contains the base

@@ -22,7 +22,7 @@ class AbstractObjectWithStates
 public:
   virtual ~AbstractObjectWithStates() {};
 
-#if 0
+#if 1
   //! the "update parent" callback on state changing in
   //! the `object'.
   virtual void state_changed

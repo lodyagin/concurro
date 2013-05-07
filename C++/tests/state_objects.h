@@ -3,7 +3,15 @@
 
 #include "CUnit.h"
 
-DECLARE_AXIS(TestAxis, StateAxis);
+DECLARE_AXIS(TestAxis, StateAxis,
+  {"s1", "s2", "s3", "s4", "s5"},
+  { {"s1", "s2"},
+	 {"s2", "s3"},
+	 {"s2", "s4"},
+	 {"s3", "s5"},
+	 {"s4", "s5"}}
+);
+
 class TestObject : public RObjectWithEvents<TestAxis>
 {
   DECLARE_EVENT(TestAxis, s3);
@@ -34,7 +42,12 @@ protected:
   DEFAULT_LOGGER(TestObject)
 };
 
-DECLARE_AXIS(DerivedAxis, TestAxis);
+DECLARE_AXIS(DerivedAxis, TestAxis,
+  {"q1"},
+  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"},
+										  {"s3", "s2"}}
+);
+
 class DerivedObject : public TestObject
 {
   A_DECLARE_EVENT(DerivedAxis, TestAxis, s1);
@@ -54,12 +67,14 @@ public RStateSplitter<DerivedAxis, TestAxis>
 {
 public:
   DECLARE_STATES(DerivedAxis, State);
+  DECLARE_STATE_CONST(State, s1);
   DECLARE_STATE_CONST(State, q1);
 
   SplittedStateObject(TestObject* orig)
-	 : RStateSplitter<DerivedAxis, TestAxis>
-	 (orig, q1State) 
-  {}
+	 : RStateSplitter<DerivedAxis, TestAxis>(s1State) 
+  {
+	 add_delegate(orig);
+  }
 
   // sync a state delegate -> this
   void state_changed(AbstractObjectWithStates* object) 

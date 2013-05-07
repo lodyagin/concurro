@@ -1,5 +1,9 @@
 #include "RObjectWithStates.h"
 
+RObjectWithStatesBase::RObjectWithStatesBase()
+  : is_frozen(false), is_changing(false)
+{}
+
 RObjectWithStatesBase::~RObjectWithStatesBase()
 {
   for (auto ce : subscribers_terminals)
@@ -7,7 +11,9 @@ RObjectWithStatesBase::~RObjectWithStatesBase()
 }
 
 void RObjectWithStatesBase
-::register_subscriber(RObjectWithStatesBase* sub)
+::register_subscriber
+  (RObjectWithStatesBase* sub/*, 
+										 const CompoundEvent& terminal_state*/)
 {
   // A guard
   is_changing = true;
@@ -29,7 +35,8 @@ void RObjectWithStatesBase
 {
   // A guard
   is_frozen = true;
-  if (is_changing) THROW_PROGRAM_ERROR;
+  if (is_changing) 
+	 THROW_PROGRAM_ERROR;
 
   for (auto sub : subscribers) 
 	 sub->state_changed(object);

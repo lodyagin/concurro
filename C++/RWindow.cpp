@@ -10,44 +10,16 @@
 #include "RWindow.h"
 #include "RThread.hpp"
 
-DEFINE_STATES(
-  WindowAxis,
-  {
-	 "ready",
-	 "filling",
-	 "filled",
-	 "welded"
-  },
-  {
-	 {"ready", "filling"},
-    {"filling", "filled"},
-    {"filled", "welded"},
-    {"welded", "filled"}, // by copy
-	 {"welded", "ready"} // by move
-  }
-  );
+DEFINE_STATES(WindowAxis);
 
 DEFINE_STATE_CONST(RWindow, State, ready);
 DEFINE_STATE_CONST(RWindow, State, filling);
 DEFINE_STATE_CONST(RWindow, State, filled);
 DEFINE_STATE_CONST(RWindow, State, welded);
 
-#if 0
-DEFINE_STATES(
-  ConnectedWindowAxis,
-  {
-	 //"destroyed" // as a final point for "skipping"
-  },
-  {
-	 {"ready", "skipping"},
-    {"filling", "skipping"},
-	 {"filled", "skipping"},
-    {"skipping", "destroyed"}
-  }
-  );
+DEFINE_STATES(ConnectedWindowAxis);
 
-DEFINE_STATE_CONST(RConnectedWindow, State, destroyed);
-#endif
+//DEFINE_STATE_CONST(RConnectedWindow, State, destroyed);
 
 RWindow::RWindow(const std::string& id)
 : RObjectWithEvents<WindowAxis>(readyState),

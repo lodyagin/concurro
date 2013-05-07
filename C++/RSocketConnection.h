@@ -137,7 +137,14 @@ protected:
   Connection* con;
 };
 
-DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
+DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis,
+  { "aborting", // skiping data and closing buffers
+	 "aborted"   // after aborting
+  },
+  { { "connected", "aborting" },
+	 { "aborting", "aborted" }
+  }
+);
 
 //! A connection which always uses only one socket
 class RSingleSocketConnection 

@@ -14,7 +14,22 @@
 #include "RThread.h"
 #include "RState.h"
 
-DECLARE_AXIS(InSocketAxis, StateAxis);
+DECLARE_AXIS(InSocketAxis, StateAxis,
+  {   "new_data",  // new data or an error
+      "empty",
+      "closed",
+		"error"
+//		"destroyed"
+  },
+  { {"new_data", "empty"},
+  {"empty", "new_data"},
+  {"new_data", "closed"},
+  {"empty", "closed"},
+  {"empty", "error"},
+  {"error", "closed"}//,
+//  {"closed", "destroyed"}
+  }
+);
 
 class InSocket
 : public RObjectWithEvents<InSocketAxis>,

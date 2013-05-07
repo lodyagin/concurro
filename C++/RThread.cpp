@@ -14,26 +14,7 @@
 
 // RThread states  ========================================
 
-DEFINE_STATES(
-  ThreadAxis,
-  {  "ready",         // after creation
-	 "starting",      
-	 "working",       
-	 "terminated"
-	 },
-  {
-    {"ready", "starting"},      // start ()
-
-    {"starting", "working"},    
-    // from a user-overrided run() method
-
-    {"working", "terminated"},  
-    // exit from a user-overrided run() 
-	 // <NB> no ready->terminated, i.e.,
-    // terminated means the run() was executed (once and
-    // only once)
-  }
-);
+DEFINE_STATES(ThreadAxis);
 
 DEFINE_STATE_CONST(RThreadBase, ThreadState, ready);
 DEFINE_STATE_CONST(RThreadBase, ThreadState, starting);

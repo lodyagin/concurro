@@ -17,21 +17,7 @@
 /*========== RSocketBase ==========*/
 /*=================================*/
 
-DEFINE_STATES(SocketBaseAxis, 
-  {
-  "created",
-  "ready",
-  "closed",
-  "error"
-  },
-  { {"created", "ready"},
-	 {"created", "closed"},
-    {"created", "error"},
-    {"ready", "error"},
-	 {"ready", "closed"},
-	 {"closed", "closed"},
-	 {"closed", "error"}
-  });
+DEFINE_STATES(SocketBaseAxis);
 
 DEFINE_STATE_CONST(RSocketBase, State, created);
 DEFINE_STATE_CONST(RSocketBase, State, ready);

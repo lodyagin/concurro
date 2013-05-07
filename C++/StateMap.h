@@ -197,15 +197,15 @@ typedef int16_t StateMapId;
 class StateMapParBase
 {
 public:
-  std::initializer_list<const char*> states;
-  std::initializer_list<
-    std::pair<const char*, const char*>> transitions;
+  std::set<std::string> states;
+  std::set<
+    std::pair<std::string, std::string>> transitions;
   StateMapId parent_map;
 
   StateMapParBase (
-	 std::initializer_list<const char*> states_,
+	 std::initializer_list<std::string> states_,
 	 std::initializer_list<
-	 std::pair<const char*, const char*>> transitions_,
+	 std::pair<std::string, std::string>> transitions_,
 	 StateMapId parent_map_
 	 )
 	 : states(states_), transitions(transitions_),
@@ -232,9 +232,9 @@ class StateMapPar : public StateMapParBase
 public:
   // TODO add complex states (with several axises).
   StateMapPar (
-	 std::initializer_list<const char*> states,
+	 std::initializer_list<std::string> states,
 	 std::initializer_list<
-	 std::pair<const char*, const char*>> transitions,
+	 std::pair<std::string, std::string>> transitions,
 	 StateMapId parent_map_ = 0 // default is top level
 	 )
 	 : StateMapParBase(states, transitions, parent_map_) 

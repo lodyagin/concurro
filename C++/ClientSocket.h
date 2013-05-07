@@ -11,7 +11,25 @@
 
 #include "RSocket.h"
 
-DECLARE_AXIS(ClientSocketAxis, StateAxis);
+DECLARE_AXIS(ClientSocketAxis, StateAxis,
+   {"created",
+    "connecting",  
+	 "connected",
+	 "connection_timed_out",
+	 "connection_refused", // got RST on SYN
+	 "destination_unreachable",
+	 "closed"
+	 },
+    { 
+		{"created", "closed"},
+		{"created", "connecting"},
+		{"connecting", "connected"},
+		{"connecting", "connection_timed_out"},
+		{"connecting", "connection_refused"},
+		{"connecting", "destination_unreachable"},
+		{"connected", "closed"}
+	 }
+);
 
 class ClientSocket : virtual public RSocketBase,
   public RObjectWithEvents<ClientSocketAxis>

@@ -16,7 +16,23 @@
 #include <list>
 
 //! A data buffer states axis
-DECLARE_AXIS(DataBufferStateAxis, StateAxis);
+DECLARE_AXIS(DataBufferStateAxis, StateAxis,
+  {   "charging", // is locked for filling
+      "charged", // has data
+		"discharged", // data was red (moved)
+		"welded"  // own a buffer together with another
+					 // RBuffer
+		},
+  { {"discharged", "charging"},
+	 {"charging", "charged"},
+		//{"charging", "discharged"}, 
+		// there is a week control if its enabled
+	 {"discharged", "welded"},
+	 {"welded", "discharged"},
+	 {"welded", "charged"},
+    {"charged", "discharged"}}
+);
+
 
 /**
  * A data buffer.

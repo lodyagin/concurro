@@ -36,7 +36,11 @@ typedef RThread<std::thread> RT;
 
 static const std::chrono::milliseconds ms100(100);
 
-DECLARE_AXIS(CDAxis, StateAxis);
+DECLARE_AXIS(CDAxis, StateAxis,
+ {"charged", "discharged"},
+  {{"charged", "discharged"}, {"discharged", "charged"}}
+);
+
 class Test : public RObjectWithEvents<CDAxis>,
 				 public RT
 {
@@ -71,10 +75,7 @@ public:
   DEFAULT_LOGGER(Test)
 };
 
-DEFINE_STATES(CDAxis, 
- {"charged", "discharged"},
-  {{"charged", "discharged"}, {"discharged", "charged"}}
-);
+DEFINE_STATES(CDAxis);
 
 DEFINE_STATE_CONST(Test, State, charged);
 DEFINE_STATE_CONST(Test, State, discharged);

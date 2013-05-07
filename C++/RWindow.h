@@ -15,7 +15,21 @@
 #include "RThread.h"
 #include "RObjectWithStates.h"
 
-DECLARE_AXIS(WindowAxis, StateAxis);
+DECLARE_AXIS(WindowAxis, StateAxis,
+  {
+	 "ready",
+	 "filling",
+	 "filled",
+	 "welded"
+  },
+  {
+	 {"ready", "filling"},
+    {"filling", "filled"},
+    {"filled", "welded"},
+    {"welded", "filled"}, // by copy
+	 {"welded", "ready"} // by move
+  }
+);
 
 class RWindow
 : public RObjectWithEvents<WindowAxis>,
@@ -61,7 +75,21 @@ protected:
   size_t sz;
 };
 
-DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
+#if 1
+DECLARE_AXIS(ConnectedWindowAxis, WindowAxis, {}, {});
+#else
+DECLARE_AXIS(ConnectedWindowAxis, WindowAxis,
+  {
+	 //"destroyed" // as a final point for "skipping"
+  },
+  {
+	 {"ready", "skipping"},
+    {"filling", "skipping"},
+	 {"filled", "skipping"},
+    {"skipping", "destroyed"}
+  }
+  );
+#endif
 
 //! A window which have live connection access.
 class RConnectedWindow : public RWindow
@@ -69,7 +97,6 @@ class RConnectedWindow : public RWindow
   friend class RSingleSocketConnection;
   friend std::ostream&
 	 operator<<(std::ostream&, const RConnectedWindow&);
-
 
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
 						ready);
