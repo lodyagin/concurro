@@ -9,34 +9,34 @@
 #include "Logging.h"
 #include <netdb.h>
 
-DECLARE_AXIS(TCPAxis, StateAxis,
-   {"created",
-    "closed",  
+DECLARE_AXIS(TCPAxis, SocketBaseAxis,
+				 {//"created",
+					//"closed",  
 	 "in_closed",    // input part of connection is closed
 	 "out_closed",
 	 "listen",       // passive open
     "accepting",    // in the middle of a new ServerSocket
 						  // creation
-	 "established",
+		//"ready",
 	 "closing",      // fin-wait, time-wait, closing,
 						  // close-wait, last-ack
 	 //"aborted",   // see RFC793, 3.8 Abort
-	 "connection_timed_out",
-	 "connection_refused",
-	 "destination_unreachable"
+	 //"connection_timed_out",
+	 //"connection_refused",
+	 //"destination_unreachable"
 	 },
   {
   {"created", "listen"},      // listen()
   {"listen", "accepting"}, // connect() from other side
   {"accepting", "listen"},
   {"listen", "closed"},
-  {"created", "established"}, // initial send() is
+  {"created", "ready"}, // initial send() is
 										 // recieved by other side
   {"created", "closed"},     // ask close() or timeout 
-  {"established", "closing"}, // our close() or FIN from
+  {"ready", "closing"}, // our close() or FIN from
 										// other side
-  {"established", "in_closed"},
-  {"established", "out_closed"},
+  {"ready", "in_closed"},
+  {"ready", "out_closed"},
   {"closing", "closed"},
   {"in_closed", "closed"},
   {"out_closed", "closed"},
@@ -45,9 +45,9 @@ DECLARE_AXIS(TCPAxis, StateAxis,
 );
 
 class TCPSocket : virtual public RSocketBase
-, public RObjectWithEvents<TCPAxis>
+, public RStateSplitter<TCPAxis, SocketBaseAxis>
 {
-  DECLARE_EVENT(TCPAxis, established);
+  DECLARE_EVENT(TCPAxis, ready);
   DECLARE_EVENT(TCPAxis, closed);
   DECLARE_EVENT(TCPAxis, in_closed);
   DECLARE_EVENT(TCPAxis, out_closed);
@@ -60,22 +60,64 @@ public:
   DECLARE_STATE_CONST(State, out_closed);
   DECLARE_STATE_CONST(State, listen);
   DECLARE_STATE_CONST(State, accepting);
-  DECLARE_STATE_CONST(State, established);
+  DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, closing);
 
   ~TCPSocket();
 
-  CompoundEvent is_terminal_state() const
+  /*CompoundEvent is_terminal_state() const
   {
 	 return is_closed_event;
-  }
+	 }*/
 
   //! Ask to close an outbound part
-  void ask_close_out();
+  void ask_close_out() override;
 
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return RSocketBase::universal_id();
+  }
+
+  void state_changed
+	 (AbstractObjectWithStates* object) override;
+
+  std::atomic<uint32_t>& current_state() override
+  { 
+	 return RStateSplitter<TCPAxis,SocketBaseAxis>
+		::current_state();
+  }
+
+  const std::atomic<uint32_t>& 
+	 current_state() const override
+  { 
+	 return RStateSplitter<TCPAxis,SocketBaseAxis>
+		::current_state();
+  }
+
+  Event get_event (const UniversalEvent& ue) override
+  {
+	 return RStateSplitter<TCPAxis,SocketBaseAxis>
+		::get_event(ue);
+  }
+
+  Event get_event (const UniversalEvent& ue) const override
+  {
+	 return RStateSplitter<TCPAxis,SocketBaseAxis>
+		::get_event(ue);
+  }
+
+  Event create_event
+	 (const UniversalEvent& ue) const override
+  {
+	 return RStateSplitter<TCPAxis,SocketBaseAxis>
+		::create_event(ue);
+  }
+
+  void update_events
+	 (TransitionId trans_id, uint32_t to) override
+  {
+	 return RStateSplitter<TCPAxis,SocketBaseAxis>
+		::update_events(trans_id, to);
   }
 
 protected:

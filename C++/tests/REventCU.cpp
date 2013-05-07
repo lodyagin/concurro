@@ -62,16 +62,20 @@ public:
 	 State::move_to(*this, dischargedState);
   }
 
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return RT::universal_id();
   }
 
-  CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
 	 return CompoundEvent();
   }
 
+  void state_changed
+	 (AbstractObjectWithStates* object) override
+  {}
+  
   DEFAULT_LOGGER(Test)
 };
 

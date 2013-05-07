@@ -58,6 +58,10 @@ public:
   TestConnection(const ObjectCreationInfo& oi,
 					  const Par& par)
 	 : RSingleSocketConnection(oi, par) {}
+
+  void state_changed
+	 (AbstractObjectWithStates* object) override
+  {}
 };
 
 void test_connection()

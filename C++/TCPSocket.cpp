@@ -18,7 +18,7 @@ DEFINE_STATE_CONST(TCPSocket, State, in_closed);
 DEFINE_STATE_CONST(TCPSocket, State, out_closed);
 DEFINE_STATE_CONST(TCPSocket, State, listen);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
-DEFINE_STATE_CONST(TCPSocket, State, established);
+DEFINE_STATE_CONST(TCPSocket, State, ready);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
 
 TCPSocket::TCPSocket
@@ -26,8 +26,8 @@ TCPSocket::TCPSocket
 	  const RSocketAddress& par)
   : 
 	 RSocketBase(oi, par),
-    RObjectWithEvents<TCPAxis> (createdState),
-	 CONSTRUCT_EVENT(established),
+    RStateSplitter<TCPAxis, SocketBaseAxis>(createdState),
+	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(closed),
 	 CONSTRUCT_EVENT(in_closed),
 	 CONSTRUCT_EVENT(out_closed),
@@ -37,18 +37,29 @@ TCPSocket::TCPSocket
 				-> create_thread(Thread::Par(this))))
 {
   SCHECK(thread);
-  this->RSocketBase::ancestor_terminals.push_back
-	 (is_terminal_state());
+  add_delegate(dynamic_cast<RSocketBase*>(this));
+  /*this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
 	 (thread->is_terminated());
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
 			NULL);
-  thread->start();
+  //thread->start();
 }
 
 TCPSocket::~TCPSocket()
 {
   LOG_DEBUG(log, "~TCPSocket()");
+}
+
+void TCPSocket::state_changed
+  (AbstractObjectWithStates* object)
+{
+  const RState<SocketBaseAxis> st(*this);
+
+  if (st == RSocketBase::readyState) {
+	 thread->start();
+  }
 }
 
 void TCPSocket::ask_close_out()
@@ -73,7 +84,7 @@ void TCPSocket::ask_close_out()
   }
 
   if (State::compare_and_move
-		(*this, establishedState, out_closedState)
+		(*this, readyState, out_closedState)
 		||
 		State::compare_and_move
 		(*this, in_closedState, closedState)
@@ -92,20 +103,12 @@ void TCPSocket::Thread::run()
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  ( socket->is_ready()
-  | socket->is_closed()
-  | socket->is_error()) . wait();
+  /*( socket->is_ready()
+	 | socket->is_terminal_state()) . wait();
 
-  if (socket->is_ready().signalled()) {
-	 TCPSocket::State::move_to
-		(*tcp_sock, establishedState);
-  }
-  else {
-	 TCPSocket::State::move_to
-		(*tcp_sock, closedState);
-	 return;
-  }
-  
+  if (socket->is_terminal_state().isSignalled())
+  return;*/
+
   // wait for close
   fd_set wfds, rfds;
   FD_ZERO(&wfds);
@@ -146,7 +149,7 @@ void TCPSocket::Thread::run()
 		if (res == 0) {
 		  if (TCPSocket::State::compare_and_move
 				(*tcp_sock, 
-				 TCPSocket::establishedState, 
+				 TCPSocket::readyState, 
 				 TCPSocket::in_closedState
 				  )
 				|| 
@@ -166,12 +169,7 @@ void TCPSocket::Thread::run()
 		  }
 		}
 		else {
-		  if (RSocketBase::State::state_in
-				(*socket, {RSocketBase::closedState,
-					 RSocketBase::errorState})) {
-			 // FIXME input message discarded here
-			 TCPSocket::State::move_to
-				(*tcp_sock, TCPSocket::closedState);
+		  if (socket->is_terminal_state().isSignalled()) {
 			 break;
 		  }
 		  else {

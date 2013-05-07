@@ -209,6 +209,9 @@ public:
   void add_delegate
 	 (RObjectWithEvents<SplitAxis>* a_delegate);
 
+  virtual void state_changed
+	 (AbstractObjectWithStates* object) = 0;
+
 protected:
   std::atomic<uint32_t>& current_state() override
   {

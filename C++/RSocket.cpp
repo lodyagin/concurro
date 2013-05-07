@@ -21,8 +21,13 @@ DEFINE_STATES(SocketBaseAxis);
 
 DEFINE_STATE_CONST(RSocketBase, State, created);
 DEFINE_STATE_CONST(RSocketBase, State, ready);
-DEFINE_STATE_CONST(RSocketBase, State, error);
 DEFINE_STATE_CONST(RSocketBase, State, closed);
+DEFINE_STATE_CONST(RSocketBase, State, 
+						 connection_timed_out);
+DEFINE_STATE_CONST(RSocketBase, State, 
+						 connection_refused);
+DEFINE_STATE_CONST(RSocketBase, State, 
+						 destination_unreachable);
 
 //! This type is only for repository creation
 RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
@@ -31,12 +36,22 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 	 RObjectWithEvents(createdState),
 	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(closed),
-	 CONSTRUCT_EVENT(error),
+	 //CONSTRUCT_EVENT(error),
+	 CONSTRUCT_EVENT(connection_timed_out),
+	 CONSTRUCT_EVENT(connection_refused),
+	 CONSTRUCT_EVENT(destination_unreachable),
 	 fd(addr.get_fd()), 
 	 is_construction_complete_event
 		("RSocketBase::construction_complete", true),
 	 repository(dynamic_cast<RSocketRepository*>
 					(oi.repository)),
+	 is_terminal_state_event {
+		is_connection_timed_out_event,
+		is_connection_refused_event,
+		is_destination_unreachable_event,
+		is_closed_event  
+	 },
+
 	 aw_ptr(addr.get_aw_ptr())
 {
   assert(fd >= 0);
@@ -63,11 +78,11 @@ void RSocketBase::set_blocking (bool blocking)
 #endif
 }
 
-void RSocketBase::process_error(int error)
+/*void RSocketBase::process_error(int error)
 {
   LOG_INFO(log, "Socket error: " << rErrorMsg(error));
   State::move_to(*this, errorState);
-}
+  }*/
 
 std::ostream&
 operator<< (std::ostream& out, const RSocketBase& s)

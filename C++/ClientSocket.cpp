@@ -9,13 +9,13 @@
 #include "StdAfx.h"
 #include "ClientSocket.h"
 #include "Event.h"
-#include "TCPSocket.h" // TODO remove it
+//#include "TCPSocket.h" // TODO remove it
 
 DEFINE_STATES(ClientSocketAxis);
 
 DEFINE_STATE_CONST(ClientSocket, State, created);
 DEFINE_STATE_CONST(ClientSocket, State, connecting);
-DEFINE_STATE_CONST(ClientSocket, State, connected);
+DEFINE_STATE_CONST(ClientSocket, State, ready);
 DEFINE_STATE_CONST(ClientSocket, State, 
 						 connection_timed_out);
 DEFINE_STATE_CONST(ClientSocket, State, 
@@ -29,28 +29,23 @@ ClientSocket::ClientSocket
 	const RSocketAddress& par)
   : 
 	 RSocketBase(oi, par),
-	 RObjectWithEvents<ClientSocketAxis>(createdState),
+	 RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+	 (createdState),
 	 CONSTRUCT_EVENT(connecting),
-	 CONSTRUCT_EVENT(connected),
+	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(connection_timed_out),
 	 CONSTRUCT_EVENT(connection_refused),
 	 CONSTRUCT_EVENT(destination_unreachable),
 	 CONSTRUCT_EVENT(closed),
-
-	 is_terminal_state_event {
-		is_connection_timed_out_event,
-		is_connection_refused_event,
-		is_destination_unreachable_event,
-		is_closed_event  
-	 },
 
 	 thread(dynamic_cast<Thread*>
 			  (RSocketBase::repository->thread_factory
 				-> create_thread(Thread::Par(this))))
 {
   SCHECK(thread);
-  this->RSocketBase::ancestor_terminals.push_back
-	 (is_terminal_state());
+  add_delegate(this);
+  /*this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
 	 (thread->is_terminated());
   thread->start();
@@ -71,6 +66,16 @@ void ClientSocket::ask_connect()
   process_error(errno);
 }
 
+void ClientSocket::state_changed
+  (AbstractObjectWithStates* object)
+{
+  /*const RState<SocketBaseAxis> st(*this);
+
+  if (st == RSocketBase::State::readyState) {
+	 thread->start();
+	 }*/
+}
+
 void ClientSocket::process_error(int error)
 {
   switch (error) {
@@ -79,19 +84,23 @@ void ClientSocket::process_error(int error)
 	 // <NB> there are no connecting->connecting transition
 	 return;
   case 0:
-	 State::move_to(*this, connectedState);
+	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+		(*this, readyState);
 	 return;
   case ETIMEDOUT:
-	 State::move_to(*this, connection_timed_outState);
+	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+		(*this, connection_timed_outState);
 	 break;
   case ECONNREFUSED:
-	 State::move_to(*this, connection_refusedState);
+	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+		(*this, connection_refusedState);
 	 break;
   case ENETUNREACH:
-	 State::move_to(*this, destination_unreachableState);
+	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+		(*this, destination_unreachableState);
 	 break;
   }
-  RSocketBase::process_error(error);
+  //RSocketBase::process_error(error);
 }
 
 void ClientSocket::Thread::run()
@@ -99,27 +108,15 @@ void ClientSocket::Thread::run()
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
 
-  // TODO move to RSocket
-  auto* tcp_sock = dynamic_cast<TCPSocket*>
-	 (socket);
-  SCHECK(tcp_sock);
-
   auto* cli_sock = dynamic_cast<ClientSocket*>
 	 (socket);
   SCHECK(cli_sock);
 
   ( cli_sock->is_connecting()
-  | socket->is_closed()
-  | socket->is_error()
-  ) . wait();
+	 | cli_sock->is_terminal_state()) . wait();
 
-  if (socket->is_closed().signalled()
-		|| socket->is_error().signalled())
-  {
-	 ClientSocket::State::move_to
-		(*cli_sock, ClientSocket::closedState);
-	 return;
-  }
+  if (cli_sock->is_terminal_state().isSignalled())
+  return;
 
   fd_set wfds;
   FD_ZERO(&wfds);
@@ -141,22 +138,6 @@ void ClientSocket::Thread::run()
 
   if (error)
 	 cli_sock->process_error(error);
-
-  if (!ClientSocket::State::compare_and_move
-		(*cli_sock, 
-		 ClientSocket::connectingState,
-		 ClientSocket::connectedState))
-	 return;
-
-  // TODO move to RSocket
-  RSocketBase::State::compare_and_move
-	 (*socket, RSocketBase::createdState,
-	  RSocketBase::readyState);
-
-  (socket->is_closed() | socket->is_error()).wait();
-  ClientSocket::State::compare_and_move
-	 (*cli_sock, ClientSocket::connectedState, 
-	  ClientSocket::closedState);
 }
 
 

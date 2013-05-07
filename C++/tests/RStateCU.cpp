@@ -218,7 +218,6 @@ void test_derived_axis()
 	 (derived, {TestObject::s3State}));
 }
 
-#if 1
 #define TEST_SPLITTED(st1, st2) \
 { \
   CU_ASSERT_TRUE_FATAL( \
@@ -226,17 +225,6 @@ void test_derived_axis()
   CU_ASSERT_TRUE_FATAL( \
     STATE_OBJ(TestObject, state_is, derived, st2)); \
 } while(0)
-#else
-#define TEST_SPLITTED(st1, st2) \
-{ \
-  CU_ASSERT_TRUE_FATAL( \
-    RMixedAxis<DerivedAxis, TestAxis>::state_is \
-      (Derived
-  ); \
-  CU_ASSERT_TRUE_FATAL( \
-    STATE_OBJ(TestObject, state_is, derived, st2)); \
-} while(0)
-#endif
 
 void test_splitted_axis()
 {
@@ -290,7 +278,12 @@ void test_splitted_axis()
   STATE_OBJ(TestObject, move_to, original, s5);
   TEST_SPLITTED(s5, s5);
   // derived movement
-  STATE_OBJ(TestObject, move_to, derived, s2);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, DerivedObject::q1State);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, TestObject::s3State);
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (derived, TestObject::s2State);
   TEST_SPLITTED(s5, s2);
   STATE_OBJ(TestObject, move_to, derived, s3);
   TEST_SPLITTED(s5, s3);

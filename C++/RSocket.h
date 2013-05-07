@@ -28,15 +28,19 @@ DECLARE_AXIS(SocketBaseAxis, StateAxis,
   "created",
   "ready",
   "closed",
-  "error"
+  "connection_timed_out",
+  "connection_refused",
+  "destination_unreachable"
   },
   { {"created", "ready"},
 	 {"created", "closed"},
-    {"created", "error"},
-    {"ready", "error"},
+    {"created", "connection_timed_out"},
+    {"created", "connection_refused"},
+    {"created", "destination_unreachable"},
+//    {"ready", "error"},
 	 {"ready", "closed"},
 	 {"closed", "closed"},
-	 {"closed", "error"}
+//	 {"closed", "error"}
   });
 
 class RSocketRepository;
@@ -57,27 +61,38 @@ class RSocketBase
 
   DECLARE_EVENT(SocketBaseAxis, ready);
   DECLARE_EVENT(SocketBaseAxis, closed);
-  DECLARE_EVENT(SocketBaseAxis, error);
+  //DECLARE_EVENT(SocketBaseAxis, error);
+  DECLARE_EVENT(SocketBaseAxis, connection_timed_out)
+  DECLARE_EVENT(SocketBaseAxis, connection_refused)
+  DECLARE_EVENT(SocketBaseAxis, destination_unreachable)
 
 public:
   DECLARE_STATES(SocketBaseAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, ready);
-  DECLARE_STATE_CONST(State, error);
+  //DECLARE_STATE_CONST(State, error);
   DECLARE_STATE_CONST(State, closed);
+  DECLARE_STATE_CONST(State, connection_timed_out);
+  DECLARE_STATE_CONST(State, connection_refused);
+  DECLARE_STATE_CONST(State, destination_unreachable);
 
   virtual ~RSocketBase () {}
 
   //! A socket file descriptor.
   const SOCKET fd;
 
-  virtual CompoundEvent is_terminal_state() const = 0;
+  //virtual CompoundEvent is_terminal_state() const = 0;
 
   virtual void ask_close_out() = 0;
 
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return StdIdMember::universal_id();
+  }
+
+  CompoundEvent is_terminal_state() const override
+  {
+	 return is_terminal_state_event;
   }
 
   Event is_construction_complete_event;
@@ -85,13 +100,15 @@ public:
 protected:
   RSocketRepository* repository;
 
+  const CompoundEvent is_terminal_state_event;
+
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
   //! List of all ancestors terminal events. Each derived
   //! (with a public virtual base) class appends its
   //! terminal event here from its constructor.
-  std::list<CompoundEvent> ancestor_terminals;
+  //std::list<CompoundEvent> ancestor_terminals;
 
 public:
   // TODO
@@ -109,7 +126,7 @@ protected:
   //! get blocking mode
   //virtual bool get_blocking () const;
 
-  virtual void process_error(int error);
+  //virtual void process_error(int error);
 
 private:
   typedef Logger<RSocketBase> log;
@@ -183,23 +200,60 @@ class RSocket : public Bases...
 	  const RSocketAddress& addr);
 
 public:
-  CompoundEvent is_terminal_state() const
+  /*CompoundEvent is_terminal_state() const
   {
 	 //return RSocketBase::is_terminal_state();
 	 //return is_terminal_state_event;
 	 THROW_NOT_IMPLEMENTED; // or return CompoundEvent()
-  }
+	 }*/
 
   //void ask_close_out();
 
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return RSocketBase::universal_id();
   }
 
-  std::string object_name() const
+  std::string object_name() const override
   {
 	 return SFORMAT("RSocket:" << this->fd);
+  }
+
+  void state_changed
+	 (AbstractObjectWithStates* object) override
+  {}
+  
+  std::atomic<uint32_t>& current_state() override
+  { 
+	 return RSocketBase::current_state();
+  }
+
+  const std::atomic<uint32_t>& 
+	 current_state() const override
+  { 
+	 return RSocketBase::current_state();
+  }
+
+  Event get_event (const UniversalEvent& ue) override
+  {
+	 return RSocketBase::get_event(ue);
+  }
+
+  Event get_event (const UniversalEvent& ue) const override
+  {
+	 return RSocketBase::get_event(ue);
+  }
+
+  Event create_event
+	 (const UniversalEvent& ue) const override
+  {
+	 return RSocketBase::create_event(ue);
+  }
+
+  void update_events
+	 (TransitionId trans_id, uint32_t to) override
+  {
+	 return RSocketBase::update_events(trans_id, to);
   }
 
 protected:

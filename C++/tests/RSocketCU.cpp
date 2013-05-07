@@ -161,8 +161,8 @@ void test_client_socket_connected()
 	 ClientSocket::State::state_is
 	 (*cli_sock, ClientSocket::createdState));
   cli_sock->ask_connect();
-  cli_sock->is_connected().wait();
-  tcp_sock->is_established().wait();
+  cli_sock->is_ready().wait();
+  tcp_sock->is_ready().wait();
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
 	 ClientSocket::State::state_is
@@ -188,7 +188,7 @@ void test_in_socket_new_msg()
 
   cli_sock->ask_connect();
 
-  in_sock->is_new_data().wait();
+  in_sock->msg.is_charged().wait();
 
   CU_ASSERT_TRUE_FATAL(
 	 RBuffer::State::state_is
@@ -239,7 +239,7 @@ void test_out_socket_login()
 
   cli_sock->ask_connect();
 
-  in_sock->is_new_data().wait();
+  in_sock->msg.is_charged().wait();
   const char* tst_string = "+Soup2.0\n";
   CU_ASSERT_EQUAL_FATAL(
 	 in_sock->msg.size(), strlen(tst_string));
@@ -257,7 +257,7 @@ void test_out_socket_login()
   out_sock->msg.resize(login_request_len);
   out_sock->msg.is_discharged().wait();
 
-  in_sock->is_new_data().wait();
+  in_sock->msg.is_charged().wait();
   std::unique_ptr<char[]> resp1
 	 (new char[in_sock->msg.size() + 1]); 
   strncpy(resp1.get(), (const char*)in_sock->msg.cdata(), 

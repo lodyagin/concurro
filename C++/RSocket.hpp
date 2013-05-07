@@ -40,8 +40,8 @@ RSocket<Bases...>
 	  RSocketBase::closedState);
 
   // wait all parts termination
-  for (auto& te : this->ancestor_terminals)
-	 te.wait();
+  /*for (auto& te : this->ancestor_terminals)
+	 te.wait();*/
 
   // TODO use and-ed events
   for (auto& teh : this->threads_terminals)

@@ -14,49 +14,93 @@
 #include "RThread.h"
 #include "RState.h"
 
+/*
 DECLARE_AXIS(InSocketAxis, StateAxis,
   {   "new_data",  // new data or an error
       "empty",
-      "closed",
-		"error"
+      //"closed",
+		//"error"
 //		"destroyed"
   },
   { {"new_data", "empty"},
   {"empty", "new_data"},
-  {"new_data", "closed"},
-  {"empty", "closed"},
-  {"empty", "error"},
-  {"error", "closed"}//,
+		//{"new_data", "closed"},
+	 //{"ready", "closed"},
+	 //{"ready", "error"},
+	 //{"error", "closed"}//,
 //  {"closed", "destroyed"}
   }
 );
+*/
 
 class InSocket
-: public RObjectWithEvents<InSocketAxis>,
+: //public RObjectWithEvents<ClientSocketAxis, SocketBaseAxis>,
   virtual public RSocketBase
 {
+/*
   DECLARE_EVENT(InSocketAxis, new_data)
-  DECLARE_EVENT(InSocketAxis, error)
+	 //DECLARE_EVENT(InSocketAxis, error)
   DECLARE_EVENT(InSocketAxis, closed)
+*/
 
 public:
+/*
   DECLARE_STATES(InSocketAxis, State);
   DECLARE_STATE_CONST(State, new_data);
-  DECLARE_STATE_CONST(State, error);
-  DECLARE_STATE_CONST(State, empty);
+  //DECLARE_STATE_CONST(State, error);
+  DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, closed); // a reading side
                                       // was closed
+												  */
   virtual void ask_close();
 
-  CompoundEvent is_terminal_state() const
+  /*CompoundEvent is_terminal_state() const
   {
 	 return is_closed_event | is_error_event;
-  }
+	 }*/
 
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return RSocketBase::universal_id();
   }
+
+/*
+  void state_changed
+	 (AbstractObjectWithStates* object) override;
+
+  const std::atomic<uint32_t>& 
+	 current_state() const override
+  { 
+	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
+		::current_state();
+  }
+
+  Event get_event (const UniversalEvent& ue) override
+  {
+	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
+		::get_event(ue);
+  }
+
+  Event get_event (const UniversalEvent& ue) const override
+  {
+	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
+		::get_event(ue);
+  }
+
+  Event create_event
+	 (const UniversalEvent& ue) const override
+  {
+	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
+		::create_event(ue);
+  }
+
+  void update_events
+	 (TransitionId trans_id, uint32_t to) override
+  {
+	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
+		::update_events(trans_id, to);
+  }
+*/
 
   //! The last received data
   RSingleBuffer msg;

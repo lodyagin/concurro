@@ -141,7 +141,7 @@ DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis,
   { "aborting", // skiping data and closing buffers
 	 "aborted"   // after aborting
   },
-  { { "connected", "aborting" },
+  { { "ready", "aborting" },
 	 { "aborting", "aborted" }
   }
 );

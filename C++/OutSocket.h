@@ -14,31 +14,35 @@
 #include "RThread.h"
 #include "RState.h"
 
-DECLARE_AXIS(OutSocketAxis, StateAxis,
-  {   "wait_you",  // write buf watermark or an error
+/*
+DECLARE_AXIS(OutSocketAxis, SocketBaseAxis,
+				 {   //"wait_you",  // write buf watermark or an error
 		"busy",
-		"closed",
-		"error"
+		  //"closed",
+		  //"error"
   },
-  { {"wait_you", "busy"},
-	 {"busy", "wait_you"},
-	 {"wait_you", "closed"},
-	 {"wait_you", "error"},
+  { {"ready", "busy"},
+	 {"busy", "ready"},
+	 {"ready", "closed"},
+	 {"ready", "error"},
 	 {"error", "closed"},
 	 {"busy", "closed"} }
 );
+*/
 
 class OutSocket
-: public RObjectWithEvents<OutSocketAxis>,
+: //public RObjectWithEvents<OutSocketAxis>,
   virtual public RSocketBase
 {
-  DECLARE_EVENT(OutSocketAxis, wait_you)
+/*
+  DECLARE_EVENT(OutSocketAxis, ready)
   DECLARE_EVENT(OutSocketAxis, error)
   DECLARE_EVENT(OutSocketAxis, closed)
-
+*/
 public:
+/*
   DECLARE_STATES(OutSocketAxis, State);
-  DECLARE_STATE_CONST(State, wait_you);
+  DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, busy);
   DECLARE_STATE_CONST(State, closed);
   DECLARE_STATE_CONST(State, error);
@@ -47,8 +51,8 @@ public:
   {
 	 return is_closed_event | is_error_event;
   }
-
-  std::string universal_id() const
+*/
+  std::string universal_id() const override
   {
 	 return RSocketBase::universal_id();
   }

@@ -235,6 +235,8 @@ bool CompoundEvent
   auto mis = std::mismatch(handle_set.begin(), 
 									handle_set.end(),
 									b.handle_set.begin());
+  if (mis.first == handle_set.end())
+	 return false; // it equals
   return *mis.first < *mis.second;
 }
 

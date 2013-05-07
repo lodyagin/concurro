@@ -9,22 +9,24 @@
 #include "StdAfx.h"
 #include "OutSocket.h"
 
+/*
 DEFINE_STATES(OutSocketAxis);
 
 DEFINE_STATE_CONST(OutSocket, State, wait_you);
 DEFINE_STATE_CONST(OutSocket, State, busy);
 DEFINE_STATE_CONST(OutSocket, State, closed);
 DEFINE_STATE_CONST(OutSocket, State, error);
+*/
 
 OutSocket::OutSocket
   (const ObjectCreationInfo& oi, 
 	const RSocketAddress& par)
 : 
 	 RSocketBase(oi, par),
-	 RObjectWithEvents<OutSocketAxis>(wait_youState),
+	 /*RObjectWithEvents<OutSocketAxis>(wait_youState),
 	 CONSTRUCT_EVENT(wait_you),
 	 CONSTRUCT_EVENT(error),
-	 CONSTRUCT_EVENT(closed),
+	 CONSTRUCT_EVENT(closed),*/
 	 select_thread(dynamic_cast<SelectThread*>
 			  (RSocketBase::repository->thread_factory
 				-> create_thread(SelectThread::Par(this)))),
@@ -37,8 +39,8 @@ OutSocket::OutSocket
 			select_thread->get_notify_fd()))))
 {
   SCHECK(select_thread && wait_thread);
-  this->RSocketBase::ancestor_terminals.push_back
-	 (is_terminal_state());
+  /*this->RSocketBase::ancestor_terminals.push_back
+	 (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
 	 (select_thread->is_terminated());
   this->RSocketBase::threads_terminals.push_back
@@ -62,26 +64,18 @@ void OutSocket::SelectThread::run()
   SCHECK(out_sock);
 
   ( socket->is_ready()
-  | socket->is_closed()
-  | socket->is_error()) . wait();
+  | socket->is_terminal_state()
+  ) . wait();
 
   ( out_sock->msg.is_charged()
-  | socket->is_closed()
-  | socket->is_error()) . wait();
+	 | socket->is_terminal_state()
+  ) . wait();
 
-  if (socket->is_closed().signalled()) {
-	 OutSocket::State::move_to
-		(*out_sock, OutSocket::closedState);
+  if (socket->is_terminal_state().isSignalled())
 	 return;
-  }
-  else if (socket->is_error().signalled()) {
-	 OutSocket::State::move_to
-		(*out_sock, OutSocket::errorState);
-	 return;
-  }
 
-  OutSocket::State::move_to
-	 (*out_sock, OutSocket::busyState);
+  /*OutSocket::State::move_to
+	 (*out_sock, OutSocket::busyState);*/
 
   fd_set wfds, rfds;
   FD_ZERO(&wfds);
@@ -109,9 +103,8 @@ void OutSocket::SelectThread::run()
 		  ::write(fd, out_sock->msg.cdata(),
 					 out_sock->msg.size());
 		if (written < 0) {
-		  out_sock->process_error(errno);
-		  // TODO add the error code
-		  break;
+		  const int err = errno;
+		  LOG_ERROR(log, "Error " << rErrorMsg(err));
 		}
 
 		assert(written <= (ssize_t) out_sock->msg.size());
@@ -119,28 +112,25 @@ void OutSocket::SelectThread::run()
 		  THROW_NOT_IMPLEMENTED;
 		
 		out_sock->msg.clear();
-		OutSocket::State::move_to
-		  (*out_sock, OutSocket::wait_youState);
+		/*OutSocket::State::move_to
+		  (*out_sock, OutSocket::wait_youState);*/
 		( out_sock->msg.is_charged() 
-      | socket->is_closed()) . wait();
-		if (socket->is_closed().signalled()) {
-		  out_sock->msg.is_discharged().wait();
-		  OutSocket::State::move_to
-			 (*out_sock, OutSocket::closedState);
+		  | socket->is_terminal_state()) . wait();
+		if (socket->is_terminal_state().isSignalled()) {
 		  break;
 		}
-		OutSocket::State::move_to
-		  (*out_sock, OutSocket::busyState);
+		/*OutSocket::State::move_to
+		  (*out_sock, OutSocket::busyState);*/
 	 }
 
-	 assert(OutSocket::State::state_is
-			  (*out_sock, OutSocket::busyState));
+	 /*assert(OutSocket::State::state_is
+		(*out_sock, OutSocket::busyState));*/
 
 	 if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
 		// TODO actual state - closed/error (is error
 		// needed?) 
-		OutSocket::State::move_to 
-		  (*out_sock, OutSocket::closedState);
+		/*OutSocket::State::move_to 
+		  (*out_sock, OutSocket::closedState);*/
 		break;
 	 }
   }
@@ -152,7 +142,7 @@ void OutSocket::WaitThread::run()
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
 
-  (socket->is_closed() | socket->is_error()).wait();
+  socket->is_terminal_state().wait();
   static char dummy_buf[1] = {1};
   rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }

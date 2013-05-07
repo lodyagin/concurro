@@ -104,10 +104,50 @@ public:
 	 USLEEP(100);
   }
 
-  std::string universal_id() const
+  std::string universal_id() const override
   {
 	 return universal_object_id;
   }
+
+  void state_changed
+	 (AbstractObjectWithStates* object) override
+  {}
+
+#if 0  
+  std::atomic<uint32_t>& current_state() override
+  { 
+	 return RObjectWithEvents<T1Axis>::current_state();
+  }
+
+  const std::atomic<uint32_t>& 
+	 current_state() const override
+  { 
+	 return RObjectWithEvents<T1Axis>::current_state();
+  }
+
+  Event get_event (const UniversalEvent& ue) override
+  {
+	 return RObjectWithEvents<T1Axis>::get_event(ue);
+  }
+
+  Event get_event (const UniversalEvent& ue) const override
+  {
+	 return RObjectWithEvents<T1Axis>::get_event(ue);
+  }
+
+  Event create_event
+	 (const UniversalEvent& ue) const override
+  {
+	 return RObjectWithEvents<T1Axis>::create_event(ue);
+  }
+
+  void update_events
+	 (TransitionId trans_id, uint32_t to) override
+  {
+	 return RObjectWithEvents<T1Axis>::update_events
+		(trans_id, to);
+  }
+#endif
 
   const std::string name;
 };
