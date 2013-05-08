@@ -30,6 +30,7 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
   return *this;
 }
 
+#if 0
 template<class Axis>
 Event RObjectWithEvents<Axis>
 //
@@ -41,6 +42,7 @@ Event RObjectWithEvents<Axis>
 
   return it->second;
 }
+#endif
 
 template<class Axis>
 CompoundEvent RObjectWithEvents<Axis>
@@ -102,7 +104,7 @@ template<class DerivedAxis, class SplitAxis>
 RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
   (RObjectWithEvents<SplitAxis>* a_delegate,
    const State& initial_state/*,
-										 const CompoundEvent& terminal_event*/)
+   const CompoundEvent& terminal_event*/)
   : RObjectWithEvents<DerivedAxis>(initial_state),
 	 delegate(a_delegate),
 	 split_state_id(StateMapInstance<SplitAxis>
@@ -114,12 +116,14 @@ RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
 {
 }
 
+#if 0
 template<class DerivedAxis, class SplitAxis>
 Event RStateSplitter<DerivedAxis, SplitAxis>
 ::get_event(const UniversalEvent& ue)
 {
   if (!is_this_event_store(ue))
-	 return delegate->get_event(ue);
+	 return delegate->RObjectWithEvents<SplitAxis>
+		::get_event(ue);
   else
 	 return this->RObjectWithEvents<DerivedAxis>
 		::get_event(ue);
@@ -130,18 +134,22 @@ Event RStateSplitter<DerivedAxis, SplitAxis>
 ::get_event (const UniversalEvent& ue) const
 {
   if (!is_this_event_store(ue))
-	 return delegate->get_event(ue);
+	 return delegate->RObjectWithEvents<SplitAxis>
+		::get_event(ue);
   else
 	 return this->RObjectWithEvents<DerivedAxis>
 		::get_event(ue);
 }
+#endif
 
 template<class DerivedAxis, class SplitAxis>
 CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
 ::create_event (const UniversalEvent& ue) const
 {
   if (!is_this_event_store(ue)) {
-	 CompoundEvent ce(delegate->create_event(ue));
+	 CompoundEvent ce(
+		delegate->RObjectWithEvents<SplitAxis>
+		::create_event(ue));
 
 	 // Create event in DerivedAxis if it is a part of
 	 // DerivedAxis transition.
@@ -164,17 +172,10 @@ template<class DerivedAxis, class SplitAxis>
 void RStateSplitter<DerivedAxis, SplitAxis>
 ::update_events(TransitionId trans_id, uint32_t to) 
 {
-#if 1
-  //delegate->update_events(trans_id, to);
+  //<NB> always in DerivedAxis (stat is splitted in this
+  //case, derived has another events states)
   this->RObjectWithEvents<DerivedAxis>
 	 ::update_events (trans_id, to);
-#else
-  if (!is_this_event_store(UniversalEvent(trans_id)))
-	 delegate->update_events(trans_id, to);
-  else
-	 return this->RObjectWithEvents<DerivedAxis>
-		::update_events (trans_id, to);
-#endif
 }
 
 template<class DerivedAxis, class SplitAxis>

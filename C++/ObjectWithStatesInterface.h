@@ -118,12 +118,14 @@ public:
   virtual ~ObjectWithEventsInterface() {}
 
 protected:
+#if 0
   //! Query an event object by UniversalEvent. 
   virtual Event get_event(const UniversalEvent& ue) = 0;
 
   //! Query an event object by UniversalEvent. 
   virtual Event get_event
 	 (const UniversalEvent& ue) const = 0;
+#endif
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.

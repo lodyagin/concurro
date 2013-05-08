@@ -142,6 +142,7 @@ public:
   { }
 
 protected:
+#if 0
   //! Query an event object by UniversalEvent. 
   Event get_event(const UniversalEvent& ue) override
   {
@@ -154,6 +155,7 @@ protected:
   {
 	 return get_event_impl(ue);
   }
+#endif
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
@@ -170,8 +172,10 @@ protected:
   mutable EventMap events;
 
 private:
+#if 0
   //! A common implementation for both get_event
   Event get_event_impl(const UniversalEvent&) const;
+#endif
 };
 
 //! It can maintain two states or delegate a "parent"
@@ -227,11 +231,13 @@ protected:
 	 return RObjectWithEvents<DerivedAxis>::current_state();
   }
 
+#if 0
   Event get_event
 	 (const UniversalEvent& ue) override;
 
   Event get_event
 	 (const UniversalEvent& ue) const override;
+#endif
 
   CompoundEvent create_event
 	 (const UniversalEvent&) const override;

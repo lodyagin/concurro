@@ -234,6 +234,7 @@ public:
 	 return RSocketBase::current_state();
   }
 
+#if 0
   Event get_event (const UniversalEvent& ue) override
   {
 	 return RSocketBase::get_event(ue);
@@ -243,6 +244,7 @@ public:
   {
 	 return RSocketBase::get_event(ue);
   }
+#endif
 
   CompoundEvent create_event
 	 (const UniversalEvent& ue) const override
