@@ -36,7 +36,6 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 	 RObjectWithEvents(createdState),
 	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(closed),
-	 //CONSTRUCT_EVENT(error),
 	 CONSTRUCT_EVENT(connection_timed_out),
 	 CONSTRUCT_EVENT(connection_refused),
 	 CONSTRUCT_EVENT(destination_unreachable),
@@ -51,7 +50,6 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
 		is_destination_unreachable_event,
 		is_closed_event  
 	 },
-
 	 aw_ptr(addr.get_aw_ptr())
 {
   assert(fd >= 0);

@@ -321,6 +321,12 @@ public:
 	 return max_transition_id;
   }
 
+  bool is_local_transition_arrival(StateIdx st) const
+  {
+	 return local_transitions_arrivals.find(STATE_IDX(st))
+		!= local_transitions_arrivals.end();
+  }
+
   const std::string universal_object_id;
   const int16_t numeric_id;
 
@@ -343,6 +349,9 @@ protected:
   StateMapRepository* repo;
   //! Max transition id in this map
   TransitionId max_transition_id;
+  //! States participating in transitions unique for this
+  //! map as destinations. 
+  std::set<StateIdx> local_transitions_arrivals;
 
   StateMap(const ObjectCreationInfo& oi,
 			  const StateMapParBase& par);

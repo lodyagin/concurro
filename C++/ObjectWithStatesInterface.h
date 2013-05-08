@@ -127,7 +127,7 @@ protected:
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
-  virtual Event create_event
+  virtual CompoundEvent create_event
 	 (const UniversalEvent&) const = 0;
 
   //! Update events due to trans_id to

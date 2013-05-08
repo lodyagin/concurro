@@ -37,9 +37,7 @@ public:
   virtual bool wait(int time = -1) = 0;
   virtual bool wait(int time = -1) const = 0;
 
-  //<NB> no signalled() - because in CompoundEvent auto
-  //and manual reset events can be mixed (no signalled()
-  //logic for auto-reset events).
+  virtual bool signalled() const = 0;
 };
 
 class EvtBase : public EventInterface
@@ -160,7 +158,7 @@ public:
 
   bool operator== (const Event& b) const
   {
-	 return evt_ptr == b.evt_ptr;
+	 return evt_ptr->h == b.evt_ptr->h;
   }
 
   bool wait(int time = -1)
@@ -213,11 +211,21 @@ public:
 	 return evt_ptr->universal_object_id;
   }
 
+  EvtBase::LogParams& log_params() const
+  {
+	 return evt_ptr->log_params;
+  }
+
 protected:
   typedef Logger<LOG::Events> log;
 
   std::shared_ptr<EvtBase> evt_ptr;
 };
+
+DEFINE_EXCEPTION(
+  AutoresetInCompound,
+  "Unable to have an autoreset event "
+  "as a member of CompoundEvent");
 
 class CompoundEvent : public EventInterface
 {
@@ -230,6 +238,7 @@ public:
   CompoundEvent(const CompoundEvent&); //UT+
   CompoundEvent(const Event&); //UT+
   CompoundEvent(std::initializer_list<Event>);
+  CompoundEvent(std::initializer_list<CompoundEvent>);
 
   CompoundEvent& operator= (CompoundEvent&&);
   CompoundEvent& operator= (const CompoundEvent&);
@@ -251,11 +260,10 @@ public:
 
   bool wait(int time = -1) const
   {
-	 SCHECK(!has_autoreset);
 	 return wait_impl(time);
   }
 
-  bool isSignalled();
+  bool signalled() const override;
 
   //! A number of unique events inside.
   size_t size() const
@@ -263,6 +271,26 @@ public:
 	 assert(vector_need_update
 			  || handle_vec.size() == handle_set.size());
 	 return handle_set.size();
+  }
+
+  std::set<Event>::iterator begin()
+  {
+	 return handle_set.begin();
+  }
+
+  std::set<Event>::const_iterator begin() const
+  {
+	 return handle_set.begin();
+  }
+
+  std::set<Event>::iterator end()
+  {
+	 return handle_set.end();
+  }
+
+  std::set<Event>::const_iterator end() const
+  {
+	 return handle_set.end();
   }
 
 protected:
@@ -274,8 +302,6 @@ protected:
   mutable std::vector<HANDLE> handle_vec;
   //! the vector need to be updated by the set
   mutable bool vector_need_update;
-  //! at least one event has autoreset
-  bool has_autoreset;
 
   bool wait_impl(int time) const;
 

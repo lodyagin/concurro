@@ -65,15 +65,23 @@ public:
 class SplittedStateObject : 
 public RStateSplitter<DerivedAxis, TestAxis>
 {
+  A_DECLARE_EVENT(DerivedAxis, TestAxis, s1);
+  A_DECLARE_EVENT(DerivedAxis, TestAxis, s2);
+  A_DECLARE_EVENT(DerivedAxis, TestAxis, s3);
+  A_DECLARE_EVENT(DerivedAxis, TestAxis, q1);
 public:
   DECLARE_STATES(DerivedAxis, State);
   DECLARE_STATE_CONST(State, s1);
   DECLARE_STATE_CONST(State, q1);
 
   SplittedStateObject(TestObject* orig)
-	 : RStateSplitter<DerivedAxis, TestAxis>(s1State) 
+	 : RStateSplitter<DerivedAxis, TestAxis>
+	 (orig, s1State),
+	 CONSTRUCT_EVENT(s1),
+	 CONSTRUCT_EVENT(s2),
+	 CONSTRUCT_EVENT(s3),
+	 CONSTRUCT_EVENT(q1)
   {
-	 add_delegate(orig);
   }
 
   // sync a state delegate -> this

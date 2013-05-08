@@ -113,7 +113,7 @@ protected:
 public:
   // TODO
   //! Temporary: list of threads terminal events
-  std::list<Event> threads_terminals;
+  std::list<CompoundEvent> threads_terminals;
 
 protected:
   //! This type is only for repository creation
@@ -244,7 +244,7 @@ public:
 	 return RSocketBase::get_event(ue);
   }
 
-  Event create_event
+  CompoundEvent create_event
 	 (const UniversalEvent& ue) const override
   {
 	 return RSocketBase::create_event(ue);

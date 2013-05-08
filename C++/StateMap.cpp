@@ -189,7 +189,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 				+ n_parent_states);
 
   // Fill name2idx and check repetitions
-  for (StateIdx k = 0; k < idx2name.size(); k++)
+  for (StateIdx k = 1; k < idx2name.size(); k++)
   {
 	 const auto inserted = name2idx.insert
 		(std::pair<std::string, StateIdx>(idx2name[k], k));
@@ -229,6 +229,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
 		old = ++(repo->max_trans_id);
 		trans2states[old] = std::pair<StateIdx, StateIdx>
 		  (st1, st2);
+		local_transitions_arrivals.insert(st2);
 	 }
   }
   max_transition_id = repo->max_trans_id;

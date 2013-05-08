@@ -22,6 +22,11 @@ CU_TestInfo EventTests[] = {
 // init the test suite
 int EventCUInit() 
 {
+  std::set<int> set;
+  set.insert(1);
+  std::set<int> set2(set);
+  for (auto i: set2)
+	 LOG_DEBUG(Logger<LOG::Root>, i);
   return 0;
 }
 
@@ -132,13 +137,14 @@ void test_auto_reset()
 
 void test_wait_for_any()
 {
-  Event e1("e1", false);
+  Event e1("e1", true);
   CompoundEvent ce1(e1);
   CU_ASSERT_EQUAL_FATAL(ce1.size(), 1);
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
-  e1.set();
+  e1.set(); 
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
-  Event e2("e2", false);
+  e1.reset();
+  Event e2("e2", true);
   ce1 |= e2;
   CU_ASSERT_EQUAL_FATAL(ce1.size(), 2);
   // uniq test
@@ -148,15 +154,17 @@ void test_wait_for_any()
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   e2.set();
   CU_ASSERT_TRUE_FATAL(ce1.wait(TAU));
+  e2.reset();
 
   CU_ASSERT_TRUE_FATAL(
-	 (Event("e3", false, true) | Event("e4", false, false))
+	 (Event("e3", true, true) | Event("e4", true, false))
 	  . wait(TAU));
 
   CompoundEvent ce2 {e1, e2};
   CU_ASSERT_FALSE_FATAL(ce2.wait(TAU));
   e1.set();
   CU_ASSERT_TRUE_FATAL(ce2.wait(TAU));
+  e1.reset();
   CU_ASSERT_FALSE_FATAL(ce2.wait(TAU));
   
   Event e3("e3", true);
@@ -170,6 +178,7 @@ void test_wait_for_any()
   CU_ASSERT_FALSE_FATAL(ce4.wait(0));
   e1.set();
   CU_ASSERT_TRUE_FATAL(ce4.wait(0));
+  e1.reset();
   CU_ASSERT_FALSE_FATAL(ce4.wait(0));
   CU_ASSERT_FALSE_FATAL(ce3.wait(0));
 
@@ -177,19 +186,21 @@ void test_wait_for_any()
   CU_ASSERT_FALSE_FATAL(ce5.wait(0));
   e1.set();
   CU_ASSERT_TRUE_FATAL(ce5.wait(0));
+  e1.reset();
   CU_ASSERT_FALSE_FATAL(ce5.wait(0));
   e2.set();
   CU_ASSERT_TRUE_FATAL(ce5.wait(0));
+  e2.reset();
   CU_ASSERT_FALSE_FATAL(ce5.wait(0));
 
   Event e5("e5", true, false);
   const Event& e5r = e5;
-  CU_ASSERT_TRUE_FATAL(( Event("e3", false, true)
-								  | Event("e4", false, false) 
+  CU_ASSERT_TRUE_FATAL(( Event("e3", true, true)
+								  | Event("e4", true, false) 
 								  | e5r ).wait(TAU));
   CU_ASSERT_TRUE_FATAL((ce1 | 
-								( Event("e3", false, true)
-								  | Event("e4", false, false) 
+								( Event("e3", true, true)
+								  | Event("e4", true, false) 
 								  | e5r )).wait(TAU));
   CompoundEvent ce2_2;
   ce2_2 = ce2;
@@ -201,15 +212,16 @@ void test_wait_for_any()
   e1.reset();
   CU_ASSERT_FALSE_FATAL(ce1.wait(TAU));
   CU_ASSERT_TRUE_FATAL(
-	 (Event("e6", false, true) | ce1).wait(TAU));
+	 (Event("e6", true, true) | ce1).wait(TAU));
   CU_ASSERT_FALSE_FATAL(
-	 (Event("e7", false, false) | ce1).wait(TAU));
+	 (Event("e7", true, false) | ce1).wait(TAU));
   CU_ASSERT_FALSE_FATAL(
 	 (Event("e7", true, false) | ce1).wait(TAU));
   const CompoundEvent ce6(ce1 | ce2);
   CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   e2.set();
   CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
+  e2.reset();
   CU_ASSERT_FALSE_FATAL((ce6 | (e1 | e2)).wait(TAU));
   e1.set();
   CU_ASSERT_TRUE_FATAL((ce6 | (e1 | e2)).wait(TAU));
@@ -290,5 +302,5 @@ void test_empty_compound()
 {
   CompoundEvent ce;
   CU_ASSERT_TRUE_FATAL(ce.wait(TAU));
-  CU_ASSERT_TRUE_FATAL(ce.isSignalled());
+  CU_ASSERT_TRUE_FATAL(ce.signalled());
 }

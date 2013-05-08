@@ -42,7 +42,7 @@ RSingleSocketConnection::RSingleSocketConnection
    const Par& par)
  : RSocketConnection(oi, par),
 	RStateSplitter
-	(
+	(this,
 	 ClientSocket::createdState
 	  ),
    socket(dynamic_cast<InSocket*>(par.socket)),
@@ -81,7 +81,6 @@ RSingleSocketConnection::RSingleSocketConnection
   assert(cli_sock);
   SCHECK(thread);
   SCHECK(in_win);
-  add_delegate(dynamic_cast<ClientSocket*>(par.socket));
   thread->start();
 }
 
@@ -164,8 +163,7 @@ void RSingleSocketConnection::run()
 		  goto LAborting;
 	 iw().buf.reset();
 
-	 if (socket->InSocket::is_terminal_state()
-		  . isSignalled())
+	 if (socket->InSocket::is_terminal_state().signalled())
 		break;
   }
 

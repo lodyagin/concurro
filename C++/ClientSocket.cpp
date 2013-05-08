@@ -30,7 +30,7 @@ ClientSocket::ClientSocket
   : 
 	 RSocketBase(oi, par),
 	 RStateSplitter<ClientSocketAxis, SocketBaseAxis>
-	 (createdState),
+	 (this, createdState),
 	 CONSTRUCT_EVENT(connecting),
 	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(connection_timed_out),
@@ -43,7 +43,6 @@ ClientSocket::ClientSocket
 				-> create_thread(Thread::Par(this))))
 {
   SCHECK(thread);
-  add_delegate(this);
   /*this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
@@ -115,7 +114,7 @@ void ClientSocket::Thread::run()
   ( cli_sock->is_connecting()
 	 | cli_sock->is_terminal_state()) . wait();
 
-  if (cli_sock->is_terminal_state().isSignalled())
+  if (cli_sock->is_terminal_state().signalled())
   return;
 
   fd_set wfds;

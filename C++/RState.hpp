@@ -110,8 +110,10 @@ void RMixedAxis<Axis, Axis2>
 
   obj.state_changed(&obj);
 
-  if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
-		(&obj)) {
+  if (auto p = 
+		dynamic_cast<ObjectWithEventsInterface<Axis2>*>
+		(&obj)) 
+  {
 	 assert(trans_id > 0);
 	 /*LOGGER_DEBUG(logger, "update_events(" << trans_id 
 		<< ", " << to << ");");*/

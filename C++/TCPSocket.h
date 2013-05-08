@@ -106,7 +106,7 @@ public:
 		::get_event(ue);
   }
 
-  Event create_event
+  CompoundEvent create_event
 	 (const UniversalEvent& ue) const override
   {
 	 return RStateSplitter<TCPAxis,SocketBaseAxis>

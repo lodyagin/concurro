@@ -85,7 +85,7 @@ void InSocket::SelectThread::run()
 	 (socket);
   SCHECK(in_sock);
 
-  if (socket->is_terminal_state().isSignalled())
+  if (socket->is_terminal_state().signalled())
 	 return;
 
   fd_set rfds;

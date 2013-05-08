@@ -43,7 +43,7 @@ Event RObjectWithEvents<Axis>
 }
 
 template<class Axis>
-Event RObjectWithEvents<Axis>
+CompoundEvent RObjectWithEvents<Axis>
 //
 ::create_event(const UniversalEvent& ue) const
 {
@@ -63,15 +63,15 @@ Event RObjectWithEvents<Axis>
 #else										  
   const auto it = events.find(ue.local_id());
   if (it == events.end()) {
-	 return events.insert
+	 return CompoundEvent(events.insert
 		(std::make_pair
 		 (ue.local_id(), 
 		  Event(SFORMAT(typeid(*this).name() << ":" 
 							 << ue.name()), 
-				  true, initial_state))).first->second;
+				  true, initial_state))).first->second);
   }
   else 
-	 return it->second;
+	 return CompoundEvent(it->second);
 #endif
 }
 
@@ -100,44 +100,19 @@ void RObjectWithEvents<Axis>
 
 template<class DerivedAxis, class SplitAxis>
 RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
-(//RObjectWithEvents<SplitAxis>* a_delegate,
+  (RObjectWithEvents<SplitAxis>* a_delegate,
    const State& initial_state/*,
 										 const CompoundEvent& terminal_event*/)
   : RObjectWithEvents<DerivedAxis>(initial_state),
-	 delegate(nullptr),
+	 delegate(a_delegate),
 	 split_state_id(StateMapInstance<SplitAxis>
 						 ::stateMap -> size()),
 	 split_transition_id(
 		StateMapInstance<SplitAxis>
-		::stateMap -> get_max_transition_id())
-{
-  //delegate->register_subscriber(that, terminal_event);
-}
-
-template<class DerivedAxis, class SplitAxis>
-void RStateSplitter<DerivedAxis, SplitAxis>
-::add_delegate(RObjectWithEvents<SplitAxis>* a_delegate)
-{
-  delegate = a_delegate;
-  delegate->register_subscriber(this);
-}
-
-
-#if 0
-template<class DerivedAxis, class SplitAxis>
-std::atomic<uint32_t>& 
-RStateSplitter<DerivedAxis, SplitAxis>
-::current_state()
+		::stateMap -> get_max_transition_id()),
+	 inited(false)
 {
 }
-
-template<class DerivedAxis, class SplitAxis>
-const std::atomic<uint32_t>&
-RStateSplitter<DerivedAxis, SplitAxis>
-::current_state() const
-{
-}
-#endif
 
 template<class DerivedAxis, class SplitAxis>
 Event RStateSplitter<DerivedAxis, SplitAxis>
@@ -162,11 +137,24 @@ Event RStateSplitter<DerivedAxis, SplitAxis>
 }
 
 template<class DerivedAxis, class SplitAxis>
-Event RStateSplitter<DerivedAxis, SplitAxis>
+CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
 ::create_event (const UniversalEvent& ue) const
 {
-  if (!is_this_event_store(ue))
-	 return delegate->create_event(ue);
+  if (!is_this_event_store(ue)) {
+	 CompoundEvent ce(delegate->create_event(ue));
+
+	 // Create event in DerivedAxis if it is a part of
+	 // DerivedAxis transition.
+	 if (ue.is_arrival_event()
+		  && StateMapInstance<DerivedAxis>::stateMap
+		  -> is_local_transition_arrival
+		  (ue.as_state_of_arrival())) 
+	 {
+		ce |= this->RObjectWithEvents<DerivedAxis>
+		  ::create_event(ue);
+	 }
+	 return ce;
+  }
   else
 	 return this->RObjectWithEvents<DerivedAxis>
 		::create_event(ue);
@@ -176,21 +164,42 @@ template<class DerivedAxis, class SplitAxis>
 void RStateSplitter<DerivedAxis, SplitAxis>
 ::update_events(TransitionId trans_id, uint32_t to) 
 {
+#if 1
+  //delegate->update_events(trans_id, to);
+  this->RObjectWithEvents<DerivedAxis>
+	 ::update_events (trans_id, to);
+#else
   if (!is_this_event_store(UniversalEvent(trans_id)))
 	 delegate->update_events(trans_id, to);
   else
 	 return this->RObjectWithEvents<DerivedAxis>
 		::update_events (trans_id, to);
+#endif
 }
 
 template<class DerivedAxis, class SplitAxis>
 bool RStateSplitter<DerivedAxis, SplitAxis>
 ::is_this_event_store(const UniversalEvent& ue) const
 {
+  init();
   if (ue.is_arrival_event()) 
-	 return ue.as_state_of_arrival() > split_state_id;
+	 return STATE_IDX(ue.as_state_of_arrival()) 
+		> split_state_id;
   else 
-	 return ue.as_transition_id() > split_transition_id;
+	 return STATE_IDX(ue.as_transition_id()) 
+		> split_transition_id;
+}
+
+template<class DerivedAxis, class SplitAxis>
+void RStateSplitter<DerivedAxis, SplitAxis>
+::init() const
+{
+  if (!inited) {
+	 inited = true;
+	 delegate->register_subscriber
+		(const_cast<RStateSplitter<DerivedAxis, SplitAxis>*>
+		 (this));
+  }
 }
 
 #endif

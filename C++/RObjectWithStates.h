@@ -157,7 +157,7 @@ protected:
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
-  Event create_event
+  CompoundEvent create_event
 	 (const UniversalEvent&) const override;
 
   //! Update events due to trans_id to
@@ -197,7 +197,7 @@ public:
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
   RStateSplitter
-	 (//RObjectWithEvents<SplitAxis>* a_delegate,
+	 (RObjectWithEvents<SplitAxis>* a_delegate,
 	  const State& initial_state/*,
 											const CompoundEvent& terminal_event*/);
 
@@ -206,13 +206,16 @@ public:
   RStateSplitter* operator=
 	 (const RStateSplitter&) = delete;
 
-  void add_delegate
-	 (RObjectWithEvents<SplitAxis>* a_delegate);
+  /*void add_delegate
+	 (RObjectWithEvents<SplitAxis>* a_delegate);*/
 
   virtual void state_changed
 	 (AbstractObjectWithStates* object) = 0;
 
 protected:
+  //! The 2nd stage init.
+  void init() const;
+
   std::atomic<uint32_t>& current_state() override
   {
 	 return RObjectWithEvents<DerivedAxis>::current_state();
@@ -224,11 +227,13 @@ protected:
 	 return RObjectWithEvents<DerivedAxis>::current_state();
   }
 
-  Event get_event(const UniversalEvent& ue) override;
+  Event get_event
+	 (const UniversalEvent& ue) override;
 
-  Event get_event(const UniversalEvent& ue) const override;
+  Event get_event
+	 (const UniversalEvent& ue) const override;
 
-  Event create_event
+  CompoundEvent create_event
 	 (const UniversalEvent&) const override;
 
   void update_events
@@ -243,6 +248,7 @@ protected:
   //uint16_t not_delegate;
   const uint16_t split_state_id;
   const TransitionId split_transition_id;
+  mutable bool inited;
 };
 
 #endif

@@ -26,7 +26,8 @@ TCPSocket::TCPSocket
 	  const RSocketAddress& par)
   : 
 	 RSocketBase(oi, par),
-    RStateSplitter<TCPAxis, SocketBaseAxis>(createdState),
+    RStateSplitter<TCPAxis, SocketBaseAxis>
+	 (this, createdState),
 	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(closed),
 	 CONSTRUCT_EVENT(in_closed),
@@ -37,7 +38,6 @@ TCPSocket::TCPSocket
 				-> create_thread(Thread::Par(this))))
 {
   SCHECK(thread);
-  add_delegate(dynamic_cast<RSocketBase*>(this));
   /*this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
@@ -169,7 +169,7 @@ void TCPSocket::Thread::run()
 		  }
 		}
 		else {
-		  if (socket->is_terminal_state().isSignalled()) {
+		  if (socket->is_terminal_state().signalled()) {
 			 break;
 		  }
 		  else {

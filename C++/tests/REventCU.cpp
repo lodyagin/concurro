@@ -9,14 +9,15 @@
 void test_arrival_event();
 void test_transitional_event();
 void test_inheritance();
+void test_splitting();
 
 CU_TestInfo REventTests[] = {
   {"an arrival event test",
    test_arrival_event},
   {"a transitional event test",
    test_transitional_event},
-  {"test inheritance",
-	test_inheritance},
+  {"test inheritance", test_inheritance},
+  {"test splitting", test_splitting},
   CU_TEST_INFO_NULL
 };
 
@@ -200,6 +201,65 @@ void test_inheritance()
   CU_ASSERT_FALSE_FATAL(derived.is_q1().wait(TAU));
   CU_ASSERT_TRUE_FATAL(origin.is_s3().wait(TAU));
   CU_ASSERT_TRUE_FATAL(derived.is_s3().wait(TAU));
+}
+
+#define STATE_DERIVED(action, object, state) \
+  RMixedAxis<DerivedAxis, TestAxis>::action \
+    ((object), TestObject::state ## State);
+
+void test_splitting()
+{
+  TestObject origin;
+  SplittedStateObject derived(&origin);
+
+  REvent<TestAxis> testS1(&origin, "s1");
+  REvent<DerivedAxis> derivedS1(&derived, "s1");
+  REvent<DerivedAxis> Q1(&derived, "q1");
+
+  CU_ASSERT_TRUE_FATAL(testS1.wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derivedS1.wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derived.is_s1().wait(TAU));
+
+  // s1 -> s2
+  STATE_OBJ(TestObject, move_to, origin, s2);
+//#if CAST
+  CU_ASSERT_FALSE_FATAL(testS1.wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derivedS1.wait(TAU));
+//#endif
+  CU_ASSERT_FALSE_FATAL(derived.is_s1().wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derived.is_s1().wait(TAU));
+
+  // s2 -> s3
+  STATE_OBJ(TestObject, move_to, origin, s3);
+  CU_ASSERT_TRUE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derived.is_s3().wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derived.is_s1().wait(TAU));
+
+  // s3 -> s5
+  STATE_OBJ(TestObject, move_to, origin, s5);
+  CU_ASSERT_FALSE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_FALSE_FATAL(derived.is_s3().wait(TAU));
+
+  // s5 -> q1
+  RMixedAxis<DerivedAxis, TestAxis>::move_to
+	 (origin, SplittedStateObject::q1State);
+//#if CAST
+  CU_ASSERT_TRUE_FATAL(Q1.wait(TAU));
+//#endif
+  CU_ASSERT_TRUE_FATAL(derived.is_q1().wait(TAU));
+
+  // q1 -> s3
+  STATE_DERIVED(move_to, origin, s3);
+//#if CAST
+  CU_ASSERT_FALSE_FATAL(Q1.wait(TAU));
+//#endif
+  CU_ASSERT_FALSE_FATAL(derived.is_q1().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derived.is_s3().wait(TAU));
+
+  STATE_DERIVED(move_to, derived, s2);
+  CU_ASSERT_TRUE_FATAL(origin.is_s3().wait(TAU));
+  CU_ASSERT_TRUE_FATAL(derived.is_s2().wait(TAU));
 }
 
 

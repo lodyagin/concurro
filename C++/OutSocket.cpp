@@ -71,7 +71,7 @@ void OutSocket::SelectThread::run()
 	 | socket->is_terminal_state()
   ) . wait();
 
-  if (socket->is_terminal_state().isSignalled())
+  if (socket->is_terminal_state().signalled())
 	 return;
 
   /*OutSocket::State::move_to
@@ -116,7 +116,7 @@ void OutSocket::SelectThread::run()
 		  (*out_sock, OutSocket::wait_youState);*/
 		( out_sock->msg.is_charged() 
 		  | socket->is_terminal_state()) . wait();
-		if (socket->is_terminal_state().isSignalled()) {
+		if (socket->is_terminal_state().signalled()) {
 		  break;
 		}
 		/*OutSocket::State::move_to

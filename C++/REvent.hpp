@@ -23,12 +23,17 @@ RMixedEvent<Axis, Axis2>
 		 StateMapInstance<Axis>::stateMap
 		  -> get_transition_id(from, to)
 		  ),
-	 Event(obj_ptr->create_event((UniversalEvent)*this))
+	 // G++-4.7.3 bug when use copy constructor
+	 CompoundEvent
+	 (std::move(obj_ptr->create_event(
+					  (UniversalEvent)*this)))
 {
-  evt_ptr->log_params.set = 
-	 evt_ptr->log_params.reset = false;
-  // if you tune it tune it also 
-  // in the second constructor
+  for (Event ev : *this) {
+	 ev.log_params().set = 
+		ev.log_params().reset = false;
+	 // if you tune it tune it also 
+	 // in the second constructor
+  }
 }
 
 template<class Axis, class Axis2>
@@ -41,10 +46,15 @@ RMixedEvent<Axis, Axis2>
 		 StateMapInstance<Axis>::stateMap
 		 -> create_state(to), true
 		  ),
-	 Event(obj_ptr->create_event((UniversalEvent)*this))
+	 // G++-4.7.3 bug when use copy constructor
+	 CompoundEvent
+	 (std::move(obj_ptr->create_event(
+					  (UniversalEvent)*this)))
 {
-  evt_ptr->log_params.set =
-	 evt_ptr->log_params.reset = false;
+  for (Event ev : *this) {
+	 ev.log_params().set = 
+		ev.log_params().reset = false;
+  }
 }
 
 #endif

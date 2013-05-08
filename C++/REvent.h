@@ -18,7 +18,7 @@ template<class Axis, class Axis2>
 class RMixedEvent
 : public Axis,
   public UniversalEvent,
-  public Event
+  public CompoundEvent
 {
 public:
   //! Create a from->to event

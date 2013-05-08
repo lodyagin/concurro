@@ -150,57 +150,68 @@ bool EvtBase::wait_impl(int time) const
 }
 
 CompoundEvent::CompoundEvent()
-  : vector_need_update(false), //<NB>
-	 has_autoreset(false)
+  : vector_need_update(false) //<NB>
 {}
 
 CompoundEvent::CompoundEvent(CompoundEvent&& e)
   : handle_set(std::move(e.handle_set)),
 	 handle_vec(std::move(e.handle_vec)),
-	 vector_need_update(e.vector_need_update),
-	 has_autoreset(e.has_autoreset)
-{}
+	 vector_need_update(e.vector_need_update)
+{
+  LOG_DEBUG(log, "CompoundEvent::move constructor");
+}
 
 CompoundEvent::CompoundEvent(const CompoundEvent& e)
   : handle_set(e.handle_set),
 	 handle_vec(e.handle_vec),
-	 vector_need_update(e.vector_need_update),
-	 has_autoreset(e.has_autoreset)
-{}
+	 vector_need_update(e.vector_need_update)
+{
+  LOG_DEBUG(log, "CompoundEvent::copy constructor");
+}
 
 CompoundEvent::CompoundEvent(const Event& e)
-  : handle_set{e}, vector_need_update(true),
-    has_autoreset(!e.is_manual())
-{}
+  : handle_set{e}, vector_need_update(true)
+{
+  if (!e.is_manual())
+	 THROW_EXCEPTION(AutoresetInCompound);
+}
 
 CompoundEvent::CompoundEvent
  (std::initializer_list<Event> evs)
-	: vector_need_update(evs.size() > 0),
-	  has_autoreset(false)
+	: vector_need_update(evs.size() > 0)
 {
   for (const Event& e : evs) {
 	 handle_set.insert(e);
-	 has_autoreset = has_autoreset || !e.is_manual();
+	 if (!e.is_manual())
+		THROW_EXCEPTION(AutoresetInCompound);
   }
 }
 
+CompoundEvent::CompoundEvent
+ (std::initializer_list<CompoundEvent> evs)
+	: vector_need_update(evs.size() > 0)
+{
+  for (const CompoundEvent& e : evs) {
+	 handle_set.insert(e.begin(), e.end());
+  }
+}
 
 CompoundEvent& CompoundEvent
 ::operator= (CompoundEvent&& e)
 {
+  LOG_DEBUG(log, "CompoundEvent::operator=(move)");
   handle_set = std::move(e.handle_set);
   handle_vec = std::move(e.handle_vec);
   vector_need_update = e.vector_need_update;
-  has_autoreset = e.has_autoreset;
   return *this;
 }
 
 CompoundEvent& CompoundEvent
 ::operator= (const CompoundEvent& e)
 {
+  LOG_DEBUG(log, "CompoundEvent::operator=(copy)");
   handle_set = e.handle_set;
   vector_need_update = true; // <NB>
-  has_autoreset = e.has_autoreset;
   return *this;
 }
 
@@ -209,7 +220,8 @@ const CompoundEvent& CompoundEvent
 {
   handle_set.insert(e);
   vector_need_update = true;
-  has_autoreset = has_autoreset || !e.is_manual();
+  if (!e.is_manual())
+	 THROW_EXCEPTION(AutoresetInCompound);
   return *this;
 }
 
@@ -219,7 +231,6 @@ CompoundEvent& CompoundEvent
   handle_set.insert(e.handle_set.begin(), 
 						  e.handle_set.end());
   vector_need_update = true;
-  has_autoreset = has_autoreset || e.has_autoreset;
   return *this;
 }
 
@@ -240,7 +251,7 @@ bool CompoundEvent
   return *mis.first < *mis.second;
 }
 
-bool CompoundEvent::isSignalled()
+bool CompoundEvent::signalled() const
 {
   if (handle_set.empty())
 	 return true;
