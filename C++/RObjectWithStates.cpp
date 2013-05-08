@@ -24,7 +24,8 @@ void RObjectWithStatesBase
 
   assert(sub);
   subscribers.insert(sub);
-  subscribers_terminals.insert(sub->is_terminal_state());
+  subscribers_terminals.insert
+	 (std::move(sub->is_terminal_state()));
   assert(subscribers_terminals.size() <= 
 			subscribers.size());
   is_changing = false;
