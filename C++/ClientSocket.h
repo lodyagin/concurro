@@ -74,17 +74,18 @@ public:
   void state_changed
 	 (AbstractObjectWithStates* object) override;
 
-  std::atomic<uint32_t>& current_state() override
+  std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) override
   { 
 	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-		::current_state();
+		::current_state(ax);
   }
 
   const std::atomic<uint32_t>& 
-	 current_state() const override
+	 current_state(const StateAxis& ax) const override
   { 
 	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-		::current_state();
+		::current_state(ax);
   }
 
 #if 0
@@ -111,6 +112,7 @@ public:
   void update_events
 	 (TransitionId trans_id, uint32_t to) override
   {
+	 LOG_TRACE(log, "update_events");
 	 return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
 		::update_events(trans_id, to);
   }

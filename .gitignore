@@ -8,6 +8,9 @@
 *.vpp.work*
 core
 CMakeCache.txt
+GPATH
+GRTAGS
+GTAGS
 log4cxx.properties
 Makefile
 CMakeFiles/

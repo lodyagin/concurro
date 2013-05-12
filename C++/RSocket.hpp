@@ -22,7 +22,6 @@ RSocket<Bases...>
 			 const RSocketAddress& addr)
   : RSocketBase(oi, addr), Bases(oi, addr)...
 {
-  
   RSocketBase::is_construction_complete_event.set();
 }
 

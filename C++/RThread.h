@@ -24,6 +24,8 @@
 #endif
 #include <thread>
 
+class ThreadAxis;
+
 //! An ancestor of all states of a thread.
 DECLARE_AXIS(ThreadAxis, StateAxis,
   {  "ready",         // after creation
@@ -55,6 +57,8 @@ class RThreadBase
     public HasStringView,
     public RObjectWithEvents<ThreadAxis>
 {
+  friend class ThreadAxis;
+
   DECLARE_EVENT(ThreadAxis, starting)
   DECLARE_EVENT(ThreadAxis, terminated)
 

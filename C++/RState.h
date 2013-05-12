@@ -65,6 +65,13 @@ struct StateMapInstance<StateAxis>
   static StateMapId init() { return 0; }
 };
 
+/**
+ * A main class to working with states.
+ * \tparam Axis - an axis where states are expressed.
+ * \tparam Axis2 - an axis defined in
+ * ObjectWithStatesInterface. Typically Axis2 is ancestor
+ * or the same as Axis.
+ */
 template<class Axis, class Axis2>
 class RMixedAxis : public Axis, 
   public SSingleton<RAxis<Axis>>
@@ -73,12 +80,6 @@ public:
   typedef Axis axis;
 
   RMixedAxis();
-
-  /*RMixedAxis(
-	 std::initializer_list<const char*> states,
-	 std::initializer_list<
-	 std::pair<const char*, const char*>> transitions
-	 );*/
 
   //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
@@ -145,21 +146,39 @@ protected:
   RMixedAxis(const StateMapPar<Axis>& par);
 };
 
-#define DECLARE_AXIS(axis, parent, pars...)		\
+#define DECLARE_AXIS(axis, parent, pars...)	\
 struct axis : public parent \
 { \
   typedef parent Parent; \
   static axis self_; \
+  static axis& self() { \
+    static axis self; \
+    return self; \
+  } \
   static StateMapPar<axis> get_state_map_par() \
   {	\
 	 return StateMapPar<axis>(pars, \
 	   StateMapInstance<typename axis::Parent>::init()); \
   } \
+  \
+  const std::atomic<uint32_t>& current_state \
+    (const AbstractObjectWithStates* obj) const override \
+  { \
+    return dynamic_cast<const RObjectWithStates<axis>*> \
+      (obj)			\
+	   -> RObjectWithStates<axis>::current_state(*this); \
+  } \
+  \
+  std::atomic<uint32_t>& current_state \
+    (AbstractObjectWithStates* obj) const override	\
+  { \
+    return dynamic_cast<RObjectWithStates<axis>*>(obj) \
+	   -> RObjectWithStates<axis>::current_state(*this); \
+  } \
 };	\
 template class RMixedAxis<axis, axis>;	\
 template class RState<axis>; \
 template class RMixedEvent<axis, axis>;		
-	
 
 #define DECLARE_STATES(axis, state_class)	\
   typedef RAxis<axis> state_class; \

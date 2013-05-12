@@ -28,22 +28,6 @@ public:
   const UniversalEvent event;
 };
 
-#if 0
-class RStateChangeSubscriber
-{
-public:
-  //! the "update parent" callback on state changing in
-  //! the `object'.
-  virtual void state_changed
-	 (AbstractObjectWithStates* object) = 0;
-  //! Terminal state means 
-  //! 1) no more state activity;
-  //! 2) the object can be deleted (there are no more
-  //! dependencies on it).
-  virtual CompoundEvent is_terminal_state() const = 0;
-};
-#endif
-
 class RObjectWithStatesBase
 : public virtual AbstractObjectWithStates
 {
@@ -98,19 +82,19 @@ public:
 	 RObjectWithStatesBase::state_changed(object);
   }
 
-protected:
-
-  std::atomic<uint32_t>& current_state() override
+  std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) override
   {
 	 return currentState;
   }
 
   const std::atomic<uint32_t>& 
-	 current_state() const override
+	 current_state(const StateAxis& ax) const override
   {
 	 return currentState;
   }
 
+protected:
   std::atomic<uint32_t> currentState;
 };
 
@@ -180,13 +164,14 @@ private:
 
 //! It can maintain two states or delegate a "parent"
 //! part of states and events to another class ("parent"
-//! states are states from DerivedAxis). SplitAxis changes will arrive
+//! states are states from DerivedAxis). SplitAxis changes
+//! will arrive
 //! to us by state_change() notification. DerivedAxis
 //! changes are local and not propagated to a delegate yet
 //! (TODO).
 //! <NB> Both delegate and splitter maintain different and
-//! not intersected sets of events. It is also possible to have
-//! 2 events set on different axes on the same time.
+//! not intersected sets of events. It is also possible to
+//! have 2 events set on different axes on the same time.
 
 template<class DerivedAxis, class SplitAxis>
 class RStateSplitter 
@@ -202,8 +187,7 @@ public:
   //! covered by DerivedAxis.
   RStateSplitter
 	 (RObjectWithEvents<SplitAxis>* a_delegate,
-	  const State& initial_state/*,
-											const CompoundEvent& terminal_event*/);
+	  const State& initial_state);
 
   RStateSplitter(const RStateSplitter&) = delete;
 
@@ -220,15 +204,22 @@ protected:
   //! The 2nd stage init.
   void init() const;
 
-  std::atomic<uint32_t>& current_state() override
+  std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) override
   {
-	 return RObjectWithEvents<DerivedAxis>::current_state();
+	 assert(is_same_axis<DerivedAxis>(ax)
+			  || is_same_axis<SplitAxis>(ax));
+	 return RObjectWithEvents<DerivedAxis>
+		::current_state(ax);
   }
 
-  const std::atomic<uint32_t>& current_state() const
-	 override
+  const std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) const override
   {
-	 return RObjectWithEvents<DerivedAxis>::current_state();
+	 assert(is_same_axis<DerivedAxis>(ax)
+			  || is_same_axis<SplitAxis>(ax));
+	 return RObjectWithEvents<DerivedAxis>
+		::current_state(ax);
   }
 
 #if 0

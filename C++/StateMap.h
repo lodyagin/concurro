@@ -43,6 +43,7 @@ protected:
 std::ostream&
 operator<< (std::ostream& out, const UniversalState& st);
 
+class AbstractObjectWithStates;
 
 class StateMap;
 //class UniversalState;
@@ -51,10 +52,22 @@ class StateMap;
 //! inherited.
 struct StateAxis {
   //! For is_ancestor check
-  static StateAxis self_;
+  //static StateAxis self_;
 
   //! To make this type polymorphic
   virtual ~StateAxis() {} 
+
+  virtual const std::atomic<uint32_t>& current_state
+    (const AbstractObjectWithStates*) const
+  {
+    THROW_NOT_IMPLEMENTED;
+  }
+
+  virtual std::atomic<uint32_t>& current_state
+    (AbstractObjectWithStates*) const
+  {
+    THROW_NOT_IMPLEMENTED;
+  }
 };
 
 //! Return true if DerivedAxis is same or derived from
@@ -67,6 +80,12 @@ constexpr bool is_ancestor()
   return dynamic_cast<const Axis*>(&DerivedAxis::self_) 
 	 != nullptr;
 #pragma GCC diagnostic pop
+}
+
+template<class Axis>
+inline bool is_same_axis(const StateAxis& ax)
+{
+  return typeid(Axis) == typeid(ax);
 }
 
 #define STATE_MAP_MASK 0x7fff0000
@@ -197,8 +216,8 @@ typedef int16_t StateMapId;
 class StateMapParBase
 {
 public:
-  std::set<std::string> states;
-  std::set<
+  std::list<std::string> states;
+  std::list<
     std::pair<std::string, std::string>> transitions;
   StateMapId parent_map;
 

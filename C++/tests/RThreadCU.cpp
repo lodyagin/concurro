@@ -113,18 +113,19 @@ public:
 	 (AbstractObjectWithStates* object) override
   {}
 
-#if 0  
-  std::atomic<uint32_t>& current_state() override
+  std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) override
   { 
-	 return RObjectWithEvents<T1Axis>::current_state();
+	 return ax.current_state(this);
   }
 
   const std::atomic<uint32_t>& 
-	 current_state() const override
+	 current_state(const StateAxis& ax) const override
   { 
-	 return RObjectWithEvents<T1Axis>::current_state();
+	 return ax.current_state(this);
   }
 
+#if 0  
   Event get_event (const UniversalEvent& ue) override
   {
 	 return RObjectWithEvents<T1Axis>::get_event(ue);
@@ -163,7 +164,6 @@ DEFINE_STATES(T1Axis);
 DEFINE_STATE_CONST(T1, St, initial);
 DEFINE_STATE_CONST(T1, St, check_passed);
 DEFINE_STATE_CONST(T1, St, check_failed);
-				  
 
 // It creates T1 in run()
 struct T2 : public RT 

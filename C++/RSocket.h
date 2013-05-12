@@ -200,15 +200,6 @@ class RSocket : public Bases...
 	  const RSocketAddress& addr);
 
 public:
-  /*CompoundEvent is_terminal_state() const
-  {
-	 //return RSocketBase::is_terminal_state();
-	 //return is_terminal_state_event;
-	 THROW_NOT_IMPLEMENTED; // or return CompoundEvent()
-	 }*/
-
-  //void ask_close_out();
-
   std::string universal_id() const override
   {
 	 return RSocketBase::universal_id();
@@ -223,15 +214,16 @@ public:
 	 (AbstractObjectWithStates* object) override
   {}
   
-  std::atomic<uint32_t>& current_state() override
+  std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) override
   { 
-	 return RSocketBase::current_state();
+	 return ax.current_state(this);
   }
 
   const std::atomic<uint32_t>& 
-	 current_state() const override
+	 current_state(const StateAxis& ax) const override
   { 
-	 return RSocketBase::current_state();
+	 return ax.current_state(this);
   }
 
 #if 0
@@ -255,6 +247,7 @@ public:
   void update_events
 	 (TransitionId trans_id, uint32_t to) override
   {
+	 LOG_TRACE(log, "update_events");
 	 return RSocketBase::update_events(trans_id, to);
   }
 
@@ -267,6 +260,8 @@ protected:
   ~RSocket();
 
   DEFAULT_LOGGER(RSocket<Bases...>);
+
+  //std::unordered_map<std::type_info> axes;
 };
 
 //=================================================

@@ -16,11 +16,10 @@ template<class Axis1, class Axis2> class RMixedAxis;
 template<class Axis> class RState;
 template<class Axis1, class Axis2> class RMixedEvent;
 
-#if 1
 class AbstractObjectWithStates
 {
 public:
-  virtual ~AbstractObjectWithStates() {};
+  virtual ~AbstractObjectWithStates() {}
 
 #if 1
   //! the "update parent" callback on state changing in
@@ -34,8 +33,14 @@ public:
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
 #endif
+
+protected:
+  virtual std::atomic<uint32_t>& 
+	 current_state(const StateAxis&) = 0;
+
+  virtual const std::atomic<uint32_t>& 
+	 current_state(const StateAxis&) const = 0;
 };
-#endif
 
 class RObjectWithStatesBase;
 
@@ -68,12 +73,6 @@ public:
 	 (AbstractObjectWithStates* object) = 0;
 
   virtual std::string universal_id() const = 0;
-
-protected:
-
-  virtual std::atomic<uint32_t>& current_state() = 0;
-  virtual const std::atomic<uint32_t>& 
-	 current_state() const = 0;
 };
 
 #if 0

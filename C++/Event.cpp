@@ -158,7 +158,7 @@ CompoundEvent::CompoundEvent(CompoundEvent&& e)
 	 handle_vec(std::move(e.handle_vec)),
 	 vector_need_update(e.vector_need_update)
 {
-  LOG_DEBUG(log, "CompoundEvent::move constructor");
+  LOG_TRACE(log, "CompoundEvent::move constructor");
 }
 
 CompoundEvent::CompoundEvent(const CompoundEvent& e)
@@ -166,7 +166,7 @@ CompoundEvent::CompoundEvent(const CompoundEvent& e)
 	 handle_vec(e.handle_vec),
 	 vector_need_update(e.vector_need_update)
 {
-  LOG_DEBUG(log, "CompoundEvent::copy constructor");
+  LOG_TRACE(log, "CompoundEvent::copy constructor");
 }
 
 CompoundEvent::CompoundEvent(const Event& e)
@@ -199,7 +199,7 @@ CompoundEvent::CompoundEvent
 CompoundEvent& CompoundEvent
 ::operator= (CompoundEvent&& e)
 {
-  LOG_DEBUG(log, "CompoundEvent::operator=(move)");
+  LOG_TRACE(log, "CompoundEvent::operator=(move)");
   handle_set = std::move(e.handle_set);
   handle_vec = std::move(e.handle_vec);
   vector_need_update = e.vector_need_update;
@@ -209,7 +209,7 @@ CompoundEvent& CompoundEvent
 CompoundEvent& CompoundEvent
 ::operator= (const CompoundEvent& e)
 {
-  LOG_DEBUG(log, "CompoundEvent::operator=(copy)");
+  LOG_TRACE(log, "CompoundEvent::operator=(copy)");
   handle_set = e.handle_set;
   vector_need_update = true; // <NB>
   return *this;

@@ -77,6 +77,18 @@ public:
 	 (AbstractObjectWithStates* object) override
   {}
   
+  std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) override
+  {
+	 return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>& 
+	 current_state(const StateAxis& ax) const override
+  {
+	 return ax.current_state(this);
+  }
+
   DEFAULT_LOGGER(Test)
 };
 

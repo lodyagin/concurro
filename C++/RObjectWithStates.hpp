@@ -50,7 +50,7 @@ CompoundEvent RObjectWithEvents<Axis>
 ::create_event(const UniversalEvent& ue) const
 {
   const UniversalEvent current_event
-	 (this->current_state(), true);
+	 (this->current_state(Axis::self()), true);
   const bool initial_state = 
 	 ue.local_id() == current_event.local_id();
 #if 0
@@ -82,6 +82,7 @@ void RObjectWithEvents<Axis>
 //
 ::update_events(TransitionId trans_id, uint32_t to)
 {
+  LOG_TRACE(Logger<LOG::Root>, "update_events");
   // reset all events due to a new transition
   for (auto& p : events) p.second.reset();
 
@@ -172,6 +173,7 @@ template<class DerivedAxis, class SplitAxis>
 void RStateSplitter<DerivedAxis, SplitAxis>
 ::update_events(TransitionId trans_id, uint32_t to) 
 {
+  LOG_TRACE(Logger<LOG::Root>, "update_events");
   //<NB> always in DerivedAxis (stat is splitted in this
   //case, derived has another events states)
   this->RObjectWithEvents<DerivedAxis>

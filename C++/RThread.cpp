@@ -21,9 +21,6 @@ DEFINE_STATE_CONST(RThreadBase, ThreadState, starting);
 DEFINE_STATE_CONST(RThreadBase, ThreadState, working);
 DEFINE_STATE_CONST(RThreadBase, ThreadState, terminated);
 
-//DEFINE_EVENT(RThreadBase, ThreadAxis, starting);
-//DEFINE_EVENT(RThreadBase, ThreadAxis, terminated);
-
 bool RThreadBase::LogParams::current = false;
 
 RThreadBase::RThreadBase 

@@ -19,8 +19,6 @@ DEFINE_STATE_CONST(RWindow, State, welded);
 
 DEFINE_STATES(ConnectedWindowAxis);
 
-//DEFINE_STATE_CONST(RConnectedWindow, State, destroyed);
-
 RWindow::RWindow(const std::string& id)
 : RObjectWithEvents<WindowAxis>(readyState),
   StdIdMember(id),
