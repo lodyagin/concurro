@@ -10,6 +10,8 @@
 #include "RSocketConnection.h"
 #include "OutSocket.h"
 #include "ClientSocket.h"
+#include "REvent.hpp"
+#include "RState.hpp"
 
 DEFINE_STATES(ClientConnectionAxis);
 

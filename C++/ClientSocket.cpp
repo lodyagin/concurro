@@ -9,134 +9,142 @@
 #include "StdAfx.h"
 #include "ClientSocket.h"
 #include "Event.h"
-//#include "TCPSocket.h" // TODO remove it
+#include "REvent.hpp"
+#include "RState.hpp"
 
 DEFINE_STATES(ClientSocketAxis);
 
 DEFINE_STATE_CONST(ClientSocket, State, created);
+DEFINE_STATE_CONST(ClientSocket, State, pre_connecting);
 DEFINE_STATE_CONST(ClientSocket, State, connecting);
 DEFINE_STATE_CONST(ClientSocket, State, ready);
 DEFINE_STATE_CONST(ClientSocket, State, 
-						 connection_timed_out);
+                   connection_timed_out);
 DEFINE_STATE_CONST(ClientSocket, State, 
-						 connection_refused);
+                   connection_refused);
 DEFINE_STATE_CONST(ClientSocket, State, 
-						 destination_unreachable);
+                   destination_unreachable);
 DEFINE_STATE_CONST(ClientSocket, State, closed);
 
 ClientSocket::ClientSocket
-  (const ObjectCreationInfo& oi, 
-	const RSocketAddress& par)
-  : 
-	 RSocketBase(oi, par),
-	 RStateSplitter<ClientSocketAxis, SocketBaseAxis>
-	 (this, createdState),
-	 CONSTRUCT_EVENT(connecting),
-	 CONSTRUCT_EVENT(ready),
-	 CONSTRUCT_EVENT(connection_timed_out),
-	 CONSTRUCT_EVENT(connection_refused),
-	 CONSTRUCT_EVENT(destination_unreachable),
-	 CONSTRUCT_EVENT(closed),
+(const ObjectCreationInfo& oi, 
+ const RSocketAddress& par)
+   : 
+   RSocketBase(oi, par),
+   RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+     (this, createdState,
+      RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+      ::memb_wrap(&ClientSocket::state_hook)
+     ),
+   CONSTRUCT_EVENT(pre_connecting),
+   CONSTRUCT_EVENT(connecting),
+   CONSTRUCT_EVENT(ready),
+   CONSTRUCT_EVENT(connection_timed_out),
+   CONSTRUCT_EVENT(connection_refused),
+   CONSTRUCT_EVENT(destination_unreachable),
+   CONSTRUCT_EVENT(closed),
 
-	 thread(dynamic_cast<Thread*>
-			  (RSocketBase::repository->thread_factory
-				-> create_thread(Thread::Par(this))))
+   thread(dynamic_cast<Thread*>
+          (RSocketBase::repository->thread_factory
+           -> create_thread(Thread::Par(this))))
 {
-  SCHECK(thread);
-  /*this->RSocketBase::ancestor_terminals.push_back
-	 (is_terminal_state());*/
-  this->RSocketBase::threads_terminals.push_back
-	 (thread->is_terminated());
-  thread->start();
+   SCHECK(thread);
+   /*this->RSocketBase::ancestor_terminals.push_back
+     (is_terminal_state());*/
+   this->RSocketBase::threads_terminals.push_back
+      (thread->is_terminated());
 }
 
 ClientSocket::~ClientSocket()
 {
-  //RSocketBase::is_terminal_state().wait();
-  LOG_DEBUG(log, "~ClientSocket()");
+   LOG_DEBUG(log, "~ClientSocket()");
 }
 
 void ClientSocket::ask_connect()
 {
-  ::connect
-	 (fd, 
-	  aw_ptr->begin()->ai_addr, 
-	  aw_ptr->begin()->ai_addrlen);
-  process_error(errno);
+   State::move_to(*this, pre_connectingState);
+   thread->start();
 }
 
-void ClientSocket::state_changed
+void ClientSocket::state_hook
   (AbstractObjectWithStates* object)
 {
-  /*const RState<SocketBaseAxis> st(*this);
+  const RState<SocketBaseAxis> st
+    (*dynamic_cast
+     <ObjectWithStatesInterface<SocketBaseAxis>*>(this));
 
-  if (st == RSocketBase::State::readyState) {
-	 thread->start();
-	 }*/
+  State::move_to(*this, st);
 }
 
 void ClientSocket::process_error(int error)
 {
-  switch (error) {
-  case EINPROGRESS:
-	 State::move_to(*this, connectingState);
-	 // <NB> there are no connecting->connecting transition
-	 return;
-  case 0:
-	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-		(*this, readyState);
-	 return;
-  case ETIMEDOUT:
-	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-		(*this, connection_timed_outState);
-	 break;
-  case ECONNREFUSED:
-	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-		(*this, connection_refusedState);
-	 break;
-  case ENETUNREACH:
-	 RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-		(*this, destination_unreachableState);
-	 break;
-  }
-  //RSocketBase::process_error(error);
+   switch (error) {
+   case EINPROGRESS:
+      State::move_to(*this, connectingState);
+      // <NB> there are no connecting->connecting
+      // transition
+      return;
+   case 0:
+      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+         (*this, readyState);
+      return;
+   case ETIMEDOUT:
+      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+         (*this, connection_timed_outState);
+      break;
+   case ECONNREFUSED:
+      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+         (*this, connection_refusedState);
+      break;
+   case ENETUNREACH:
+      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+         (*this, destination_unreachableState);
+      break;
+   }
+   //RSocketBase::process_error(error);
 }
 
 void ClientSocket::Thread::run()
 {
-  ThreadState::move_to(*this, workingState);
-  socket->is_construction_complete_event.wait();
+   ThreadState::move_to(*this, workingState);
+   socket->is_construction_complete_event.wait();
 
-  auto* cli_sock = dynamic_cast<ClientSocket*>
-	 (socket);
-  SCHECK(cli_sock);
+   auto* cli_sock = dynamic_cast<ClientSocket*>
+      (socket);
+   SCHECK(cli_sock);
 
-  ( cli_sock->is_connecting()
-	 | cli_sock->is_terminal_state()) . wait();
+   ( cli_sock->is_pre_connecting()
+     | cli_sock->is_terminal_state()) . wait();
 
-  if (cli_sock->is_terminal_state().signalled())
-  return;
+   if (cli_sock->is_terminal_state().signalled())
+      return;
 
-  fd_set wfds;
-  FD_ZERO(&wfds);
+   ::connect
+      (cli_sock->fd, 
+       cli_sock->aw_ptr->begin()->ai_addr, 
+       cli_sock->aw_ptr->begin()->ai_addrlen);
+   cli_sock->process_error(errno);
 
-  const SOCKET fd = socket->fd;
-  SCHECK(fd >= 0);
+   fd_set wfds;
+   FD_ZERO(&wfds);
 
-  // Wait for termination of a connection process
-  FD_SET(fd, &wfds);
-  rSocketCheck(
-	 ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
-  LOG_DEBUG(log, "ClientSocket>\t ::select");
+   const SOCKET fd = socket->fd;
+   SCHECK(fd >= 0);
 
-  int error = 0;
-  socklen_t error_len = sizeof(error);
-  rSocketCheck(
-	 getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
-					&error_len) == 0);
+   // Wait for termination of a connection process
+   FD_SET(fd, &wfds);
+   rSocketCheck(
+      ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
+   LOG_DEBUG(log, "ClientSocket>\t ::select");
 
-  if (error)
-	 cli_sock->process_error(error);
+   int error = 0;
+   socklen_t error_len = sizeof(error);
+   rSocketCheck(
+      getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
+                 &error_len) == 0);
+
+   if (error)
+      cli_sock->process_error(error);
 }
 
 

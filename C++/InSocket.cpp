@@ -8,7 +8,8 @@
 
 #include "StdAfx.h"
 #include "InSocket.h"
-//#include "TCPSocket.h"
+//#include "REvent.hpp"
+#include "RState.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <algorithm>

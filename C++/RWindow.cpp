@@ -9,6 +9,8 @@
 #include "StdAfx.h"
 #include "RWindow.h"
 #include "RThread.hpp"
+#include "REvent.hpp"
+#include "RState.hpp"
 
 DEFINE_STATES(WindowAxis);
 

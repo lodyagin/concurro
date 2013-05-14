@@ -157,8 +157,8 @@ struct axis : public parent \
   } \
   static StateMapPar<axis> get_state_map_par() \
   {	\
-	 return StateMapPar<axis>(pars, \
-	   StateMapInstance<typename axis::Parent>::init()); \
+    return StateMapPar<axis>(pars, \
+      StateMapInstance<typename axis::Parent>::init()); \
   } \
   \
   const std::atomic<uint32_t>& current_state \
@@ -166,14 +166,34 @@ struct axis : public parent \
   { \
     return dynamic_cast<const RObjectWithStates<axis>*> \
       (obj)			\
-	   -> RObjectWithStates<axis>::current_state(*this); \
+      -> RObjectWithStates<axis>::current_state(*this); \
   } \
   \
   std::atomic<uint32_t>& current_state \
     (AbstractObjectWithStates* obj) const override	\
   { \
     return dynamic_cast<RObjectWithStates<axis>*>(obj) \
-	   -> RObjectWithStates<axis>::current_state(*this); \
+     -> RObjectWithStates<axis>::current_state(*this); \
+  } \
+  \
+  void update_events \
+     (AbstractObjectWithEvents* obj, \
+      TransitionId trans_id,  \
+      uint32_t to) override \
+  { \
+    return dynamic_cast<RObjectWithEvents<axis>*>(obj) \
+    -> RObjectWithEvents<axis>::update_events \
+      (*this, trans_id, to); \
+  } \
+  \
+  void state_changed \
+     (AbstractObjectWithStates* subscriber, \
+      AbstractObjectWithStates* publisher) override \
+  { \
+    return dynamic_cast<RObjectWithStates<axis>*> \
+    (subscriber) \
+    -> RObjectWithStates<axis>::state_changed \
+      (*this, publisher); \
   } \
 };	\
 template class RMixedAxis<axis, axis>;	\

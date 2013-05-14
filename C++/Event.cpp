@@ -7,7 +7,7 @@
  */
 
 #include "StdAfx.h"
-#include "REvent.h"
+//#include "REvent.h"
 #include "Logging.h"
 #include "RThread.h"
 #ifdef _WIN32

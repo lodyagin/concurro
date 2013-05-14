@@ -8,6 +8,8 @@
 
 #include "StdAfx.h"
 #include "OutSocket.h"
+//#include "REvent.hpp"
+#include "RState.hpp"
 
 /*
 DEFINE_STATES(OutSocketAxis);

@@ -12,8 +12,9 @@ RObjectWithStatesBase::~RObjectWithStatesBase()
 
 void RObjectWithStatesBase
 ::register_subscriber
-  (RObjectWithStatesBase* sub/*, 
-										 const CompoundEvent& terminal_state*/)
+  (RObjectWithStatesBase* sub,
+   StateAxis* ax
+  )
 {
   // A guard
   is_changing = true;
@@ -23,7 +24,7 @@ void RObjectWithStatesBase
   }
 
   assert(sub);
-  subscribers.insert(sub);
+  subscribers.insert(std::make_pair(sub, ax));
   subscribers_terminals.insert
 	 (std::move(sub->is_terminal_state()));
   assert(subscribers_terminals.size() <= 
@@ -32,7 +33,8 @@ void RObjectWithStatesBase
 }
 
 void RObjectWithStatesBase
-::state_changed(AbstractObjectWithStates* object)
+::state_changed
+  (StateAxis& ax, AbstractObjectWithStates* object)
 {
   // A guard
   is_frozen = true;
@@ -40,6 +42,6 @@ void RObjectWithStatesBase
 	 THROW_PROGRAM_ERROR;
 
   for (auto sub : subscribers) 
-	 sub->state_changed(object);
+    sub.first->state_changed(*sub.second, object);
 }
 

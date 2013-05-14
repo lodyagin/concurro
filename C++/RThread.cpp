@@ -10,6 +10,8 @@
 #include "RThreadRepository.h"
 #include "SShutdown.h"
 #include "Logging.h"
+#include "REvent.hpp"
+#include "RState.hpp"
 #include <assert.h>
 
 // RThread states  ========================================

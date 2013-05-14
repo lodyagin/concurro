@@ -38,12 +38,12 @@ typedef RThread<std::thread> RT;
 static const std::chrono::milliseconds ms100(100);
 
 DECLARE_AXIS(CDAxis, StateAxis,
- {"charged", "discharged"},
-  {{"charged", "discharged"}, {"discharged", "charged"}}
-);
+             {"charged", "discharged"},
+             {{"charged", "discharged"}, {"discharged", "charged"}}
+  );
 
 class Test : public RObjectWithEvents<CDAxis>,
-				 public RT
+             public RT
 {
 public:
   DECLARE_STATES(CDAxis, State);
@@ -51,43 +51,58 @@ public:
   DECLARE_STATE_CONST(State, discharged);
 
   Test() : RObjectWithEvents<CDAxis>(dischargedState),
-			  RT("Test") {}
+           RT("Test") {}
   ~Test() { destroy(); }
 
   void run()
-  {
-	 RThreadState::move_to(*this, workingState);
-	 USLEEP(100);
-	 State::move_to(*this, chargedState);
-	 USLEEP(100);
-	 State::move_to(*this, dischargedState);
-  }
+    {
+      RThreadState::move_to(*this, workingState);
+      USLEEP(100);
+      State::move_to(*this, chargedState);
+      USLEEP(100);
+      State::move_to(*this, dischargedState);
+    }
 
   std::string universal_id() const override
-  {
-	 return RT::universal_id();
-  }
+    {
+      return RT::universal_id();
+    }
 
   CompoundEvent is_terminal_state() const override
-  {
-	 return CompoundEvent();
-  }
+    {
+      return CompoundEvent();
+    }
 
   void state_changed
-	 (AbstractObjectWithStates* object) override
-  {}
+    (StateAxis& ax, 
+     AbstractObjectWithStates* object) override
+  {
+  }
   
   std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) override
-  {
-	 return ax.current_state(this);
-  }
+  current_state(const StateAxis& ax) override
+    {
+      return ax.current_state(this);
+    }
 
   const std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) const override
+  current_state(const StateAxis& ax) const override
+    {
+      return ax.current_state(this);
+    }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
   {
-	 return ax.current_state(this);
+    ax.update_events(this, trans_id, to);
   }
+
+  /*StateAxis& get_axis() const override
+  {
+    return CDAxis::self();
+    }*/
 
   DEFAULT_LOGGER(Test)
 };
@@ -97,10 +112,10 @@ DEFINE_STATES(CDAxis);
 DEFINE_STATE_CONST(Test, State, charged);
 DEFINE_STATE_CONST(Test, State, discharged);
 
-#define TEST_OBJ_STATE(obj, axis, state)			\
-  { \
-	 RState<axis> st(obj); \
-	 CU_ASSERT_EQUAL_FATAL(st, state); \
+#define TEST_OBJ_STATE(obj, axis, state)        \
+  {                                             \
+    RState<axis> st(obj);                       \
+    CU_ASSERT_EQUAL_FATAL(st, state);           \
   } while(0)
 
 void test_arrival_event()
@@ -215,9 +230,9 @@ void test_inheritance()
   CU_ASSERT_TRUE_FATAL(derived.is_s3().wait(TAU));
 }
 
-#define STATE_DERIVED(action, object, state) \
-  RMixedAxis<DerivedAxis, TestAxis>::action \
-    ((object), TestObject::state ## State);
+#define STATE_DERIVED(action, object, state)    \
+  RMixedAxis<DerivedAxis, TestAxis>::action     \
+  ((object), TestObject::state ## State);
 
 void test_splitting()
 {
@@ -254,7 +269,7 @@ void test_splitting()
 
   // s5 -> q1
   RMixedAxis<DerivedAxis, TestAxis>::move_to
-	 (origin, SplittedStateObject::q1State);
+    (origin, SplittedStateObject::q1State);
 //#if CAST
   CU_ASSERT_TRUE_FATAL(Q1.wait(TAU));
 //#endif

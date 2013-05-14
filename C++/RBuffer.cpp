@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 #include "RBuffer.h"
+#include "REvent.hpp"
+#include "RState.hpp"
 
 DEFINE_STATES(DataBufferStateAxis);
 

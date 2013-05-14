@@ -10,6 +10,7 @@
 #define CONCURRO_RTHREADREPOSITORY_HPP_
 
 #include "RThreadRepository.h"
+#include "RCheck.h"
 #include <signal.h>
 
 template<class Thread>

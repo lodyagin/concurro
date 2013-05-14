@@ -9,6 +9,8 @@
 
 #include "StdAfx.h"
 #include "RSocket.hpp"
+#include "REvent.hpp"
+#include "RState.hpp"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>

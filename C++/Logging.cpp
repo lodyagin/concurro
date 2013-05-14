@@ -14,6 +14,7 @@
 #include <log4cxx/helpers/properties.h>
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
 
 LogBase::LogBase (const std::string& szName)
   : m_sName (szName)/*,

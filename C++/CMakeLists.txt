@@ -8,7 +8,7 @@ project(concurrent)
 set(Boost_USE_MULTITHREADED OFF)  
 # it is alwais multithreaded on Linux
 set(Boost_NO_SYSTEM_PATHS TRUE)
-find_package(Boost 1.53 COMPONENTS thread REQUIRED)
+find_package(Boost 1.49 COMPONENTS thread system REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -Wall")
 

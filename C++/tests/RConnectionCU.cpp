@@ -8,7 +8,7 @@ void test_connection();
 
 CU_TestInfo RConnectionTests[] = {
   {"test RConnection",
-	test_connection},
+   test_connection},
   CU_TEST_INFO_NULL
 };
 
@@ -33,34 +33,35 @@ public:
 
   struct Par : public ParentPar
   {
-	 Par(const std::string& host, uint16_t port)
-	 : ParentPar (host, port) 
-	 {
-		sock_addr = sar->get_object_by_id(1);
-	 }
+    Par(const std::string& host, uint16_t port)
+      : ParentPar (host, port) 
+      {
+        sock_addr = sar->get_object_by_id(1);
+      }
 
-	 RSocketConnection* create_derivation
-	   (const ObjectCreationInfo& oi) const
-	 {
-		assert(sock_addr);
-		socket_rep.reset(
-		  new RSocketRepository(
-			 SFORMAT("TestConnection:" << oi.objectId
-						<< ":RSocketRepository"),
-			 1,
-			 dynamic_cast<RConnectionRepository*>
-			 (oi.repository)->thread_factory));
-		socket = socket_rep->create_object(*sock_addr);
-		return new TestConnection(oi, *this);
-	 }
+    RSocketConnection* create_derivation
+    (const ObjectCreationInfo& oi) const
+      {
+        assert(sock_addr);
+        socket_rep.reset(
+          new RSocketRepository(
+            SFORMAT("TestConnection:" << oi.objectId
+                    << ":RSocketRepository"),
+            1,
+            dynamic_cast<RConnectionRepository*>
+            (oi.repository)->thread_factory));
+        socket = socket_rep->create_object(*sock_addr);
+        return new TestConnection(oi, *this);
+      }
   };
 
   TestConnection(const ObjectCreationInfo& oi,
-					  const Par& par)
-	 : RSingleSocketConnection(oi, par) {}
+                 const Par& par)
+    : RSingleSocketConnection(oi, par) {}
 
   void state_changed
-	 (AbstractObjectWithStates* object) override
+    (StateAxis& ax, 
+     AbstractObjectWithStates* object) override
   {}
 };
 
@@ -69,15 +70,15 @@ void test_connection()
   typedef Logger<LOG::Root> log;
 
   RConnectionRepository con_rep
-	 ("RConnectionCU::test_connection::sr", 10, 
-	  &RThreadRepository<RThread<std::thread>>::instance()
-		);
+    ("RConnectionCU::test_connection::sr", 10, 
+     &RThreadRepository<RThread<std::thread>>::instance()
+      );
 
   RWindow wc;
 
   auto* con = dynamic_cast<TestConnection*>
-	 (con_rep.create_object
-	  (TestConnection::Par("192.168.25.240", 31001)));
+    (con_rep.create_object
+     (TestConnection::Par("192.168.25.240", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
   con->ask_connect();
@@ -94,16 +95,16 @@ void test_connection()
   const std::string a2(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a2);
   CU_ASSERT_TRUE_FATAL(
-	 STATE_OBJ(RConnectedWindow, state_is, con->iw(),
-				  filled));
+    STATE_OBJ(RConnectedWindow, state_is, con->iw(),
+              filled));
   CU_ASSERT_TRUE_FATAL(
-	 STATE_OBJ(RWindow, state_is, wc, filled));
+    STATE_OBJ(RWindow, state_is, wc, filled));
 
   // move whole content
   wc = std::move(con->iw());
   const std::string a3(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a3);
   CU_ASSERT_TRUE_FATAL(
-	 STATE_OBJ(RWindow, state_is, wc, filled));
+    STATE_OBJ(RWindow, state_is, wc, filled));
   con->ask_abort();
 }

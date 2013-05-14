@@ -44,6 +44,7 @@ std::ostream&
 operator<< (std::ostream& out, const UniversalState& st);
 
 class AbstractObjectWithStates;
+class AbstractObjectWithEvents;
 
 class StateMap;
 //class UniversalState;
@@ -65,6 +66,21 @@ struct StateAxis {
 
   virtual std::atomic<uint32_t>& current_state
     (AbstractObjectWithStates*) const
+  {
+    THROW_NOT_IMPLEMENTED;
+  }
+
+  virtual void update_events
+     (AbstractObjectWithEvents* obj, 
+      TransitionId trans_id, 
+      uint32_t to)
+  {
+    THROW_NOT_IMPLEMENTED;
+  }
+
+  virtual void state_changed
+    (AbstractObjectWithStates* subscriber,
+     AbstractObjectWithStates* publisher)
   {
     THROW_NOT_IMPLEMENTED;
   }
