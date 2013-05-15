@@ -26,6 +26,10 @@ template<class Axis>
 StateMapId StateMapInstance<Axis>::init()
 {
   if (!stateMap) {
+    StateMapInstance<typename Axis::Parent>::init();
+    // ensure parent map ids are always less than childs
+    // (it is used in StateMap::is_compatible)
+
     try {
       stateMap = StateMapRepository::instance()
         . get_map_for_axis(typeid(Axis));
@@ -272,11 +276,8 @@ RState<Axis>::RState (const char* name)
 
 template<class Axis>
 RState<Axis>::RState(uint32_t us)
-  : UniversalState(us)
-{
-  // ensure the new state is from Axis
-  RAxis<Axis>::instance().state_map().is_compatible(us);
-}
+: UniversalState(RAxis<Axis>::instance().state_map(), us)
+{}
 
 template<class Axis>
 RState<Axis>

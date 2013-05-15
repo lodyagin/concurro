@@ -44,7 +44,7 @@ void RObjectWithStates<Axis>
   if (mcw)
     mcw->call
       (this, object, state_ax, 
-       UniversalState(object->current_state(state_ax)));
+       state_ax.bound(object->current_state(state_ax)));
 }
 
 template<class Axis>
@@ -116,7 +116,7 @@ RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
     RObjectWithEvents<DerivedAxis>(initial_state, mcw),
     delegate(a_delegate),
     split_state_id(StateMapInstance<SplitAxis>
-                   ::stateMap -> size()),
+                   ::stateMap -> get_n_states()),
     split_transition_id(
       StateMapInstance<SplitAxis>
       ::stateMap -> get_max_transition_id()),
