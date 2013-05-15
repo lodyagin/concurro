@@ -89,7 +89,7 @@ void RMixedAxis<Axis, Axis2>
       throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
 
-  obj.state_changed(Axis2::self(), &obj);
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
 
   if (auto p = 
       dynamic_cast<ObjectWithEventsInterface<Axis2>*>
@@ -133,7 +133,7 @@ bool RMixedAxis<Axis, Axis2>
   if (!current.compare_exchange_strong(expected, to))
     return false;
 
-  obj.state_changed(Axis2::self(), &obj);
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
   
   if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
       (&obj)) {
@@ -179,7 +179,7 @@ bool RMixedAxis<Axis, Axis2>
 
   } while(!current.compare_exchange_strong(from, to));
 
-  obj.state_changed(Axis2::self(), &obj);
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
 
   if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
       (&obj)) {

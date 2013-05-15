@@ -87,6 +87,7 @@ SplittedStateObject(TestObject* orig)
   // sync a state delegate -> this
   void state_changed
     (StateAxis& ax, 
+     const StateAxis& state_ax,     
      AbstractObjectWithStates* object) override
   {
     if (object != this) {

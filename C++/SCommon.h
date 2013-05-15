@@ -256,4 +256,37 @@ char* string2char_ptr (const std::string& str);
 //! Calculate the logic implication: a -> b
 #define IMPLICATION(a, b) ((b) || (!(a)))
 
+/**
+ * Abstract wrapper for a class method pointer. It allows
+ * has pointer to any method of any class derived from
+ * Base. 
+ */
+template<class Base, class... Args>
+class AbstractMethodCallWrapper 
+{
+public:
+  virtual void call(Base* obj, Args... args) = 0;
+};
+
+/**
+ * An AbstractMethodCallWrapper descendant for holding
+ * pointers of class Derived.
+ */
+template<class Derived, class Base, class... Args>
+class MethodCallWrapper
+  : public AbstractMethodCallWrapper<Base, Args...>
+{
+public:
+  typedef void (Derived::*Method) (Args... args);
+
+  MethodCallWrapper(Method a_method) : method(a_method) {}
+
+  void call(Base* obj, Args... args) override
+  {
+    (dynamic_cast<Derived*>(obj)->*method)(args...);
+  }
+protected:
+  Method method;
+};
+
 #endif

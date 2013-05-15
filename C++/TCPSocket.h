@@ -76,13 +76,16 @@ public:
 
   void state_changed
     (StateAxis& ax, 
+     const StateAxis& state_ax,
      AbstractObjectWithStates* object) override
   {
     THROW_PROGRAM_ERROR;
   }
 
   void state_hook
-    (AbstractObjectWithStates* object);
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state);
 
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override

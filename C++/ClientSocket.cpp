@@ -34,7 +34,7 @@ ClientSocket::ClientSocket
    RStateSplitter<ClientSocketAxis, SocketBaseAxis>
      (this, createdState,
       RStateSplitter<ClientSocketAxis, SocketBaseAxis>
-      ::memb_wrap(&ClientSocket::state_hook)
+      ::state_hook(&ClientSocket::state_hook)
      ),
    CONSTRUCT_EVENT(pre_connecting),
    CONSTRUCT_EVENT(connecting),
@@ -67,13 +67,14 @@ void ClientSocket::ask_connect()
 }
 
 void ClientSocket::state_hook
-  (AbstractObjectWithStates* object)
+  (AbstractObjectWithStates* object,
+   const StateAxis& ax,
+   const UniversalState& new_state)
 {
-  const RState<SocketBaseAxis> st
-    (*dynamic_cast
-     <ObjectWithStatesInterface<SocketBaseAxis>*>(this));
-
-  State::move_to(*this, st);
+  if (!ClientSocketAxis::is_same(ax)) {
+    State::move_to(*this, 
+                   RState<ClientSocketAxis>(new_state));
+  }
 }
 
 void ClientSocket::process_error(int error)

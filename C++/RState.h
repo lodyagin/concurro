@@ -155,10 +155,20 @@ struct axis : public parent \
     static axis self; \
     return self; \
   } \
+  \
+  static bool is_same(const StateAxis& ax) { \
+    return &axis::self() == ax.vself();        \
+  } \
+  \
   static StateMapPar<axis> get_state_map_par() \
   {	\
     return StateMapPar<axis>(pars, \
       StateMapInstance<typename axis::Parent>::init()); \
+  } \
+  \
+  const StateAxis* vself() const override \
+  { \
+    return &axis::self(); \
   } \
   \
   const std::atomic<uint32_t>& current_state \
@@ -188,12 +198,13 @@ struct axis : public parent \
   \
   void state_changed \
      (AbstractObjectWithStates* subscriber, \
-      AbstractObjectWithStates* publisher) override \
+      AbstractObjectWithStates* publisher, \
+      const StateAxis& state_ax) override    \
   { \
     return dynamic_cast<RObjectWithStates<axis>*> \
     (subscriber) \
     -> RObjectWithStates<axis>::state_changed \
-      (*this, publisher); \
+      (*this, state_ax, publisher);            \
   } \
 };	\
 template class RMixedAxis<axis, axis>;	\

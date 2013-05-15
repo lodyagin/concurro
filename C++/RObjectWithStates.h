@@ -9,6 +9,7 @@
 #ifndef CONCURRO_ROBJECTWITHSTATES_H_
 #define CONCURRO_ROBJECTWITHSTATES_H_
 
+#include "SCommon.h"
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
 #if __GNUC_MINOR__< 6
@@ -42,6 +43,7 @@ public:
   //! the `object'.
   void state_changed
     (StateAxis& ax, 
+     const StateAxis& state_ax,     
      AbstractObjectWithStates* object) override;
 
 protected:
@@ -49,45 +51,13 @@ protected:
   std::atomic<bool> is_frozen;
   std::atomic<bool> is_changing;
 
-#if 0
-  struct Subscriber {
-    RObjectWithStatesBase* subscriber;
-    StdAxis* axis;
-  };
-#else
   typedef std::pair<RObjectWithStatesBase*, StateAxis*>
     Subscriber;
-#endif
 
   //! Registered subscribers
-  //std::set<RStateChangeSubscriber*> subscribers;
   std::set<Subscriber> subscribers;
   //! All subscribers terminal states.
   std::set<CompoundEvent> subscribers_terminals;
-};
-
-template<class Base, class... Args>
-class AbstractMethodCallWrapper 
-{
-public:
-  virtual void call(Base* obj, Args... args) = 0;
-};
-
-template<class Derived, class Base, class... Args>
-class MethodCallWrapper
-  : public AbstractMethodCallWrapper<Base, Args...>
-{
-public:
-  typedef void (Derived::*Method) (Args... args);
-
-  MethodCallWrapper(Method a_method) : method(a_method) {}
-
-  void call(Base* obj, Args... args) override
-  {
-    (dynamic_cast<Derived*>(obj)->*method)(args...);
-  }
-protected:
-  Method method;
 };
 
 //! It can be used as a parent of an object which
@@ -103,12 +73,17 @@ public:
 
   typedef AbstractMethodCallWrapper<
     RObjectWithStates<Axis>, 
-    AbstractObjectWithStates*      > AMembWrap;
+    AbstractObjectWithStates*,
+    const StateAxis&,
+    const UniversalState&
+  > AMembWrap;
 
   template<class AppObj>
   using MembWrap = MethodCallWrapper<
     AppObj, RObjectWithStates<Axis>, 
-    AbstractObjectWithStates*
+    AbstractObjectWithStates*,
+    const StateAxis&,
+    const UniversalState&
   >;
 
   RObjectWithStates
@@ -125,23 +100,18 @@ public:
   template<class AppObj>
     static typename RObjectWithStates<Axis>
     ::template MembWrap<AppObj>*
-    memb_wrap(void (AppObj::*memb) 
-              (AbstractObjectWithStates*))
+    state_hook(void (AppObj::*memb) 
+               (AbstractObjectWithStates*, 
+                const StateAxis&,
+                const UniversalState&))
   {
     return new MembWrap<AppObj>(memb);
   }
 
   void state_changed
     (StateAxis& ax, 
-     AbstractObjectWithStates* object) override
-  {
-    assert(is_same_axis<Axis>(ax));
-    RObjectWithStatesBase::state_changed(ax, object);
-    if (mcw)
-      mcw->call
-        (this, 
-         std::forward<AbstractObjectWithStates*>(object));
-  }
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override;
 
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override
@@ -193,10 +163,12 @@ public:
   template<class AppObj>
     static typename RObjectWithStates<Axis>
     ::template MembWrap<AppObj>*
-    memb_wrap(void (AppObj::*memb) 
-              (AbstractObjectWithStates*))
+    state_hook(void (AppObj::*memb) 
+               (AbstractObjectWithStates*,
+                const StateAxis&,
+                const UniversalState&))
   {
-    return RObjectWithStates<Axis>::memb_wrap(memb);
+    return RObjectWithStates<Axis>::state_hook(memb);
   }
 
   //! Update events due to trans_id to
@@ -276,15 +248,18 @@ public:
   template<class AppObj>
     static typename RObjectWithStates<DerivedAxis>
     ::template MembWrap<AppObj>*
-    memb_wrap(void (AppObj::*memb) 
-              (AbstractObjectWithStates*))
+    state_hook(void (AppObj::*memb) 
+               (AbstractObjectWithStates*,
+                const StateAxis&,
+                const UniversalState& new_state))
   {
     return RObjectWithEvents<DerivedAxis>
-      ::memb_wrap(memb);
+      ::state_hook(memb);
   }
 
   virtual void state_changed
     (StateAxis& ax, 
+     const StateAxis& state_ax,     
      AbstractObjectWithStates* object) = 0;
 
   /*StateAxis& get_axis() const override

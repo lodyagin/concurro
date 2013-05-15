@@ -18,6 +18,8 @@ template<class Axis1, class Axis2> class RMixedEvent;
 
 class AbstractObjectWithStates
 {
+  template<class Axis>
+  friend class RObjectWithStates;
 public:
   virtual ~AbstractObjectWithStates() {}
 
@@ -25,9 +27,13 @@ public:
   //virtual StateAxis& get_axis() const = 0;
 
   //! the "update parent" callback on state changing in
-  //! the `object'.
+  //! the `object' on the `state_ax'.
+  //! \param ax is used for dispatching to particular
+  //! RObjectWithStates class 
   virtual void state_changed
-    (StateAxis& ax, AbstractObjectWithStates* object) = 0;
+    (StateAxis& ax, 
+     const StateAxis& state_ax,
+     AbstractObjectWithStates* object) = 0;
 
   //! Terminal state means 
   //! 1) no more state activity;
@@ -76,7 +82,9 @@ public:
     }*/
 
   virtual void state_changed
-    (StateAxis& ax, AbstractObjectWithStates* object) = 0;
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) = 0;
 
   virtual std::string universal_id() const = 0;
 };

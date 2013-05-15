@@ -117,9 +117,10 @@ public:
 
   void state_changed
     (StateAxis& ax, 
+     const StateAxis& state_ax,     
      AbstractObjectWithStates* object) override
   {
-    ax.state_changed(this, object);
+    ax.state_changed(this, object, state_ax);
   }
 
   std::atomic<uint32_t>& 

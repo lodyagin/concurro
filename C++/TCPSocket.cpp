@@ -29,7 +29,10 @@ TCPSocket::TCPSocket
   : 
   RSocketBase(oi, par),
   RStateSplitter<TCPAxis, SocketBaseAxis>
-  (this, createdState),
+    (this, createdState,
+     RStateSplitter<TCPAxis, SocketBaseAxis>
+     ::state_hook(&TCPSocket::state_hook)
+    ),
   CONSTRUCT_EVENT(ready),
   CONSTRUCT_EVENT(closed),
   CONSTRUCT_EVENT(in_closed),
@@ -55,16 +58,17 @@ TCPSocket::~TCPSocket()
 }
 
 void TCPSocket::state_hook
-  (AbstractObjectWithStates* object)
+  (AbstractObjectWithStates* object,
+   const StateAxis& ax,
+   const UniversalState& new_state)
 {
-  const RState<SocketBaseAxis> st
-    (*dynamic_cast
-     <ObjectWithStatesInterface<SocketBaseAxis>*>(this));
+  if (!TCPAxis::is_same(ax)) {
+    const RState<TCPAxis> st(new_state);
+    State::move_to(*this, st);
 
-  State::move_to(*this, st);
-
-  if (st == RSocketBase::readyState) {
-    thread->start();
+    if (st == RSocketBase::readyState) {
+      thread->start();
+    }
   }
 }
 

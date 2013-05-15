@@ -30,19 +30,22 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
   return *this;
 }
 
-#if 0
 template<class Axis>
-Event RObjectWithEvents<Axis>
+void RObjectWithStates<Axis>
 //
-::get_event_impl(const UniversalEvent& ue) const
+::state_changed
+  (StateAxis& ax, 
+   const StateAxis& state_ax,     
+   AbstractObjectWithStates* object)
 {
-  const auto it = events.find(ue.local_id());
-  if (it == events.end())
-    THROW_EXCEPTION(REventIsUnregistered, ue);
-
-  return it->second;
+  assert(is_same_axis<Axis>(ax));
+  RObjectWithStatesBase::state_changed
+    (ax, state_ax, object);
+  if (mcw)
+    mcw->call
+      (this, object, state_ax, 
+       UniversalState(object->current_state(state_ax)));
 }
-#endif
 
 template<class Axis>
 CompoundEvent RObjectWithEvents<Axis>

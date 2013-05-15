@@ -80,10 +80,13 @@ struct StateAxis {
 
   virtual void state_changed
     (AbstractObjectWithStates* subscriber,
-     AbstractObjectWithStates* publisher)
+     AbstractObjectWithStates* publisher,
+     const StateAxis& state_ax)
   {
     THROW_NOT_IMPLEMENTED;
   }
+
+  virtual const StateAxis* vself() const = 0;
 };
 
 //! Return true if DerivedAxis is same or derived from
@@ -214,7 +217,7 @@ class NoStateWithTheName : public SException
 {
 public:
   NoStateWithTheName(const std::string& name, 
-							const StateMap* map);
+                     const StateMap* map);
 };
 
 class IncompatibleMap : public SException
