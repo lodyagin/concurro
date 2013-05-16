@@ -8,6 +8,7 @@ void test_local_block();
 void test_local_no_start();
 void test_thread_in_repository();
 void test_current();
+void test_destroy_without_start();
 
 CU_TestInfo RThreadTests[] = {
   {"a working thread must prevent exiting "
@@ -19,6 +20,8 @@ CU_TestInfo RThreadTests[] = {
    test_thread_in_repository},
   {"test RThread<std::thread>::current()",
    test_current},
+  {"termination without start()",
+   test_destroy_without_start},
   CU_TEST_INFO_NULL
 };
 
@@ -199,7 +202,7 @@ struct T2 : public RT
       t1.start();
   }
   void stop() {
-    t1_ptr->start();
+    //t1_ptr->start();
     RT::stop();
   }
 };
@@ -228,7 +231,7 @@ void test_local_no_start()
   USLEEP(100);
   USLEEP(100);
   CU_ASSERT_TRUE_FATAL(
-    RThreadState::state_is(t2, T2::workingState));
+    RThreadState::state_is(t2, T2::terminatedState));
   t2.stop();
 }
 
@@ -290,3 +293,7 @@ void test_current()
   thread2->remove();
 }
 
+void test_destroy_without_start()
+{
+  T1 t;
+}
