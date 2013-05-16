@@ -271,7 +271,7 @@ template<class Axis>
 RState<Axis>::RState (const char* name)
 : UniversalState
 (RAxis<Axis>::instance().state_map()
- . create_state(name))
+ -> create_state(name))
 {}
 
 template<class Axis>
@@ -292,7 +292,7 @@ template<class Axis>
 std::string RState<Axis>::name () const
 {
   return RAxis<Axis>::instance().state_map()
-    .get_state_name(*this);
+    -> get_state_name(*this);
 }
 
 template<class Axis>

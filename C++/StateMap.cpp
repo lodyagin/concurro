@@ -11,17 +11,39 @@
 #endif
 
 UniversalState::UniversalState
-  (const StateMap& new_map, uint32_t st)
-  : the_state((new_map.numeric_id << STATE_MAP_SHIFT) 
-              | STATE_IDX(st))
+  (const StateMap* new_map, uint32_t st)
+  : the_state((new_map->numeric_id << STATE_MAP_SHIFT) 
+              | STATE_IDX(st)),
+    the_map(new_map)
 {
-  new_map.ensure_is_compatible(st);
+  the_map->ensure_is_compatible(st);
+}
+
+bool UniversalState::operator== 
+  (const UniversalState& us) const
+{
+  init_map();
+  return the_map->is_compatible(us)
+    && STATE_IDX(the_state) == STATE_IDX(us);
+}
+
+bool UniversalState::operator!= 
+  (const UniversalState& us) const
+{
+  return ! (*this == us);
 }
 
 std::string UniversalState::name() const
 {
   return StateMapRepository::instance()
     . get_state_name(the_state);
+}
+
+void UniversalState::init_map() const
+{
+  if (!the_map)
+    the_map = StateMapRepository::instance()
+      . get_object_by_id(STATE_MAP(the_state));
 }
 
 std::ostream&

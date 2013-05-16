@@ -29,18 +29,28 @@ class UniversalState
   operator<< (std::ostream& out, const UniversalState& st);
 
 public:
-  UniversalState() : the_state(0) {}
-  UniversalState(uint32_t st) : the_state(st) {}
+  UniversalState() : the_state(0), the_map(nullptr) {}
+  UniversalState(uint32_t st) 
+    : the_state(st), the_map(nullptr) {}
   //! Change a map
-  UniversalState(const StateMap& new_map, uint32_t st);
+  UniversalState(const StateMap* new_map, uint32_t st);
   operator uint32_t() const { return the_state; }
+
+  //! It is a time-consuming comparison, use only if you
+  //! understand what you do. In other cases use
+  //! RState<Axis>::operator==.
+  bool operator== (const UniversalState&) const;
+  bool operator!= (const UniversalState&) const;
 
   //! Never use it if you already know a map (it makes a
   //! map-lookup). StateMap::get_state_name suit for most
   //! cases. 
   std::string name() const; 
+
 protected:
+  void init_map() const;
   uint32_t the_state;
+  mutable const StateMap* the_map;
 };
 
 std::ostream&
@@ -108,7 +118,11 @@ template<class Axis, class DerivedAxis>
 template<class Axis>
 inline bool is_same_axis(const StateAxis& ax)
 {
+#if 1
+  return Axis::is_same(ax);
+#else
   return typeid(Axis) == typeid(ax);
+#endif
 }
 
 #define STATE_MAP_MASK 0x7fff0000

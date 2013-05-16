@@ -44,9 +44,9 @@ OutSocket::OutSocket
   /*this->RSocketBase::ancestor_terminals.push_back
 	 (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
-	 (select_thread->is_terminated());
+	 (select_thread->is_terminal_state());
   this->RSocketBase::threads_terminals.push_back
-	 (wait_thread->is_terminated());
+	 (wait_thread->is_terminal_state());
   select_thread->start();
   wait_thread->start();
 }

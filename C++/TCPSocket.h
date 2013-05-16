@@ -148,30 +148,64 @@ protected:
     (const ObjectCreationInfo& oi, 
      const RSocketAddress& par);
 
-  class Thread : public SocketThread
+  class SelectThread : public SocketThreadWithPair
   {
   public:
-    struct Par : public SocketThread::Par
+    struct Par : public SocketThreadWithPair::Par
     {
     Par(RSocketBase* sock) 
-      : SocketThread::Par(sock)
+      : SocketThreadWithPair::Par(sock)
       {
-        thread_name = SFORMAT("TCPSocket:" << sock->fd);
+        thread_name = SFORMAT("TCPSocket(select):" 
+                              << sock->fd);
       }
 
       RThreadBase* create_derivation
         (const ObjectCreationInfo& oi) const
       { 
-        return new Thread(oi, *this); 
+        return new SelectThread(oi, *this); 
       }
     };
 
   protected:
-  Thread(const ObjectCreationInfo& oi, const Par& p)
-    : SocketThread(oi, p) {}
-    ~Thread() { destroy(); }
+    SelectThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThreadWithPair(oi, p) {}
+    ~SelectThread() { destroy(); }
     void run();
-  }* thread;
+  }* select_thread;
+
+  class WaitThread : public SocketThread
+  {
+  public:
+    struct Par : public SocketThread::Par
+    { 
+      SOCKET notify_fd;
+      Par(RSocketBase* sock, SOCKET notify) 
+        : SocketThread::Par(sock),
+        notify_fd(notify)
+        {
+          thread_name = SFORMAT("TCPSocket(wait):" 
+                                << sock->fd);
+        }
+
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new WaitThread(oi, *this); 
+      }
+    };
+
+    void run();
+
+  protected:
+    SOCKET notify_fd;
+
+    WaitThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThread(oi, p), notify_fd(p.notify_fd) {}
+    ~WaitThread() { destroy(); }
+  }* wait_thread;
 };
 
 #endif

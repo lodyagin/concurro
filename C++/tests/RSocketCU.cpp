@@ -26,7 +26,7 @@ CU_TestInfo RSocketTests[] = {
   {"test Client_Socket connection_refused",
    test_client_socket_connection_refused},
   {"test Client_Socket connected",
-   test_client_socket_connected},
+    test_client_socket_connected},
   {"test InSocket new msg",
    test_in_socket_new_msg},
   {"test OutSocket login",
@@ -204,7 +204,7 @@ void test_in_socket_new_msg()
 
   tcp_sock->ask_close_out();
 
-  CU_ASSERT_FALSE_FATAL(in_sock->is_closed().wait(100));
+  CU_ASSERT_TRUE_FATAL(in_sock->is_closed().wait(100));
   CU_ASSERT_TRUE_FATAL(
     RBuffer::State::state_is(
       in_sock->msg, RBuffer::chargedState));

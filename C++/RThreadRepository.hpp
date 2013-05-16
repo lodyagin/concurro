@@ -13,11 +13,33 @@
 #include "RCheck.h"
 #include <signal.h>
 
+template<class Val>
+struct ThreadCanceller
+  : std::unary_function<Val, void>
+{
+  void operator () (Val th)
+  {
+    if (th) th->cancel();
+  }
+};
+
+template<class Key, class Val>
+  struct ThreadCanceller<std::pair<Key, Val>>
+  : std::unary_function<std::pair<Key, Val>&, void>
+{
+  void operator () (std::pair<Key, Val>& p)
+  {
+    if (p.second) 
+      p.second->cancel();
+  }
+};
+
+
 template<class Thread>
 RThreadRepository<Thread>::RThreadRepository()
   : Parent(typeid(RThreadRepository<Thread>).name(), 
-			  100 // the value is ignored for std::map
-	 ) 
+           100 // the value is ignored for std::map
+    ) 
 {
   // Disable signals. See RSignalRepository
   sigset_t ss;
@@ -27,10 +49,10 @@ RThreadRepository<Thread>::RThreadRepository()
   rCheck(::pthread_sigmask(SIG_SETMASK, &ss, NULL) == 0);
   
   RepositoryBase<
-  Thread, typename Thread::Par,
-	 std::map, typename Thread::Id
-	 >
-	 ::log_params.get_object_by_id = false;
+    Thread, typename Thread::Par,
+    std::map, typename Thread::Id
+    >
+    ::log_params.get_object_by_id = false;
 }
 
 
@@ -43,9 +65,9 @@ void RThreadRepository<Thread>
     this->objects->begin (),
     this->objects->end (),
     ThreadStopper<typename RepositoryMapType
-	               <Thread, ThreadId, std::map>
-                  ::Map::value_type
-                  > ()
+    <Thread, ThreadId, std::map>
+    ::Map::value_type
+    > ()
     );
 }
 
@@ -58,9 +80,24 @@ void RThreadRepository<Thread>
     this->objects->begin (),
     this->objects->end (),
     ThreadWaiter<typename RepositoryMapType
-	               <Thread, ThreadId, std::map>
-                  ::Map::value_type
-                  > ()
+    <Thread, ThreadId, std::map>
+    ::Map::value_type
+    > ()
+    );
+}
+
+template<class Thread>
+void RThreadRepository<Thread>
+//
+::cancel_subthreads ()
+{
+  std::for_each (
+    this->objects->begin (),
+    this->objects->end (),
+    ThreadCanceller<typename RepositoryMapType
+    <Thread, ThreadId, std::map>
+    ::Map::value_type
+    > ()
     );
 }
 
@@ -71,7 +108,7 @@ void RThreadRepository<Thread>
 {
   assert (thread);
   const ThreadId id = fromString<ThreadId> 
-	 (thread->universal_id());
+    (thread->universal_id());
   delete_object_by_id(id, freeMemory);
 }
 
@@ -84,7 +121,7 @@ void RThreadRepository<Thread>
   if (th) 
   {
     th->stop ();
-	 th->is_terminated().wait();
+    th->is_terminal_state().wait();
     Parent::delete_object_by_id (id, freeMemory);
   }
 }

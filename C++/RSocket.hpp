@@ -19,7 +19,7 @@ template<class... Bases>
 RSocket<Bases...>
 //
 ::RSocket(const ObjectCreationInfo& oi,
-			 const RSocketAddress& addr)
+          const RSocketAddress& addr)
   : RSocketBase(oi, addr), Bases(oi, addr)...
 {
   RSocketBase::is_construction_complete_event.set();
@@ -32,19 +32,28 @@ RSocket<Bases...>
 ::~RSocket()
 {
   RSocketBase::State::compare_and_move
-	 (*this, 
-	  { RSocketBase::createdState,
-		 RSocketBase::readyState 
-	  },
-	  RSocketBase::closedState);
+    (*this, 
+     { RSocketBase::createdState,
+       RSocketBase::readyState 
+     },
+     RSocketBase::closedState);
 
   // wait all parts termination
   /*for (auto& te : this->ancestor_terminals)
 	 te.wait();*/
+  
+  // TODO make an array holder instead of this
+  // durty temporary solution
+  {
+    auto rep = dynamic_cast
+      <RThreadRepository<RThread<std::thread>>*>
+      (this->repository->thread_factory);
+    rep->cancel_subthreads();
+  }
 
   // TODO use and-ed events
   for (auto& teh : this->threads_terminals)
-	 teh.wait();
+    teh.wait();
 
   //RSocketBase::is_terminal_state_event.set();
   LOG_DEBUG(log, "~RSocket()");

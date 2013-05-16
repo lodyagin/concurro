@@ -199,11 +199,15 @@ void RThreadBase::destroy()
 void RThreadBase::_run()
 {
   (is_starting_event | is_cancelled_event).wait();
-  if (is_cancelled_event.signalled())
+  if (is_cancelled_event.signalled()) {
+    LOG_DEBUG (log, "thread " << pretty_id() 
+               << ">\t cancelled");
     return;
+  }
 
   //TODO check run from current thread
-  LOG_DEBUG (log, "thread " << pretty_id() << ">\t started");
+  LOG_DEBUG (log, "thread " << pretty_id() 
+             << ">\t started");
   try
   {
     run();

@@ -304,10 +304,10 @@ public:
 
   RThreadFactory *const thread_factory;
 
-RSocketRepository(const std::string& id,
-                  size_t reserved,
-                  RThreadFactory *const tf)
-  : Parent(id, reserved),
+  RSocketRepository(const std::string& id,
+                    size_t reserved,
+                    RThreadFactory *const tf)
+    : Parent(id, reserved),
     thread_factory(tf) {}
 };
 

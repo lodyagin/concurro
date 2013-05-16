@@ -52,7 +52,7 @@ ClientSocket::ClientSocket
    /*this->RSocketBase::ancestor_terminals.push_back
      (is_terminal_state());*/
    this->RSocketBase::threads_terminals.push_back
-      (thread->is_terminated());
+      (thread->is_terminal_state());
 }
 
 ClientSocket::~ClientSocket()
@@ -144,8 +144,7 @@ void ClientSocket::Thread::run()
       getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
                  &error_len) == 0);
 
-   if (error)
-      cli_sock->process_error(error);
+   cli_sock->process_error(error);
 }
 
 

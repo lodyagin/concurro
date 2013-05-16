@@ -56,18 +56,19 @@ public:
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
+  virtual void cancel_subthreads ();
 
   //! It overrides RThreadFactory::create_thread
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
-	  return Parent::create_object
-		 (dynamic_cast<const Par&>(par));
+    return Parent::create_object
+      (dynamic_cast<const Par&>(par));
   }
 
   //! It overrides RThreadFactory::delete_thread
   void delete_thread(RThreadBase* thread)
   {
-	 delete_object(dynamic_cast<Thread*>(thread), true);
+    delete_object(dynamic_cast<Thread*>(thread), true);
   }
 
   // Overrides
@@ -78,17 +79,17 @@ public:
 
   // Overrides
   Thread* replace_object(ThreadId id,const Par& param,
-  		bool freeMemory)
+                         bool freeMemory)
   {
     THROW_EXCEPTION
-    (SException,
-    		"replace_object is not implemented for threads.");
+      (SException,
+       "replace_object is not implemented for threads.");
   }
 };
 
 template<class Obj>
 struct ThreadStopper
- : std::unary_function<Obj, void>
+  : std::unary_function<Obj, void>
 {
   void operator () (Obj th)
   {
@@ -98,19 +99,19 @@ struct ThreadStopper
 
 // std::pair version
 template<class Key, class Val>
-struct ThreadStopper<std::pair<Key, Val>>
- : std::unary_function<std::pair<Key, Val>&, void>
+  struct ThreadStopper<std::pair<Key, Val>>
+  : std::unary_function<std::pair<Key, Val>&, void>
 {
   void operator () (std::pair<Key, Val>& p)
   {
     if (p.second && p.second->is_running ()) 
-		p.second->stop ();
+      p.second->stop ();
   }
 };
 
 template<class Val>
 struct ThreadWaiter
- : std::unary_function<Val, void>
+  : std::unary_function<Val, void>
 {
   void operator () (Val th)
   {
@@ -119,13 +120,13 @@ struct ThreadWaiter
 };
 
 template<class Key, class Val>
-struct ThreadWaiter<std::pair<Key, Val>>
- : std::unary_function<std::pair<Key, Val>&, void>
+  struct ThreadWaiter<std::pair<Key, Val>>
+  : std::unary_function<std::pair<Key, Val>&, void>
 {
   void operator () (std::pair<Key, Val>& p)
   {
     if (p.second) 
-		p.second->is_terminated().wait();
+      p.second->is_terminated().wait();
   }
 };
 

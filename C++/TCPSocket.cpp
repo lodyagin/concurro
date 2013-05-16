@@ -38,15 +38,25 @@ TCPSocket::TCPSocket
   CONSTRUCT_EVENT(in_closed),
   CONSTRUCT_EVENT(out_closed),
   tcp_protoent(NULL),
-  thread(dynamic_cast<Thread*>
-         (RSocketBase::repository->thread_factory
-          -> create_thread(Thread::Par(this))))
+  select_thread(
+    dynamic_cast<SelectThread*>
+    (RSocketBase::repository->thread_factory
+     -> create_thread(SelectThread::Par(this)))),
+  wait_thread(
+    dynamic_cast<WaitThread*>
+    (RSocketBase::repository->thread_factory
+     -> create_thread
+     (WaitThread::Par
+      (this, 
+       select_thread->get_notify_fd()))))
 {
-  SCHECK(thread);
+  SCHECK(select_thread && wait_thread);
   /*this->RSocketBase::ancestor_terminals.push_back
     (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
-    (thread->is_terminated());
+    (select_thread->is_terminal_state());
+  this->RSocketBase::threads_terminals.push_back
+    (wait_thread->is_terminal_state());
   SCHECK((tcp_protoent = ::getprotobyname("TCP")) !=
          NULL);
   //thread->start();
@@ -66,8 +76,9 @@ void TCPSocket::state_hook
     const RState<TCPAxis> st(new_state);
     State::move_to(*this, st);
 
-    if (st == RSocketBase::readyState) {
-      thread->start();
+    if (st == readyState) {
+      select_thread->start();
+      wait_thread->start();
     }
   }
 }
@@ -103,7 +114,7 @@ void TCPSocket::ask_close_out()
       (*this, RSocketBase::closedState);
 }
 
-void TCPSocket::Thread::run()
+void TCPSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
@@ -134,6 +145,9 @@ void TCPSocket::Thread::run()
       FD_CLR(fd, &rfds);
     else
       FD_SET(fd, &rfds);
+    FD_SET(sock_pair[ForSelect], &rfds);
+    const int maxfd = std::max(sock_pair[ForSelect], fd)
+      + 1;
 
     /*if (State::state_is(*tcp_sock, out_closedState))
       FD_CLR(fd, &wfds);
@@ -141,7 +155,7 @@ void TCPSocket::Thread::run()
       FD_SET(fd, &wfds);*/
 
     rSocketCheck(
-      ::select(fd+1, &rfds, /*&wfds,*/NULL, NULL, NULL) > 0);
+      ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
     LOG_DEBUG(log, "TCPSocket>\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
@@ -157,6 +171,11 @@ void TCPSocket::Thread::run()
       rSocketCheck(res >=0);
       assert(res >= 0);
       if (res == 0) {
+
+        if (TCPSocket::State::state_is
+            (*tcp_sock, TCPSocket::closedState))
+          break;
+
         if (TCPSocket::State::compare_and_move
             (*tcp_sock, 
              TCPSocket::readyState, 
@@ -177,6 +196,7 @@ void TCPSocket::Thread::run()
              TCPSocket::closedState);
           break;
         }
+
       }
       else {
         if (socket->is_terminal_state().signalled()) {
@@ -188,15 +208,29 @@ void TCPSocket::Thread::run()
           std::this_thread::yield();
 #else
           std::this_thread::sleep_for
-            (std::chrono::milliseconds(100));
+            (std::chrono::milliseconds(1000));
 #endif
         }
       }
+    }
+
+    if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
+      break;
     }
 
     //if (FD_ISSET(fd, &wfds)) {
     // FIXME need intercept SIGPIPE
     //}
   }
+}
+
+void TCPSocket::WaitThread::run()
+{
+  ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
+
+  socket->is_terminal_state().wait();
+  static char dummy_buf[1] = {1};
+  rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }
 

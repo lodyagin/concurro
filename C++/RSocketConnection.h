@@ -118,12 +118,12 @@ public:
   };
 
 protected:
-ConnectionThread(const ObjectCreationInfo& oi, 
+  ConnectionThread(const ObjectCreationInfo& oi, 
                  const Par& p)
   : SocketThread(oi, p), con(p.con) 
   {
     con->socket->threads_terminals.push_back
-      (this->is_terminated());
+      (this->is_terminal_state());
   }
 
   ~ConnectionThread() { destroy(); }
