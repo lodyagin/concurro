@@ -87,6 +87,12 @@ void RThreadBase::stop()
   isStopRequested.set ();
 }
 
+bool RThreadBase::cancel()
+{
+  return RAxis<ThreadAxis>::compare_and_move(
+    *this, {readyState, cancelledState}, cancelledState);
+}
+
 std::thread::id RThread<std::thread>::main_thread_id; 
 // the default value not represents a thread
 
@@ -167,7 +173,7 @@ RThreadBase::~RThreadBase()
 {
   LOG_DEBUG(log, "thread "
             << RThread<std::thread>::current_pretty_id()
-            << ">\t RThreadBase");
+            << ">\t ~RThreadBase");
   if (!destructor_delegate_is_called)
     THROW_PROGRAM_ERROR;
   // must be called from desc. destructors
@@ -179,8 +185,7 @@ void RThreadBase::destroy()
   if (destructor_delegate_is_called) 
     return;
 
-  if (!RAxis<ThreadAxis>::compare_and_move(
-        *this, readyState, cancelledState)) {
+  if (!cancel()) {
     isStopRequested.set();
     is_terminated_event.wait();
   }

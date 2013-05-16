@@ -9,6 +9,7 @@ void test_local_no_start();
 void test_thread_in_repository();
 void test_current();
 void test_destroy_without_start();
+void test_cancel();
 
 CU_TestInfo RThreadTests[] = {
   {"a working thread must prevent exiting "
@@ -22,6 +23,7 @@ CU_TestInfo RThreadTests[] = {
    test_current},
   {"termination without start()",
    test_destroy_without_start},
+  {"RThreadBase::cancel()", test_cancel},
   CU_TEST_INFO_NULL
 };
 
@@ -297,3 +299,13 @@ void test_destroy_without_start()
 {
   T1 t;
 }
+
+void test_cancel()
+{
+  T1 t1, t2;
+  CU_ASSERT_TRUE_FATAL(t1.cancel());
+  t2.start();
+  CU_ASSERT_FALSE_FATAL(t2.cancel());
+  t2.stop();
+}
+

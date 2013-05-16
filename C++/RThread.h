@@ -46,9 +46,10 @@ DECLARE_AXIS(ThreadAxis, StateAxis,
     // terminated means the run() was executed (once and
     // only once)
 
-    {"ready", "cancelled"} 
+    {"ready", "cancelled"},
     // to the possibility of destroying non-started
     // threads (ticket:71)
+    {"cancelled", "cancelled"}
   }
   );
 
@@ -132,11 +133,17 @@ public:
   void start();
   virtual void stop (); //!< try to stop implicitly
 
+  //! Move non-started thread to the `cancelled' state and
+  //! return true.
+  //! Do nothing for started threads and return false.
+  virtual bool cancel();
+
   bool is_running () const
   {
     return RAxis<ThreadAxis>::state_is
       (*this, RThreadBase::workingState);
   }
+
 
   // Overrides
   void outString (std::ostream& out) const;
