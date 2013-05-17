@@ -133,6 +133,12 @@ void TCPSocket::ask_close_out()
     }
   }
 
+#if 1
+  State::compare_and_move
+    (*this, readyState, out_closedState) ||
+  State::compare_and_move
+    (*this, in_closedState, closedState);
+#else
   if (State::compare_and_move
       (*this, readyState, out_closedState)
       ||
@@ -141,6 +147,7 @@ void TCPSocket::ask_close_out()
     )
     RSocketBase::State::move_to
       (*this, RSocketBase::closedState);
+#endif
 }
 
 void TCPSocket::SelectThread::run()

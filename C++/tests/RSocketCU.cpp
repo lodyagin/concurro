@@ -204,7 +204,7 @@ void test_in_socket_new_msg()
 
   tcp_sock->ask_close_out();
 
-  CU_ASSERT_TRUE_FATAL(in_sock->is_closed().wait(100));
+  CU_ASSERT_TRUE_FATAL(in_sock->is_closed().wait(10000));
   CU_ASSERT_TRUE_FATAL(
     RBuffer::State::state_is(
       in_sock->msg, RBuffer::chargedState));
