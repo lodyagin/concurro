@@ -12,6 +12,34 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+DEFINE_AXIS(
+  TCPAxis, 
+  {
+    "in_closed",    // input part of connection is closed
+    "out_closed",
+    "listen",       // passive open
+    "accepting",    // in the middle of a new ServerSocket
+    "closing",      // fin-wait, time-wait, closing,
+  },
+  {
+    {"created", "listen"},      // listen()
+    {"listen", "accepting"}, // connect() from other side
+    {"accepting", "listen"},
+    {"listen", "closed"},
+    {"created", "ready"}, // initial send() is
+      // recieved by other side
+    {"created", "closed"},     // ask close() or timeout 
+    {"ready", "closing"}, // our close() or FIN from
+      // other side
+    {"ready", "in_closed"},
+    {"ready", "out_closed"},
+    {"closing", "closed"},
+    {"in_closed", "closed"},
+    {"out_closed", "closed"},
+    {"closed", "closed"}
+  }
+  );
+
 DEFINE_STATES(TCPAxis);
 
 DEFINE_STATE_CONST(TCPSocket, State, created);

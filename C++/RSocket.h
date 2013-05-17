@@ -23,25 +23,7 @@
 #endif
 #include <list>
 
-DECLARE_AXIS(SocketBaseAxis, StateAxis,
-  {
-  "created",
-  "ready",
-  "closed",
-  "connection_timed_out",
-  "connection_refused",
-  "destination_unreachable"
-  },
-  { {"created", "ready"},
-	 {"created", "closed"},
-    {"created", "connection_timed_out"},
-    {"created", "connection_refused"},
-    {"created", "destination_unreachable"},
-//    {"ready", "error"},
-	 {"ready", "closed"},
-	 {"closed", "closed"},
-//	 {"closed", "error"}
-  });
+DECLARE_AXIS(SocketBaseAxis, StateAxis);
 
 class RSocketRepository;
 class SocketThread;

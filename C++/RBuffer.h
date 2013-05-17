@@ -16,23 +16,7 @@
 #include <list>
 
 //! A data buffer states axis
-DECLARE_AXIS(DataBufferStateAxis, StateAxis,
-  {   "charging", // is locked for filling
-      "charged", // has data
-		"discharged", // data was red (moved)
-		"welded"  // own a buffer together with another
-					 // RBuffer
-		},
-  { {"discharged", "charging"},
-	 {"charging", "charged"},
-		//{"charging", "discharged"}, 
-		// there is a week control if its enabled
-	 {"discharged", "welded"},
-	 {"welded", "discharged"},
-	 {"welded", "charged"},
-    {"charged", "discharged"}}
-);
-
+DECLARE_AXIS(DataBufferStateAxis, StateAxis);
 
 /**
  * A data buffer.
@@ -60,7 +44,7 @@ public:
 
   CompoundEvent is_terminal_state() const
   {
-	 return is_discharged_event;
+    return is_discharged_event;
   }
 
   //! Prepare the buffer to charging.
@@ -75,18 +59,18 @@ public:
 
   std::string universal_id() const
   {
-	 return "?";
+    return "?";
   }
 
   //! Autoclear means call clear() in the destructor
   void set_autoclear(bool autocl)
   {
-	 autoclear = autocl;
+    autoclear = autocl;
   }
 
   bool get_autoclear() const
   {
-	 return autoclear;
+    return autoclear;
   }
 
 protected:
@@ -98,8 +82,8 @@ class RSingleBuffer : public RBuffer
 {
 public:
   DEFINE_EXCEPTION(ResizeOverCapacity, 
-						 "Can't resize RSingleBuffer "
-						 "over its initial capacity");
+                   "Can't resize RSingleBuffer "
+                   "over its initial capacity");
 
   RSingleBuffer();
   //! Construct a buffer with maximal size res.

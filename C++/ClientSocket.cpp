@@ -12,6 +12,23 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+DEFINE_AXIS(
+  ClientSocketAxis,
+  {  "pre_connecting", // ask_connect
+      "connecting"
+      },
+  { 
+    {"created", "closed"},
+    {"created", "pre_connecting"},
+    {"pre_connecting", "connecting"},
+    {"connecting", "ready"},
+    {"connecting", "connection_timed_out"},
+    {"connecting", "connection_refused"},
+    {"connecting", "destination_unreachable"},
+    {"ready", "closed"}
+  }
+  );
+
 DEFINE_STATES(ClientSocketAxis);
 
 DEFINE_STATE_CONST(ClientSocket, State, created);

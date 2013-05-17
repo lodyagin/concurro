@@ -27,31 +27,7 @@
 class ThreadAxis;
 
 //! An ancestor of all states of a thread.
-DECLARE_AXIS(ThreadAxis, StateAxis,
-  {  "ready",         // after creation
-      "starting",      
-      "working",       
-      "terminated",
-      "cancelled"
-      },
-  {
-    {"ready", "starting"},      // start ()
-
-    {"starting", "working"},    
-    // from a user-overrided run() method
-
-    {"working", "terminated"},  
-    // exit from a user-overrided run() 
-    // <NB> no ready->terminated, i.e.,
-    // terminated means the run() was executed (once and
-    // only once)
-
-    {"ready", "cancelled"},
-    // to the possibility of destroying non-started
-    // threads (ticket:71)
-    {"cancelled", "cancelled"}
-  }
-  );
+DECLARE_AXIS(ThreadAxis, StateAxis);
 
 /**
  * It is a base class for RThread. It contains the base

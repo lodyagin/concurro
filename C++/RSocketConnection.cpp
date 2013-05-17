@@ -13,6 +13,16 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+DEFINE_AXIS(
+  ClientConnectionAxis,
+  { "aborting", // skiping data and closing buffers
+    "aborted"   // after aborting
+  },
+  { { "ready", "aborting" },
+    { "aborting", "aborted" }
+  }
+);
+
 DEFINE_STATES(ClientConnectionAxis);
 
 DEFINE_STATE_CONST(RSingleSocketConnection, State, 

@@ -9,41 +9,7 @@
 #include "Logging.h"
 #include <netdb.h>
 
-DECLARE_AXIS(
-  TCPAxis, SocketBaseAxis,
-  {//"created",
-    //"closed",  
-    "in_closed",    // input part of connection is closed
-      "out_closed",
-      "listen",       // passive open
-      "accepting",    // in the middle of a new ServerSocket
-      // creation
-      //"ready",
-      "closing",      // fin-wait, time-wait, closing,
-      // close-wait, last-ack
-      //"aborted",   // see RFC793, 3.8 Abort
-      //"connection_timed_out",
-      //"connection_refused",
-      //"destination_unreachable"
-      },
-  {
-    {"created", "listen"},      // listen()
-    {"listen", "accepting"}, // connect() from other side
-    {"accepting", "listen"},
-    {"listen", "closed"},
-    {"created", "ready"}, // initial send() is
-      // recieved by other side
-    {"created", "closed"},     // ask close() or timeout 
-    {"ready", "closing"}, // our close() or FIN from
-      // other side
-    {"ready", "in_closed"},
-    {"ready", "out_closed"},
-    {"closing", "closed"},
-    {"in_closed", "closed"},
-    {"out_closed", "closed"},
-    {"closed", "closed"}
-  }
-  );
+DECLARE_AXIS(TCPAxis, SocketBaseAxis);
 
 class TCPSocket : virtual public RSocketBase
 , public RStateSplitter<TCPAxis, SocketBaseAxis>

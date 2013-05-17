@@ -41,14 +41,16 @@ int RThreadCUClean()
 
 static bool check_my_name(const std::string& n);
 
-DECLARE_AXIS(T1Axis, StateAxis,
-             {
-               "initial", "check_passed", "check_failed"
-                 },
-             {
-               {"initial", "check_passed"},
-               {"initial", "check_failed"}
-             }
+DECLARE_AXIS(T1Axis, StateAxis);
+DEFINE_AXIS(
+  T1Axis,
+  {
+    "initial", "check_passed", "check_failed"
+      },
+  {
+    {"initial", "check_passed"},
+    {"initial", "check_failed"}
+  }
   );
 
 class T1 : public RT, public RObjectWithEvents<T1Axis>

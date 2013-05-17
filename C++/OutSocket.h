@@ -14,47 +14,12 @@
 #include "RThread.h"
 #include "RState.h"
 
-/*
-DECLARE_AXIS(OutSocketAxis, SocketBaseAxis,
-				 {   //"wait_you",  // write buf watermark or an error
-		"busy",
-		  //"closed",
-		  //"error"
-  },
-  { {"ready", "busy"},
-	 {"busy", "ready"},
-	 {"ready", "closed"},
-	 {"ready", "error"},
-	 {"error", "closed"},
-	 {"busy", "closed"} }
-);
-*/
-
-class OutSocket
-: //public RObjectWithEvents<OutSocketAxis>,
-  virtual public RSocketBase
+class OutSocket : virtual public RSocketBase
 {
-/*
-  DECLARE_EVENT(OutSocketAxis, ready)
-  DECLARE_EVENT(OutSocketAxis, error)
-  DECLARE_EVENT(OutSocketAxis, closed)
-*/
 public:
-/*
-  DECLARE_STATES(OutSocketAxis, State);
-  DECLARE_STATE_CONST(State, ready);
-  DECLARE_STATE_CONST(State, busy);
-  DECLARE_STATE_CONST(State, closed);
-  DECLARE_STATE_CONST(State, error);
-
-  CompoundEvent is_terminal_state() const
-  {
-	 return is_closed_event | is_error_event;
-  }
-*/
   std::string universal_id() const override
   {
-	 return RSocketBase::universal_id();
+    return RSocketBase::universal_id();
   }
 
   //! A buffer to send data
@@ -62,75 +27,74 @@ public:
 
 protected:
   OutSocket
-	 (const ObjectCreationInfo& oi, 
-	  const RSocketAddress& par);
+    (const ObjectCreationInfo& oi, 
+     const RSocketAddress& par);
   ~OutSocket();
 
   class SelectThread : public SocketThreadWithPair
   {
   public:
-	 struct Par : public SocketThreadWithPair::Par
-	 { 
-		Par(RSocketBase* sock) 
-		  : SocketThreadWithPair::Par(sock) 
-		{
-		  thread_name = SFORMAT("OutSocket(select):" 
-										<< sock->fd);
-		}
+    struct Par : public SocketThreadWithPair::Par
+    { 
+    Par(RSocketBase* sock) 
+      : SocketThreadWithPair::Par(sock) 
+      {
+        thread_name = SFORMAT("OutSocket(select):" 
+                              << sock->fd);
+      }
 
-		RThreadBase* create_derivation
-		  (const ObjectCreationInfo& oi) const
-		{ 
-		  return new SelectThread(oi, *this); 
-		}
-	 };
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new SelectThread(oi, *this); 
+      }
+    };
 
-	 void run();
+    void run();
 
   protected:
-	 SelectThread
-		(const ObjectCreationInfo& oi, const Par& p)
-		: SocketThreadWithPair(oi, p) {}
+    SelectThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThreadWithPair(oi, p) {}
 
-	 ~SelectThread() { destroy(); }
+    ~SelectThread() { destroy(); }
   }* select_thread;
 
   class WaitThread : public SocketThread
   {
   public:
-	 struct Par : public SocketThread::Par
-	 { 
-		SOCKET notify_fd;
-	   Par(RSocketBase* sock, SOCKET notify) 
-		: SocketThread::Par(sock),
-		  notify_fd(notify)
-		{
-		  thread_name = SFORMAT("OutSocket(wait):" 
-										<< sock->fd);
-		}
+    struct Par : public SocketThread::Par
+    { 
+      SOCKET notify_fd;
+    Par(RSocketBase* sock, SOCKET notify) 
+      : SocketThread::Par(sock),
+        notify_fd(notify)
+        {
+          thread_name = SFORMAT("OutSocket(wait):" 
+                                << sock->fd);
+        }
 
-		RThreadBase* create_derivation
-		  (const ObjectCreationInfo& oi) const
-		{ 
-		  return new WaitThread(oi, *this); 
-		}
-	 };
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new WaitThread(oi, *this); 
+      }
+    };
 
-	 void run();
+    void run();
 
   protected:
-	 SOCKET notify_fd;
+    SOCKET notify_fd;
 
-	 WaitThread
-		(const ObjectCreationInfo& oi, const Par& p)
-		: SocketThread(oi, p), notify_fd(p.notify_fd) {}
-	 ~WaitThread() { destroy(); }
+    WaitThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThread(oi, p), notify_fd(p.notify_fd) {}
+    ~WaitThread() { destroy(); }
   }* wait_thread;
 
   DEFAULT_LOGGER(OutSocket)
 
-  SOCKET notify_fd;
+    SOCKET notify_fd;
 };
-
 
 #endif

@@ -12,6 +12,25 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+DEFINE_AXIS(
+  WindowAxis,
+  {
+    "ready",
+      "filling",
+      "filled",
+      "welded"
+      },
+  {
+    {"ready", "filling"},
+    {"filling", "filled"},
+    {"filled", "welded"},
+    {"welded", "filled"}, // by copy
+    {"welded", "ready"} // by move
+  }
+  );
+
+DEFINE_AXIS(ConnectedWindowAxis, {}, {});
+
 DEFINE_STATES(WindowAxis);
 
 DEFINE_STATE_CONST(RWindow, State, ready);

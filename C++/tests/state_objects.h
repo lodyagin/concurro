@@ -3,14 +3,7 @@
 
 #include "CUnit.h"
 
-DECLARE_AXIS(TestAxis, StateAxis,
-             {"s1", "s2", "s3", "s4", "s5"},
-             { {"s1", "s2"},
-               {"s2", "s3"},
-               {"s2", "s4"},
-               {"s3", "s5"},
-               {"s4", "s5"}}
-  );
+DECLARE_AXIS(TestAxis, StateAxis);
 
 class TestObject : public RObjectWithEvents<TestAxis>
 {
@@ -42,11 +35,7 @@ protected:
   DEFAULT_LOGGER(TestObject)
     };
 
-DECLARE_AXIS(DerivedAxis, TestAxis,
-             {"q1"},
-             { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"},
-                                           {"s3", "s2"}}
-  );
+DECLARE_AXIS(DerivedAxis, TestAxis);
 
 class DerivedObject : public TestObject
 {

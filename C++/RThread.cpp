@@ -16,6 +16,33 @@
 
 // RThread states  ========================================
 
+DEFINE_AXIS(
+  ThreadAxis,
+  {  "ready",         // after creation
+      "starting",      
+      "working",       
+      "terminated",
+      "cancelled"
+      },
+  {
+    {"ready", "starting"},      // start ()
+
+    {"starting", "working"},    
+    // from a user-overrided run() method
+
+    {"working", "terminated"},  
+    // exit from a user-overrided run() 
+    // <NB> no ready->terminated, i.e.,
+    // terminated means the run() was executed (once and
+    // only once)
+
+    {"ready", "cancelled"},
+    // to the possibility of destroying non-started
+    // threads (ticket:71)
+    {"cancelled", "cancelled"}
+  }
+  );
+
 DEFINE_STATES(ThreadAxis);
 
 DEFINE_STATE_CONST(RThreadBase, ThreadState, ready);

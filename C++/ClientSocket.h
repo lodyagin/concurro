@@ -11,22 +11,7 @@
 
 #include "RSocket.h"
 
-DECLARE_AXIS(
-  ClientSocketAxis, SocketBaseAxis,
-  {  "pre_connecting", // ask_connect
-      "connecting"
-      },
-  { 
-    {"created", "closed"},
-    {"created", "pre_connecting"},
-    {"pre_connecting", "connecting"},
-    {"connecting", "ready"},
-    {"connecting", "connection_timed_out"},
-    {"connecting", "connection_refused"},
-    {"connecting", "destination_unreachable"},
-    {"ready", "closed"}
-  }
-  );
+DECLARE_AXIS(ClientSocketAxis, SocketBaseAxis);
 
 class ClientSocket : virtual public RSocketBase,
   public RStateSplitter<ClientSocketAxis, SocketBaseAxis>

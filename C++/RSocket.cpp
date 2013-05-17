@@ -19,6 +19,26 @@
 /*========== RSocketBase ==========*/
 /*=================================*/
 
+DEFINE_AXIS(
+  SocketBaseAxis,
+  {
+    "created",
+      "ready",
+      "closed",
+      "connection_timed_out",
+      "connection_refused",
+      "destination_unreachable"
+      },
+  { {"created", "ready"},
+    {"created", "closed"},
+    {"created", "connection_timed_out"},
+    {"created", "connection_refused"},
+    {"created", "destination_unreachable"},
+    {"ready", "closed"},
+    {"closed", "closed"},
+  }
+  );
+
 DEFINE_STATES(SocketBaseAxis);
 
 DEFINE_STATE_CONST(RSocketBase, State, created);

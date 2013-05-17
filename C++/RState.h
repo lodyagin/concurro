@@ -165,7 +165,7 @@ protected:
   RMixedAxis(const StateMapPar<Axis>& par);
 };
 
-#define DECLARE_AXIS(axis, parent, pars...)	\
+#define DECLARE_AXIS(axis, parent)	\
 struct axis : public parent \
 { \
   typedef parent Parent; \
@@ -179,11 +179,7 @@ struct axis : public parent \
     return &axis::self() == ax.vself();        \
   } \
   \
-  static StateMapPar<axis> get_state_map_par() \
-  {	\
-    return StateMapPar<axis>(pars, \
-      StateMapInstance<typename axis::Parent>::init()); \
-  } \
+  static StateMapPar<axis> get_state_map_par(); \
   \
   const StateAxis* vself() const override \
   { \
@@ -230,10 +226,17 @@ struct axis : public parent \
   { \
     return RState<axis>(st); \
   } \
-}; \
-template class RMixedAxis<axis, axis>;	\
-template class RState<axis>; \
-template class RMixedEvent<axis, axis>;		
+}; 
+
+#define DEFINE_AXIS(axis, pars...)	\
+  StateMapPar<axis> axis::get_state_map_par()    \
+  {	\
+    return StateMapPar<axis>(pars, \
+      StateMapInstance<typename axis::Parent>::init()); \
+  } \
+  template class RMixedAxis<axis, axis>;	\
+  template class RState<axis>; \
+  template class RMixedEvent<axis, axis>;		
 
 #define DECLARE_STATES(axis, state_class)	\
   typedef RAxis<axis> state_class; \
