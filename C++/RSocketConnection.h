@@ -137,21 +137,25 @@ protected:
   Connection* con;
 };
 
-DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis,
-             { "aborting", // skiping data and closing buffers
-                 "aborted"   // after aborting
-                 },
-             { { "ready", "aborting" },
-               { "aborting", "aborted" }
-             }
-  );
+DECLARE_AXIS(
+  ClientConnectionAxis, ClientSocketAxis,
+  { "aborting", // skiping data and closing buffers
+    "aborted"   // after aborting
+  },
+  { { "ready", "aborting" },
+    { "aborting", "aborted" }
+  }
+);
 
 //! A connection which always uses only one socket
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
-  <ClientSocketAxis, ClientSocketAxis>
+  <ClientConnectionAxis, ClientSocketAxis>
 {
+  DECLARE_EVENT(ClientConnectionAxis, aborting);
+  DECLARE_EVENT(ClientConnectionAxis, aborted);
+
 public:
   DECLARE_STATES(ClientConnectionAxis, State);
   DECLARE_STATE_CONST(State, aborting);
@@ -165,7 +169,7 @@ public:
   {
     RSocketAddress* sock_addr;
 
-  Par()
+    Par()
     : sock_addr(0), // descendats must init it by an
       // address
       // from the address repository (sar)
@@ -195,12 +199,17 @@ public:
     : public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
-  InetClientPar(const std::string& a_host,
-                uint16_t a_port) 
+    InetClientPar(const std::string& a_host,
+                  uint16_t a_port) 
     : RSocketConnection::InetClientPar<proto, ip_ver>
       (a_host, a_port)
     {}
   };
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override;
 
   RSocketConnection& operator<< (const std::string);
   RSocketConnection& operator<< (RSingleBuffer&&);
@@ -217,7 +226,6 @@ public:
     return socket;
   }
 
-
   CompoundEvent is_terminal_state() const override
   {
     return is_terminal_state_event;
@@ -227,6 +235,11 @@ public:
   {
     return universal_object_id;
   }
+
+  /*void state_hook
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state);*/
 
 protected:
   RSingleSocketConnection
@@ -242,18 +255,9 @@ protected:
   ClientSocket* cli_sock;
   SocketThread* thread;
   RConnectedWindow* in_win;
+  CompoundEvent is_terminal_state_event;
 
   DEFAULT_LOGGER(RSingleSocketConnection);
-
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-                  ClientSocketAxis, 
-                  aborting);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-                  ClientSocketAxis, 
-                  aborted);
-
-protected:
-  CompoundEvent is_terminal_state_event;
 
 public:
   //! A current window
@@ -277,9 +281,9 @@ public:
 
   RThreadFactory *const thread_factory;
 
-RConnectionRepository(const std::string& id,
-                      size_t reserved,
-                      RThreadFactory *const tf)
+  RConnectionRepository(const std::string& id,
+                        size_t reserved,
+                        RThreadFactory *const tf)
   : Parent(id, reserved), thread_factory(tf)
   {}
 };

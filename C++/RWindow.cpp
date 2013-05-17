@@ -120,15 +120,14 @@ const char& RWindow::operator[] (size_t idx) const
 
 RConnectedWindow::RConnectedWindow(RSocketBase* sock)
   : 
-    RWindow(SFORMAT("RConnectedWindow:" << sock->fd)),
+    RWindow(SFORMAT(sock->fd)),
 	 CONSTRUCT_EVENT(ready),
 	 CONSTRUCT_EVENT(filling),
 	 CONSTRUCT_EVENT(filled)
 {}
 
 RConnectedWindow::RConnectedWindow
-  (const ObjectCreationInfo& oi,
-	const Par& par)
+  (const ObjectCreationInfo& oi, const Par& par)
  : RConnectedWindow(par.socket)
 {}
 

@@ -49,6 +49,7 @@ ClientSocket::ClientSocket
            -> create_thread(Thread::Par(this))))
 {
    SCHECK(thread);
+   RStateSplitter<ClientSocketAxis, SocketBaseAxis>::init();
    /*this->RSocketBase::ancestor_terminals.push_back
      (is_terminal_state());*/
    this->RSocketBase::threads_terminals.push_back

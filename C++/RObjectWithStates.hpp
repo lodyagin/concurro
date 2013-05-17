@@ -88,7 +88,13 @@ void RObjectWithEvents<Axis>
                 uint32_t to)
 {
   assert(is_same_axis<Axis>(ax));
-  LOG_TRACE(Logger<LOG::Root>, "update_events");
+
+  LOG_TRACE(Logger<LOG::Root>, 
+            "update_events for the axis "
+            << typeid(ax).name()
+            << ", to = " << UniversalState(to).name()
+            << std::hex << " (0x" << to << ")");
+
   // reset all events due to a new transition
   for (auto& p : events) p.second.reset();
 
@@ -124,32 +130,6 @@ RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
 {
 }
 
-#if 0
-template<class DerivedAxis, class SplitAxis>
-Event RStateSplitter<DerivedAxis, SplitAxis>
-::get_event(const UniversalEvent& ue)
-{
-  if (!is_this_event_store(ue))
-    return delegate->RObjectWithEvents<SplitAxis>
-      ::get_event(ue);
-  else
-    return this->RObjectWithEvents<DerivedAxis>
-      ::get_event(ue);
-}
-
-template<class DerivedAxis, class SplitAxis>
-Event RStateSplitter<DerivedAxis, SplitAxis>
-::get_event (const UniversalEvent& ue) const
-{
-  if (!is_this_event_store(ue))
-    return delegate->RObjectWithEvents<SplitAxis>
-      ::get_event(ue);
-  else
-    return this->RObjectWithEvents<DerivedAxis>
-      ::get_event(ue);
-}
-#endif
-
 template<class DerivedAxis, class SplitAxis>
 CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
 ::create_event (const UniversalEvent& ue) const
@@ -183,7 +163,7 @@ void RStateSplitter<DerivedAxis, SplitAxis>
    TransitionId trans_id, 
    uint32_t to) 
 {
-  init();
+  assert(inited);
   LOG_TRACE(Logger<LOG::Root>, "update_events");
   //<NB> always in DerivedAxis (stat is splitted in this
   //case, derived has another events states)
@@ -195,7 +175,7 @@ template<class DerivedAxis, class SplitAxis>
 bool RStateSplitter<DerivedAxis, SplitAxis>
 ::is_this_event_store(const UniversalEvent& ue) const
 {
-  init();
+  //assert(inited);
   if (ue.is_arrival_event()) 
     return STATE_IDX(ue.as_state_of_arrival()) 
       > split_state_id;

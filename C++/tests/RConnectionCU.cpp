@@ -58,12 +58,6 @@ public:
   TestConnection(const ObjectCreationInfo& oi,
                  const Par& par)
     : RSingleSocketConnection(oi, par) {}
-
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
 };
 
 void test_connection()

@@ -57,7 +57,7 @@ public:
   //! \return false on timeout.
   bool wait(int time = -1)
   { 
-	 return wait_impl(time); 
+    return wait_impl(time); 
   }
 
   //! Wait for event or time in msecs. This is a const
@@ -65,10 +65,10 @@ public:
   //! \return false on timeout.
   bool wait(int time = -1) const
   {
-	 SCHECK(is_manual);
-	 bool returnValue = wait_impl(time);
-	 isSignaled = is_manual ? isSignaled.load() : false;
-	 return returnValue;
+    SCHECK(is_manual);
+    bool returnValue = wait_impl(time);
+    isSignaled = is_manual ? isSignaled.load() : false;
+    return returnValue;
   }
 
   void set();
@@ -76,27 +76,27 @@ public:
 
   bool signalled() const
   {
-	 return isSignaled;
+    return isSignaled;
   }
 
   bool get_shadow() const
   {
-	 return shadow;
+    return shadow;
   }
 
   //! It is like wait(int) but return true if shadow is
   //! true (i.e., the event "was")
   bool wait_shadow(int time = -1)
   {
-	 //LOG_DEBUG(log, "shadow = " << shadow);
-	 return shadow || wait_impl(time);
+    //LOG_DEBUG(log, "shadow = " << shadow);
+    return shadow || wait_impl(time);
   }
 
   bool wait_shadow(int time = -1) const
   {
-	 SCHECK(is_manual);
-	 //LOG_DEBUG(log, "shadow = " << shadow);
-	 return shadow || wait_impl(time);
+    SCHECK(is_manual);
+    //LOG_DEBUG(log, "shadow = " << shadow);
+    return shadow || wait_impl(time);
   }
 
   const std::string universal_object_id;
@@ -132,88 +132,88 @@ public:
   Event(Event&& e) : evt_ptr(std::move(e.evt_ptr)) {}
 
   explicit Event
-	 (const std::string& id, 
+    (const std::string& id, 
      bool manual, //! manual reset
-	  bool init = false //! initial state 
-		)
-	 : evt_ptr(new EvtBase(id, manual, init)) {}
+     bool init = false //! initial state 
+      )
+    : evt_ptr(new EvtBase(id, manual, init)) {}
 
   //! Share an internal event handler
   Event& operator= (const Event& e)
-  {
-	 evt_ptr = e.evt_ptr;
-	 return *this;
-  }
+    {
+      evt_ptr = e.evt_ptr;
+      return *this;
+    }
 
   Event& operator= (Event&& e)
-  {
-	 evt_ptr = std::move(e.evt_ptr);
-	 return *this;
-  }
+    {
+      evt_ptr = std::move(e.evt_ptr);
+      return *this;
+    }
 
   bool operator< (const Event& b) const
   {
-	 return evt_ptr->h < b.evt_ptr->h;
+    return evt_ptr->h < b.evt_ptr->h;
   }
 
   bool operator== (const Event& b) const
   {
-	 return evt_ptr->h == b.evt_ptr->h;
+    return evt_ptr->h == b.evt_ptr->h;
   }
 
   bool wait(int time = -1)
   { 
-	 return evt_ptr->wait(time); 
+    return evt_ptr->wait(time); 
   }
 
   bool wait(int time = -1) const
   {
-	 return evt_ptr->wait(time); 
+    return evt_ptr->wait(time); 
   }
 
   bool wait_shadow(int time = -1)
   {
-	 return evt_ptr->wait_shadow(time); 
+    return evt_ptr->wait_shadow(time); 
   }
 
   bool wait_shadow(int time = -1) const
   {
-	 return evt_ptr->wait_shadow(time); 
+    return evt_ptr->wait_shadow(time); 
   }
 
   bool get_shadow() const
   {
-	 return evt_ptr->get_shadow();
+    return evt_ptr->get_shadow();
   }
 
   void set()
   {
-	 return evt_ptr->set();
+    return evt_ptr->set();
   }
 
   void reset()
   {
-	 return evt_ptr->reset();
+    return evt_ptr->reset();
   }
 
   bool signalled() const
   {
-	 return evt_ptr->signalled();
+    return evt_ptr->signalled();
   }
 
   bool is_manual() const
   {
-	 return evt_ptr->is_manual;
+    return evt_ptr->is_manual;
   }
 
   std::string universal_id() const
   {
-	 return evt_ptr->universal_object_id;
+    return evt_ptr->universal_object_id;
   }
 
   EvtBase::LogParams& log_params() const
   {
-	 return evt_ptr->log_params;
+    return evt_ptr->log_params;
   }
 
 protected:
@@ -227,25 +227,35 @@ DEFINE_EXCEPTION(
   "Unable to have an autoreset event "
   "as a member of CompoundEvent");
 
+#define STL_BUG 1
+
 class CompoundEvent : public EventInterface
 {
   friend std::ostream&
-  operator<< (std::ostream&, const CompoundEvent&);
+    operator<< (std::ostream&, const CompoundEvent&);
 
 public:
   CompoundEvent();
   CompoundEvent(CompoundEvent&&); //UT+
-  CompoundEvent(const CompoundEvent&); //UT+
+#if 1 //!STL_BUG
+  CompoundEvent(const CompoundEvent&); 
+#else
+  CompoundEvent(const CompoundEvent&) = delete;
+#endif
   CompoundEvent(const Event&); //UT+
   CompoundEvent(std::initializer_list<Event>);
   CompoundEvent(std::initializer_list<CompoundEvent>);
 
   CompoundEvent& operator= (CompoundEvent&&);
+#if 1 //!STL_BUG
   CompoundEvent& operator= (const CompoundEvent&);
+#else
+  CompoundEvent& operator= (const CompoundEvent&) = delete;
+#endif
 
   bool operator== (const CompoundEvent& b) const
   {
-	 return handle_set == b.handle_set;
+    return handle_set == b.handle_set;
   }
 
   bool operator< (const CompoundEvent& b) const;
@@ -255,12 +265,12 @@ public:
 
   bool wait(int time = -1)
   {
-	 return wait_impl(time);
+    return wait_impl(time);
   }
 
   bool wait(int time = -1) const
   {
-	 return wait_impl(time);
+    return wait_impl(time);
   }
 
   bool signalled() const override;
@@ -268,29 +278,29 @@ public:
   //! A number of unique events inside.
   size_t size() const
   {
-	 assert(vector_need_update
-			  || handle_vec.size() == handle_set.size());
-	 return handle_set.size();
+    assert(vector_need_update
+           || handle_vec.size() == handle_set.size());
+    return handle_set.size();
   }
 
   std::set<Event>::iterator begin()
   {
-	 return handle_set.begin();
+    return handle_set.begin();
   }
 
   std::set<Event>::const_iterator begin() const
   {
-	 return handle_set.begin();
+    return handle_set.begin();
   }
 
   std::set<Event>::iterator end()
   {
-	 return handle_set.end();
+    return handle_set.end();
   }
 
   std::set<Event>::const_iterator end() const
   {
-	 return handle_set.end();
+    return handle_set.end();
   }
 
 protected:

@@ -82,6 +82,7 @@ SplittedStateObject(TestObject* orig)
     CONSTRUCT_EVENT(s3),
     CONSTRUCT_EVENT(q1)
     {
+      RStateSplitter<DerivedAxis, TestAxis>::init();
     }
 
   // sync a state delegate -> this

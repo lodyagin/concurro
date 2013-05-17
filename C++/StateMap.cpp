@@ -22,6 +22,8 @@ UniversalState::UniversalState
 bool UniversalState::operator== 
   (const UniversalState& us) const
 {
+  if (the_state == us.the_state)
+    return true;
   init_map();
   return the_map->is_compatible(us)
     && STATE_IDX(the_state) == STATE_IDX(us);

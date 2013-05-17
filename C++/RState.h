@@ -33,6 +33,9 @@ public:
   //! Construct a state with the name.
   RState (const char* name);
   RState(uint32_t);
+  RState(const UniversalState& us)
+    : RState((uint32_t) us) {}
+
   RState(const ObjectWithStatesInterface<Axis>& obj);
   std::string name () const;
 
@@ -117,6 +120,17 @@ public:
   static bool compare_and_move
     (ObjectWithStatesInterface<Axis2>& obj, 
      const std::set<RState<Axis>>& from_set,
+     const RState<Axis>& to);
+	 
+  //! Atomic compare-and-change the state
+  //! \return true if the object NOT in the `from' state and
+  //! false otherwise.
+  //! \throw InvalidStateTransition if threre is no
+  //! transition from->to and the object is in the `from'
+  //! state.  
+  static bool neg_compare_and_move
+    (ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& not_from,
      const RState<Axis>& to);
 	 
   static uint32_t state

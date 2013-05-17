@@ -259,13 +259,8 @@ public:
 
   virtual void state_changed
     (StateAxis& ax, 
-     const StateAxis& state_ax,     
+     const StateAxis& state_ax,    
      AbstractObjectWithStates* object) = 0;
-
-  /*StateAxis& get_axis() const override
-    {
-    return DerivedAxis::self();
-    }*/
 
 protected:
   //! The 2nd stage init.
@@ -276,7 +271,6 @@ protected:
   {
     assert(is_same_axis<DerivedAxis>(ax)
            || is_same_axis<SplitAxis>(ax));
-    init();
     return RObjectWithEvents<DerivedAxis>
       ::current_state(ax);
   }
@@ -286,7 +280,6 @@ protected:
   {
     assert(is_same_axis<DerivedAxis>(ax)
            || is_same_axis<SplitAxis>(ax));
-    init();
     return RObjectWithEvents<DerivedAxis>
       ::current_state(ax);
   }

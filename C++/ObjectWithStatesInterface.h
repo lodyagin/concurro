@@ -41,7 +41,7 @@ public:
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
 
-protected:
+//protected:
   virtual std::atomic<uint32_t>& 
 	 current_state(const StateAxis&) = 0;
 

@@ -51,6 +51,7 @@ TCPSocket::TCPSocket
        select_thread->get_notify_fd()))))
 {
   SCHECK(select_thread && wait_thread);
+  RStateSplitter<TCPAxis, SocketBaseAxis>::init();
   /*this->RSocketBase::ancestor_terminals.push_back
     (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back
