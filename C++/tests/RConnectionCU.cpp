@@ -4,11 +4,14 @@
 #include "RWindow.h"
 #include "tests.h"
 
-void test_connection();
+void test_connection_aborted();
+void test_connection_clearly_closed();
 
 CU_TestInfo RConnectionTests[] = {
-  {"test RConnection",
-   test_connection},
+  {"test RConnection (aborted)", 
+  test_connection_aborted},
+  {"test RConnection (clearly closed)", 
+   test_connection_clearly_closed},
   CU_TEST_INFO_NULL
 };
 
@@ -60,7 +63,7 @@ public:
     : RSingleSocketConnection(oi, par) {}
 };
 
-void test_connection()
+static void test_connection(bool do_abort)
 {
   typedef Logger<LOG::Root> log;
 
@@ -101,5 +104,22 @@ void test_connection()
   CU_ASSERT_EQUAL_FATAL(answer, a3);
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RWindow, state_is, wc, filled));
-  con->ask_abort();
+
+  if (do_abort)
+    con->ask_abort();
+  else {
+    con->ask_close();
+    RWindow(con->iw());
+  }
 }
+
+void test_connection_aborted()
+{
+  test_connection(true);
+}
+
+void test_connection_clearly_closed()
+{
+  test_connection(false);
+}
+

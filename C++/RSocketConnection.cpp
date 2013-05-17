@@ -16,10 +16,14 @@
 DEFINE_AXIS(
   ClientConnectionAxis,
   { "aborting", // skiping data and closing buffers
-    "aborted"   // after aborting
+     "aborted",   // after aborting
+     "clearly_closed" // all pending data 
+                      // was received / sent
   },
   { { "ready", "aborting" },
-    { "aborting", "aborted" }
+    { "aborting", "aborted" },
+    { "closed", "clearly_closed" },
+    { "closed", "aborting" }
   }
 );
 
@@ -29,6 +33,8 @@ DEFINE_STATE_CONST(RSingleSocketConnection, State,
                    aborting);
 DEFINE_STATE_CONST(RSingleSocketConnection, State, 
                    aborted);
+DEFINE_STATE_CONST(RSingleSocketConnection, State, 
+                   clearly_closed);
 
 std::ostream&
 operator<< (std::ostream& out, const RSocketConnection& c)
@@ -57,6 +63,7 @@ RSingleSocketConnection::RSingleSocketConnection
      ClientSocket::createdState),
     CONSTRUCT_EVENT(aborting),
     CONSTRUCT_EVENT(aborted),
+    CONSTRUCT_EVENT(clearly_closed),
     socket(dynamic_cast<InSocket*>(par.socket)),
     cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
     thread(dynamic_cast<SocketThread*>
@@ -65,13 +72,10 @@ RSingleSocketConnection::RSingleSocketConnection
             (*par.get_thread_par(this)))),
     in_win(win_rep.create_object
            (*par.get_window_par(cli_sock))),
+    is_closed_event(cli_sock, "closed"),
     is_terminal_state_event { 
-  //cli_sock->is_terminal_state_event(),
-  // ClientSocket terminal state is not connection
-  // terminal state because we alse need empty buffers
-
-  is_aborted_event	// only aborted terminal now (TODO:
-    // add a clean exit)
+      is_clearly_closed_event,
+      is_aborted_event
     }
 {
   assert(socket);
@@ -172,30 +176,41 @@ void RSingleSocketConnection::run()
     iw().buf->set_autoclear(true);
     iw().top = 0;
 
+    CompoundEvent ce1 {
+      iw().is_filling(), is_aborting(), is_terminal_state()
+    };
+
     do {
-      ( iw().is_filling()
-        | is_aborting()) . wait();
+      // wait a new data request 
+      // (e.g. RWindow::forward_top(size))
+      ce1.wait();
 
       if (is_aborting().signalled()) 
         goto LAborting;
+      else if (is_terminal_state().signalled()) 
+        goto LClosed;
 
-      iw().move_forward();
+      iw().move_forward(); // filling the window
       STATE_OBJ(RConnectedWindow, move_to, iw(), filled);
 
     } while (iw().top < iw().buf->size());
 
-    ( iw().is_filling()
-      | is_aborting()) . wait();
+    // All the buffer is red
+    // Allocate a new buffer only on a next data request.
+    ce1.wait();
+
     if (is_aborting().signalled()) 
       goto LAborting;
+    else if (is_terminal_state().signalled()) 
+      goto LClosed;
+
     iw().buf.reset();
 
-    if (socket->InSocket::is_terminal_state().signalled())
-      break;
+    //if (is_terminal_state().signalled())
+    //  break;
   }
 
 LAborting:
-  // FIXME add a non-aborting close case
   is_aborting().wait();
   ask_close();
   socket->InSocket::is_terminal_state().wait();
@@ -213,8 +228,7 @@ LAborting:
                  discharged))
     socket->msg.clear();
 
-  /*A_STATE(RSingleSocketConnection, 
-    ClientConnectionAxis, move_to, aborted);*/
+LClosed: ;
 }
 
 void RSingleSocketConnection::ask_abort()

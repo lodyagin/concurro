@@ -162,7 +162,9 @@ RConnectedWindow::~RConnectedWindow()
 
 void RConnectedWindow::forward_top(size_t s)
 {
-  if (s == 0) return;
+  //if (s == 0) return;
+  // s == 0 is used, for example, in SoupWindow
+  
   sz = s;
   STATE(RConnectedWindow, move_to, filling);
 }

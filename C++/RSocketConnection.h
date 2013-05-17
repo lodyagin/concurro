@@ -147,11 +147,13 @@ class RSingleSocketConnection
 {
   DECLARE_EVENT(ClientConnectionAxis, aborting);
   DECLARE_EVENT(ClientConnectionAxis, aborted);
+  DECLARE_EVENT(ClientConnectionAxis, clearly_closed);
 
 public:
   DECLARE_STATES(ClientConnectionAxis, State);
   DECLARE_STATE_CONST(State, aborting);
   DECLARE_STATE_CONST(State, aborted);
+  DECLARE_STATE_CONST(State, clearly_closed);
 
   typedef ConnectionThread<RSingleSocketConnection>
     Thread;
@@ -247,6 +249,11 @@ protected:
   ClientSocket* cli_sock;
   SocketThread* thread;
   RConnectedWindow* in_win;
+
+  A_DECLARE_EVENT(ClientConnectionAxis, 
+                  ClientSocketAxis, closed);
+
+protected:
   CompoundEvent is_terminal_state_event;
 
   DEFAULT_LOGGER(RSingleSocketConnection);
