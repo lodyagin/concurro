@@ -21,6 +21,7 @@ class RWindow
 : public RObjectWithEvents<WindowAxis>,
   StdIdMember
 {
+  DECLARE_EVENT(WindowAxis, filled);
 public:
   DECLARE_STATES(WindowAxis, State);
   DECLARE_STATE_CONST(State, ready);
@@ -74,8 +75,8 @@ class RConnectedWindow : public RWindow
                   ready);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
                   filling);
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
-                  filled);
+  //A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+  //                filled);
 
 public:
   struct Par {
