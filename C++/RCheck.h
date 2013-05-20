@@ -8,45 +8,75 @@ void rCheck( BOOL );
 void rCheck( BOOL, const wchar_t * fmt, ... );
 void rError( const wchar_t * fmt, ... );
 void rErrorCode( DWORD code, const wchar_t * fmt, ... );
+#define rErrorMsg(err) sWinErrMsg(err)
+#else
+#define rErrorMsg(err) strerror(err)
+#define rCheck rSocketCheck
+#endif
+
+class RSystemError : public SException
+{
+public:
+  const int error_code;
+
+  RSystemError(int err_code, 
+					const std::string& msg = std::string())
+  : SException(SFORMAT("System error : " 
+							  << rErrorMsg(err_code) << ' ')),
+	 error_code(err_code) {}
+};
+
+class RSocketError : public RSystemError
+{
+public:
+  RSocketError(int err_code, 
+					const std::string& msg = std::string())
+	 : RSystemError(err_code, msg) {}
+};
+
+#ifdef _WIN32
+#define rSocketCheck(cond) \
+{ \
+  if (!(cond)) \
+	 THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
+}
+#else
+#define rSocketCheck(cond) \
+{ \
+  if (!(cond)) {	 \
+    THROW_EXCEPTION (RSystemError, errno); \
+  } \
+}
 #endif
 
 #ifdef _WIN32
 #define rSocketCheck(cond) \
 { \
   if (!(cond)) \
-  THROW_EXCEPTION (SException, \
-						 SFORMAT("Socket error : " << sWinErrMsg(WSAGetLastError()))) \
+	 THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
 }
 #else
 #define rSocketCheck(cond) \
 { \
   if (!(cond)) {	 \
-    int errsav = errno; \
-    THROW_EXCEPTION (SException, \
-							SFORMAT("Socket error : " << strerror(errsav)));	\
-		} \
+    THROW_EXCEPTION (RSystemError, errno); \
+  } \
 }
 #endif
 
 #ifdef _WIN32
-#define rSocketCheckWithMsg(cond, msg) \
+#define rSocketCheckWithMsg(cond, msg)					\
 { \
   if (!(cond)) \
-  THROW_EXCEPTION (SException, \
-	 SFORMAT("Socket error : " << sWinErrMsg(WSAGetLastError()) \
-				<< msg))															\
+	 THROW_EXCEPTION(RSystemError, WSAGetLastError(),msg);\
 }
 #else
-#define rSocketCheckWithMsg(cond, msg)							\
+#define rSocketCheckWithMsg(cond, msg)				\
 { \
   if (!(cond)) {	 \
-    int errsav = errno; \
-    THROW_EXCEPTION (SException, \
-							SFORMAT("Socket error : " << strerror(errsav) << msg))	\
-		}\
+    THROW_EXCEPTION (RSystemError, errno, msg);		\
+  } \
 }
 #endif
-
-
 
 #endif  // __SWINCHECK_H

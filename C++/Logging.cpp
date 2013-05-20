@@ -2,7 +2,9 @@
 
 #include "StdAfx.h"
 #ifndef _WIN32
-#  include "AppConfig.h"
+//#  include "AppConfig.h"
+// FIXME
+#define APPCONFIG_PKG_NAME "project"
 #else
 #  include <sys/types.h>
 #  include <unistd.h>
@@ -12,13 +14,14 @@
 #include <log4cxx/helpers/properties.h>
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
 
 LogBase::LogBase (const std::string& szName)
   : m_sName (szName)/*,
 							 logger (log4cxx::Logger::getLogger(szName.c_str()))*/
 {
   if (!szName.empty ()) {
-	 LOG_DEBUG(Logger<LOG::Root>,
+	 LOG_TRACE(Logger<LOG::Root>,
 		"Create the [" << szName << "] logger.");
   }
   else {

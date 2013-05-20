@@ -1,105 +1,126 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+/**
+ * @file
+ * Socket types.
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
-#include "RSocket.h"
+#include "RSocket.hpp"
+#include "REvent.hpp"
+#include "RState.hpp"
+#include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
 
-// RSocketBase ===========================================
+/*=================================*/
+/*========== RSocketBase ==========*/
+/*=================================*/
 
-/*RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
-								 const Par& par)
-{
-  
-}*/
-
- //DEFINE_STATES(InSocket, InSocketStateAxis, State)
-RAxis<InSocketStateAxis> in_socket_state_axis
-({
-  {   "new_data",  // new data or an error
-		"empty",
-		"closed"      },
-  { {"new_data", "empty"},
-	 {"empty", "new_data"},
-	 {"new_data", "closed"},
-	 {"empty", "closed"} }
-});
-
-DEFINE_STATE_CONST(InSocket, State, new_data);
-DEFINE_STATE_CONST(InSocket, State, empty);
-DEFINE_STATE_CONST(InSocket, State, closed);
-
-
-//DEFINE_STATES(OutSocket, OutSocketStateAxis, State)
-RAxis<OutSocketStateAxis> out_socket_state_axis
-({
-  {   "wait_you",  // write buf watermark or an error
-		"busy",
-		"closed"      },
-  { {"wait_you", "busy"},
-	 {"busy", "wait_you"},
-	 {"wait_you", "closed"},
-	 {"busy", "closed"} }
-});
-
-DEFINE_STATE_CONST(OutSocket, State, wait_you);
-DEFINE_STATE_CONST(OutSocket, State, busy);
-DEFINE_STATE_CONST(OutSocket, State, closed);
-
-InSocket::InSocket
-(const ObjectCreationInfo& oi, const Par& p)
-  : RObjectWithEvents<InSocketStateAxis>(emptyState),
-	 msg(0)
-{
-  socklen_t m = sizeof(socket_rd_buf_size);
-  getsockopt(fd, SOL_SOCKET, SO_RCVBUF, 
-				 &socket_rd_buf_size, &m);
-  socket_rd_buf_size++; // to allow catch an overflow error
-  LOG_DEBUG(log, "socket_rd_buf_size = " << socket_rd_buf_size);
-}
-
-InSocket::~InSocket()
-{
-  delete msg;
-}
-
-void InSocket::Thread::run()
-{
-  fd_set rfds;
-  FD_ZERO(&rfds);
-
-  const SOCKET fd = socket->fd;
-  SCHECK(fd >= 0);
-
-  REvent<DataBufferStateAxis> buf_discharged("discharged");
-
-  for(;;) {
-	 // Wait for new data
-	 FD_SET(fd, &rfds);
-	 rSocketCheck(
-		::select(fd+1, &rfds, NULL, NULL, NULL) > 0);
-
-	 InSocket::State::move_to(*socket, new_dataState);
-
-	 ssize_t red;
-	 rSocketCheck(
-		(red = ::read(fd, socket->msg->data(),
-						  socket->msg->capacity())) >= 0
-		);
-	 socket->msg->resize(red);
-
-	 SCHECK((size_t) red < socket->socket_rd_buf_size); 
-    // to make sure we always read all (rd_buf_size =
-    // internal socket rcv buffer + 1)
-
-	 if (red == 0) { // EOF
-		InSocket::State::move_to(*socket, closedState);
-		break;
-	 }
-
-	 // <NB> do not read more data until a client read this
-	 // piece 
-	 buf_discharged.wait(*socket->msg);
-	 InSocket::State::move_to(*socket, emptyState);
+DEFINE_AXIS(
+  SocketBaseAxis,
+  {
+    "created",
+      "ready",
+      "closed",
+      "connection_timed_out",
+      "connection_refused",
+      "destination_unreachable"
+      },
+  { {"created", "ready"},
+    {"created", "closed"},
+    {"created", "connection_timed_out"},
+    {"created", "connection_refused"},
+    {"created", "destination_unreachable"},
+    {"ready", "closed"},
+    {"closed", "closed"},
   }
+  );
+
+DEFINE_STATES(SocketBaseAxis);
+
+DEFINE_STATE_CONST(RSocketBase, State, created);
+DEFINE_STATE_CONST(RSocketBase, State, ready);
+DEFINE_STATE_CONST(RSocketBase, State, closed);
+DEFINE_STATE_CONST(RSocketBase, State, 
+						 connection_timed_out);
+DEFINE_STATE_CONST(RSocketBase, State, 
+						 connection_refused);
+DEFINE_STATE_CONST(RSocketBase, State, 
+						 destination_unreachable);
+
+//! This type is only for repository creation
+RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
+								 const RSocketAddress& addr) 
+  : StdIdMember(SFORMAT(addr.get_fd())),
+	 RObjectWithEvents(createdState),
+	 CONSTRUCT_EVENT(ready),
+	 CONSTRUCT_EVENT(closed),
+	 CONSTRUCT_EVENT(connection_timed_out),
+	 CONSTRUCT_EVENT(connection_refused),
+	 CONSTRUCT_EVENT(destination_unreachable),
+	 fd(addr.get_fd()), 
+	 is_construction_complete_event
+		("RSocketBase::construction_complete", true),
+	 repository(dynamic_cast<RSocketRepository*>
+					(oi.repository)),
+	 is_terminal_state_event {
+		is_connection_timed_out_event,
+		is_connection_refused_event,
+		is_destination_unreachable_event,
+		is_closed_event  
+	 },
+	 aw_ptr(addr.get_aw_ptr())
+{
+  assert(fd >= 0);
+  assert(repository);
+  assert(aw_ptr);
+  assert(aw_ptr->begin()->ai_addr);
+
+  set_blocking(false);
 }
 
+void RSocketBase::set_blocking (bool blocking)
+{
+#ifdef _WIN32
+  u_long mode = (blocking) ? 0 : 1;
+  ioctlsocket(socket, FIONBIO, &mode);
+#else
+  int opts = 0;
+  rSocketCheck((opts = fcntl(fd, F_GETFL)) != -1);
+  if (blocking)
+	 opts &= (~O_NONBLOCK);
+  else
+	 opts |= O_NONBLOCK;
+  rSocketCheck(fcntl(fd, F_SETFL, opts) != -1);
+#endif
+}
 
+/*void RSocketBase::process_error(int error)
+{
+  LOG_INFO(log, "Socket error: " << rErrorMsg(error));
+  State::move_to(*this, errorState);
+  }*/
+
+std::ostream&
+operator<< (std::ostream& out, const RSocketBase& s)
+{
+  out << "socket[fd=" << s.fd << ']';
+  return out;
+}
+
+SocketThreadWithPair::SocketThreadWithPair
+  (const ObjectCreationInfo& oi, const Par& p) 
+  : SocketThread(oi, p), sock_pair{-1}
+{
+  rSocketCheck(
+	 ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);
+}
+
+SocketThreadWithPair::~SocketThreadWithPair()
+{
+  rSocketCheck(::close(sock_pair[ForSelect]) == 0);
+  rSocketCheck(::close(sock_pair[ForNotify]) == 0);
+}

@@ -1,4 +1,13 @@
-#pragma once
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_SEXCEPTION_H_
+#define CONCURRO_SEXCEPTION_H_
 
 #include "SCommon.h"
 #include "HasStringView.h"
@@ -32,9 +41,15 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-#define THROW_EXCEPTION(exception_class, par) { \
-	 exception_class exc_(par);								  \
+#define THROW_EXCEPTION(exception_class, par...) do { \
+	 exception_class exc_{par};								\
   LOG_DEBUG(Logger<LOG::Root>, "Throw " << exc_); \
+  throw exc_; \
+  } while (0)
+
+#define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
+	 exception_class exc_{par};			 \
+  LOG_DEBUG_PLACE(Logger<LOG::Root>, place, "Throw " << exc_);	\
   throw exc_; \
   } while (0)
 
@@ -67,3 +82,5 @@ class class_ : public SException \
 public: \
   class_() : SException(msg) {} \
 };
+
+#endif

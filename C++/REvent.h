@@ -6,55 +6,47 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_REVENT_H
-#define CONCURRO_REVENT_H
+#ifndef CONCURRO_REVENT_H_
+#define CONCURRO_REVENT_H_
 
 #include "StateMap.h"
-#include "RObjectWithStates.h"
+#include "RObjectWithStates.hpp"
 #include "Event.h"
+#include <set>
 
-template<class Axis>
-class REvent
+template<class Axis, class Axis2>
+class RMixedEvent
 : public Axis,
-  protected UniversalEvent
+  public UniversalEvent,
+  public CompoundEvent
 {
 public:
   //! Create a from->to event
-  REvent(const char* from, const char* to);
+  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+				  const char* from, const char* to);
+
   //! Create a *->to event
-  REvent(const char* to);
-
-  Event& event(RObjectWithEvents<Axis>&);
-
-  //! Wait for the event on obj for max time msecs.
-  //! \return false on timeout.
-  bool wait(RObjectWithEvents<Axis>& obj, int time = -1);
-
-  bool signalled(RObjectWithEvents<Axis>& obj) const
-  {
-	 return const_cast<REvent<Axis>*>(this)
-		-> event(obj).signalled();
-  }
+  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+				  const char* to);
+protected:
+  typedef Logger<LOG::Events> log;
 };
 
-#if 0
-//! Create an event of moving Obj from `before' state to
-//! `after' state.
-const UniversalEvent& operator / 
-  (const UniversalState& before, 
-	const UniversalState& after);
+template<class Axis>
+using REvent = RMixedEvent<Axis, Axis>;
 
-//! Change a state according to an event
-const UniversalState& operator + 
-  (const UniversalState& state, 
-	const UniversalEvent& event);
-#endif
+#define A_DECLARE_EVENT(axis_, axis_2, event)		\
+protected: \
+RMixedEvent<axis_, axis_2> is_ ## event ## _event;	\
+public: \
+  const RMixedEvent<axis_, axis_2>& is_ ## event ()	\
+  { return is_ ## event ## _event; } \
+private:
 
-//size_t waitMultiple( HANDLE *, size_t count );
+#define DECLARE_EVENT(axis_, event) \
+  A_DECLARE_EVENT(axis_, axis_, event)
 
-// include shutdown event also
-//size_t waitMultipleSD( HANDLE *, size_t count );
-
-#include "REvent.hpp"
+#define CONSTRUCT_EVENT(event)		\
+  is_ ## event ## _event(this, #event)
 
 #endif 

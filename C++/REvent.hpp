@@ -1,47 +1,60 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
-template<class Axis>
-REvent<Axis>::REvent(const char* from, 
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
+#ifndef CONCURRO_REVENT_HPP_
+#define CONCURRO_REVENT_HPP_
+
+#include "REvent.h"
+#include "RState.h"
+
+template<class Axis, class Axis2>
+RMixedEvent<Axis, Axis2>
+//
+::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+							const char* from, 
 							const char* to)
   : UniversalEvent
-  	   (StateMapRepository::instance()
-		 . get_map_for_axis(typeid(Axis))
-		 -> get_transition_id(from, to)
-		  )
-{}
-
-template<class Axis>
-REvent<Axis>::REvent(const char* to)
-  : UniversalEvent
-  	   (StateMapRepository::instance()
-	    . get_map_for_axis(typeid(Axis))
-		 -> create_state(to), true
-		  )
-{}
-
-template<class Axis>
-Event& REvent<Axis>
-//
-::event(RObjectWithEvents<Axis>& obj)
+  	   (
+		 StateMapInstance<Axis>::stateMap
+		  -> get_transition_id(from, to)
+		  ),
+	 // G++-4.7.3 bug when use copy constructor
+	 CompoundEvent
+	 (std::move(obj_ptr->create_event(
+					  (UniversalEvent)*this)))
 {
-  return *obj.get_event(*this);
-}
-
-template<class Axis>
-bool REvent<Axis>
-//
-::wait(RObjectWithEvents<Axis>& obj, int time)
-{
-  if (is_arrival_event()) {
-	 const uint32_t obj_state = obj.current_state();
-	 const uint32_t arrival_state = UniversalState(*this);
-
-	 // TODO they should store state both with or w/o map
-	 // id (no STATE_IDX is actually needed)
-	 if (STATE_IDX(obj_state) == STATE_IDX(arrival_state))
-		return true; // the object is already in that state
+  for (Event ev : *this) {
+	 ev.log_params().set = 
+		ev.log_params().reset = false;
+	 // if you tune it tune it also 
+	 // in the second constructor
   }
-  // wait untill it be
-  return event(obj).wait(time);
 }
 
+template<class Axis, class Axis2>
+RMixedEvent<Axis, Axis2>
+//
+::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+							const char* to)
+  : UniversalEvent
+  	   (
+		 StateMapInstance<Axis>::stateMap
+		 -> create_state(to), true
+		  ),
+	 // G++-4.7.3 bug when use copy constructor
+	 CompoundEvent
+	 (std::move(obj_ptr->create_event(
+					  (UniversalEvent)*this)))
+{
+  for (Event ev : *this) {
+	 ev.log_params().set = 
+		ev.log_params().reset = false;
+  }
+}
+
+#endif

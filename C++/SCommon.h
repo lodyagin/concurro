@@ -186,12 +186,20 @@ void toString (const T& object, std::string & s)
   s += os.str();
 }
 
-// FIXME raise exception when the string is not a number
 template <class T>
-T fromString (const std::string& s)
+std::string toString (const T& object)
+{
+  std::ostringstream os;
+  os << object;
+  return os.str();
+}
+
+// FIXME raise exception when the string is not a number
+template <class T, class String>
+T fromString (String&& s)
 {
   T object;
-  std::istringstream is (s);
+  std::istringstream is (std::forward<String>(s));
   is >> object;
   return object;
 }
@@ -244,5 +252,41 @@ Out copy_if (In first, In last, Out res, Pred p)
  * Allocate a new char* string by the std::string arg.
  */
 char* string2char_ptr (const std::string& str);
+
+//! Calculate the logic implication: a -> b
+#define IMPLICATION(a, b) ((b) || (!(a)))
+
+/**
+ * Abstract wrapper for a class method pointer. It allows
+ * has pointer to any method of any class derived from
+ * Base. 
+ */
+template<class Base, class... Args>
+class AbstractMethodCallWrapper 
+{
+public:
+  virtual void call(Base* obj, Args... args) = 0;
+};
+
+/**
+ * An AbstractMethodCallWrapper descendant for holding
+ * pointers of class Derived.
+ */
+template<class Derived, class Base, class... Args>
+class MethodCallWrapper
+  : public AbstractMethodCallWrapper<Base, Args...>
+{
+public:
+  typedef void (Derived::*Method) (Args... args);
+
+  MethodCallWrapper(Method a_method) : method(a_method) {}
+
+  void call(Base* obj, Args... args) override
+  {
+    (dynamic_cast<Derived*>(obj)->*method)(args...);
+  }
+protected:
+  Method method;
+};
 
 #endif

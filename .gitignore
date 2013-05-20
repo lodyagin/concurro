@@ -1,11 +1,17 @@
 *~*
+*#*
 *.a
 *.cmake
 *.log
 *.so
 *.so.*
 *.vpp.work*
+core
 CMakeCache.txt
+GPATH
+GRTAGS
+GSYMS
+GTAGS
 log4cxx.properties
 Makefile
 CMakeFiles/

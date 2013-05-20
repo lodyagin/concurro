@@ -15,190 +15,159 @@
 #include "Repository.h"
 #include "RBuffer.h"
 #include "RSocketAddress.h"
-#include "RClientSocketAddress.h"
 #include "RThread.h"
 #include "RState.h"
+#include "RThreadRepository.h"
 #ifndef _WIN32
 #  define SOCKET int
 #endif
+#include <list>
+
+DECLARE_AXIS(SocketBaseAxis, StateAxis);
+
+class RSocketRepository;
+class SocketThread;
 
 /**
  * An abstract socket base.  In the Concurro library
  * each separate RSocket is connected to one an
  *
  */
-class RSocketBase : public SNotCopyable
+class RSocketBase 
+: public SNotCopyable, public StdIdMember,
+  public RObjectWithEvents<SocketBaseAxis>
 {
+  friend class RSocketAddress;
+  friend std::ostream&
+	 operator<< (std::ostream&, const RSocketBase&);
+
+  DECLARE_EVENT(SocketBaseAxis, ready);
+  DECLARE_EVENT(SocketBaseAxis, closed);
+  //DECLARE_EVENT(SocketBaseAxis, error);
+  DECLARE_EVENT(SocketBaseAxis, connection_timed_out)
+  DECLARE_EVENT(SocketBaseAxis, connection_refused)
+  DECLARE_EVENT(SocketBaseAxis, destination_unreachable)
+
 public:
-
-  struct Par
-  {
-	 //! An address to determine a socket type
-	 const RSocketAddress& addr;
-
-	 // ::socket(domain, type, protocol)
-	 int domain;
-	 int type;
-	 int protocol;
-
-    Par(const RSocketAddress& a) 
-	 : addr(a), domain(0), type(0), protocol(0) {}
-
-	 /*RSocketBase* create_derivation
-	   (const ObjectCreationInfo& oi) const
-	 {
-		return addr.create_socket_pars(oi, *this)
-		  .create_derivation(oi);
-		  }*/
-
-	 RSocketBase* transform_object
-	   (const RSocketBase*) const
-	 { THROW_NOT_IMPLEMENTED; }
-  };
-
-  struct IPv4Par : public Par
-  {
-	 
-  };
+  DECLARE_STATES(SocketBaseAxis, State);
+  DECLARE_STATE_CONST(State, created);
+  DECLARE_STATE_CONST(State, ready);
+  //DECLARE_STATE_CONST(State, error);
+  DECLARE_STATE_CONST(State, closed);
+  DECLARE_STATE_CONST(State, connection_timed_out);
+  DECLARE_STATE_CONST(State, connection_refused);
+  DECLARE_STATE_CONST(State, destination_unreachable);
 
   virtual ~RSocketBase () {}
 
-  //! Connect the first available address in addr. States
-  //! transitions are, for get_blocking() == true:
-  //! ->syn_sent, for get_blocking() == false: 
-  //! ->syn_sent[->established]
-  virtual void connect_first 
-	 (const RClientSocketAddress& addr) = 0;
+  //! A socket file descriptor.
+  const SOCKET fd;
 
-  virtual void close() = 0;
+  //virtual CompoundEvent is_terminal_state() const = 0;
 
-#if 0
-  //! Return the REvent associated with the socket. It
-  //! will be signalled on new FD_XXX events available
-  //! after the last call to get_events. NB the event
-  //! object allow combine socket events with another type
-  //! of events in WaitForMultipleEvents
-  //! \see get_events.
-  virtual REvent* get_event_object() = 0;
+  virtual void ask_close_out() = 0;
 
-  //! Get (and clear) the socket events triggered after
-  //! the last call to this function.
-  //! \par reset_event_object Reset the associated REvent.
-  //! \return An or-ed set of FD_XXX constants.
-  //! \see get_event_object()
-  virtual int32_t get_events 
-	 (bool reset_event_object = false) = 0; 
-#endif
+  std::string universal_id() const override
+  {
+    return StdIdMember::universal_id();
+  }
 
-  //! It is true if get_event_object, get_events are
-  //! working.
-  //const bool eventUsed;
+  CompoundEvent is_terminal_state() const override
+  {
+    return is_terminal_state_event;
+  }
+
+  Event is_construction_complete_event;
 
 protected:
-  //! A socket file descriptor.
-  SOCKET fd;
+  RSocketRepository* repository;
+
+  const CompoundEvent is_terminal_state_event;
+
+  //! A socket address
+  std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
-  /*RSocketBase(const ObjectCreationInfo& oi,
-	 const Par& par);*/
-  //RSocketBase(SOCKET socket) : fd(socket) {}
+  //! List of all ancestors terminal events. Each derived
+  //! (with a public virtual base) class appends its
+  //! terminal event here from its constructor.
+  //std::list<CompoundEvent> ancestor_terminals;
 
+public:
+  // TODO
+  //! Temporary: list of threads terminal events
+  std::list<CompoundEvent> threads_terminals;
+
+protected:
+  //! This type is only for repository creation
+  RSocketBase (const ObjectCreationInfo& oi,
+               const RSocketAddress& addr);
+  
   //! set blocking mode
-  virtual void set_blocking (bool blocking) = 0;
+  virtual void set_blocking (bool blocking);
 
-  virtual bool get_blocking () const = 0;
+  //! get blocking mode
+  //virtual bool get_blocking () const;
+
+  //virtual void process_error(int error);
+
+private:
+  typedef Logger<RSocketBase> log;
 };
 
-class ClientSideSocket : virtual public RSocketBase 
-{};
-
-class ServerSideSocket : virtual public RSocketBase 
-{};
+std::ostream&
+operator<< (std::ostream&, const RSocketBase&);
 
 class SocketThread: public RThread<std::thread>
 { 
 public:
   struct Par : public RThread<std::thread>::Par
   {
-	 RSocketBase* socket;
+    RSocketBase* socket;
 
-	 RThreadBase* create_derivation
-		(const ObjectCreationInfo&) const;
+  Par(RSocketBase* sock, Event* ext_terminated = 0) 
+    : RThread<std::thread>::Par(ext_terminated),
+      socket(sock) {}
 
-	 RThreadBase* transform_object
-		(const RThreadBase*) const
-	 { THROW_NOT_IMPLEMENTED; }
-
-	 //SocketId get_id() const
-	 //{ return socket->socket; }
+    RThreadBase* transform_object
+      (const RThreadBase*) const
+    { THROW_NOT_IMPLEMENTED; }
   };
 
+  typedef RThread<std::thread>::RepositoryType 
+    RepositoryType;
+
 protected:
-  SocketThread(const ObjectCreationInfo& oi, const Par& p) 
-  : RThread<std::thread>(oi, p) {}
+  RSocketBase* socket;
+
+SocketThread(const ObjectCreationInfo& oi, const Par& p) 
+  : RThread<std::thread>(oi, p), socket(p.socket) 
+  { assert(socket); }
 };
 
-class InSocketStateAxis : public StateAxis {};
-
-class InSocket
-: public RObjectWithEvents<InSocketStateAxis>,
-  virtual public RSocketBase
-{
+class SocketThreadWithPair: public SocketThread
+{ 
 public:
-  DECLARE_STATES(InSocketStateAxis, State);
-  DECLARE_STATE_CONST(State, new_data);
-  DECLARE_STATE_CONST(State, empty);
-  DECLARE_STATE_CONST(State, closed); // a reading side
-                                      // was closed
-
-//  RBuffer* 
-
-protected:
-  typedef Logger<InSocket> log;
-
-  InSocket(const ObjectCreationInfo& oi, 
-			  const /*RSocketBase::*/Par& p);
-  ~InSocket();
-  
-  //! Doing ::select and signalling new_data.
-  class Thread;
-
-  class Thread : public SocketThread
+  SOCKET get_notify_fd() const
   {
-  public:
-	 void run(); 
+    return sock_pair[ForNotify];
+  }
 
-  protected:
-    Thread(const ObjectCreationInfo& oi, const Par& p) 
-	 : SocketThread(oi, p), 
-		socket(dynamic_cast<InSocket*>(p.socket)) 
-		{ assert(socket); }
+protected:
+  //! indexing sock_pair sockets
+  enum {ForSelect = 0, ForNotify = 1};
 
-	 InSocket* socket;
-  };
+  //! the pair for ::select call waking-up
+  int sock_pair[2];
 
-  //! The last received data
-  RSingleBuffer* msg;
-
-  //! Actual size of a socket internal read buffer + 1.
-  size_t socket_rd_buf_size;
+  SocketThreadWithPair
+    (const ObjectCreationInfo& oi, const Par& p);
+  ~SocketThreadWithPair();
 };
 
-class OutSocketStateAxis : public StateAxis {};
 
-class OutSocket
-: public RObjectWithStates<OutSocketStateAxis>
-{
-public:
-  DECLARE_STATES(OutSocketStateAxis, State);
-  DECLARE_STATE_CONST(State, wait_you);
-  DECLARE_STATE_CONST(State, busy);
-  DECLARE_STATE_CONST(State, closed);
-
-  //! Doing ::select and signalling wait_you.
-  void run();
-};
-
-class InOutSocket : public InSocket, public OutSocket {};
+/*=============================*/
+/*========== RSocket ==========*/
+/*=============================*/
 
 /**
  * A real socket, for example
@@ -207,14 +176,121 @@ class InOutSocket : public InSocket, public OutSocket {};
 template<class... Bases>
 class RSocket : public Bases...
 {
-  struct Par : public Bases::Par... {};
+  template<class...>
+    friend RSocketBase* RSocketAllocator
+    (const ObjectCreationInfo& oi,
+     const RSocketAddress& addr);
+
+public:
+  std::string universal_id() const override
+  {
+    return RSocketBase::universal_id();
+  }
+
+  std::string object_name() const override
+  {
+    return SFORMAT("RSocket:" << this->fd);
+  }
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override
+  {
+    ax.state_changed(this, object, state_ax);
+  }
+  
+  std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) override
+  { 
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) const override
+  { 
+    return ax.current_state(this);
+  }
+
+  CompoundEvent create_event
+    (const UniversalEvent& ue) const override
+  {
+    return RSocketBase::create_event(ue);
+  }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
+  {
+    ax.update_events(this, trans_id, to);
+  }
+  
+  /*void state_hook
+    (AbstractObjectWithStates* object) override
+  {
+    THROW_PROGRAM_ERROR;
+    }*/
+
+protected:
+  RSocket(const ObjectCreationInfo& oi,
+          const RSocketAddress& addr);
+
+  //! wait all parts terminated and set
+  //! its own is_terminal_state_event. 
+  ~RSocket();
+
+  DEFAULT_LOGGER(RSocket<Bases...>);
+
+  //std::unordered_map<std::type_info> axes;
 };
 
-template<class Map, class Id>
-class SocketRepository
-  : public Repository<
-  RSocketBase, RSocketBase::Par, Map, Id>
+//=================================================
+// Functions to make an appropriate RSocket type by
+// enum parameters 
+
+inline RSocketBase* RSocketAllocator0
+(SocketSide side,
+ NetworkProtocol protocol,
+ IPVer ver,
+ const ObjectCreationInfo& oi,
+ const RSocketAddress& addr);
+    
+template<class Side>
+inline RSocketBase* RSocketAllocator1
+(NetworkProtocol protocol,
+ IPVer ver,
+ const ObjectCreationInfo& oi,
+ const RSocketAddress& addr);
+
+template<class Side, class Protocol>
+  inline RSocketBase* RSocketAllocator2
+  (IPVer ver, 
+   const ObjectCreationInfo& oi,
+   const RSocketAddress& addr);
+
+template<class... Bases>
+inline RSocketBase* RSocketAllocator
+(const ObjectCreationInfo& oi,
+ const RSocketAddress& addr);
+
+
+class RSocketRepository
+: public Repository
+<RSocketBase, RSocketAddress, std::map, SOCKET>
 {
+public:
+  typedef Repository
+    <RSocketBase, RSocketAddress, std::map, SOCKET>
+    Parent;
+
+  RThreadFactory *const thread_factory;
+
+  RSocketRepository(const std::string& id,
+                    size_t reserved,
+                    RThreadFactory *const tf)
+    : Parent(id, reserved),
+    thread_factory(tf) {}
 };
 
 #endif

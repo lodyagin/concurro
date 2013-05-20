@@ -11,11 +11,12 @@
 #define CONCURRO_RBUFFER_H_
 
 #include "RState.h"
+#include "REvent.h"
 #include "RObjectWithStates.h"
 #include <list>
 
 //! A data buffer states axis
-class DataBufferStateAxis : public StateAxis {};
+DECLARE_AXIS(DataBufferStateAxis, StateAxis);
 
 /**
  * A data buffer.
@@ -23,31 +24,28 @@ class DataBufferStateAxis : public StateAxis {};
 class RBuffer 
   : public RObjectWithEvents<DataBufferStateAxis>
 {
+  DECLARE_EVENT(DataBufferStateAxis, charged);
+  DECLARE_EVENT(DataBufferStateAxis, discharged);
+
 public:
   DECLARE_STATES(DataBufferStateAxis, State);
-#if 0
-  static const RState<DataBufferStateAxis> chargingState;
-  static const RState<DataBufferStateAxis> chargedState;
-  static const RState<DataBufferStateAxis> dischargedState;
-  static const RState<DataBufferStateAxis> destroyedState;
-  static const RState<DataBufferStateAxis> weldedState;
-#else
   DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
-  DECLARE_STATE_CONST(State, destroyed);
   DECLARE_STATE_CONST(State, welded);
-#endif
 
-  static REvent<DataBufferStateAxis> is_discharged;
-
-  RBuffer() 
-  : RObjectWithEvents<DataBufferStateAxis>
-	 (dischargedState) {}
+  RBuffer();
 
   //! Move the buffer.
-  //RBuffer(RBuffer&& b);
+  RBuffer(RBuffer&& b);
   virtual ~RBuffer();
+
+  RBuffer& operator=(RBuffer&& b);
+
+  CompoundEvent is_terminal_state() const
+  {
+    return is_discharged_event;
+  }
 
   //! Prepare the buffer to charging.
   virtual void start_charging() = 0;
@@ -59,14 +57,33 @@ public:
   //! Move the buffer.
   //RBuffer& operator=(RBuffer&&);
 
+  std::string universal_id() const
+  {
+    return "?";
+  }
+
+  //! Autoclear means call clear() in the destructor
+  void set_autoclear(bool autocl)
+  {
+    autoclear = autocl;
+  }
+
+  bool get_autoclear() const
+  {
+    return autoclear;
+  }
+
+protected:
+  bool destructor_is_called;
+  std::atomic<bool> autoclear;
 };
 
 class RSingleBuffer : public RBuffer
 {
 public:
   DEFINE_EXCEPTION(ResizeOverCapacity, 
-						 "Can't resize RSingleBuffer "
-						 "over its initial capacity");
+                   "Can't resize RSingleBuffer "
+                   "over its initial capacity");
 
   RSingleBuffer();
   //! Construct a buffer with maximal size res.
@@ -88,7 +105,7 @@ public:
   void* data();
   //! Return the buffer data as a constant. Not imply
   //! start_charging().
-  const void* cdata() { return buf; }
+  const void* cdata() const { return buf; }
   //! Return used buffer size
   size_t size() const { return size_; }
   //! Mark the buffer as holding data. Also set filled.

@@ -1,5 +1,5 @@
 #include "RBuffer.h"
-#include "CUnit.h"
+#include "tests.h"
 
 void test_move_rbuffer();
 void test_resize_rbuffer();

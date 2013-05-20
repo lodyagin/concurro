@@ -15,19 +15,18 @@
 #endif
 
 #include "Logging.h"
-#include "RCheck.h"
+//#include "RCheck.h"
 #include "SException.h"
 //#include "logging.h"
-#include "SCommon.h"
+//#include "SCommon.h"
 #ifdef _WIN32
 #include "SWinCheck.h"
-#include "SEvent.h"
-#include "SMutex.h"
 #endif
-#include "RMutex.h"
-#include "REvent.h"
-#include "SShutdown.h"
-#include "SCheck.h"
+//#include "RMutex.h"
+//#include "RState.hpp"
+//#include "REvent.hpp"
+//#include "SShutdown.h"
+//#include "SCheck.h"
 
 #include <string>
 //#include <assert.h> better use SCheck

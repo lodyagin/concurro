@@ -7,20 +7,16 @@
 #include "SNotCopyable.h"
 #include "Logging.h"
 #include <log4cxx/spi/location/locationinfo.h>
-#ifndef GPP44
 #include <atomic>
-#else
-#include <cstdatomic>
-#endif
 #ifndef _WIN32
 #include <boost/thread/recursive_mutex.hpp>
 #endif
 
 #define MUTEX_ACQUIRE(mutex) \
-  { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
+  do { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
 
 #define MUTEX_RELEASE(mutex) \
-  { (mutex).release(LOG4CXX_LOCATION); } while(0)
+  do { (mutex).release(LOG4CXX_LOCATION); } while(0)
 
 /// RAII version of MUTEX_ACQUIRE
 #define RLOCK(mutex) \
@@ -43,6 +39,7 @@ public:
 
   void acquire(const log4cxx::spi::LocationInfo& debug_location);
   void release(const log4cxx::spi::LocationInfo& debug_location);
+  bool is_locked();
 
   const std::string get_name () const { return name; }
 
@@ -160,6 +157,11 @@ inline void RMutex::release(const log4cxx::spi::LocationInfo& debug_location)
   /*  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
 					 debug_location);
   */
+}
+
+inline bool RMutex::is_locked()
+{
+  return !mx.try_lock();
 }
 
 // RMutex::Lock  =====================================================

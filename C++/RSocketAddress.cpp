@@ -1,12 +1,187 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58 -*-
+
+/**
+ * @file
+ *
+ * @author Sergei Lodyagin
+ */
+
 #include "StdAfx.h"
-#include "RSocketAddress.h"
+#include "RSocketAddress.hpp"
+#include "RSocket.hpp"
 #ifdef _WIN32
 #  include <winsock2.h>
 #  include <Ws2tcpip.h>
 #else
+#  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <arpa/inet.h>
+#  include <netdb.h>
 #endif
+#include "RCheck.h"
+
+std::ostream& operator << 
+  (std::ostream& out, const addrinfo& ai)
+{
+  out << "addrinfo ("
+      << "ai_flags: "  << std::hex << "0x" << ai.ai_flags
+      << std::dec 
+      << " ai_family: " << ai.ai_family
+      << " ai_socktype: " << ai.ai_socktype
+      << " ai_protocol: " << ai.ai_protocol
+      << " ai_canonname: [" 
+      << ((ai.ai_canonname) ? ai.ai_canonname : "<null>")
+      << "] ai_addr: ";
+  RSocketAddress::outString (out, ai.ai_addr);
+  out << ")\n";
+  return out;
+}
+
+/*==================================*/
+/*========== HintsBuilder ==========*/
+/*==================================*/
+
+NetworkProtocolHints<NetworkProtocol::TCP>
+//
+::NetworkProtocolHints()
+{
+  struct protoent pent_buf, *pent;
+  char str_buf[1024]; 
+  // see
+  // http://www.unix.com/man-page/Linux/3/getprotobyname_r/
+
+  hints.ai_socktype = SOCK_STREAM;
+  rCheck
+	 (getprotobyname_r("TCP", &pent_buf, str_buf, 
+                      sizeof(str_buf), &pent)==0);
+  assert(pent = &pent_buf);
+  hints.ai_protocol = pent->p_proto;
+}
+
+size_t AddressRequestBase
+//
+::n_objects(const ObjectCreationInfo& oi)
+{
+  addrinfo* ai_;
+
+  // NULL is a special "wildcard" value for AI_PASSIVE, 
+  // see man getaddrinfo
+  const char *const node = 
+	 (host.empty()) ? NULL : host.c_str();
+
+
+  /* check the address consistency */
+
+  // AI_PASSIVE will be ignored if node != NULL
+  // see getaddrinfo(3)
+  SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
+							node == NULL));
+
+
+  rSocketCheck(
+    getaddrinfo(node,
+                SFORMAT(port).c_str(), 
+                &hints, &ai_) 
+    == 0);
+
+  aw_ptr = std::make_shared<AddrinfoWrapper>(ai_);
+  next_obj = aw_ptr->begin();
+  return aw_ptr->size();
+}
+
+RSocketAddress* AddressRequestBase
+//
+::create_next_derivation(const ObjectCreationInfo& oi)
+{
+  return new RSocketAddress(oi, aw_ptr, &*next_obj++);
+}
+
+AddrinfoWrapper::AddrinfoWrapper (addrinfo* _ai)
+  : ai (_ai), theSize (0)
+{
+  // Count the size
+  for (addrinfo* ail = ai; ail != 0; ail = ail->ai_next)
+    theSize++;
+}
+
+AddrinfoWrapper::~AddrinfoWrapper ()
+{
+  if (ai)
+    ::freeaddrinfo (ai);
+}
+
+
+/*====================================*/
+/*========== RSocketAddress ==========*/
+/*====================================*/
+
+RSocketAddress::RSocketAddress
+  (const ObjectCreationInfo& oi,
+   const std::shared_ptr<AddrinfoWrapper>& ptr,
+	const addrinfo* ai_)
+:   StdIdMember(oi.objectId),
+    ai(ai_), aw_ptr(ptr), fd(-1)
+{
+  assert(ai);
+}
+
+RSocketBase* RSocketAddress::create_derivation
+  (const ObjectCreationInfo& oi) const
+{
+  assert(fd >= 0);
+  
+  /* Define the basic socket parameters */
+  NetworkProtocol protocol;
+  IPVer ver;
+  SocketSide side;
+
+  switch (ai->ai_family) 
+  {
+  case AF_INET:   ver = IPVer::v4; break;
+  case AF_INET6:  ver = IPVer::v6; break;
+  case AF_UNSPEC: THROW_PROGRAM_ERROR;
+  default:        THROW_NOT_IMPLEMENTED;
+  }
+
+  side = (ai->ai_flags & AI_PASSIVE) 
+	 ? SocketSide::Server : SocketSide::Client;
+
+  {
+    struct protoent pent_buf, *pent;
+    char str_buf[1024]; 
+    // see
+    // http://www.unix.com/man-page/Linux/3/getprotobyname_r/
+
+    rCheck
+      (::getprotobynumber_r(ai->ai_protocol, 
+                            &pent_buf, 
+                            str_buf, sizeof(str_buf),
+                            &pent) == 0);
+        assert(&pent_buf == pent);
+    if (strcmp(pent->p_name, "tcp") == 0
+		  || strcmp(pent->p_name, "TCP") == 0
+		) 
+	 {
+      protocol = NetworkProtocol::TCP;
+    }
+    else THROW_NOT_IMPLEMENTED;
+  }
+
+  return RSocketAllocator0
+	 (side, protocol, ver, oi, *this);
+}
+
+SOCKET RSocketAddress
+::get_id(ObjectCreationInfo& oi) const
+{
+  assert(ai);
+  rSocketCheck
+	 ((fd = ::socket(ai->ai_family, 
+						  ai->ai_socktype,
+						  ai->ai_protocol)) >= 0);
+  return fd;
+}
+
 
 void RSocketAddress::outString 
   (std::ostream& out, const struct sockaddr* sa)
@@ -118,7 +293,8 @@ void RSocketAddress::copy_sockaddr
 }
 
 
-int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
+int RSocketAddress::get_sockaddr_len 
+  (const struct sockaddr* sa)
 {
   assert (sa);
   switch (sa->sa_family)
@@ -133,34 +309,20 @@ int RSocketAddress::get_sockaddr_len (const struct sockaddr* sa)
     return sizeof (SOCKADDR_BTH);*/
 
   default:
-    return 0;
+    THROW_NOT_IMPLEMENTED;
   }
 }
 
-#if 0
-RSocketBase::Par& RSocketAddress::create_socket_pars
-  (const ObjectCreationInfo& oi,
-   const RSocketBase::Par& par) const
+std::ostream&
+operator<< (std::ostream& out, const RSocketAddress& sa)
 {
-  RSocketBase::Par* par = 0;
- 
-  // TODO RSocketAddress(addrinfo) -> RMultiprotoSocketAddress *-
-  // RSingleprotoSocketAddress(sockaddr)
-  // boost::asio?
-
-  // socket types
-  // ai->ai_flags == AI_PASSIVE -> RClientSideSocket
-  // ai->ai_family == AF_INET -> par.domain
-  // ai->ai_socktype -> par.type== SOCK_STREAM -> TCPSocket
-  // ai->ai_protocol -> par.protocol
-
-  switch (sa_in) 
-  {
-  RSocketBase::Par ipv4_par(par);
-  }
-  
-  par->domain = sa_in.ai_family;
-  //par.type = todo get for example from TCPSocket
-  //par.protocol = ??
+  RSocketAddress::outString(out, sa.ai->ai_addr);
+  return out;
 }
-#endif
+
+template std::list<RSocketAddress*> 
+RSocketAddressRepository
+//
+::create_addresses<NetworkProtocol::TCP, IPVer::v4>
+    (const std::string& host, uint16_t port);
+;

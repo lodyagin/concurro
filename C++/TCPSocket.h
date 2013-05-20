@@ -3,64 +3,175 @@
 #ifndef CONCURRO_TCPSOCKET_H_
 #define CONCURRO_TCPSOCKET_H_
 
-#include "RClientSocketAddress.h"
 #include "RSocket.h"
-//#include "AbstractConnection.h"
 #include "RObjectWithStates.h"
 #include "StateMap.h"
 #include "Logging.h"
 #include <netdb.h>
 
-class TCPStateAxis : public StateAxis {};
+DECLARE_AXIS(TCPAxis, SocketBaseAxis);
 
 class TCPSocket : virtual public RSocketBase
-, public RObjectWithStates<TCPStateAxis>
+, public RStateSplitter<TCPAxis, SocketBaseAxis>
 {
+  DECLARE_EVENT(TCPAxis, ready);
+  DECLARE_EVENT(TCPAxis, closed);
+  DECLARE_EVENT(TCPAxis, in_closed);
+  DECLARE_EVENT(TCPAxis, out_closed);
+
 public:
+  DECLARE_STATES(TCPAxis, State);
+  DECLARE_STATE_CONST(State, created);
+  DECLARE_STATE_CONST(State, closed);
+  DECLARE_STATE_CONST(State, in_closed);
+  DECLARE_STATE_CONST(State, out_closed);
+  DECLARE_STATE_CONST(State, listen);
+  DECLARE_STATE_CONST(State, accepting);
+  DECLARE_STATE_CONST(State, ready);
+  DECLARE_STATE_CONST(State, closing);
 
-  struct Par //: virtual public RSocketBase::Par
-  {
-	 //! How much to wait a
-	 //! connection termination on close()
-	 int close_wait_seconds;
-
-    Par(const RSocketAddress& addr, int close_wait) 
-	 : //RSocketBase::Par(addr),
-        close_wait_seconds(close_wait) {}
-  };
-
-  //!
-  TCPSocket(int close_wait_seconds);
   ~TCPSocket();
 
-  void close();
+  //! Ask to close an outbound part
+  void ask_close_out() override;
 
-  // TODO add inform about event from tapi-sockets-tcp
+  std::string universal_id() const override
+  {
+    return RSocketBase::universal_id();
+  }
 
-  DECLARE_STATES(TCPStateAxis, State);
-  DECLARE_STATE_CONST(State, closed);
-  DECLARE_STATE_CONST(State, listen);
-  DECLARE_STATE_CONST(State, syn_sent);
-  DECLARE_STATE_CONST(State, established);
-  DECLARE_STATE_CONST(State, closing);
-  DECLARE_STATE_CONST(State, aborted);
-  DECLARE_STATE_CONST(State, destroyed);
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,
+     AbstractObjectWithStates* object) override
+  {
+    THROW_PROGRAM_ERROR;
+  }
+
+  void state_hook
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state);
+
+  std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) override
+  { 
+    return RStateSplitter<TCPAxis,SocketBaseAxis>
+      ::current_state(ax);
+  }
+
+  const std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) const override
+  { 
+    return RStateSplitter<TCPAxis,SocketBaseAxis>
+      ::current_state(ax);
+  }
+
+#if 0
+  Event get_event (const UniversalEvent& ue) override
+  {
+    return RStateSplitter<TCPAxis,SocketBaseAxis>
+      ::get_event(ue);
+  }
+
+  Event get_event (const UniversalEvent& ue) const override
+  {
+    return RStateSplitter<TCPAxis,SocketBaseAxis>
+      ::get_event(ue);
+  }
+#endif
+
+  CompoundEvent create_event
+    (const UniversalEvent& ue) const override
+  {
+    return RStateSplitter<TCPAxis,SocketBaseAxis>
+      ::create_event(ue);
+  }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
+  {
+#if 1
+    ax.update_events(this, trans_id, to);
+#else
+    LOG_TRACE(log, "update_events");
+    return RStateSplitter<TCPAxis,SocketBaseAxis>
+      ::update_events(ax, trans_id, to);
+#endif
+}
 
 protected:
-
-  //! Create a TCP socket in a "closed" state.
-  TCPSocket(const ObjectCreationInfo&, const Par&);
-
   typedef Logger<TCPSocket> log;
   
   //! It is set in the constructor by 
   //! ::getprotobyname("TCP") call
   struct protoent* tcp_protoent;
   
-  //! how much wait closing the socket
-  int close_wait_secs;
+  //! Create a TCP socket in a "closed" state.
+  TCPSocket
+    (const ObjectCreationInfo& oi, 
+     const RSocketAddress& par);
 
-  //void connect_first(const RClientSocketAddress& addr);
+  class SelectThread : public SocketThreadWithPair
+  {
+  public:
+    struct Par : public SocketThreadWithPair::Par
+    {
+    Par(RSocketBase* sock) 
+      : SocketThreadWithPair::Par(sock)
+      {
+        thread_name = SFORMAT("TCPSocket(select):" 
+                              << sock->fd);
+      }
+
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new SelectThread(oi, *this); 
+      }
+    };
+
+  protected:
+    SelectThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThreadWithPair(oi, p) {}
+    ~SelectThread() { destroy(); }
+    void run();
+  }* select_thread;
+
+  class WaitThread : public SocketThread
+  {
+  public:
+    struct Par : public SocketThread::Par
+    { 
+      SOCKET notify_fd;
+      Par(RSocketBase* sock, SOCKET notify) 
+        : SocketThread::Par(sock),
+        notify_fd(notify)
+        {
+          thread_name = SFORMAT("TCPSocket(wait):" 
+                                << sock->fd);
+        }
+
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new WaitThread(oi, *this); 
+      }
+    };
+
+    void run();
+
+  protected:
+    SOCKET notify_fd;
+
+    WaitThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThread(oi, p), notify_fd(p.notify_fd) {}
+    ~WaitThread() { destroy(); }
+  }* wait_thread;
 };
 
 #endif

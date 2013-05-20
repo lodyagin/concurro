@@ -65,6 +65,7 @@ public:
   class Thread {};
   class Concurrency {};
   class States {};
+  class Events {};
 };
 
 /**
@@ -138,7 +139,7 @@ inline LogBase* Logger<LOG::States>::init_base
 
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOGGER_DEBUG_LOC(log, stream_expr, loc) {										\
+#define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isDebugEnabled())) {							\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -148,7 +149,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
-#define LOGGER_TRACE_LOC(log, stream_expr, loc) {										\
+#define LOGGER_TRACE_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isTraceEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -158,7 +159,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
-#define LOGGER_INFO_LOC(log, stream_expr, loc) {											\
+#define LOGGER_INFO_LOC(log, stream_expr, loc) do {											\
 	 if (LOG4CXX_UNLIKELY((log)->isInfoEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -168,7 +169,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
-#define LOGGER_WARN_LOC(log, stream_expr, loc) {											\
+#define LOGGER_WARN_LOC(log, stream_expr, loc) do {											\
 	 if (LOG4CXX_UNLIKELY((log)->isWarnEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -178,7 +179,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
-#define LOGGER_ERROR_LOC(log, stream_expr, loc) {										\
+#define LOGGER_ERROR_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isErrorEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -188,7 +189,7 @@ inline LogBase* Logger<LOG::States>::init_base
 #endif
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
-#define LOGGER_FATAL_LOC(log, stream_expr, loc) {										\
+#define LOGGER_FATAL_LOC(log, stream_expr, loc) do {										\
 	 if (LOG4CXX_UNLIKELY((log)->isFatalEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
@@ -196,6 +197,37 @@ inline LogBase* Logger<LOG::States>::init_base
 #else
 #define LOGGER_FATAL_LOC(logger, message, loc)
 #endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
+#define LOGGER_DEBUG_PLACE_LOC(log, place, stream_expr, loc) do {			\
+  if (LOG4CXX_UNLIKELY(log_params.place \
+	                    && (log)->isDebugEnabled())) { 	\
+		::log4cxx::helpers::MessageBuffer oss_;		 	\
+		{ oss_ << stream_expr ; }							  	\
+		(log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); \
+  } \
+} while (0)
+#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {			\
+ if (LOG4CXX_UNLIKELY(LogParams::place									\
+							 && log::logger()->isDebugEnabled())) {			\
+		::log4cxx::helpers::MessageBuffer oss_;		 	\
+		{ oss_ << stream_expr ; }							  	\
+		log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); \
+  } \
+} while (0)
+#else
+#define LOGGER_DEBUG_PLACE_LOC(log, place, message, loc)
+#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)
+#endif
+
+#define LOG_DEBUG_PLACE_LOC(log, place, message, loc)	\
+  LOGGER_DEBUG_PLACE_LOC(log::logger(), place, message, loc)
+//#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)		  LOGGER_DEBUG_STATIC_PLACE_LOC(log::logger(), place, message, loc)
+
+#define LOG_DEBUG_PLACE(log, place, message)					\
+  LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+#define LOG_DEBUG_STATIC_PLACE(log, place, message)					\
+  LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 
 #define LOG_TRACE_LOC(log, message, loc)		 \
   LOGGER_TRACE_LOC(log::logger(), message, loc)
