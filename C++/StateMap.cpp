@@ -50,7 +50,6 @@ operator<< (std::ostream& out, const UniversalState& st)
   out << st.name();
   return out;
 }
->>>>>>> wip
 
 UniversalEvent::operator UniversalState() const
 {

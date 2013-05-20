@@ -55,7 +55,6 @@ protected:
   //! All subscribers terminal states.
   std::set<CompoundEvent> subscribers_terminals;
 };
->>>>>>> wip
 
 //! It can be used as a parent of an object which
 //! introduces new state axis.
