@@ -33,6 +33,23 @@ int RStateCUClean()
   return 0;
 }
 
+DEFINE_AXIS(
+  TestAxis,
+  {"s1", "s2", "s3", "s4", "s5"},
+  { {"s1", "s2"},
+    {"s2", "s3"},
+    {"s2", "s4"},
+    {"s3", "s5"},
+    {"s4", "s5"}}
+  );
+
+DEFINE_AXIS(
+  DerivedAxis,
+  {"q1"},
+  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"},
+                                {"s3", "s2"}}
+  );
+
 DEFINE_STATES(TestAxis);
 
 DEFINE_STATE_CONST(TestObject, State, s1);

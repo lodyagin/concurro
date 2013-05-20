@@ -10,6 +10,7 @@ core
 CMakeCache.txt
 GPATH
 GRTAGS
+GSYMS
 GTAGS
 log4cxx.properties
 Makefile

@@ -20,58 +20,58 @@
 
 class RSocketConnection 
 : //public RObjectWithEvents<ConnectionAxis>,
-  public StdIdMember
+public StdIdMember
 {
 public:
   struct Par {
-	 //! Available addresses for socket(s)
-	 std::unique_ptr<RSocketAddressRepository> sar;
-	 size_t win_rep_capacity;
+    //! Available addresses for socket(s)
+    std::unique_ptr<RSocketAddressRepository> sar;
+    size_t win_rep_capacity;
 
-    Par() 
-	 : sar(new RSocketAddressRepository),
-		win_rep_capacity(3)
-	 {
-		assert(sar);
-	 }
+  Par() 
+  : sar(new RSocketAddressRepository),
+      win_rep_capacity(3)
+      {
+        assert(sar);
+      }
 
-	 virtual ~Par() {}
-	 virtual RSocketConnection* create_derivation
-	   (const ObjectCreationInfo& oi) const = 0;
-	 virtual RSocketConnection* transform_object
-	   (const RSocketConnection*) const
-	 { THROW_NOT_IMPLEMENTED; }
+    virtual ~Par() {}
+    virtual RSocketConnection* create_derivation
+    (const ObjectCreationInfo& oi) const = 0;
+    virtual RSocketConnection* transform_object
+    (const RSocketConnection*) const
+      { THROW_NOT_IMPLEMENTED; }
 
-	 //! Must be inited from derived classes. We can
-	 //! maintain any scope of a socket repository: per
-	 //! connection, per connection type, global etc.
-	 mutable std::unique_ptr<RSocketRepository> socket_rep;
+    //! Must be inited from derived classes. We can
+    //! maintain any scope of a socket repository: per
+    //! connection, per connection type, global etc.
+    mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
 
   //! Parameters to create client side of an Internet
   //! connection. 
   template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar : public virtual Par
+    struct InetClientPar : public virtual Par
   {
-	 std::string host;
-	 uint16_t port;
+    std::string host;
+    uint16_t port;
 
-    InetClientPar(const std::string& a_host,
-						uint16_t a_port) 
-		: host(a_host), port(a_port)
-	 {
-		sar->create_addresses<proto, ip_ver>
-		  (host, port);
-	 }
+  InetClientPar(const std::string& a_host,
+                uint16_t a_port) 
+    : host(a_host), port(a_port)
+    {
+      sar->create_addresses<proto, ip_ver>
+        (host, port);
+    }
   };
 
   virtual ~RSocketConnection() {}
 
   virtual RSocketConnection&
-  operator<< (const std::string) = 0;
+    operator<< (const std::string) = 0;
 
   virtual RSocketConnection& 
-  operator<< (RSingleBuffer&&) = 0;
+    operator<< (RSingleBuffer&&) = 0;
 
   //! Non-blocking close
   virtual void ask_close() = 0;
@@ -84,8 +84,8 @@ public:
 
 protected:
   RSocketConnection
-	 (const ObjectCreationInfo& oi,
-	  const Par& par);
+    (const ObjectCreationInfo& oi,
+     const Par& par);
 
   std::shared_ptr<RSocketRepository> socket_rep;
 };
@@ -101,106 +101,109 @@ class ConnectionThread : public SocketThread
 public:
   struct Par : public SocketThread::Par
   {
-    Par(Connection* c) 
-		: SocketThread::Par(c->socket), con(c)
-	 {
-		thread_name = SFORMAT(
-		  typeid(Connection).name() << socket->fd);
-	 }
+  Par(Connection* c) 
+    : SocketThread::Par(c->socket), con(c)
+    {
+      thread_name = SFORMAT(
+        typeid(Connection).name() << socket->fd);
+    }
 
-	 RThreadBase* create_derivation
-		(const ObjectCreationInfo& oi) const override
-	 { 
-		return new ConnectionThread(oi, *this); 
-	 }
+    RThreadBase* create_derivation
+      (const ObjectCreationInfo& oi) const override
+    { 
+      return new ConnectionThread(oi, *this); 
+    }
 
-	 Connection* con;
+    Connection* con;
   };
 
 protected:
   ConnectionThread(const ObjectCreationInfo& oi, 
-						 const Par& p)
-	 : SocketThread(oi, p), con(p.con) 
+                 const Par& p)
+  : SocketThread(oi, p), con(p.con) 
   {
-	 con->socket->threads_terminals.push_back
-		(this->is_terminated());
+    con->socket->threads_terminals.push_back
+      (this->is_terminal_state());
   }
 
   ~ConnectionThread() { destroy(); }
 
   void run()
   {
-	 ThreadState::move_to(*this, workingState);
-	 con->run();
+    ThreadState::move_to(*this, workingState);
+    con->run();
   }
 
   Connection* con;
 };
 
-DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis,
-  { "aborting", // skiping data and closing buffers
-	 "aborted"   // after aborting
-  },
-  { { "ready", "aborting" },
-	 { "aborting", "aborted" }
-  }
-);
+DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
 
 //! A connection which always uses only one socket
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
-  <ClientSocketAxis, ClientSocketAxis>
+  <ClientConnectionAxis, ClientSocketAxis>
 {
+  DECLARE_EVENT(ClientConnectionAxis, aborting);
+  DECLARE_EVENT(ClientConnectionAxis, aborted);
+  DECLARE_EVENT(ClientConnectionAxis, clearly_closed);
+
 public:
   DECLARE_STATES(ClientConnectionAxis, State);
   DECLARE_STATE_CONST(State, aborting);
   DECLARE_STATE_CONST(State, aborted);
+  DECLARE_STATE_CONST(State, clearly_closed);
 
   typedef ConnectionThread<RSingleSocketConnection>
-	 Thread;
+    Thread;
   friend Thread;
 
   struct Par : public virtual RSocketConnection::Par
   {
-	 RSocketAddress* sock_addr;
+    RSocketAddress* sock_addr;
 
-	 Par()
-		: sock_addr(0), // descendats must init it by an
-		                // address
-		               // from the address repository (sar)
-		socket(0) // descendant must create it in
-					 // create_derivation 
-	 {}
+    Par()
+    : sock_addr(0), // descendats must init it by an
+      // address
+      // from the address repository (sar)
+      socket(0) // descendant must create it in
+      // create_derivation 
+      {}
 
-	 virtual std::unique_ptr<SocketThread::Par> 
-	 get_thread_par(RSingleSocketConnection* c) const
-	 {
-		return std::unique_ptr<Thread::Par>
-		  (new Thread::Par(c));
-	 }
+    virtual std::unique_ptr<SocketThread::Par> 
+      get_thread_par(RSingleSocketConnection* c) const
+    {
+      return std::unique_ptr<Thread::Par>
+        (new Thread::Par(c));
+    }
 
-	 virtual std::unique_ptr<RConnectedWindow::Par>
-	 get_window_par(RSocketBase* sock) const
-	 {
-		return std::unique_ptr<RConnectedWindow::Par>
-		  (new RConnectedWindow::Par(sock));
-	 }
+    virtual std::unique_ptr<RConnectedWindow::Par>
+      get_window_par(RSocketBase* sock) const
+    {
+      return std::unique_ptr<RConnectedWindow::Par>
+        (new RConnectedWindow::Par(sock));
+    }
 
-	 mutable RSocketBase* socket;
+    mutable RSocketBase* socket;
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar 
-  : public Par,
+    struct InetClientPar 
+    : public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
     InetClientPar(const std::string& a_host,
-						uint16_t a_port) 
-		: RSocketConnection::InetClientPar<proto, ip_ver>
-		     (a_host, a_port)
-	 {}
+                  uint16_t a_port) 
+    : RSocketConnection::InetClientPar<proto, ip_ver>
+      (a_host, a_port)
+    {}
   };
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override;
 
   RSocketConnection& operator<< (const std::string);
   RSocketConnection& operator<< (RSingleBuffer&&);
@@ -214,24 +217,28 @@ public:
 
   RSocketBase* get_socket()
   {
-	 return socket;
+    return socket;
   }
-
 
   CompoundEvent is_terminal_state() const override
   {
-	 return is_terminal_state_event;
+    return is_terminal_state_event;
   }
   
   std::string universal_id() const override
   {
-	 return universal_object_id;
+    return universal_object_id;
   }
+
+  /*void state_hook
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state);*/
 
 protected:
   RSingleSocketConnection
-	 (const ObjectCreationInfo& oi,
-	  const Par& par);
+    (const ObjectCreationInfo& oi,
+     const Par& par);
   ~RSingleSocketConnection();
 
   // <NB> not virtual
@@ -243,17 +250,13 @@ protected:
   SocketThread* thread;
   RConnectedWindow* in_win;
 
-  DEFAULT_LOGGER(RSingleSocketConnection);
-
   A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						aborting);
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-						ClientSocketAxis, 
-						aborted);
+                  ClientSocketAxis, closed);
 
 protected:
   CompoundEvent is_terminal_state_event;
+
+  DEFAULT_LOGGER(RSingleSocketConnection);
 
 public:
   //! A current window
@@ -263,24 +266,24 @@ public:
 
 class RConnectionRepository
 : public Repository<
-    RSocketConnection, 
-	 RSocketConnection::Par,
-	 std::vector,
-	 size_t>
+RSocketConnection, 
+  RSocketConnection::Par,
+  std::vector,
+  size_t>
 {
 public:
   typedef Repository<
     RSocketConnection, 
-	 RSocketConnection::Par,
-	 std::vector,
-	 size_t> Parent;
+    RSocketConnection::Par,
+    std::vector,
+    size_t> Parent;
 
   RThreadFactory *const thread_factory;
 
   RConnectionRepository(const std::string& id,
-								size_t reserved,
-								RThreadFactory *const tf)
-	 : Parent(id, reserved), thread_factory(tf)
+                        size_t reserved,
+                        RThreadFactory *const tf)
+  : Parent(id, reserved), thread_factory(tf)
   {}
 };
 

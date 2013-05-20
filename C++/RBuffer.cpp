@@ -2,6 +2,26 @@
 
 #include "StdAfx.h"
 #include "RBuffer.h"
+#include "REvent.hpp"
+#include "RState.hpp"
+
+DEFINE_AXIS(
+  DataBufferStateAxis,
+  {   "charging", // is locked for filling
+      "charged", // has data
+      "discharged", // data was red (moved)
+      "welded"  // own a buffer together with another
+                // RBuffer
+      },
+  { {"discharged", "charging"},
+    {"charging", "charged"},
+      //{"charging", "discharged"}, 
+      // there is a week control if its enabled
+    {"discharged", "welded"},
+    {"welded", "discharged"},
+    {"welded", "charged"},
+    {"charged", "discharged"}}
+  );
 
 DEFINE_STATES(DataBufferStateAxis);
 

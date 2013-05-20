@@ -9,6 +9,7 @@
 #ifndef CONCURRO_ROBJECTWITHSTATES_H_
 #define CONCURRO_ROBJECTWITHSTATES_H_
 
+#include "SCommon.h"
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
 #if __GNUC_MINOR__< 6
@@ -20,10 +21,10 @@
 class REventIsUnregistered : public SException
 {
 public:
-  REventIsUnregistered(const UniversalEvent& ue)
-	 : SException(SFORMAT("The event [" << ue 
-								 << "] is unregistered")),
-	 event(ue) {}
+REventIsUnregistered(const UniversalEvent& ue)
+  : SException(SFORMAT("The event [" << ue 
+                       << "] is unregistered")),
+    event(ue) {}
 
   const UniversalEvent event;
 };
@@ -34,25 +35,27 @@ class RObjectWithStatesBase
 public:
   RObjectWithStatesBase();
   virtual ~RObjectWithStatesBase();
-  //void register_subscriber(RStateChangeSubscriber*);
+
   void register_subscriber
-	 (RObjectWithStatesBase*/*, const CompoundEvent&*/);
-  //! the "update parent" callback on state changing in
+    (RObjectWithStatesBase*, StateAxis*);
+
+  //! An "update parent" callback on state changing in
   //! the `object'.
   void state_changed
-	 (AbstractObjectWithStates* object) override;
-  //! Terminal state means 
-  //! 1) no more state activity;
-  //! 2) the object can be deleted (there are no more
-  //! dependencies on it).
-  //virtual CompoundEvent is_terminal_state() const = 0;
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override;
+
 protected:
   //! No more changes in subscribers list
   std::atomic<bool> is_frozen;
   std::atomic<bool> is_changing;
+
+  typedef std::pair<RObjectWithStatesBase*, StateAxis*>
+    Subscriber;
+
   //! Registered subscribers
-  //std::set<RStateChangeSubscriber*> subscribers;
-  std::set<RObjectWithStatesBase*> subscribers;
+  std::set<Subscriber> subscribers;
   //! All subscribers terminal states.
   std::set<CompoundEvent> subscribers_terminals;
 };
@@ -66,36 +69,65 @@ class RObjectWithStates
 {
 public:
   typedef typename ObjectWithStatesInterface<Axis>
-	 ::State State;
-  
-  RObjectWithStates(const State& initial_state)
-	 : currentState(initial_state) {}
+    ::State State;
+
+  typedef AbstractMethodCallWrapper<
+    RObjectWithStates<Axis>, 
+    AbstractObjectWithStates*,
+    const StateAxis&,
+    const UniversalState&
+  > AMembWrap;
+
+  template<class AppObj>
+  using MembWrap = MethodCallWrapper<
+    AppObj, RObjectWithStates<Axis>, 
+    AbstractObjectWithStates*,
+    const StateAxis&,
+    const UniversalState&
+  >;
+
+  RObjectWithStates
+    (const State& initial_state, AMembWrap* amcw = nullptr)
+    : currentState(initial_state), mcw(amcw)
+  {}
+
   RObjectWithStates(const RObjectWithStates&);
 
   virtual ~RObjectWithStates() {}
 
   RObjectWithStates& operator=(const RObjectWithStates&);
 
-  void state_changed(AbstractObjectWithStates* object) 
-	 override
+  template<class AppObj>
+    static typename RObjectWithStates<Axis>
+    ::template MembWrap<AppObj>*
+    state_hook(void (AppObj::*memb) 
+               (AbstractObjectWithStates*, 
+                const StateAxis&,
+                const UniversalState&))
   {
-	 RObjectWithStatesBase::state_changed(object);
+    return new MembWrap<AppObj>(memb);
   }
 
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override;
+
   std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) override
+    current_state(const StateAxis& ax) override
   {
-	 return currentState;
+    return currentState;
   }
 
   const std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) const override
+    current_state(const StateAxis& ax) const override
   {
-	 return currentState;
+    return currentState;
   }
 
 protected:
   std::atomic<uint32_t> currentState;
+  std::shared_ptr<AMembWrap> mcw;
 };
 
 class UniversalEvent;
@@ -109,46 +141,62 @@ class RObjectWithEvents
   public virtual ObjectWithEventsInterface<Axis>
 {
   template<class Axis1, class Axis2> 
-	 friend class RMixedEvent;
+    friend class RMixedEvent;
   friend class RState<Axis>;
   template<class Axis1, class Axis2> 
-	 friend class RMixedAxis;
+    friend class RMixedAxis;
   template<class Axis1, class Axis2> 
-	 friend class RStateSplitter;
+    friend class RStateSplitter;
 public:
   typedef RObjectWithStates<Axis> Parent;
   typedef typename Parent::State State;
+  typedef typename RObjectWithStates<Axis>::AMembWrap
+    AMembWrap;
 
   RObjectWithEvents
-	 (const typename RObjectWithStates<Axis>::State& 
-	    initial_state)
-	 : Parent(initial_state)
+    (const typename RObjectWithStates<Axis>::State& 
+     initial_state,
+     AMembWrap* mcw = nullptr)
+    : Parent(initial_state, mcw)
   { }
+
+  template<class AppObj>
+    static typename RObjectWithStates<Axis>
+    ::template MembWrap<AppObj>*
+    state_hook(void (AppObj::*memb) 
+               (AbstractObjectWithStates*,
+                const StateAxis&,
+                const UniversalState&))
+  {
+    return RObjectWithStates<Axis>::state_hook(memb);
+  }
+
+  //! Update events due to trans_id to
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to);
 
 protected:
 #if 0
   //! Query an event object by UniversalEvent. 
   Event get_event(const UniversalEvent& ue) override
   {
-	 return get_event_impl(ue);
+    return get_event_impl(ue);
   }
 
   //! Query an event object by UniversalEvent. 
   Event get_event
-	 (const UniversalEvent& ue) const override
+    (const UniversalEvent& ue) const override
   {
-	 return get_event_impl(ue);
+    return get_event_impl(ue);
   }
 #endif
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
   CompoundEvent create_event
-	 (const UniversalEvent&) const override;
-
-  //! Update events due to trans_id to
-  void update_events
-	 (TransitionId trans_id, uint32_t to);
+    (const UniversalEvent&) const override;
 
   typedef std::map<uint32_t, Event> EventMap;
 
@@ -181,68 +229,75 @@ class RStateSplitter
 {
 public:
   typedef typename ObjectWithStatesInterface<DerivedAxis>
-	 ::State State;
-  
+    ::State State;
+  typedef typename RObjectWithEvents<DerivedAxis>
+    ::AMembWrap AMembWrap;
+
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
   RStateSplitter
-	 (RObjectWithEvents<SplitAxis>* a_delegate,
-	  const State& initial_state);
+    (RObjectWithEvents<SplitAxis>* a_delegate,
+     const State& initial_state,
+     AMembWrap* mcw = nullptr);
 
   RStateSplitter(const RStateSplitter&) = delete;
 
   RStateSplitter* operator=
-	 (const RStateSplitter&) = delete;
+    (const RStateSplitter&) = delete;
 
-  /*void add_delegate
-	 (RObjectWithEvents<SplitAxis>* a_delegate);*/
+  template<class AppObj>
+    static typename RObjectWithStates<DerivedAxis>
+    ::template MembWrap<AppObj>*
+    state_hook(void (AppObj::*memb) 
+               (AbstractObjectWithStates*,
+                const StateAxis&,
+                const UniversalState& new_state))
+  {
+    return RObjectWithEvents<DerivedAxis>
+      ::state_hook(memb);
+  }
 
   virtual void state_changed
-	 (AbstractObjectWithStates* object) = 0;
+    (StateAxis& ax, 
+     const StateAxis& state_ax,    
+     AbstractObjectWithStates* object) = 0;
 
 protected:
   //! The 2nd stage init.
   void init() const;
 
   std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) override
+    current_state(const StateAxis& ax) override
   {
-	 assert(is_same_axis<DerivedAxis>(ax)
-			  || is_same_axis<SplitAxis>(ax));
-	 return RObjectWithEvents<DerivedAxis>
-		::current_state(ax);
+    assert(is_same_axis<DerivedAxis>(ax)
+           || is_same_axis<SplitAxis>(ax));
+    return RObjectWithEvents<DerivedAxis>
+      ::current_state(ax);
   }
 
   const std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) const override
+    current_state(const StateAxis& ax) const override
   {
-	 assert(is_same_axis<DerivedAxis>(ax)
-			  || is_same_axis<SplitAxis>(ax));
-	 return RObjectWithEvents<DerivedAxis>
-		::current_state(ax);
+    assert(is_same_axis<DerivedAxis>(ax)
+           || is_same_axis<SplitAxis>(ax));
+    return RObjectWithEvents<DerivedAxis>
+      ::current_state(ax);
   }
 
-#if 0
-  Event get_event
-	 (const UniversalEvent& ue) override;
-
-  Event get_event
-	 (const UniversalEvent& ue) const override;
-#endif
-
   CompoundEvent create_event
-	 (const UniversalEvent&) const override;
+    (const UniversalEvent&) const override;
 
   void update_events
-	 (TransitionId trans_id, uint32_t to) override;
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override;
 
   //! Select this or delegate depending on the event.
   //! \return true if it is from DerivedAxis
   bool is_this_event_store
-	 (const UniversalEvent& ue) const;
+    (const UniversalEvent& ue) const;
 
   RObjectWithEvents<SplitAxis>* delegate;
-  //uint16_t not_delegate;
   const uint16_t split_state_id;
   const TransitionId split_transition_id;
   mutable bool inited;

@@ -15,11 +15,11 @@
 template<class Axis>
 struct UnitializedAxis : public SException
 {
-  UnitializedAxis()
-	 : SException(SFORMAT(
-						 "The axis " << typeid(Axis).name()
-						 << " must be initialized before usage"
-						 ))
+UnitializedAxis()
+  : SException(SFORMAT(
+                 "The axis " << typeid(Axis).name()
+                 << " must be initialized before usage"
+                 ))
   {}
   
 };
@@ -33,8 +33,17 @@ public:
   //! Construct a state with the name.
   RState (const char* name);
   RState(uint32_t);
+  RState(const UniversalState& us)
+    : RState((uint32_t) us) {}
+
   RState(const ObjectWithStatesInterface<Axis>& obj);
   std::string name () const;
+
+  bool operator== (const RState<Axis>& st) const
+  { return the_state == st.the_state; }
+
+  bool operator!= (const RState<Axis>& st) const
+  { return the_state == st.the_state; }
 
   template<class DerivedAxis>
   operator RState<DerivedAxis> () const;
@@ -45,7 +54,6 @@ class RMixedAxis;
 
 template<class Axis>
 using RAxis = RMixedAxis<Axis, Axis>;
-
 
 //! Server stateMap for RMixedAxis
 //! (only one map per main Axis)
@@ -83,13 +91,13 @@ public:
 
   //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
-	 (const ObjectWithStatesInterface<Axis2>& obj, 
-	  const RState<Axis>& to);
+    (const ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& to);
 
   //! Atomic move obj to a new state
   static void move_to
-	 (ObjectWithStatesInterface<Axis2>& obj, 
-	  const RState<Axis>& to);
+    (ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& to);
 
   //! Atomic compare-and-change the state
   //! \return true if the object in the `from' state and
@@ -98,45 +106,56 @@ public:
   //! transition from->to and the object is in the `from'
   //! state.  
   static bool compare_and_move
-	 (ObjectWithStatesInterface<Axis2>& obj, 
-	  const RState<Axis>& from,
-	  const RState<Axis>& to);
+    (ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& from,
+     const RState<Axis>& to);
 	 
-  //! Atomic compare-and-change the state which uses a set
-  //! of possible from-states.
+  //! Atomic compare-and-change the state which uses a
+  //! set of possible from-states.
   //! \return true if the object in one of the `from'
   //! states and false otherwise.
   //! \throw InvalidStateTransition if threre is no
   //! transition current->to and the current state is in
   //! the `from' set.
   static bool compare_and_move
-	 (ObjectWithStatesInterface<Axis2>& obj, 
-	  const std::set<RState<Axis>>& from_set,
-	  const RState<Axis>& to);
+    (ObjectWithStatesInterface<Axis2>& obj, 
+     const std::set<RState<Axis>>& from_set,
+     const RState<Axis>& to);
+	 
+  //! Atomic compare-and-change the state
+  //! \return true if the object NOT in the `from' state and
+  //! false otherwise.
+  //! \throw InvalidStateTransition if threre is no
+  //! transition from->to and the object is in the `from'
+  //! state.  
+  static bool neg_compare_and_move
+    (ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& not_from,
+     const RState<Axis>& to);
 	 
   static uint32_t state
-	 (const ObjectWithStatesInterface<Axis2>& obj);
+    (const ObjectWithStatesInterface<Axis2>& obj);
 
   //! Atomic check the object state
   static bool state_is
-	  (const ObjectWithStatesInterface<Axis2>& obj, 
-		const RState<Axis>& st);
+    (const ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& st);
 
   //! Atomic check the obj state is in the set
   static bool state_in
-	  (const ObjectWithStatesInterface<Axis2>& obj, 
-		const std::initializer_list<RState<Axis>>& set);
+    (const ObjectWithStatesInterface<Axis2>& obj, 
+     const std::initializer_list<RState<Axis>>& set);
 
   //! Raise InvalidState when a state is not expected.
   static void ensure_state
-	  (const ObjectWithStatesInterface<Axis2>& obj, 
-		const RState<Axis>& expected);
+    (const ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& expected);
 
-  static const StateMap& state_map() 
+  static const StateMap* state_map() 
   { 
-	 static_assert(is_ancestor<Axis2, Axis>(), 
-						"This state mixing is invalid.");
-	 return *StateMapInstance<Axis>::stateMap; 
+    static_assert(is_ancestor<Axis2, Axis>(), 
+                  "This state mixing is invalid.");
+    return StateMapInstance<Axis>::stateMap; 
   }
 protected:
   typedef Logger<RAxis<Axis>> log;
@@ -146,19 +165,25 @@ protected:
   RMixedAxis(const StateMapPar<Axis>& par);
 };
 
-#define DECLARE_AXIS(axis, parent, pars...)	\
+#define DECLARE_AXIS(axis, parent)	\
 struct axis : public parent \
 { \
   typedef parent Parent; \
   static axis self_; \
   static axis& self() { \
-    static axis self; \
-    return self; \
+    static axis* self = new axis; \
+    return *self; \
   } \
-  static StateMapPar<axis> get_state_map_par() \
-  {	\
-	 return StateMapPar<axis>(pars, \
-	   StateMapInstance<typename axis::Parent>::init()); \
+  \
+  static bool is_same(const StateAxis& ax) { \
+    return &axis::self() == ax.vself();        \
+  } \
+  \
+  static StateMapPar<axis> get_state_map_par(); \
+  \
+  const StateAxis* vself() const override \
+  { \
+    return &axis::self(); \
   } \
   \
   const std::atomic<uint32_t>& current_state \
@@ -166,19 +191,52 @@ struct axis : public parent \
   { \
     return dynamic_cast<const RObjectWithStates<axis>*> \
       (obj)			\
-	   -> RObjectWithStates<axis>::current_state(*this); \
+      -> RObjectWithStates<axis>::current_state(*this); \
   } \
   \
   std::atomic<uint32_t>& current_state \
     (AbstractObjectWithStates* obj) const override	\
   { \
     return dynamic_cast<RObjectWithStates<axis>*>(obj) \
-	   -> RObjectWithStates<axis>::current_state(*this); \
+     -> RObjectWithStates<axis>::current_state(*this); \
   } \
-};	\
-template class RMixedAxis<axis, axis>;	\
-template class RState<axis>; \
-template class RMixedEvent<axis, axis>;		
+  \
+  void update_events \
+     (AbstractObjectWithEvents* obj, \
+      TransitionId trans_id,  \
+      uint32_t to) override \
+  { \
+    return dynamic_cast<RObjectWithEvents<axis>*>(obj) \
+    -> RObjectWithEvents<axis>::update_events \
+      (*this, trans_id, to); \
+  } \
+  \
+  void state_changed \
+     (AbstractObjectWithStates* subscriber, \
+      AbstractObjectWithStates* publisher, \
+      const StateAxis& state_ax) override    \
+  { \
+    return dynamic_cast<RObjectWithStates<axis>*> \
+    (subscriber) \
+    -> RObjectWithStates<axis>::state_changed \
+      (*this, state_ax, publisher);            \
+  } \
+  \
+  UniversalState bound(uint32_t st) const override \
+  { \
+    return RState<axis>(st); \
+  } \
+}; 
+
+#define DEFINE_AXIS(axis, pars...)	\
+  StateMapPar<axis> axis::get_state_map_par()    \
+  {	\
+    return StateMapPar<axis>(pars, \
+      StateMapInstance<typename axis::Parent>::init()); \
+  } \
+  template class RMixedAxis<axis, axis>;	\
+  template class RState<axis>; \
+  template class RMixedEvent<axis, axis>;		
 
 #define DECLARE_STATES(axis, state_class)	\
   typedef RAxis<axis> state_class; \

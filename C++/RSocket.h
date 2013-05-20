@@ -23,25 +23,7 @@
 #endif
 #include <list>
 
-DECLARE_AXIS(SocketBaseAxis, StateAxis,
-  {
-  "created",
-  "ready",
-  "closed",
-  "connection_timed_out",
-  "connection_refused",
-  "destination_unreachable"
-  },
-  { {"created", "ready"},
-	 {"created", "closed"},
-    {"created", "connection_timed_out"},
-    {"created", "connection_refused"},
-    {"created", "destination_unreachable"},
-//    {"ready", "error"},
-	 {"ready", "closed"},
-	 {"closed", "closed"},
-//	 {"closed", "error"}
-  });
+DECLARE_AXIS(SocketBaseAxis, StateAxis);
 
 class RSocketRepository;
 class SocketThread;
@@ -87,12 +69,12 @@ public:
 
   std::string universal_id() const override
   {
-	 return StdIdMember::universal_id();
+    return StdIdMember::universal_id();
   }
 
   CompoundEvent is_terminal_state() const override
   {
-	 return is_terminal_state_event;
+    return is_terminal_state_event;
   }
 
   Event is_construction_complete_event;
@@ -118,7 +100,7 @@ public:
 protected:
   //! This type is only for repository creation
   RSocketBase (const ObjectCreationInfo& oi,
-					const RSocketAddress& addr);
+               const RSocketAddress& addr);
   
   //! set blocking mode
   virtual void set_blocking (bool blocking);
@@ -140,25 +122,25 @@ class SocketThread: public RThread<std::thread>
 public:
   struct Par : public RThread<std::thread>::Par
   {
-	 RSocketBase* socket;
+    RSocketBase* socket;
 
-    Par(RSocketBase* sock, Event* ext_terminated = 0) 
-	 : RThread<std::thread>::Par(ext_terminated),
-		socket(sock) {}
+  Par(RSocketBase* sock, Event* ext_terminated = 0) 
+    : RThread<std::thread>::Par(ext_terminated),
+      socket(sock) {}
 
-	 RThreadBase* transform_object
-		(const RThreadBase*) const
-	 { THROW_NOT_IMPLEMENTED; }
+    RThreadBase* transform_object
+      (const RThreadBase*) const
+    { THROW_NOT_IMPLEMENTED; }
   };
 
   typedef RThread<std::thread>::RepositoryType 
-	 RepositoryType;
+    RepositoryType;
 
 protected:
   RSocketBase* socket;
 
-  SocketThread(const ObjectCreationInfo& oi, const Par& p) 
-	 : RThread<std::thread>(oi, p), socket(p.socket) 
+SocketThread(const ObjectCreationInfo& oi, const Par& p) 
+  : RThread<std::thread>(oi, p), socket(p.socket) 
   { assert(socket); }
 };
 
@@ -167,7 +149,7 @@ class SocketThreadWithPair: public SocketThread
 public:
   SOCKET get_notify_fd() const
   {
-	 return sock_pair[ForNotify];
+    return sock_pair[ForNotify];
   }
 
 protected:
@@ -178,7 +160,7 @@ protected:
   int sock_pair[2];
 
   SocketThreadWithPair
-	 (const ObjectCreationInfo& oi, const Par& p);
+    (const ObjectCreationInfo& oi, const Par& p);
   ~SocketThreadWithPair();
 };
 
@@ -195,65 +177,64 @@ template<class... Bases>
 class RSocket : public Bases...
 {
   template<class...>
-  friend RSocketBase* RSocketAllocator
-	 (const ObjectCreationInfo& oi,
-	  const RSocketAddress& addr);
+    friend RSocketBase* RSocketAllocator
+    (const ObjectCreationInfo& oi,
+     const RSocketAddress& addr);
 
 public:
   std::string universal_id() const override
   {
-	 return RSocketBase::universal_id();
+    return RSocketBase::universal_id();
   }
 
   std::string object_name() const override
   {
-	 return SFORMAT("RSocket:" << this->fd);
+    return SFORMAT("RSocket:" << this->fd);
   }
 
   void state_changed
-	 (AbstractObjectWithStates* object) override
-  {}
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object) override
+  {
+    ax.state_changed(this, object, state_ax);
+  }
   
   std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) override
+    current_state(const StateAxis& ax) override
   { 
-	 return ax.current_state(this);
+    return ax.current_state(this);
   }
 
   const std::atomic<uint32_t>& 
-	 current_state(const StateAxis& ax) const override
+    current_state(const StateAxis& ax) const override
   { 
-	 return ax.current_state(this);
+    return ax.current_state(this);
   }
-
-#if 0
-  Event get_event (const UniversalEvent& ue) override
-  {
-	 return RSocketBase::get_event(ue);
-  }
-
-  Event get_event (const UniversalEvent& ue) const override
-  {
-	 return RSocketBase::get_event(ue);
-  }
-#endif
 
   CompoundEvent create_event
-	 (const UniversalEvent& ue) const override
+    (const UniversalEvent& ue) const override
   {
-	 return RSocketBase::create_event(ue);
+    return RSocketBase::create_event(ue);
   }
 
   void update_events
-	 (TransitionId trans_id, uint32_t to) override
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
   {
-	 LOG_TRACE(log, "update_events");
-	 return RSocketBase::update_events(trans_id, to);
+    ax.update_events(this, trans_id, to);
   }
+  
+  /*void state_hook
+    (AbstractObjectWithStates* object) override
+  {
+    THROW_PROGRAM_ERROR;
+    }*/
 
 protected:
   RSocket(const ObjectCreationInfo& oi,
-			 const RSocketAddress& addr);
+          const RSocketAddress& addr);
 
   //! wait all parts terminated and set
   //! its own is_terminal_state_event. 
@@ -269,47 +250,47 @@ protected:
 // enum parameters 
 
 inline RSocketBase* RSocketAllocator0
-  (SocketSide side,
-   NetworkProtocol protocol,
-   IPVer ver,
-	const ObjectCreationInfo& oi,
-	const RSocketAddress& addr);
+(SocketSide side,
+ NetworkProtocol protocol,
+ IPVer ver,
+ const ObjectCreationInfo& oi,
+ const RSocketAddress& addr);
     
 template<class Side>
 inline RSocketBase* RSocketAllocator1
- (NetworkProtocol protocol,
-  IPVer ver,
-  const ObjectCreationInfo& oi,
-  const RSocketAddress& addr);
+(NetworkProtocol protocol,
+ IPVer ver,
+ const ObjectCreationInfo& oi,
+ const RSocketAddress& addr);
 
 template<class Side, class Protocol>
-inline RSocketBase* RSocketAllocator2
+  inline RSocketBase* RSocketAllocator2
   (IPVer ver, 
-	const ObjectCreationInfo& oi,
-	const RSocketAddress& addr);
+   const ObjectCreationInfo& oi,
+   const RSocketAddress& addr);
 
 template<class... Bases>
 inline RSocketBase* RSocketAllocator
-  (const ObjectCreationInfo& oi,
-   const RSocketAddress& addr);
+(const ObjectCreationInfo& oi,
+ const RSocketAddress& addr);
 
 
 class RSocketRepository
 : public Repository
-  <RSocketBase, RSocketAddress, std::map, SOCKET>
+<RSocketBase, RSocketAddress, std::map, SOCKET>
 {
 public:
   typedef Repository
-	 <RSocketBase, RSocketAddress, std::map, SOCKET>
-	 Parent;
+    <RSocketBase, RSocketAddress, std::map, SOCKET>
+    Parent;
 
   RThreadFactory *const thread_factory;
 
   RSocketRepository(const std::string& id,
-						  size_t reserved,
-						  RThreadFactory *const tf)
+                    size_t reserved,
+                    RThreadFactory *const tf)
     : Parent(id, reserved),
-	 thread_factory(tf) {}
+    thread_factory(tf) {}
 };
 
 #endif

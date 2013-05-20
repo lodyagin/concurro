@@ -15,26 +15,13 @@
 #include "RThread.h"
 #include "RObjectWithStates.h"
 
-DECLARE_AXIS(WindowAxis, StateAxis,
-  {
-	 "ready",
-	 "filling",
-	 "filled",
-	 "welded"
-  },
-  {
-	 {"ready", "filling"},
-    {"filling", "filled"},
-    {"filled", "welded"},
-    {"welded", "filled"}, // by copy
-	 {"welded", "ready"} // by move
-  }
-);
+DECLARE_AXIS(WindowAxis, StateAxis);
 
 class RWindow
 : public RObjectWithEvents<WindowAxis>,
   StdIdMember
 {
+  DECLARE_EVENT(WindowAxis, filled);
 public:
   DECLARE_STATES(WindowAxis, State);
   DECLARE_STATE_CONST(State, ready);
@@ -50,8 +37,8 @@ public:
 
   CompoundEvent is_terminal_state() const
   {
-	 //<NB> it is always terminal
-	 return CompoundEvent();
+    //<NB> it is always terminal
+    return CompoundEvent();
   }
 
   size_t size() const;
@@ -63,7 +50,7 @@ public:
 
   std::string universal_id() const override
   {
-	 return universal_object_id;
+    return universal_object_id;
   }
 
 protected:
@@ -75,54 +62,37 @@ protected:
   size_t sz;
 };
 
-#if 1
-DECLARE_AXIS(ConnectedWindowAxis, WindowAxis, {}, {});
-#else
-DECLARE_AXIS(ConnectedWindowAxis, WindowAxis,
-  {
-	 //"destroyed" // as a final point for "skipping"
-  },
-  {
-	 {"ready", "skipping"},
-    {"filling", "skipping"},
-	 {"filled", "skipping"},
-    {"skipping", "destroyed"}
-  }
-  );
-#endif
+DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
 
 //! A window which have live connection access.
 class RConnectedWindow : public RWindow
 {
   friend class RSingleSocketConnection;
   friend std::ostream&
-	 operator<<(std::ostream&, const RConnectedWindow&);
+    operator<<(std::ostream&, const RConnectedWindow&);
 
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
-						ready);
+                  ready);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
-						filling);
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
-						filled);
+                  filling);
+  //A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+  //                filled);
 
 public:
   struct Par {
-	 RSocketBase* socket;
+    RSocketBase* socket;
     Par(RSocketBase* sock) : socket(sock) {}
-	 PAR_DEFAULT_VIRTUAL_MEMBERS(RConnectedWindow)
-	 SOCKET get_id(const ObjectCreationInfo& oi) const 
-	 { return socket->fd; }
+    PAR_DEFAULT_VIRTUAL_MEMBERS(RConnectedWindow)
+    SOCKET get_id(const ObjectCreationInfo& oi) const 
+      { return socket->fd; }
   };
-
-  //DECLARE_STATES(ConnectedWindowAxis, State);
-  //DECLARE_STATE_CONST(State, destroyed);
 
   RConnectedWindow(RSocketBase* sock);
   virtual ~RConnectedWindow();
 
   CompoundEvent is_terminal_state() const
   {
-	 return is_ready_event;
+    return is_ready_event;
   }
 
   void forward_top(size_t);
@@ -131,7 +101,7 @@ protected:
   DEFAULT_LOGGER(RConnectedWindow);
 
   RConnectedWindow(const ObjectCreationInfo& oi,
-						 const Par& par);
+                   const Par& par);
 
   //! A logic block reading implementation. It must set
   //! a filled state at the end. 
@@ -144,11 +114,11 @@ operator<<(std::ostream&, const RConnectedWindow&);
 typedef Repository
 <
 RConnectedWindow,
-RConnectedWindow::Par,
-std::unordered_map,
-SOCKET
->
-RConnectedWindowRepository;
+  RConnectedWindow::Par,
+  std::unordered_map,
+  SOCKET
+  >
+  RConnectedWindowRepository;
 
 #endif
 

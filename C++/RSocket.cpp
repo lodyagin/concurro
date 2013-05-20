@@ -9,6 +9,8 @@
 
 #include "StdAfx.h"
 #include "RSocket.hpp"
+#include "REvent.hpp"
+#include "RState.hpp"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -16,6 +18,26 @@
 /*=================================*/
 /*========== RSocketBase ==========*/
 /*=================================*/
+
+DEFINE_AXIS(
+  SocketBaseAxis,
+  {
+    "created",
+      "ready",
+      "closed",
+      "connection_timed_out",
+      "connection_refused",
+      "destination_unreachable"
+      },
+  { {"created", "ready"},
+    {"created", "closed"},
+    {"created", "connection_timed_out"},
+    {"created", "connection_refused"},
+    {"created", "destination_unreachable"},
+    {"ready", "closed"},
+    {"closed", "closed"},
+  }
+  );
 
 DEFINE_STATES(SocketBaseAxis);
 
