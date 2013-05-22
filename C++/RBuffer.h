@@ -73,6 +73,9 @@ public:
     return autoclear;
   }
 
+  //! Return used buffer size
+  virtual size_t size() const = 0;
+
 protected:
   bool destructor_is_called;
   std::atomic<bool> autoclear;

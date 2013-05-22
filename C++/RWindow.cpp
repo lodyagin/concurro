@@ -140,6 +140,35 @@ const char& RWindow::operator[] (size_t idx) const
   return *((const char*)buf->cdata() + idx2);
 }
 
+void RWindow::resize(ssize_t shift_bottom, 
+                     ssize_t shif_top)
+{
+  if (RAxis<WindowAxis>::compare_and_move(
+        *this, filledState, weldedState)) {
+    if (-shift_bottom > bottom 
+        || shift_bottom + bottom >= buf->size()
+        || -shift_top >= top 
+        || shift_top + top > buf->size() ) 
+    {
+      STATE(RWindow, move_to, filled);
+      throw std::out_of_range;
+    }
+
+    bottom += shift_bottom;
+    top += shift_top;
+    sz -= shift_bottom;
+    sz += shift_top;
+    STATE(RWindow, move_to, filled);
+  }
+  else 
+    throw InvalidState(current_state(), filledState);
+}
+
+void RWindow::shift_top(ssize_t shift)
+{
+  if (shift + top > buf->size()
+}
+
 // RConnectedWindow
 
 RConnectedWindow::RConnectedWindow(RSocketBase* sock)
