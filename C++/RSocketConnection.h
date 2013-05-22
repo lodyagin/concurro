@@ -47,8 +47,8 @@ public:
     (const RSocketConnection*) const
       { THROW_NOT_IMPLEMENTED; }
 
-    //! Must be inited from derived classes. We can
-    //! maintain any scope of a socket repository: per
+    //! Must be inited from derived classes.
+    //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
     mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
@@ -78,7 +78,7 @@ public:
   virtual ~RSocketConnection() {}
 
   virtual RSocketConnection&
-    operator<< (const std::string) = 0;
+    operator<< (const std::string&) = 0;
 
   virtual RSocketConnection& 
     operator<< (RSingleBuffer&&) = 0;
@@ -214,9 +214,11 @@ public:
       (a_host, a_port) {}
 
     InetClientPar(InetClientPar&& par)
-      : Par(std::move(par)),
-      RSocketConnection::InetClientPar<proto, ip_ver>
-      (std::move(par)) {}
+      : RSocketConnection::Par(std::move(par)),
+                            // virtual base
+        Par(std::move(par)),
+        RSocketConnection::InetClientPar<proto, ip_ver>
+          (std::move(par)) {}
   };
 
   void state_changed
@@ -224,8 +226,10 @@ public:
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object) override;
 
-  RSocketConnection& operator<< (const std::string);
-  RSocketConnection& operator<< (RSingleBuffer&&);
+  RSocketConnection& operator<< 
+    (const std::string&) override;
+  RSocketConnection& operator<< 
+    (RSingleBuffer&&) override;
 
   // TODO move to separate (client side) class
   void ask_connect();
