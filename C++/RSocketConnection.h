@@ -28,12 +28,17 @@ public:
     std::unique_ptr<RSocketAddressRepository> sar;
     size_t win_rep_capacity;
 
-  Par() 
-  : sar(new RSocketAddressRepository),
+    Par() 
+    : sar(new RSocketAddressRepository),
       win_rep_capacity(3)
       {
         assert(sar);
       }
+
+    Par(Par&& par)
+    : sar(std::move(par.sar)),
+      win_rep_capacity(par.win_rep_capacity),
+      socket_rep(std::move(par.socket_rep)) {}
 
     virtual ~Par() {}
     virtual RSocketConnection* create_derivation
@@ -56,13 +61,18 @@ public:
     std::string host;
     uint16_t port;
 
-  InetClientPar(const std::string& a_host,
-                uint16_t a_port) 
+    InetClientPar(const std::string& a_host,
+                  uint16_t a_port) 
     : host(a_host), port(a_port)
     {
       sar->create_addresses<proto, ip_ver>
         (host, port);
     }
+
+    InetClientPar(InetClientPar&& par)
+      : Par(std::move(par)),
+      host(std::move(par.host)),
+      port(par.port) {}
   };
 
   virtual ~RSocketConnection() {}
@@ -171,6 +181,11 @@ public:
       // create_derivation 
       {}
 
+    Par(Par&& par) 
+      : RSocketConnection::Par(std::move(par)),
+      sock_addr(par.sock_addr),
+      socket(par.socket) {}
+
     virtual std::unique_ptr<SocketThread::Par> 
       get_thread_par(RSingleSocketConnection* c) const
     {
@@ -196,8 +211,12 @@ public:
     InetClientPar(const std::string& a_host,
                   uint16_t a_port) 
     : RSocketConnection::InetClientPar<proto, ip_ver>
-      (a_host, a_port)
-    {}
+      (a_host, a_port) {}
+
+    InetClientPar(InetClientPar&& par)
+      : Par(std::move(par)),
+      RSocketConnection::InetClientPar<proto, ip_ver>
+      (std::move(par)) {}
   };
 
   void state_changed
