@@ -61,6 +61,37 @@ RWindow::RWindow(RWindow& w)
   STATE(RWindow, move_to, filled);
 }
 	
+RWindow::RWindow(RWindow& w, 
+                 ssize_t shift_bottom, 
+                 ssize_t shift_top) 
+  : RWindow("RWindow")
+{
+  w.is_filled().wait();
+  STATE(RWindow, move_to, filling);
+  STATE_OBJ(RWindow, move_to, w, welded);
+  buf = w.buf;
+  bottom = w.bottom;
+  top = w.top;
+  sz = w.sz;
+  STATE_OBJ(RWindow, move_to, w, filled);
+
+  if ((size_t) -shift_bottom > bottom 
+      || shift_bottom + bottom >= buf->size()
+      || (size_t) -shift_top >= top 
+      || shift_top + top > buf->size() ) 
+  {
+    STATE(RWindow, move_to, filled);
+    throw std::out_of_range("RWindow: improper shift");
+  }
+
+  bottom += shift_bottom;
+  top += shift_top;
+  sz -= shift_bottom;
+  sz += shift_top;
+
+  STATE(RWindow, move_to, filled);
+}
+	
 RWindow::RWindow(RWindow&& w)
   : RWindow("RWindow")
 {
@@ -87,7 +118,7 @@ RWindow& RWindow
       (*this, RWindow::filledState, 
        RWindow::weldedState)) 
   {
-    // already contains data, clear first
+    // it already contains data, clear first
     buf.reset();
     bottom = top = sz = 0;
     STATE(RWindow, move_to, ready);
@@ -140,6 +171,7 @@ const char& RWindow::operator[] (size_t idx) const
   return *((const char*)buf->cdata() + idx2);
 }
 
+#if 0
 void RWindow::resize(ssize_t shift_bottom, 
                      ssize_t shif_top)
 {
@@ -163,11 +195,7 @@ void RWindow::resize(ssize_t shift_bottom,
   else 
     throw InvalidState(current_state(), filledState);
 }
-
-void RWindow::shift_top(ssize_t shift)
-{
-  if (shift + top > buf->size()
-}
+#endif
 
 // RConnectedWindow
 
