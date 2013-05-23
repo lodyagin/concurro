@@ -25,12 +25,17 @@ REventIsUnregistered(const UniversalEvent& ue)
   const UniversalEvent event;
 };
 
+//TODO allow only delegates have subscribers list
 class RObjectWithStatesBase
 : public virtual AbstractObjectWithStates
 {
 public:
   RObjectWithStatesBase();
+  RObjectWithStatesBase(RObjectWithStatesBase&&);
   virtual ~RObjectWithStatesBase();
+
+  RObjectWithStatesBase& operator=
+    (RObjectWithStatesBase&&);
 
   void register_subscriber
     (RObjectWithStatesBase*, StateAxis*);
@@ -88,10 +93,12 @@ public:
   {}
 
   RObjectWithStates(const RObjectWithStates&);
+  RObjectWithStates(RObjectWithStates&&);
 
   virtual ~RObjectWithStates() {}
 
   RObjectWithStates& operator=(const RObjectWithStates&);
+  RObjectWithStates& operator=(RObjectWithStates&&);
 
   template<class AppObj>
     static typename RObjectWithStates<Axis>
@@ -152,17 +159,19 @@ public:
   RObjectWithEvents
     (const typename RObjectWithStates<Axis>::State& 
      initial_state,
-     AMembWrap* mcw = nullptr)
-    : Parent(initial_state, mcw)
-  { }
+     AMembWrap* mcw = nullptr);
+
+  RObjectWithEvents(RObjectWithEvents&&);
+
+  RObjectWithEvents& operator= (RObjectWithEvents&&);
 
   template<class AppObj>
-    static typename RObjectWithStates<Axis>
-    ::template MembWrap<AppObj>*
-    state_hook(void (AppObj::*memb) 
-               (AbstractObjectWithStates*,
-                const StateAxis&,
-                const UniversalState&))
+  static typename RObjectWithStates<Axis>
+  ::template MembWrap<AppObj>*
+  state_hook(void (AppObj::*memb) 
+             (AbstractObjectWithStates*,
+              const StateAxis&,
+              const UniversalState&))
   {
     return RObjectWithStates<Axis>::state_hook(memb);
   }
@@ -174,21 +183,6 @@ public:
      uint32_t to);
 
 protected:
-#if 0
-  //! Query an event object by UniversalEvent. 
-  Event get_event(const UniversalEvent& ue) override
-  {
-    return get_event_impl(ue);
-  }
-
-  //! Query an event object by UniversalEvent. 
-  Event get_event
-    (const UniversalEvent& ue) const override
-  {
-    return get_event_impl(ue);
-  }
-#endif
-
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
   CompoundEvent create_event
@@ -198,12 +192,6 @@ protected:
 
   //! It maps a local event id to an Event object
   mutable EventMap events;
-
-private:
-#if 0
-  //! A common implementation for both get_event
-  Event get_event_impl(const UniversalEvent&) const;
-#endif
 };
 
 //! It can maintain two states or delegate a "parent"

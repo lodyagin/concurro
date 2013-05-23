@@ -145,7 +145,7 @@ RSocketConnection& RSingleSocketConnection
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
   SCHECK(out_sock);
 
-  out_sock->msg = std::move(buf);
+  out_sock->msg.move(&buf);
   return *this;
 }
 
@@ -170,8 +170,7 @@ void RSingleSocketConnection::run()
     if (is_aborting().signalled()) 
       goto LAborting;
 
-    iw().buf.reset(new RSingleBuffer
-                   (std::move(socket->msg)));
+    iw().buf.reset(new RSingleBuffer(&socket->msg));
     // content of the buffer will be cleared after
     // everybody stops using it
     iw().buf->set_autoclear(true);

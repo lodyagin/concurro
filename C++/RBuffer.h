@@ -28,6 +28,8 @@ class RBuffer
   DECLARE_EVENT(DataBufferStateAxis, discharged);
 
 public:
+  typedef RObjectWithEvents<DataBufferStateAxis> Parent;
+
   DECLARE_STATES(DataBufferStateAxis, State);
   DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
@@ -35,14 +37,15 @@ public:
   DECLARE_STATE_CONST(State, welded);
 
   RBuffer();
+  // temporary, to fix ticket:93
+  RBuffer(const RBuffer&) = delete;
 
-  //! Move the buffer.
-  RBuffer(RBuffer&& b);
   virtual ~RBuffer();
 
-  RBuffer& operator=(RBuffer&& b);
+  // temporary, to fix ticket:93
+  RBuffer& operator=(const RBuffer&) = delete;
 
-  CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
     return is_discharged_event;
   }
@@ -51,13 +54,10 @@ public:
   virtual void start_charging() = 0;
   virtual void clear() = 0;
 
-  // to make this class abstract
-  //virtual void dummy() = 0;
+  //! Move the buffer
+  virtual void move(RBuffer* from) = 0;
 
-  //! Move the buffer.
-  //RBuffer& operator=(RBuffer&&);
-
-  std::string universal_id() const
+  std::string universal_id() const override
   {
     return "?";
   }
@@ -91,14 +91,15 @@ public:
   RSingleBuffer();
   //! Construct a buffer with maximal size res.
   explicit RSingleBuffer(size_t res);
+  //! Construct a buffer by moving a content from another
+  //! buffer
+  explicit RSingleBuffer(RBuffer* buf);
   RSingleBuffer(const RSingleBuffer& b) = delete;
-  //! Move the buffer.
-  RSingleBuffer(RSingleBuffer&& b);
   virtual ~RSingleBuffer();
  
   RSingleBuffer& operator=(const RSingleBuffer&) = delete;
-  //! Move the buffer.
-  RSingleBuffer& operator=(RSingleBuffer&&);
+
+  void move(RBuffer* from) override;
 
   //! Get available size of the buffer
   size_t capacity() const { return reserved_; }
