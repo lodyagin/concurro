@@ -161,6 +161,7 @@ void RSingleSocketConnection::ask_close()
 
 void RSingleSocketConnection::run()
 {
+  //<NB> it is not a thread run(), it is called from it
   socket->is_construction_complete_event.wait();
 
   for (;;) {

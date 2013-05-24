@@ -75,9 +75,9 @@ RWindow::RWindow(RWindow& w,
   sz = w.sz;
   STATE_OBJ(RWindow, move_to, w, filled);
 
-  if ((size_t) -shift_bottom > bottom 
+  if (-shift_bottom > (ssize_t) bottom 
       || shift_bottom + bottom >= buf->size()
-      || (size_t) -shift_top >= top 
+      || -shift_top >= (ssize_t) top 
       || shift_top + top > buf->size() ) 
   {
     STATE(RWindow, move_to, filled);
