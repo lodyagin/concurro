@@ -8,7 +8,7 @@
 #include "Logging.h"
 #include "SException.h"
 #include "SCheck.h"
-#include "Repository.hpp"
+#include "Repository.h"
 #include <assert.h>
 #include <unordered_map>
 #include <vector>
