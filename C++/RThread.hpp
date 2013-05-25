@@ -8,6 +8,9 @@
 #ifndef CONCURRO_RTHREAD_HPP_
 #define CONCURRO_RTHREAD_HPP_
 
+#include "RThread.h"
+#include "RThreadRepository.h"
+
 template<class Thread, class... Args>
 Thread* RThread<std::thread>::create(Args&&... args)
 {
