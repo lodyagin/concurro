@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 #include "StateMap.h"
 #include "RState.h"
+#include "Repository.hpp"
 #include <assert.h>
 #include <atomic>
 
