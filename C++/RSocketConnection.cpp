@@ -101,6 +101,8 @@ void RSingleSocketConnection::state_changed
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object)
 {
+  //FIXME no parent call
+
   RState<ClientConnectionAxis> st =
     state_ax.bound(object->current_state(state_ax));
 
