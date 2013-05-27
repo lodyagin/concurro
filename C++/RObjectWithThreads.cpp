@@ -8,6 +8,8 @@
 
 #include "RObjectWithThreads.h"
 #include "RThreadRepository.h"
+#include "RState.hpp"
+#include "REvent.hpp"
 #include <memory>
 
 DEFINE_AXIS(

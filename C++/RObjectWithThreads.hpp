@@ -49,13 +49,14 @@ void RObjectWithThreads<Object>
    const StateAxis& ax,
    const UniversalState& new_state)
 {
-  if (!STATE(RObjectWithThreads, state_is, 
-             RConstructableObject::complete_construction))
+  if (!RAxis<ConstructibleAxis>::state_is(
+        *this, complete_constructionState))
     return;
 
   while (!threads_pars.empty()) {
-    ThreadPar* par = threads_pars.front();
-    par->object = this;
+    ThreadPar* par = threads_pars.front().get();
+    par->object = dynamic_cast<Object*>(this);
+    SCHECK(par->object);
     threads.push_back(
       RThreadRepository<RThread<std::thread>>
       ::instance().create_thread(*par));

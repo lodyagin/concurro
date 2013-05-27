@@ -78,7 +78,7 @@ protected:
     current_state(const StateAxis& ax) override
   { 
     return RStateSplitter
-      <ConstructibleAxis, ConstructibleAxis>
+      <ObjectWithThreadsAxis, ConstructibleAxis>
       ::current_state(ax);
   }
 
@@ -86,7 +86,7 @@ protected:
     current_state(const StateAxis& ax) const override
   { 
     return RStateSplitter
-      <ConstructibleAxis, ConstructibleAxis>
+      <ObjectWithThreadsAxis, ConstructibleAxis>
       ::current_state(ax);
   }
 
@@ -94,7 +94,7 @@ protected:
     (const UniversalEvent& ue) const override
   {
     return RStateSplitter
-      <ConstructibleAxis, ConstructibleAxis>
+      <ObjectWithThreadsAxis, ConstructibleAxis>
       ::create_event(ue);
   }
 
