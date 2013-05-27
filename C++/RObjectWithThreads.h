@@ -33,7 +33,7 @@ public:
   RConstructibleObject();
 };
 
-DECLARE_AXIS(ObjectWithThreadsAxis, ConstructibleAxis);
+//DECLARE_AXIS(ObjectWithThreadsAxis, ConstructibleAxis);
 
 template<class Object>
 struct ThreadOfObjectPar 
@@ -45,9 +45,9 @@ public:
 
 template<class Object>
 class RObjectWithThreads
-: public RConstructibleObject,
-  public RStateSplitter
-  <ObjectWithThreadsAxis, ConstructibleAxis>
+: public RConstructibleObject
+  //public RStateSplitter
+  //<ObjectWithThreadsAxis, ConstructibleAxis>
 {
 public:
   using ThreadPar = ThreadOfObjectPar<Object>;
@@ -61,50 +61,18 @@ public:
     (const RObjectWithThreads&) = delete;
 
 protected:
-  void complete_construction
+  //RSTATESPLITTER_DEFAULT_MEMBERS(ObjectWithThreadsAxis, 
+  //                               ConstructibleAxis);
+
+  /*void complete_construction
     (AbstractObjectWithStates* object,
      const StateAxis& ax,
-     const UniversalState& new_state);
+     const UniversalState& new_state);*/
 
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {
-    THROW_PROGRAM_ERROR;
-  }
-
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override
-  { 
-    return RStateSplitter
-      <ObjectWithThreadsAxis, ConstructibleAxis>
-      ::current_state(ax);
-  }
-
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override
-  { 
-    return RStateSplitter
-      <ObjectWithThreadsAxis, ConstructibleAxis>
-      ::current_state(ax);
-  }
-
-  CompoundEvent create_event
-    (const UniversalEvent& ue) const override
-  {
-    return RStateSplitter
-      <ObjectWithThreadsAxis, ConstructibleAxis>
-      ::create_event(ue);
-  }
-
-  void update_events
-    (StateAxis& ax, 
-     TransitionId trans_id, 
-     uint32_t to) override
-  {
-    ax.update_events(this, trans_id, to);
-  }
+     AbstractObjectWithStates* object) override;
 
   std::queue< std::unique_ptr<ThreadPar> > threads_pars;
 

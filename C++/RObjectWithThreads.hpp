@@ -17,13 +17,13 @@ template<class Object>
 RObjectWithThreads<Object>
 ::RObjectWithThreads
   (std::initializer_list<ThreadPar*> pars)
-  : RStateSplitter
+/*: RStateSplitter
     <ObjectWithThreadsAxis, ConstructibleAxis>
     (this, RConstructibleObject::in_constructionState,
      RStateSplitter
      <ObjectWithThreadsAxis, ConstructibleAxis>
      ::state_hook(
-       &RObjectWithThreads<Object>::complete_construction))
+     &RObjectWithThreads<Object>::complete_construction))*/
 {
   for (ThreadPar* par : pars) {
     threads_pars.push(
@@ -44,28 +44,29 @@ RObjectWithThreads<Object>
 
 template<class Object>
 void RObjectWithThreads<Object>
-::complete_construction
-  (AbstractObjectWithStates* object,
-   const StateAxis& ax,
-   const UniversalState& new_state)
+::state_changed
+  (StateAxis& ax, 
+   const StateAxis& state_ax,     
+   AbstractObjectWithStates* object)
 {
-  if (!RAxis<ConstructibleAxis>::state_is(
+  if (RAxis<ConstructibleAxis>::state_is(
         *this, complete_constructionState))
-    return;
-
-  while (!threads_pars.empty()) {
-    ThreadPar* par = threads_pars.front().get();
-    par->object = dynamic_cast<Object*>(this);
-    SCHECK(par->object);
-    threads.push_back(
-      RThreadRepository<RThread<std::thread>>
-      ::instance().create_thread(*par));
-    threads_pars.pop();
+  {
+    while (!threads_pars.empty()) {
+      ThreadPar* par = threads_pars.front().get();
+      par->object = dynamic_cast<Object*>(this);
+      SCHECK(par->object);
+      threads.push_back(
+        RThreadRepository<RThread<std::thread>>
+        ::instance().create_thread(*par));
+      threads_pars.pop();
+    }
+    for (RThreadBase* th : threads) {
+      threads_terminals.push_back(th->is_terminal_state());
+      th->start();
+    }
   }
-  for (RThreadBase* th : threads) {
-    threads_terminals.push_back(th->is_terminal_state());
-    th->start();
-  }
+  RConstructibleObject::state_changed(ax, state_ax, object);
 }
 
 #endif

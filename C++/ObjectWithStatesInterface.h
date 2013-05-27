@@ -76,16 +76,6 @@ public:
                         << ":" << universal_id());
   }
 
-  /*StateAxis& get_axis() const override 
-  { 
-    return Axis::self(); 
-    }*/
-
-  virtual void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) = 0;
-
   virtual std::string universal_id() const = 0;
 };
 

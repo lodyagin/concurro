@@ -26,7 +26,7 @@ DEFINE_STATE_CONST(RConstructibleObject,
                    ConstructibleState, 
                    in_construction);
 
-DEFINE_AXIS(ObjectWithThreadsAxis, {}, {});
+//DEFINE_AXIS(ObjectWithThreadsAxis, {}, {});
 
 
 RConstructibleObject::RConstructibleObject()

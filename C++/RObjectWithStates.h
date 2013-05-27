@@ -287,5 +287,37 @@ protected:
   mutable bool inited;
 };
 
+#define RSTATESPLITTER_DEFAULT_MEMBERS(DerivedAxis, SplitAxis) \
+void state_changed \
+  (StateAxis& ax,  \
+   const StateAxis& state_ax, \
+   AbstractObjectWithStates* object) override \
+{ \
+  ax.state_changed(this, object, state_ax); \
+} \
+\
+std::atomic<uint32_t>& current_state(const StateAxis& ax) override \
+{ \
+  return RStateSplitter<DerivedAxis, SplitAxis>::current_state(ax); \
+} \
+\
+const std::atomic<uint32_t>& \
+current_state(const StateAxis& ax) const override \
+{ \
+  return RStateSplitter<DerivedAxis, SplitAxis>::current_state(ax); \
+} \
+\
+CompoundEvent create_event \
+(const UniversalEvent& ue) const override \
+{ \
+  return RStateSplitter<DerivedAxis, SplitAxis>::create_event(ue); \
+} \
+\
+void update_events \
+  (StateAxis& ax, TransitionId trans_id, uint32_t to) override \
+{ \
+  ax.update_events(this, trans_id, to); \
+}
+
 #endif
 
