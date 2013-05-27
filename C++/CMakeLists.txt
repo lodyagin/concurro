@@ -12,8 +12,6 @@ find_package(Boost 1.49 COMPONENTS thread system REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -Wall")
 
-add_subdirectory(tests)
-
 #project (concurrent)
 set (concurrent_SOURCES 
   ClientSocket.cpp
@@ -39,10 +37,15 @@ set (concurrent_SOURCES
   TCPSocket.cpp
 )
 
+add_library(pevents STATIC IMPORTED)
+set_property(TARGET pevents PROPERTY
+             IMPORTED_LOCATION ../../PEvents/libpevents.a)
+             
 #include_directories(/usr/local/lib/boost_1_53_0)
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(../../PEvents)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_LIBRARY(concurrent ${concurrent_SOURCES})
+target_link_libraries(concurrent pevents)
 #target_link_libraries(${Boost_SYSTEM_LIBRARY})

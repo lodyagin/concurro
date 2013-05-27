@@ -18,7 +18,7 @@
 #include <ostream>
 #include <iomanip>
 #include <string.h>
-
+#include <boost/lexical_cast.hpp>
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
 
@@ -198,10 +198,7 @@ std::string toString (const T& object)
 template <class T, class String>
 T fromString (String&& s)
 {
-  T object;
-  std::istringstream is (std::forward<String>(s));
-  is >> object;
-  return object;
+  return boost::lexical_cast<T>(s);
 }
 
 #define SMAKE_THROW_FN_DECL(name, XClass)  \
