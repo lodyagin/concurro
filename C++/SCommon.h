@@ -18,6 +18,7 @@
 #include <ostream>
 #include <iomanip>
 #include <string.h>
+#include <boost/lexical_cast.hpp>
 
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
