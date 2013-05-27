@@ -181,17 +181,13 @@ inline const char * ptr2szptr( const T & s )
 template <class T>
 void toString (const T& object, std::string & s)
 {
-  std::ostringstream os;
-  os << object;
-  s += os.str();
+  s = boost::lexical_cast<std::string>(object);
 }
 
 template <class T>
 std::string toString (const T& object)
 {
-  std::ostringstream os;
-  os << object;
-  return os.str();
+  return boost::lexical_cast<std::string>(object);
 }
 
 // FIXME raise exception when the string is not a number
