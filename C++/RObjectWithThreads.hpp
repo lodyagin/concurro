@@ -17,13 +17,8 @@ template<class Object>
 RObjectWithThreads<Object>
 ::RObjectWithThreads
   (std::initializer_list<ThreadPar*> pars)
-/*: RStateSplitter
-    <ObjectWithThreadsAxis, ConstructibleAxis>
-    (this, RConstructibleObject::in_constructionState,
-     RStateSplitter
-     <ObjectWithThreadsAxis, ConstructibleAxis>
-     ::state_hook(
-     &RObjectWithThreads<Object>::complete_construction))*/
+: destructor_delegate_is_called(false)
+
 {
   for (ThreadPar* par : pars) {
     threads_pars.push(
@@ -35,11 +30,10 @@ template<class Object>
 RObjectWithThreads<Object>
 ::~RObjectWithThreads()
 {
-  for (auto& teh : threads_terminals)
-    teh.wait();
-  for (RThreadBase* th : threads)
-    RThreadRepository<RThread<std::thread>>
-      ::instance().delete_thread(th);
+  // A descendant must call destroy() in its
+  // destructor. 
+  if (!destructor_delegate_is_called)
+    THROW_PROGRAM_ERROR;
 }
 
 template<class Object>
@@ -67,6 +61,22 @@ void RObjectWithThreads<Object>
     }
   }
   RConstructibleObject::state_changed(ax, state_ax, object);
+}
+
+template<class Object>
+void RObjectWithThreads<Object>
+::destroy()
+{
+  if (destructor_delegate_is_called) 
+    return;
+
+  for (auto& teh : threads_terminals)
+    teh.wait();
+  for (RThreadBase* th : threads)
+    RThreadRepository<RThread<std::thread>>
+      ::instance().delete_thread(th);
+
+  destructor_delegate_is_called = true;
 }
 
 #endif

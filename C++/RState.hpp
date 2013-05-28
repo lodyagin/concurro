@@ -124,14 +124,14 @@ bool RMixedAxis<Axis, Axis2>
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
   
-  if (current != from)
+  if (STATE_IDX(current) != STATE_IDX(from))
     return false;
 
   if (!(trans_id= StateMapInstance<Axis>::stateMap
         -> get_transition_id(from, to)))
     throw InvalidStateTransition(from, to);
 
-  uint32_t expected = from;
+  uint32_t expected = current;
   if (!current.compare_exchange_strong(expected, to))
     return false;
 
@@ -223,7 +223,7 @@ bool RMixedAxis<Axis, Axis2>
     from = UniversalState(from_);
 
     // should we move?
-    if (from == not_from)
+    if (STATE_IDX(from) == STATE_IDX(not_from))
       return false;
 
     if (!(trans_id= StateMapInstance<Axis>::stateMap

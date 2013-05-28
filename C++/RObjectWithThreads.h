@@ -33,8 +33,6 @@ public:
   RConstructibleObject();
 };
 
-//DECLARE_AXIS(ObjectWithThreadsAxis, ConstructibleAxis);
-
 template<class Object>
 struct ThreadOfObjectPar 
   : public RThread<std::thread>::Par
@@ -44,10 +42,7 @@ public:
 };
 
 template<class Object>
-class RObjectWithThreads
-: public RConstructibleObject
-  //public RStateSplitter
-  //<ObjectWithThreadsAxis, ConstructibleAxis>
+class RObjectWithThreads : public RConstructibleObject
 {
 public:
   using ThreadPar = ThreadOfObjectPar<Object>;
@@ -61,21 +56,20 @@ public:
     (const RObjectWithThreads&) = delete;
 
 protected:
-  //RSTATESPLITTER_DEFAULT_MEMBERS(ObjectWithThreadsAxis, 
-  //                               ConstructibleAxis);
-
-  /*void complete_construction
-    (AbstractObjectWithStates* object,
-     const StateAxis& ax,
-     const UniversalState& new_state);*/
-
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object) override;
 
-  std::queue< std::unique_ptr<ThreadPar> > threads_pars;
+  //! A real work of a destructor is here. All descendants
+  //! must call it in the destructor. It waits a
+  //! termination of all threads. (Must be called from the
+  //! most overrided destructor to prevent destroying
+  //! vtable.
+  void destroy();
 
+  bool destructor_delegate_is_called;
+  std::queue< std::unique_ptr<ThreadPar> > threads_pars;
   std::list<RThreadBase*> threads;
   std::list<CompoundEvent> threads_terminals;
 };
