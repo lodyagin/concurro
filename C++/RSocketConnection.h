@@ -28,12 +28,17 @@ public:
     std::unique_ptr<RSocketAddressRepository> sar;
     size_t win_rep_capacity;
 
-  Par() 
-  : sar(new RSocketAddressRepository),
+    Par() 
+    : sar(new RSocketAddressRepository),
       win_rep_capacity(3)
       {
         assert(sar);
       }
+
+    Par(Par&& par)
+    : sar(std::move(par.sar)),
+      win_rep_capacity(par.win_rep_capacity),
+      socket_rep(std::move(par.socket_rep)) {}
 
     virtual ~Par() {}
     virtual RSocketConnection* create_derivation
@@ -42,8 +47,8 @@ public:
     (const RSocketConnection*) const
       { THROW_NOT_IMPLEMENTED; }
 
-    //! Must be inited from derived classes. We can
-    //! maintain any scope of a socket repository: per
+    //! Must be inited from derived classes.
+    //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
     mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
@@ -56,19 +61,24 @@ public:
     std::string host;
     uint16_t port;
 
-  InetClientPar(const std::string& a_host,
-                uint16_t a_port) 
+    InetClientPar(const std::string& a_host,
+                  uint16_t a_port) 
     : host(a_host), port(a_port)
     {
       sar->create_addresses<proto, ip_ver>
         (host, port);
     }
+
+    InetClientPar(InetClientPar&& par)
+      : Par(std::move(par)),
+      host(std::move(par.host)),
+      port(par.port) {}
   };
 
   virtual ~RSocketConnection() {}
 
   virtual RSocketConnection&
-    operator<< (const std::string) = 0;
+    operator<< (const std::string&) = 0;
 
   virtual RSocketConnection& 
     operator<< (RSingleBuffer&&) = 0;
@@ -171,6 +181,11 @@ public:
       // create_derivation 
       {}
 
+    Par(Par&& par) 
+      : RSocketConnection::Par(std::move(par)),
+      sock_addr(par.sock_addr),
+      socket(par.socket) {}
+
     virtual std::unique_ptr<SocketThread::Par> 
       get_thread_par(RSingleSocketConnection* c) const
     {
@@ -196,8 +211,14 @@ public:
     InetClientPar(const std::string& a_host,
                   uint16_t a_port) 
     : RSocketConnection::InetClientPar<proto, ip_ver>
-      (a_host, a_port)
-    {}
+      (a_host, a_port) {}
+
+    InetClientPar(InetClientPar&& par)
+      : RSocketConnection::Par(std::move(par)),
+                            // virtual base
+        Par(std::move(par)),
+        RSocketConnection::InetClientPar<proto, ip_ver>
+          (std::move(par)) {}
   };
 
   void state_changed
@@ -205,8 +226,10 @@ public:
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object) override;
 
-  RSocketConnection& operator<< (const std::string);
-  RSocketConnection& operator<< (RSingleBuffer&&);
+  RSocketConnection& operator<< 
+    (const std::string&) override;
+  RSocketConnection& operator<< 
+    (RSingleBuffer&&) override;
 
   // TODO move to separate (client side) class
   void ask_connect();

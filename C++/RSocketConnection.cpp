@@ -75,7 +75,8 @@ RSingleSocketConnection::RSingleSocketConnection
     is_closed_event(cli_sock, "closed"),
     is_terminal_state_event { 
       is_clearly_closed_event,
-      is_aborted_event
+      is_aborted_event,
+      socket->is_terminal_state()
     }
 {
   assert(socket);
@@ -100,6 +101,8 @@ void RSingleSocketConnection::state_changed
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object)
 {
+  //FIXME no parent call
+
   RState<ClientConnectionAxis> st =
     state_ax.bound(object->current_state(state_ax));
 
@@ -125,7 +128,7 @@ void RSingleSocketConnection::state_changed
 }
 
 RSocketConnection& RSingleSocketConnection
-::operator<< (const std::string str)
+::operator<< (const std::string& str)
 {
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
   SCHECK(out_sock);
@@ -144,7 +147,7 @@ RSocketConnection& RSingleSocketConnection
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
   SCHECK(out_sock);
 
-  out_sock->msg = std::move(buf);
+  out_sock->msg.move(&buf);
   return *this;
 }
 
@@ -160,6 +163,7 @@ void RSingleSocketConnection::ask_close()
 
 void RSingleSocketConnection::run()
 {
+  //<NB> it is not a thread run(), it is called from it
   socket->is_construction_complete_event.wait();
 
   for (;;) {
@@ -169,8 +173,7 @@ void RSingleSocketConnection::run()
     if (is_aborting().signalled()) 
       goto LAborting;
 
-    iw().buf.reset(new RSingleBuffer
-                   (std::move(socket->msg)));
+    iw().buf.reset(new RSingleBuffer(&socket->msg));
     // content of the buffer will be cleared after
     // everybody stops using it
     iw().buf->set_autoclear(true);
@@ -211,24 +214,27 @@ void RSingleSocketConnection::run()
   }
 
 LAborting:
-  is_aborting().wait();
-  ask_close();
-  socket->InSocket::is_terminal_state().wait();
-  // No sence to start aborting while a socket is working
+  {
+    is_aborting().wait();
+    ask_close();
+    socket->InSocket::is_terminal_state().wait();
+    // No sence to start aborting while a socket is working
 
-  assert(iw().buf->get_autoclear());
-  RWindow(iw()); // clear iw()
-#if 0
-  if (iw().buf) {
     assert(iw().buf->get_autoclear());
-    iw().buf.reset(); // reset shared_ptr
-  }
+    RWindow dummy(iw()); // clear iw()
+#if 0
+    if (iw().buf) {
+      assert(iw().buf->get_autoclear());
+      iw().buf.reset(); // reset shared_ptr
+    }
 #endif
-  if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
-                 discharged))
-    socket->msg.clear();
-
-LClosed: ;
+    if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
+                   discharged))
+      socket->msg.clear();
+    return;
+  }
+LClosed:
+  STATE_OBJ(RConnectedWindow, move_to, iw(), filled);
 }
 
 void RSingleSocketConnection::ask_abort()

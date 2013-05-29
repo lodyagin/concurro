@@ -76,7 +76,8 @@ static void test_connection(bool do_abort)
 
   auto* con = dynamic_cast<TestConnection*>
     (con_rep.create_object
-     (TestConnection::Par("192.168.25.240", 31001)));
+     //(TestConnection::Par("192.168.25.240", 31001)));
+     (TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
   con->ask_connect();

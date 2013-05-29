@@ -29,7 +29,7 @@ void test_move_rbuffer()
   a.reserve(11);
   memcpy(a.data(), c, a.capacity());
   try {
-	 b = std::move(a);
+	 b.move(&a);
 	 CU_FAIL_FATAL("InvalidState exception wanted");
   }
   catch(const InvalidStateTransition& ex) {
@@ -39,22 +39,22 @@ void test_move_rbuffer()
 		(ex.to, RBuffer::dischargedState);
   }
   CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
-							   (a, RBuffer::chargingState));
+                       (a, RBuffer::chargingState));
   CU_ASSERT_EQUAL_FATAL(a.size(), 0);
   CU_ASSERT_EQUAL_FATAL(a.capacity(), 11);
   CU_ASSERT_PTR_NOT_NULL_FATAL(a.cdata());
   CU_ASSERT_NSTRING_EQUAL_FATAL(a.cdata(), c, 11);
   CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
-							   (b, RBuffer::dischargedState));
+                       (b, RBuffer::dischargedState));
   CU_ASSERT_EQUAL_FATAL(b.size(), 0);
   CU_ASSERT_EQUAL_FATAL(b.capacity(), 0);
   CU_ASSERT_PTR_NULL_FATAL(b.cdata());
   a.resize(10);
-  b = std::move(a);
+  b.move(&a);
   CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
-							  (a, RBuffer::dischargedState));
+                       (a, RBuffer::dischargedState));
   CU_ASSERT_TRUE_FATAL(RBuffer::State::state_is
-							  (b, RBuffer::chargedState));
+                       (b, RBuffer::chargedState));
   CU_ASSERT_EQUAL_FATAL(b.size(), 10);
   CU_ASSERT_EQUAL_FATAL(b.capacity(), 11);
   CU_ASSERT_EQUAL_FATAL(a.size(), 0);

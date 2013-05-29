@@ -17,11 +17,7 @@
 #include "RObjectWithStates.h"
 #include "Repository.h"
 #include <string>
-#if __GNUC_MINOR__< 6
-#include <cstdatomic>
-#else
 #include <atomic>
-#endif
 #include <thread>
 
 class ThreadAxis;

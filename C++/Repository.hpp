@@ -10,6 +10,7 @@
 #define CONCURRO_REPOSITORY_HPP_
 
 #include "Repository.h"
+#include "RState.hpp"
 #include <set>
 
 template<class Obj, class Par, class ObjId>
@@ -182,7 +183,7 @@ public:
   StateMatch (const State& _state) : state (_state) {}
   bool operator () (const Obj& obj) const
   { 
-    return State::state_is (obj, state);
+    return RAxis<typename State::axis>::state_is (obj, state);
   }
 protected:
   State state;

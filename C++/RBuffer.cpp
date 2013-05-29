@@ -31,8 +31,7 @@ DEFINE_STATE_CONST(RBuffer, State, discharged);
 DEFINE_STATE_CONST(RBuffer, State, welded);
 
 RBuffer::RBuffer() 
-: RObjectWithEvents<DataBufferStateAxis>
-	 (dischargedState),
+: Parent(dischargedState),
   CONSTRUCT_EVENT(charged),
   CONSTRUCT_EVENT(discharged),
   destructor_is_called(false),
@@ -52,42 +51,45 @@ RSingleBuffer::RSingleBuffer(size_t res)
   : buf(0), size_(0), reserved_(res) 
 {}
 
-RSingleBuffer::RSingleBuffer(RSingleBuffer&& b)
+RSingleBuffer::RSingleBuffer(RBuffer* buf)
+  : RSingleBuffer()
 {
-  *this = std::move(b);
+  this->move(buf);
 }
 
 RSingleBuffer::~RSingleBuffer()
 {
   if (autoclear)
-	 clear();
+    clear();
   else
-	 is_discharged_event.wait();
+    is_discharged_event.wait();
   delete[] buf;
   destructor_is_called = true;
 }
 
-RSingleBuffer& RSingleBuffer
-//
-::operator= (RSingleBuffer&& b)
+void RSingleBuffer::move(RBuffer* from)
 {
+  assert(from);
+  RSingleBuffer* b = dynamic_cast<RSingleBuffer*>(from);
+  if (!b) 
+    THROW_NOT_IMPLEMENTED;
+
   State::move_to(*this, weldedState);
   const size_t old_reserved = reserved_;
-  reserved_ = b.reserved_;
-  buf = b.buf; size_ = b.size_;
+  reserved_ = b->reserved_;
+  buf = b->buf; size_ = b->size_;
   try {
-	 State::move_to(b, dischargedState);
+    State::move_to(*b, dischargedState);
   }
   catch (const InvalidStateTransition&)
   {
-	 reserved_ = old_reserved;
-	 buf = 0; size_ = 0;
-	 State::move_to(*this, dischargedState);
-	 throw;
+    reserved_ = old_reserved;
+    buf = 0; size_ = 0;
+    State::move_to(*this, dischargedState);
+    throw;
   }
-  b.buf = 0; b.size_ = 0;
+  b->buf = 0; b->size_ = 0;
   State::move_to(*this, chargedState);
-  return *this;
 }
 
 void RSingleBuffer::reserve(size_t res)
@@ -108,19 +110,19 @@ void* RSingleBuffer::data()
 void RSingleBuffer::resize(size_t sz) 
 { 
   if (sz > reserved_)
-	 throw ResizeOverCapacity();
+    throw ResizeOverCapacity();
 
   if (sz > 0) {
-	 State::ensure_state(*this, chargingState);
-	 SCHECK(buf);
-	 size_ = sz;
-	 State::move_to(*this, chargedState);
+    State::ensure_state(*this, chargingState);
+    SCHECK(buf);
+    size_ = sz;
+    State::move_to(*this, chargedState);
   }
   else {
-	 State::move_to(*this, dischargedState);
-	 delete[] buf;
-	 buf = 0;
-	 size_ = sz;
+    State::move_to(*this, dischargedState);
+    delete[] buf;
+    buf = 0;
+    size_ = sz;
   }
 }
 
@@ -128,13 +130,13 @@ void RSingleBuffer::start_charging()
 {
   size_ = 0;
   if (!buf)
-	 try {
-		buf = new char[reserved_];
-	 }
-	 catch (const std::bad_alloc& ex) {
-		LOG_ERROR(log, "Unable to allocate RSingleBuffer "
-					 << "of size " << reserved_);
-		throw ex;
-	 }
+    try {
+      buf = new char[reserved_];
+    }
+    catch (const std::bad_alloc& ex) {
+      LOG_ERROR(log, "Unable to allocate RSingleBuffer "
+                << "of size " << reserved_);
+      throw ex;
+    }
   State::move_to(*this, chargingState);
 }

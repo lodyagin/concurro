@@ -3,12 +3,9 @@
 #include "StdAfx.h"
 #include "StateMap.h"
 #include "RState.h"
+#include "Repository.hpp"
 #include <assert.h>
-#if __GNUC_MINOR__< 6
-#include <cstdatomic>
-#else
 #include <atomic>
-#endif
 
 UniversalState::UniversalState
   (const StateMap* new_map, uint32_t st)

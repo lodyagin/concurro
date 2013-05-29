@@ -31,6 +31,8 @@ public:
 
   RWindow(const std::string& = std::string("RWindow"));
   RWindow(RWindow&);
+  RWindow(RWindow&, 
+          ssize_t shift_bottom, ssize_t shift_top);
   RWindow(RWindow&&);
 
   virtual ~RWindow() {}
@@ -43,7 +45,7 @@ public:
 
   size_t size() const;
 
-  RWindow& operator= (RWindow&);
+  RWindow& operator=(RWindow&); 
   RWindow& operator= (RWindow&&);
 
   virtual const char& operator[](size_t) const;
@@ -52,6 +54,8 @@ public:
   {
     return universal_object_id;
   }
+
+  //void resize(ssize_t shift_bottom, ssize_t shif_top);
 
 protected:
   DEFAULT_LOGGER(RWindow);

@@ -4,10 +4,29 @@ RObjectWithStatesBase::RObjectWithStatesBase()
   : is_frozen(false), is_changing(false)
 {}
 
+RObjectWithStatesBase
+::RObjectWithStatesBase(RObjectWithStatesBase&& o)
+{
+  //<NB> no parent
+  *this = std::move(o);
+}
+
 RObjectWithStatesBase::~RObjectWithStatesBase()
 {
   for (auto ce : subscribers_terminals)
 	 ce.wait();
+}
+
+RObjectWithStatesBase& RObjectWithStatesBase
+::operator=(RObjectWithStatesBase&& o)
+{
+  SCHECK(o.is_frozen);
+  is_frozen = true;
+  is_changing = false;
+  subscribers = std::move(o.subscribers);
+  subscribers_terminals =
+    std::move(o.subscribers_terminals);
+  return *this;
 }
 
 void RObjectWithStatesBase

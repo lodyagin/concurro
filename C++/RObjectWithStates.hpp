@@ -17,15 +17,37 @@ template<class Axis>
 RObjectWithStates<Axis>
 //
 ::RObjectWithStates(const RObjectWithStates& obj)
-{
-  currentState = obj.currentState.load();
-}
+: RObjectWithStatesBase(obj),
+  currentState(obj.currentState.load())
+{}
+
+template<class Axis>
+RObjectWithStates<Axis>
+//
+::RObjectWithStates(RObjectWithStates&& obj)
+: RObjectWithStatesBase(std::move(obj)),
+  currentState(obj.currentState.load())
+{}
 
 template<class Axis>
 RObjectWithStates<Axis>& RObjectWithStates<Axis>
 //
 ::operator=(const RObjectWithStates& obj)
 {
+  RObjectWithStatesBase::operator=
+    (static_cast<const RObjectWithStatesBase&>(obj));
+  currentState = obj.currentState.load();
+  return *this;
+}
+
+template<class Axis>
+RObjectWithStates<Axis>& RObjectWithStates<Axis>
+//
+::operator=(RObjectWithStates&& obj)
+{
+  RObjectWithStatesBase::operator=
+    (static_cast<RObjectWithStatesBase&&>
+     (std::move(obj)));
   currentState = obj.currentState.load();
   return *this;
 }
@@ -45,6 +67,29 @@ void RObjectWithStates<Axis>
     mcw->call
       (this, object, state_ax, 
        state_ax.bound(object->current_state(state_ax)));
+}
+
+template<class Axis>
+RObjectWithEvents<Axis>
+::RObjectWithEvents
+(const typename RObjectWithStates<Axis>::State& 
+ initial_state,
+ AMembWrap* mcw)
+  : Parent(initial_state, mcw)
+{}
+
+template<class Axis>
+RObjectWithEvents<Axis>
+::RObjectWithEvents(RObjectWithEvents&& o)
+  : Parent(std::move(o)), events(std::move(o.events))
+{}
+
+template<class Axis>
+RObjectWithEvents<Axis>& RObjectWithEvents<Axis>
+::operator= (RObjectWithEvents&& o)
+{
+  Parent::operator= (static_cast<Parent&&>(std::move(o)));
+  events = std::move(o.events);
 }
 
 template<class Axis>
@@ -68,12 +113,13 @@ CompoundEvent RObjectWithEvents<Axis>
 #else										  
   const auto it = events.find(ue.local_id());
   if (it == events.end()) {
-    return CompoundEvent(events.insert
-                         (std::make_pair
-                          (ue.local_id(), 
-                           Event(SFORMAT(typeid(*this).name() << ":" 
-                                         << ue.name()), 
-                                 true, initial_state))).first->second);
+    return CompoundEvent(
+      events.insert
+      (std::make_pair
+       (ue.local_id(), 
+        Event(SFORMAT(typeid(*this).name() << ":" 
+                      << ue.name()), 
+              true, initial_state))).first->second);
   }
   else 
     return CompoundEvent(it->second);

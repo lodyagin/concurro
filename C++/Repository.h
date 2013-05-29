@@ -213,6 +213,7 @@ public:
   Out get_object_ids_by_pred (Out res, Pred p);
 
   //! return ids of objects selected by  an UniversalState
+  //TODO add event on change possible result
   template<class Out, class State>
   Out get_object_ids_by_state
     (Out res, const State& state);

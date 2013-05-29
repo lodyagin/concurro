@@ -238,6 +238,13 @@ struct axis : public parent \
   template class RState<axis>; \
   template class RMixedEvent<axis, axis>;		
 
+#define DEFINE_AXIS_NS(axis, pars...)	\
+  StateMapPar<axis> axis::get_state_map_par()    \
+  {	\
+    return StateMapPar<axis>(pars, \
+      StateMapInstance<typename axis::Parent>::init()); \
+  } 
+
 #define DECLARE_STATES(axis, state_class)	\
   typedef RAxis<axis> state_class; \
   friend RAxis<axis>;

@@ -16,11 +16,7 @@
 #include "pevents.h"
 typedef neosmart::neosmart_event_t HANDLE;
 #endif
-#if __GNUC_MINOR__< 6
-#include <cstdatomic>
-#else
 #include <atomic>
-#endif
 #include <ostream>
 #include <vector>
 #include <set>
