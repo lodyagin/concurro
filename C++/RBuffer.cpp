@@ -10,8 +10,10 @@ DEFINE_AXIS(
   {   "charging", // is locked for filling
       "charged", // has data
       "discharged", // data was red (moved)
-      "welded"  // own a buffer together with another
-                // RBuffer
+      "welded",  // own a buffer together with another
+                 // RBuffer
+      "resizing_charged",
+      "resizing_discharged"
       },
   { {"discharged", "charging"},
     {"charging", "charged"},
@@ -20,8 +22,12 @@ DEFINE_AXIS(
     {"discharged", "welded"},
     {"welded", "discharged"},
     {"welded", "charged"},
-    {"charged", "discharged"}}
-  );
+    {"charged", "discharged"},
+    {"charged", "resizing_charged"},
+    {"resizing_charged", "charged"},
+    {"discharged", "resizing_discharged"},
+    {"resizing_discharged", "discharged"},
+  });
 
 DEFINE_STATES(DataBufferStateAxis);
 
@@ -92,12 +98,35 @@ void RSingleBuffer::move(RBuffer* from)
   State::move_to(*this, chargedState);
 }
 
-void RSingleBuffer::reserve(size_t res)
+void RSingleBuffer::reserve(size_t res, size_t shift)
 {
   SCHECK(res > 0);
-  // Unable to resize an existing buffer.
-  State::ensure_state(*this, dischargedState);
-  reserved_ = res;
+  SCHECK(res >= size() + shift);
+  do {
+    if (State::compare_and_move(
+          *this, dischargedState, resizing_dischargedState))
+    {
+      reserved_ = res;
+      STATE(RSingleBuffer, move_to, discharged);
+      return;
+    }
+    else if (State::compare_and_move(
+               *this, chargedState, 
+               resizing_chargedState))
+    {
+      SCHECK(res >= size());
+      buf.reserve(res);
+      if (move > 0) {
+        std::move_backward(
+          buf.begin(), 
+          buf.begin() + size(),
+          buf.begin() + size() + shift);
+      }
+      STATE(RSingleBuffer, move_to, charged);
+      return;
+    }
+    (is_discharged() | is_charged()).wait();
+  } while (true);
 }
 
 void* RSingleBuffer::data() 
@@ -139,4 +168,16 @@ void RSingleBuffer::start_charging()
       throw ex;
     }
   State::move_to(*this, chargingState);
+}
+
+RSingleBuffer* join_buffers
+  (RSingleBuffer* buf,
+   size_t offset, 
+   RSingleBuffer* buf2)
+{
+  assert(buf->size() >= offset);
+  const size_t add = buf->size() - offset;
+  if (add > 0) {
+    RSingleBuffer* new_buf = new RSingleBuffer(buf2);
+    new_buf->reserve(new_buf->size() + add);
 }

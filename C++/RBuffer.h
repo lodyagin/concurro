@@ -104,7 +104,9 @@ public:
   //! Get available size of the buffer
   size_t capacity() const { return reserved_; }
   //! Resize the buffer.
-  void reserve(size_t res);
+  //! \par shift move the size() bytes from the start of
+  //! the buffer. res >= size() + shift
+  void reserve(size_t res, size_t shift = 0);
   //! Return the buffer data. Imply start_charging().
   void* data();
   //! Return the buffer data as a constant. Not imply
@@ -121,11 +123,19 @@ public:
   DEFAULT_LOGGER(RSingleBuffer)
 
 protected:
-  char* buf;
+  std::vector<char> buf;
   size_t size_;
   size_t reserved_;
 };
 
+//! Join two RSingleBuffer-s to one RSingleBuffer. 
+//! Get the part of buf starting from offset.
+RSingleBuffer* join_buffers
+  (RSingleBuffer* buf,
+   size_t offset, 
+   RSingleBuffer* buf2);
+
+#if 0
 class RMultipleBuffer : public RBuffer
 {
 public:
@@ -133,6 +143,7 @@ public:
 protected:
   std::list<RSingleBuffer> bufs;
 };
+#endif
 
 #endif
 

@@ -151,6 +151,11 @@ public:
     (const ObjectWithStatesInterface<Axis2>& obj, 
      const RState<Axis>& expected);
 
+  //! Raise InvalidState when a state is not in set
+  static void ensure_state_in
+    (const ObjectWithStatesInterface<Axis2>& obj, 
+     const RState<Axis>& set);
+
   static const StateMap* state_map() 
   { 
     static_assert(is_ancestor<Axis2, Axis>(), 

@@ -194,7 +194,6 @@ void RSingleSocketConnection::run()
         goto LClosed;
 
       iw().move_forward(); // filling the window
-      STATE_OBJ(RConnectedWindow, move_to, iw(), filled);
 
     } while (iw().top < iw().buf->size());
 

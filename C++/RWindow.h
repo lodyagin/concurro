@@ -71,7 +71,6 @@ DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
 //! A window which have live connection access.
 class RConnectedWindow : public RWindow
 {
-  friend class RSingleSocketConnection;
   friend std::ostream&
     operator<<(std::ostream&, const RConnectedWindow&);
 
@@ -79,9 +78,6 @@ class RConnectedWindow : public RWindow
                   ready);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
                   filling);
-  //A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
-  //                filled);
-
 public:
   struct Par {
     RSocketBase* socket;
@@ -99,7 +95,13 @@ public:
     return is_ready_event;
   }
 
+  //! Increase the window and start waiting new data.
+  //! Will transmit the object to the filling state. You
+  //! should call is_filled().wait() after it.
   void forward_top(size_t);
+
+  //! Append the new RSingleBuffer to the window.
+  void new_buffer(RSingleBuffer*);
 
 protected:
   DEFAULT_LOGGER(RConnectedWindow);

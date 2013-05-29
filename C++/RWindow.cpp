@@ -29,7 +29,14 @@ DEFINE_AXIS(
   }
   );
 
-DEFINE_AXIS(ConnectedWindowAxis, {}, {});
+DEFINE_AXIS(
+  ConnectedWindowAxis, 
+  { "wait_for_buffer" }, 
+  { 
+    { "filling"         , "wait_for_buffer" }, 
+    { "wait_for_buffer" , "filling" }
+  }
+);
 
 DEFINE_STATES(WindowAxis);
 
@@ -222,16 +229,30 @@ void RConnectedWindow::forward_top(size_t s)
   //if (s == 0) return;
   // s == 0 is used, for example, in SoupWindow
   
+  do { is_ready().wait(); }
+  while(!RAxis<WindowAxis>::compare_and_move
+        (*this, readyState, fillingState));
+
   sz = s;
-  STATE(RConnectedWindow, move_to, filling);
 }
 
 void RConnectedWindow::move_forward()
 {
+  STATE(RConnectedWindow, ensure_state, filling);
+
   bottom = top;
   top = bottom + sz;
+
   if (top > buf->size())
-    THROW_NOT_IMPLEMENTED;
+    STATE(RConnectedWindow, move_to, wait_for_buffer);
+  else
+    STATE(RConnectedWindow, move_to, filled);
+}
+
+void new_buffer(RSingleBuffer* new_buf)
+{
+  is_wait_for_buffer().wait();
+  buf = join_buffers(buf, bottom, new_buf);
 }
 
 std::ostream&
