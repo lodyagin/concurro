@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 #include "RBuffer.h"
+#include "RWindow.h"
 #include "REvent.hpp"
 #include "RState.hpp"
 
@@ -37,13 +38,19 @@ DEFINE_AXIS(
 
 DEFINE_STATES(DataBufferStateAxis);
 
-DEFINE_STATE_CONST(RBuffer, State, charged);
+DEFINE_STATE_CONST(RBuffer, State, dummy);
 DEFINE_STATE_CONST(RBuffer, State, charging);
+DEFINE_STATE_CONST(RBuffer, State, charged);
 DEFINE_STATE_CONST(RBuffer, State, discharged);
-DEFINE_STATE_CONST(RBuffer, State, welded);
+DEFINE_STATE_CONST(RBuffer, State, moving_destination);
+DEFINE_STATE_CONST(RBuffer, State, moving_source);
+DEFINE_STATE_CONST(RBuffer, State, resizing_discharged);
+DEFINE_STATE_CONST(RBuffer, State, bottom_extending);
+DEFINE_STATE_CONST(RBuffer, State, bottom_extended);
 
-RBuffer::RBuffer() 
-: Parent(dischargedState),
+RBuffer::RBuffer
+(const RState<DataBufferStateAxis>& initial_state) 
+: Parent(initial_state),
   CONSTRUCT_EVENT(charged),
   CONSTRUCT_EVENT(discharged),
   destructor_is_called(false),
@@ -55,12 +62,16 @@ RBuffer::~RBuffer()
   SCHECK(destructor_is_called);
 }
 
-/*RSingleBuffer::RSingleBuffer()
-  : buf(0), size_(0), reserved_(0) 
-  {}*/
+RSingleBuffer::RSingleBuffer()
+  : RBuffer(dummyState),
+    buf(0), size_(0), 
+    top_reserved_(0), bottom_reserved_(0)
+{
+}
 
 RSingleBuffer::RSingleBuffer(size_t res, size_t bottom_res)
-  : buf(0), size_(0), 
+  : RBuffer(dischargedState),
+    buf(0), size_(0), 
     top_reserved_(res), bottom_reserved_(bottom_res) 
 {}
 
@@ -87,24 +98,13 @@ void RSingleBuffer::move(RBuffer* from)
   if (!b) 
     THROW_NOT_IMPLEMENTED;
 
-  State::move_to(*this, weldedState);
-  const size_t old_top_reserved = top_reserved_;
-  const size_t old_bottom_reserved = bottom_reserved_;
-  reserved_ = b->reserved_;
+  State::move_to(*this, moving_destinationState);
+  State::move_to(*from, moving_sourceState);
+  top_reserved_ = b->top_reserved_;
+  bottom_reserved_ = b->bottom_reserved_;
   buf = b->buf; size_ = b->size_;
-  try {
-    State::move_to(*b, dischargedState);
-  }
-  catch (const InvalidStateTransition&)
-  {
-    top_reserved_ = old_top_reserved;
-    bottom_reserved_ = old_bottom_reserved;
-    buf = size_ = 0;
-    State::move_to(*this, dischargedState);
-    throw;
-  }
-  b->buf = b->size_ = 0;
   State::move_to(*this, chargedState);
+  State::move_to(*from, dischargedState);
 }
 
 void RSingleBuffer::reserve(size_t res)
@@ -124,7 +124,7 @@ void* RSingleBuffer::data()
 
 void RSingleBuffer::resize(size_t sz) 
 { 
-  if (sz > reserved_)
+  if (sz > top_reserved_)
     throw ResizeOverCapacity();
 
   if (sz > 0) {
@@ -144,15 +144,17 @@ void RSingleBuffer::resize(size_t sz)
 void RSingleBuffer::start_charging()
 {
   size_ = 0;
-  if (!buf)
+  if (!buf) {
+    const size_t res = top_reserved_+ bottom_reserved_;
     try {
-      buf = new char[top_reserved_ + bottom_reserved_];
+      buf = new char[res];
     }
     catch (const std::bad_alloc& ex) {
       LOG_ERROR(log, "Unable to allocate RSingleBuffer "
-                << "of size " << reserved_);
+                << "of size " << res);
       throw ex;
     }
+  }
   State::move_to(*this, chargingState);
 }
 
@@ -160,6 +162,7 @@ void RSingleBuffer::extend_bottom(const RWindow& wnd)
 {
   SCHECK(wnd.size() <= bottom_reserved_);
   STATE(RSingleBuffer, move_to, bottom_extending);
-  memcpy(&wnd[0], buf + bottom_reserved_ - wnd.size(), wnd.szie());
+  memcpy(buf + bottom_reserved_ - wnd.size(), &wnd[0],
+         wnd.size());
   STATE(RSingleBuffer, move_to, bottom_extended);
 }

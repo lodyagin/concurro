@@ -33,12 +33,19 @@ public:
   typedef RObjectWithEvents<DataBufferStateAxis> Parent;
 
   DECLARE_STATES(DataBufferStateAxis, State);
+  DECLARE_STATE_CONST(State, dummy);
   DECLARE_STATE_CONST(State, charging);
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
-  DECLARE_STATE_CONST(State, welded);
+  DECLARE_STATE_CONST(State, moving_destination);
+  DECLARE_STATE_CONST(State, moving_source);
+  DECLARE_STATE_CONST(State, resizing_discharged);
+  DECLARE_STATE_CONST(State, bottom_extending);
+  DECLARE_STATE_CONST(State, bottom_extended);
 
-  RBuffer();
+  RBuffer
+    (const RState<DataBufferStateAxis>& initial_state);
+
   // temporary, to fix ticket:93
   RBuffer(const RBuffer&) = delete;
 
@@ -94,7 +101,8 @@ public:
 
   //! Construct a buffer with maximal size res +
   //! bottom_res. It will be possible append up to
-  //! bottom_res bytes below the buffer start (see extend_bottom()).
+  //! bottom_res bytes below the buffer start 
+  //! (see extend_bottom()).
   explicit RSingleBuffer(size_t res, size_t bottom_res);
   //! Construct a buffer by moving a content from another
   //! buffer
