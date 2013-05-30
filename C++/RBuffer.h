@@ -18,6 +18,8 @@
 //! A data buffer states axis
 DECLARE_AXIS(DataBufferStateAxis, StateAxis);
 
+class RWindow;
+
 /**
  * A data buffer.
  */
@@ -89,8 +91,11 @@ public:
                    "over its initial capacity");
 
   RSingleBuffer();
-  //! Construct a buffer with maximal size res.
-  explicit RSingleBuffer(size_t res);
+
+  //! Construct a buffer with maximal size res +
+  //! bottom_res. It will be possible append up to
+  //! bottom_res bytes below the buffer start (see extend_bottom()).
+  explicit RSingleBuffer(size_t res, size_t bottom_res);
   //! Construct a buffer by moving a content from another
   //! buffer
   explicit RSingleBuffer(RBuffer* buf);
@@ -101,17 +106,15 @@ public:
 
   void move(RBuffer* from) override;
 
-  //! Get available size of the buffer
-  size_t capacity() const { return reserved_; }
-  //! Resize the buffer.
-  //! \par shift move the size() bytes from the start of
-  //! the buffer. res >= size() + shift
-  void reserve(size_t res, size_t shift = 0);
+  //! Get available size of the buffer (top part only)
+  size_t capacity() const { return top_reserved_; }
+  //! Resize the buffer (bottom part is not change its size).
+  void reserve(size_t res);
   //! Return the buffer data. Imply start_charging().
   void* data();
   //! Return the buffer data as a constant. Not imply
   //! start_charging().
-  const void* cdata() const { return buf; }
+  const void* cdata() const { return buf + bottom_reserved_; }
   //! Return used buffer size
   size_t size() const { return size_; }
   //! Mark the buffer as holding data. Also set filled.
@@ -119,21 +122,22 @@ public:
   void resize(size_t sz);
   void clear() { resize(0); }
   void start_charging();
+  //! Append wnd below the buffer start. 
+  //! It will be accessible starting from the address
+  //! (const char*) cdata() - wnd.size()
+  void extend_bottom(const RWindow& wnd);
 
   DEFAULT_LOGGER(RSingleBuffer)
 
 protected:
-  std::vector<char> buf;
+  //! Start of memory (bottom part)
+  char* buf;
   size_t size_;
-  size_t reserved_;
+  //! A reserved memory size for a primary part
+  size_t top_reserved_;
+  //! A reserved memory size for a bottom part
+  size_t bottom_reserved_;
 };
-
-//! Join two RSingleBuffer-s to one RSingleBuffer. 
-//! Get the part of buf starting from offset.
-RSingleBuffer* join_buffers
-  (RSingleBuffer* buf,
-   size_t offset, 
-   RSingleBuffer* buf2);
 
 #if 0
 class RMultipleBuffer : public RBuffer
