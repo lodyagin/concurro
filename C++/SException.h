@@ -83,4 +83,12 @@ public: \
   class_() : SException(msg) {} \
 };
 
+class FromStringCastException: public boost::bad_lexical_cast,
+   public SException {
+public:
+  FromStringCastException(boost::bad_lexical_cast e) :
+    boost::bad_lexical_cast(e.source_type(), e.target_type()),
+    SException("FromStringCastException, bad cast"){}
+};
+
 #endif

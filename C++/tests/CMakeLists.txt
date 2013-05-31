@@ -18,6 +18,7 @@ set(TestsSrc
   RSignalCU.cpp
   RSocketCU.cpp
   RConnectionCU.cpp
+  SCommonCU.cpp
   tests.cpp
 )
 
