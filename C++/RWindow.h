@@ -30,12 +30,15 @@ public:
   DECLARE_STATE_CONST(State, welded);
 
   RWindow(const std::string& = std::string("RWindow"));
-  RWindow(RWindow&);
-  RWindow(RWindow&, 
-          ssize_t shift_bottom, ssize_t shift_top);
-  RWindow(RWindow&&);
-
+  RWindow(const RWindow&) = delete;
   virtual ~RWindow() {}
+
+  RWindow& operator=(const RWindow&) = delete;
+
+  RWindow& attach_to(RWindow&);
+  RWindow& attach_to(RWindow&, 
+          ssize_t shift_bottom, ssize_t shift_top);
+  RWindow& move(RWindow&);
 
   CompoundEvent is_terminal_state() const
   {
@@ -50,9 +53,6 @@ public:
   //! A size of a part already filled with a data.
   size_t filled_size() const
   { return top - bottom; }
-
-  RWindow& operator=(RWindow&); 
-  RWindow& operator= (RWindow&&);
 
   virtual const char& operator[](size_t) const;
 
@@ -97,6 +97,11 @@ public:
   };
 
   RConnectedWindow(RSocketBase* sock);
+
+  //! Construct a window which owns buf.
+  //TODO move to RWindow
+  //explicit RConnectedWindow(RSingleBuffer* buf);
+
   virtual ~RConnectedWindow();
 
   CompoundEvent is_terminal_state() const

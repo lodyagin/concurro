@@ -152,6 +152,8 @@ void RSingleBuffer::resize(size_t sz)
   if (sz > top_reserved_)
     throw ResizeOverCapacity();
 
+  //<NB> not available for a buffer in a bottom_extended
+  // state.
   if (sz > 0) {
     State::ensure_state(*this, chargingState);
     SCHECK(buf);
@@ -190,5 +192,6 @@ void RSingleBuffer::extend_bottom(const RWindow& wnd)
   SCHECK(sz <= bottom_reserved_);
   STATE(RSingleBuffer, move_to, bottom_extending);
   memcpy(buf + bottom_reserved_ - sz, &wnd[0], sz);
+  size_ += sz;
   STATE(RSingleBuffer, move_to, bottom_extended);
 }

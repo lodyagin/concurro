@@ -195,7 +195,7 @@ LAborting:
     // No sence to start aborting while a socket is working
 
     //assert(iw().buf->get_autoclear());
-    RWindow dummy(iw()); // clear iw()
+    RWindow().move(iw()); // clear iw()
 #if 0
     if (iw().buf) {
       assert(iw().buf->get_autoclear());
