@@ -167,49 +167,24 @@ void RSingleSocketConnection::run()
   socket->is_construction_complete_event.wait();
 
   for (;;) {
+    // The socket has a message.
     ( socket->msg.is_charged()
-      | is_aborting() ). wait();
+      | is_aborting() | is_terminal_state() ). wait();
 
-    if (is_aborting().signalled()) 
-      goto LAborting;
-
-    iw().buf.reset(new RSingleBuffer(&socket->msg));
-    // content of the buffer will be cleared after
-    // everybody stops using it
-    iw().buf->set_autoclear(true);
-    iw().top = 0;
-
-    CompoundEvent ce1 {
-      iw().is_filling(), is_aborting(), is_terminal_state()
-    };
-
-    do {
-      // wait a new data request 
-      // (e.g. RWindow::forward_top(size))
-      ce1.wait();
-
-      if (is_aborting().signalled()) 
-        goto LAborting;
-      else if (is_terminal_state().signalled()) 
-        goto LClosed;
-
-      iw().move_forward(); // filling the window
-
-    } while (iw().top < iw().buf->size());
-
-    // All the buffer is red
-    // Allocate a new buffer only on a next data request.
-    ce1.wait();
+    // We already need it.
+    ( iw().is_wait_for_buffer()
+      | is_aborting() | is_terminal_state() ). wait();
 
     if (is_aborting().signalled()) 
       goto LAborting;
     else if (is_terminal_state().signalled()) 
       goto LClosed;
 
-    iw().buf.reset();
-
-    //if (is_terminal_state().signalled())
-    //  break;
+    RSingleBuffer* buf = new RSingleBuffer(&socket->msg);
+    // a content of the buffer will be cleared after
+    // everybody stops using it
+    buf->set_autoclear(true);
+    iw().new_buffer(buf);
   }
 
 LAborting:
@@ -219,7 +194,7 @@ LAborting:
     socket->InSocket::is_terminal_state().wait();
     // No sence to start aborting while a socket is working
 
-    assert(iw().buf->get_autoclear());
+    //assert(iw().buf->get_autoclear());
     RWindow dummy(iw()); // clear iw()
 #if 0
     if (iw().buf) {

@@ -43,7 +43,13 @@ public:
     return CompoundEvent();
   }
 
+  //! In a state "filling" it is wanted size requested by
+  //! forward_top(sz). 
   size_t size() const;
+
+  //! A size of a part already filled with a data.
+  size_t filled_size() const
+  { return top - bottom; }
 
   RWindow& operator=(RWindow&); 
   RWindow& operator= (RWindow&&);
@@ -55,13 +61,11 @@ public:
     return universal_object_id;
   }
 
-  //void resize(ssize_t shift_bottom, ssize_t shif_top);
-
 protected:
   DEFAULT_LOGGER(RWindow);
 
   std::shared_ptr<RSingleBuffer> buf;
-  size_t bottom;
+  ssize_t bottom;
   size_t top;
   size_t sz;
 };
@@ -78,7 +82,12 @@ class RConnectedWindow : public RWindow
                   ready);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
                   filling);
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+                  wait_for_buffer);
 public:
+  DECLARE_STATES(ConnectedWindowAxis, State);
+  DECLARE_STATE_CONST(State, wait_for_buffer);
+
   struct Par {
     RSocketBase* socket;
     Par(RSocketBase* sock) : socket(sock) {}
@@ -100,7 +109,10 @@ public:
   //! should call is_filled().wait() after it.
   void forward_top(size_t);
 
-  //! Append the new RSingleBuffer to the window.
+  //! Append the new RSingleBuffer to the window. It
+  //! should be new buffer (not simultaneously used by
+  //! another class), e.g., a move copy of a socket
+  //! buffer, see RSingleSocketConnection::run().
   void new_buffer(RSingleBuffer*);
 
 protected:

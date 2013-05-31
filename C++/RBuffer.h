@@ -43,7 +43,7 @@ public:
   DECLARE_STATE_CONST(State, bottom_extending);
   DECLARE_STATE_CONST(State, bottom_extended);
 
-  RBuffer
+  explicit RBuffer
     (const RState<DataBufferStateAxis>& initial_state);
 
   // temporary, to fix ticket:93
@@ -122,7 +122,7 @@ public:
   void* data();
   //! Return the buffer data as a constant. Not imply
   //! start_charging().
-  const void* cdata() const { return buf + bottom_reserved_; }
+  const void* cdata() const;
   //! Return used buffer size
   size_t size() const { return size_; }
   //! Mark the buffer as holding data. Also set filled.

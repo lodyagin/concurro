@@ -20,17 +20,24 @@ DEFINE_AXIS(
       "bottom_extended"
       },
   { {"dummy", "moving_destination"},
+    {"moving_destination", "dummy"},     // another side
+                                         // is not ready
     {"moving_destination", "charged"},
     {"discharged", "charging"},
     {"discharged", "resizing_discharged"},
     {"discharged", "moving_destination"},
+    {"moving_destination", "discharged"}, // another side
+                                          // is not ready
     {"resizing_discharged", "discharged"},
     {"charging", "charged"},
     {"charged", "discharged"},
     {"charged", "bottom_extending"},
     {"charged", "moving_source"},
+    {"moving_source", "charged"},
+    {"charged", "moving_source"},         // another side
+                                          // is not ready
     {"bottom_extending", "bottom_extended"},
-    {"moving_source", "discharged"},
+    {"moving_source", "discharged"},      
       //{"charging", "discharged"}, 
       // there is a week control if its enabled
     {"bottom_extended", "discharged"} //<NB> no bottom_extended->charged
@@ -98,11 +105,24 @@ void RSingleBuffer::move(RBuffer* from)
   if (!b) 
     THROW_NOT_IMPLEMENTED;
 
-  State::move_to(*this, moving_destinationState);
-  State::move_to(*from, moving_sourceState);
-  top_reserved_ = b->top_reserved_;
-  bottom_reserved_ = b->bottom_reserved_;
-  buf = b->buf; size_ = b->size_;
+  RState<DataBufferStateAxis> dest_0state(*this);
+  RState<DataBufferStateAxis> src_0state(*from);
+  try {
+    State::move_to(*this, moving_destinationState);
+    State::move_to(*from, moving_sourceState);
+    top_reserved_ = b->top_reserved_;
+    bottom_reserved_ = b->bottom_reserved_;
+    buf = b->buf; size_ = b->size_;
+    b->buf = nullptr; b->size_ = 0;
+  }
+  catch (const InvalidStateTransition&)
+  {
+    State::compare_and_move(
+      *this, moving_destinationState, dest_0state);
+    State::compare_and_move(
+      *from, moving_sourceState, src_0state);
+    throw;
+  }
   State::move_to(*this, chargedState);
   State::move_to(*from, dischargedState);
 }
@@ -120,6 +140,11 @@ void* RSingleBuffer::data()
   start_charging();
   assert(buf);
   return buf + bottom_reserved_; 
+}
+
+const void* RSingleBuffer::cdata() const
+{ 
+  return (buf) ? buf + bottom_reserved_ : nullptr;
 }
 
 void RSingleBuffer::resize(size_t sz) 
@@ -160,9 +185,10 @@ void RSingleBuffer::start_charging()
 
 void RSingleBuffer::extend_bottom(const RWindow& wnd)
 {
-  SCHECK(wnd.size() <= bottom_reserved_);
+  const size_t sz = wnd.filled_size();
+  assert(sz > 0);
+  SCHECK(sz <= bottom_reserved_);
   STATE(RSingleBuffer, move_to, bottom_extending);
-  memcpy(buf + bottom_reserved_ - wnd.size(), &wnd[0],
-         wnd.size());
+  memcpy(buf + bottom_reserved_ - sz, &wnd[0], sz);
   STATE(RSingleBuffer, move_to, bottom_extended);
 }

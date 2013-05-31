@@ -46,6 +46,7 @@ DEFINE_STATE_CONST(RWindow, State, filled);
 DEFINE_STATE_CONST(RWindow, State, welded);
 
 DEFINE_STATES(ConnectedWindowAxis);
+DEFINE_STATE_CONST(RConnectedWindow, State, wait_for_buffer);
 
 RWindow::RWindow(const std::string& id)
 : RObjectWithEvents<WindowAxis>(readyState),
@@ -82,8 +83,8 @@ RWindow::RWindow(RWindow& w,
   sz = w.sz;
   STATE_OBJ(RWindow, move_to, w, filled);
 
-  if (-shift_bottom > (ssize_t) bottom 
-      || shift_bottom + bottom >= buf->size()
+  if (-shift_bottom > bottom 
+      || shift_bottom + bottom >= (ssize_t) buf->size()
       || -shift_top >= (ssize_t) top 
       || shift_top + top > buf->size() ) 
   {
@@ -210,8 +211,8 @@ RConnectedWindow::RConnectedWindow(RSocketBase* sock)
   : 
   RWindow(SFORMAT(sock->fd)),
   CONSTRUCT_EVENT(ready),
-  CONSTRUCT_EVENT(filling)
-//  CONSTRUCT_EVENT(filled)
+  CONSTRUCT_EVENT(filling),
+  CONSTRUCT_EVENT(wait_for_buffer)
 {}
 
 RConnectedWindow::RConnectedWindow
@@ -234,6 +235,7 @@ void RConnectedWindow::forward_top(size_t s)
         (*this, readyState, fillingState));
 
   sz = s;
+  move_forward();
 }
 
 void RConnectedWindow::move_forward()
@@ -249,10 +251,36 @@ void RConnectedWindow::move_forward()
     STATE(RConnectedWindow, move_to, filled);
 }
 
-void new_buffer(RSingleBuffer* new_buf)
+void RConnectedWindow::new_buffer(RSingleBuffer* new_buf)
 {
+#if 0
+  if (State::compare_and_move(
+        *this, readyState, fillingState)) 
+  {
+    buf.reset(new_buf);
+    bottom = top = 0;
+  }
+  else if (State::compare_and_move(
+        *this, wait_for_bufferState, fillingState)) 
+  {
+    bottom = -size();
+    top = 0;
+  }
+  else 
+    THROW_EXCEPTION(
+      InvalidState, RAxis<DataBufferStateAxis>(*this),
+      "must be ready or wait_for_buffer");
+#else
   is_wait_for_buffer().wait();
-  buf = join_buffers(buf, bottom, new_buf);
+  const size_t sz = filled_size(); //<NB> not wnd.size()
+  if (sz > 0)
+    new_buf->extend_bottom(*this);
+
+  buf.reset(new_buf);
+  bottom = -sz;
+  top = 0;
+  STATE(RConnectedWindow, move_to, filling);
+#endif
 }
 
 std::ostream&
