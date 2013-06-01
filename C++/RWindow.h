@@ -31,7 +31,8 @@ public:
 
   RWindow(const std::string& = std::string("RWindow"));
   RWindow(const RWindow&) = delete;
-  virtual ~RWindow() {}
+  //! Will release underlaying buffer.
+  virtual ~RWindow();
 
   RWindow& operator=(const RWindow&) = delete;
 
@@ -102,6 +103,7 @@ public:
   //TODO move to RWindow
   //explicit RConnectedWindow(RSingleBuffer* buf);
 
+  //! Will wait till underlaying buffer is discharged.
   virtual ~RConnectedWindow();
 
   CompoundEvent is_terminal_state() const
@@ -118,7 +120,7 @@ public:
   //! should be new buffer (not simultaneously used by
   //! another class), e.g., a move copy of a socket
   //! buffer, see RSingleSocketConnection::run().
-  void new_buffer(RSingleBuffer*);
+  void new_buffer(std::unique_ptr<RSingleBuffer>&&);
 
 protected:
   DEFAULT_LOGGER(RConnectedWindow);

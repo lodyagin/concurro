@@ -180,11 +180,13 @@ void RSingleSocketConnection::run()
     else if (is_terminal_state().signalled()) 
       goto LClosed;
 
-    RSingleBuffer* buf = new RSingleBuffer(&socket->msg);
+    std::unique_ptr<RSingleBuffer> buf 
+      (new RSingleBuffer(&socket->msg));
+
     // a content of the buffer will be cleared after
     // everybody stops using it
     buf->set_autoclear(true);
-    iw().new_buffer(buf);
+    iw().new_buffer(std::move(buf));
   }
 
 LAborting:

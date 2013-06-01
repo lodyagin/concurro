@@ -168,17 +168,22 @@ void test_resize_rbuffer()
 
 void test_extend_bottom()
 {
-  RSingleBuffer a(10, 5), b(10, 5);
-  memcpy(a.data(), "12345", 5);
-  memcpy(b.data(), "67890", 5);
-  a.resize(5); b.resize(5);
+  std::unique_ptr<RSingleBuffer> a  
+    (new RSingleBuffer(10, 5));
+  std::unique_ptr<RSingleBuffer> b 
+    (new RSingleBuffer(10, 5));
+
+  memcpy(a->data(), "12345", 5);
+  memcpy(b->data(), "67890", 5);
+  a->resize(5); b->resize(5);
   RConnectedWindow w(nullptr);
   w.forward_top(5);
-  w.new_buffer(&a);
-  b.extend_bottom(w);
+  a->set_autoclear(true);
+  w.new_buffer(std::move(a));
+  b->extend_bottom(w);
   CU_ASSERT_NSTRING_EQUAL_FATAL(
-    (const char*)b.cdata() - 5, "1234567890", 10);
+    (const char*)b->cdata() - 5, "1234567890", 10);
   RWindow().move(w);
-  a.resize(0); b.resize(0);
+  b->resize(0);
 }
 

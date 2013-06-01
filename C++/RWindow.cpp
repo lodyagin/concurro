@@ -55,6 +55,8 @@ RWindow::RWindow(const std::string& id)
   bottom(0), top(0), sz(0)
 {}
 
+RWindow::~RWindow() {}
+
 RWindow& RWindow::attach_to(RWindow& w) 
 {
   if (RWindow::State::compare_and_move
@@ -149,32 +151,6 @@ const char& RWindow::operator[] (size_t idx) const
   return *((const char*)buf->cdata() + idx2);
 }
 
-#if 0
-void RWindow::resize(ssize_t shift_bottom, 
-                     ssize_t shif_top)
-{
-  if (RAxis<WindowAxis>::compare_and_move(
-        *this, filledState, weldedState)) {
-    if (-shift_bottom > bottom 
-        || shift_bottom + bottom >= buf->size()
-        || -shift_top >= top 
-        || shift_top + top > buf->size() ) 
-    {
-      STATE(RWindow, move_to, filled);
-      throw std::out_of_range;
-    }
-
-    bottom += shift_bottom;
-    top += shift_top;
-    sz -= shift_bottom;
-    sz += shift_top;
-    STATE(RWindow, move_to, filled);
-  }
-  else 
-    throw InvalidState(current_state(), filledState);
-}
-#endif
-
 // RConnectedWindow
 
 RConnectedWindow::RConnectedWindow(RSocketBase* sock)
@@ -223,7 +199,8 @@ void RConnectedWindow::move_forward()
     STATE(RConnectedWindow, move_to, filled);
 }
 
-void RConnectedWindow::new_buffer(RSingleBuffer* new_buf)
+void RConnectedWindow::new_buffer
+  (std::unique_ptr<RSingleBuffer>&& new_buf)
 {
   assert(new_buf);
 
@@ -239,7 +216,7 @@ void RConnectedWindow::new_buffer(RSingleBuffer* new_buf)
     new_buf->extend_bottom(*this);
   }
 
-  buf.reset(new_buf);
+  buf = std::move(new_buf);
   bottom = -sz;
   top = 0;
   STATE(RConnectedWindow, move_to, filling);
