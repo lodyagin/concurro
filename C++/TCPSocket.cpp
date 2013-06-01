@@ -192,7 +192,7 @@ void TCPSocket::SelectThread::run()
 
     rSocketCheck(
       ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
-    LOG_DEBUG(log, "TCPSocket>\t ::select");
+    LOG_DEBUG(TCPSocket::log, "TCPSocket>\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
       // peek the message size
@@ -201,7 +201,7 @@ void TCPSocket::SelectThread::run()
       static char dummy_buf[1];
       const ssize_t res = ::recv
         (fd, &dummy_buf, 1, MSG_PEEK);
-      LOG_DEBUG(log, "TCPSocket>\t ::recv");
+      LOG_DEBUG(TCPSocket::log, "TCPSocket>\t ::recv");
       if (res < 0 && errno == EAGAIN) 
         continue; // no data available
       rSocketCheck(res >=0);

@@ -92,13 +92,13 @@ protected:
     ~WaitThread() { destroy(); }
   }* wait_thread;
 
-  DEFAULT_LOGGER(InSocket)
-
-    //! Actual size of a socket internal read buffer + 1.
-    int socket_rd_buf_size;
+  //! Actual size of a socket internal read buffer + 1.
+  int socket_rd_buf_size;
   SOCKET notify_fd;
   
   ~InSocket();
+
+  DEFAULT_LOGGER(InSocket);
 };
 
 #endif

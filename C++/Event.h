@@ -96,11 +96,8 @@ public:
   }
 
   const std::string universal_object_id;
+
 protected:
-  typedef Logger<LOG::Events> log;
-
-  //std::atomic<bool> is_signalled;
-
   //! It is set if the event was occured at least once.
   std::atomic<bool> shadow;
 
@@ -112,6 +109,9 @@ protected:
   EvtBase(const std::string& id, bool manual, bool init);
 
   bool wait_impl(int time) const;
+
+private:
+  typedef Logger<LOG::Events> log;
 };
 
 std::ostream&
@@ -213,9 +213,10 @@ public:
   }
 
 protected:
-  typedef Logger<LOG::Events> log;
-
   std::shared_ptr<EvtBase> evt_ptr;
+
+private:
+  typedef Logger<LOG::Events> log;
 };
 
 DEFINE_EXCEPTION(
@@ -300,8 +301,6 @@ public:
   }
 
 protected:
-  typedef Logger<LOG::Events> log;
-
   //! a set for accumulate handles
   std::set<Event> handle_set;
   //! a vector to pass to WaitForMultipleEvents
@@ -314,6 +313,9 @@ protected:
   //! update the vector by the set if vector_need_update
   //! == true.
   void update_vector() const;
+
+private:
+  typedef Logger<LOG::Events> log;
 };
 
 std::ostream&

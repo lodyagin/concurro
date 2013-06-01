@@ -238,7 +238,6 @@ public:
   };
 
 protected:
-  typedef Logger<RepositoryBase> log;
   RepositoryLogParams log_params;
 
   RMutex objectsM;
@@ -256,6 +255,9 @@ protected:
   //! RepositoryBase to allow (dummy) calls from
   //! destructor.
   virtual void delete_object_id (ObjId) {}
+
+private:
+  typedef Logger<RepositoryBase> log;
 };
 
 // TODO separate read and write lock

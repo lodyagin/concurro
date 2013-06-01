@@ -28,7 +28,7 @@ public:
   //! Create a *->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
 				  const char* to);
-protected:
+private:
   typedef Logger<LOG::Events> log;
 };
 

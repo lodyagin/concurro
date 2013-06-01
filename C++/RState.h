@@ -157,12 +157,12 @@ public:
                   "This state mixing is invalid.");
     return StateMapInstance<Axis>::stateMap; 
   }
+
 protected:
-  typedef Logger<RAxis<Axis>> log;
-
-  //std::atomic_flag changed;
-
   RMixedAxis(const StateMapPar<Axis>& par);
+
+private:
+  typedef Logger<RAxis<Axis>> log;
 };
 
 #define DECLARE_AXIS(axis, parent)	\

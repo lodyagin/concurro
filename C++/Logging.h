@@ -289,9 +289,10 @@ inline LogBase* Logger<LOG::States>::init_base
 //! Add this to a class declaration for implement logging
 //! in the class
 #define DEFAULT_LOGGER(class_) \
+private: \
   typedef Logger<class_> log; \
   \
-  log4cxx::LoggerPtr logger() const \
+  log4cxx::LoggerPtr logger() const override \
   { \
 	 return log::logger(); \
   }

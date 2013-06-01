@@ -76,9 +76,6 @@ void OutSocket::SelectThread::run()
   if (socket->is_terminal_state().signalled())
 	 return;
 
-  /*OutSocket::State::move_to
-	 (*out_sock, OutSocket::busyState);*/
-
   fd_set wfds, rfds;
   FD_ZERO(&wfds);
 
@@ -87,54 +84,43 @@ void OutSocket::SelectThread::run()
 
   for(;;) {
     // Wait for buffer space
-	 if (RSocketBase::State::state_is
-		  (*socket, RSocketBase::readyState))
-		FD_SET(fd, &wfds);
-	 else
-		FD_CLR(fd, &wfds);
-	 // The second socket for close report
-	 FD_SET(sock_pair[ForSelect], &rfds);
-	 const int maxfd = std::max(sock_pair[ForSelect], fd)
-		+ 1;
+    if (RSocketBase::State::state_is
+        (*socket, RSocketBase::readyState))
+      FD_SET(fd, &wfds);
+    else
+      FD_CLR(fd, &wfds);
+    // The second socket for close report
+    FD_SET(sock_pair[ForSelect], &rfds);
+    const int maxfd = std::max(sock_pair[ForSelect], fd)
+      + 1;
     rSocketCheck(
-		 ::select(maxfd, &rfds, &wfds, NULL, NULL) > 0);
-	 LOG_DEBUG(log, "OutSocket>\t ::select");
+      ::select(maxfd, &rfds, &wfds, NULL, NULL) > 0);
+    LOG_DEBUG(OutSocket::log, "OutSocket>\t ::select");
 
-	 if (FD_ISSET(fd, &wfds)) {
-		const ssize_t written = 
-		  ::write(fd, out_sock->msg.cdata(),
-					 out_sock->msg.size());
-		if (written < 0) {
-		  const int err = errno;
-		  LOG_ERROR(log, "Error " << rErrorMsg(err));
-		}
+    if (FD_ISSET(fd, &wfds)) {
+      const ssize_t written = 
+        ::write(fd, out_sock->msg.cdata(),
+                out_sock->msg.size());
+      if (written < 0) {
+        const int err = errno;
+        LOG_ERROR(OutSocket::log, "Error " << rErrorMsg(err));
+      }
 
-		assert(written <= (ssize_t) out_sock->msg.size());
-		if (written < (ssize_t) out_sock->msg.size())
-		  THROW_NOT_IMPLEMENTED;
+      assert(written <= (ssize_t) out_sock->msg.size());
+      if (written < (ssize_t) out_sock->msg.size())
+        THROW_NOT_IMPLEMENTED;
 		
-		out_sock->msg.clear();
-		/*OutSocket::State::move_to
-		  (*out_sock, OutSocket::wait_youState);*/
-		( out_sock->msg.is_charged() 
-		  | socket->is_terminal_state()) . wait();
-		if (socket->is_terminal_state().signalled()) {
-		  break;
-		}
-		/*OutSocket::State::move_to
-		  (*out_sock, OutSocket::busyState);*/
-	 }
+      out_sock->msg.clear();
+      ( out_sock->msg.is_charged() 
+        | socket->is_terminal_state()) . wait();
+      if (socket->is_terminal_state().signalled()) {
+        break;
+      }
+    }
 
-	 /*assert(OutSocket::State::state_is
-		(*out_sock, OutSocket::busyState));*/
-
-	 if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
-		// TODO actual state - closed/error (is error
-		// needed?) 
-		/*OutSocket::State::move_to 
-		  (*out_sock, OutSocket::closedState);*/
-		break;
-	 }
+    if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
+      break;
+    }
   }
 }
 

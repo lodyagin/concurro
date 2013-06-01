@@ -58,12 +58,12 @@ public:
   //void resize(ssize_t shift_bottom, ssize_t shif_top);
 
 protected:
-  DEFAULT_LOGGER(RWindow);
-
   std::shared_ptr<RSingleBuffer> buf;
   size_t bottom;
   size_t top;
   size_t sz;
+
+  DEFAULT_LOGGER(RWindow);
 };
 
 DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
@@ -102,14 +102,14 @@ public:
   void forward_top(size_t);
 
 protected:
-  DEFAULT_LOGGER(RConnectedWindow);
-
   RConnectedWindow(const ObjectCreationInfo& oi,
                    const Par& par);
 
   //! A logic block reading implementation. It must set
   //! a filled state at the end. 
   virtual void move_forward();
+
+  DEFAULT_LOGGER(RConnectedWindow);
 };
 
 std::ostream&
