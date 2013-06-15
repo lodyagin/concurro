@@ -47,3 +47,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_LIBRARY(concurrent ${concurrent_SOURCES})
 #target_link_libraries(${Boost_SYSTEM_LIBRARY})
+
+set_property(TARGET pevents PROPERTY
+             IMPORTED_LOCATION 
+             /usr/local/lib/pevents/libpevents.a)
+
+target_link_libraries(concurrent pevents)
