@@ -121,6 +121,8 @@ class ObjectWithEventsInterface
 public:
   virtual ~ObjectWithEventsInterface() {}
 
+  virtual log4cxx::LoggerPtr logger() const = 0;
+
 protected:
 #if 0
   //! Query an event object by UniversalEvent. 

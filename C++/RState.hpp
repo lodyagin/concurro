@@ -15,6 +15,8 @@
 #include "RObjectWithStates.hpp"
 #include <atomic>
 
+#define LOG_IN_OBJECT 1
+
 template<class Axis>
 StateMap* StateMapInstance<Axis>::stateMap = nullptr;
 
@@ -77,7 +79,11 @@ void RMixedAxis<Axis, Axis2>
   uint32_t from;
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
-  auto logger = obj.logger(); 
+#if LOG_IN_OBJECT
+  auto logger = obj.logger();
+#else
+  auto logger = Logger<LOG::States>::logger();
+#endif
   // <NB> get the logger before possible destruction of
   // obj (i.e. as a result of move to a terminal state)
 

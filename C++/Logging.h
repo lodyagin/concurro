@@ -137,6 +137,13 @@ inline LogBase* Logger<LOG::States>::init_base
   return new LogBase ("States");
 }
 
+template<>
+inline LogBase* Logger<LOG::Events>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("Events");
+}
+
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {										\
@@ -228,6 +235,8 @@ inline LogBase* Logger<LOG::States>::init_base
   LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 #define LOG_DEBUG_STATIC_PLACE(log, place, message)					\
   LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+#define LOGGER_DEBUG_PLACE(log, place, message)					\
+  LOGGER_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 
 #define LOG_TRACE_LOC(log, message, loc)		 \
   LOGGER_TRACE_LOC(log::logger(), message, loc)

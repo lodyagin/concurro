@@ -32,7 +32,7 @@ EvtBase::EvtBase(const std::string& id,
     h(CreateEvent(manual, init))
 #endif
 {
-  LOG_DEBUG(log, "thread " 
+  LOGGER_DEBUG(log_params.logger, "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event "
             << universal_object_id 
@@ -44,7 +44,7 @@ EvtBase::EvtBase(const std::string& id,
 
 EvtBase::~EvtBase()
 {
-  LOG_DEBUG(log, "thread " 
+  LOGGER_DEBUG(log_params.logger, "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t closes the event handle [" 
             << universal_object_id << "]");
@@ -66,8 +66,8 @@ operator<< (std::ostream& out, const EvtBase& evt)
 
 void EvtBase::set()
 {
-  LOG_DEBUG_PLACE(log, set, "thread " 
-                  << RThread<std::thread>::current_pretty_id()
+  LOGGER_DEBUG_PLACE(log_params.logger, set, "thread " 
+                << RThread<std::thread>::current_pretty_id()
                   << ">\t event "
                   << universal_object_id << ">\t set");
 #ifdef _WIN32
@@ -85,8 +85,8 @@ void EvtBase::set()
 
 void EvtBase::reset()
 {
-  LOG_DEBUG_PLACE(log, reset, "thread " 
-                  << RThread<std::thread>::current_pretty_id()
+  LOGGER_DEBUG_PLACE(log_params.logger, reset, "thread " 
+                << RThread<std::thread>::current_pretty_id()
                   << ">\t event "
                   << universal_object_id << ">\t reset");
 #ifdef _WIN32
@@ -105,14 +105,14 @@ bool EvtBase::wait_impl(int time) const
 {
 //  if (time != std::numeric_limits<uint64_t>::max()) {
   if (time != -1) {
-    LOG_DEBUG(log, "thread " 
+    LOGGER_DEBUG(log_params.logger, "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
               << universal_object_id 
               << ">\t wait " << time << " msecs");
   }
   else {
-    LOG_DEBUG(log, "thread " 
+    LOGGER_DEBUG(log_params.logger, "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
               << universal_object_id 
@@ -133,7 +133,7 @@ bool EvtBase::wait_impl(int time) const
 #else
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
-    LOG_DEBUG(log, "thread " 
+    LOGGER_DEBUG(log_params.logger, "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
               << universal_object_id 
@@ -141,7 +141,7 @@ bool EvtBase::wait_impl(int time) const
     return false;
   }
 #endif
-  LOG_DEBUG(log, "thread " 
+  LOGGER_DEBUG(log_params.logger, "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event "
             << universal_object_id 

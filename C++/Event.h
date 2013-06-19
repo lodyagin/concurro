@@ -42,8 +42,11 @@ class EvtBase : public EventInterface
   friend class CompoundEvent;
 public:
   struct LogParams {
-	 bool set, reset;
-    LogParams() : set(true), reset(true) {}
+    bool set, reset;
+    log4cxx::LoggerPtr logger;
+
+    LogParams() : set(true), reset(true), 
+      logger(Logger<LOG::Events>::logger()) {}
   } log_params;
 
   EvtBase(const EvtBase&) = delete;
@@ -109,9 +112,6 @@ protected:
   EvtBase(const std::string& id, bool manual, bool init);
 
   bool wait_impl(int time) const;
-
-private:
-  typedef Logger<LOG::Events> log;
 };
 
 std::ostream&
