@@ -18,6 +18,7 @@ set(TestsSrc
   RSignalCU.cpp
   RSocketCU.cpp
   RConnectionCU.cpp
+  SCommonCU.cpp
   tests.cpp
 )
 
@@ -28,7 +29,7 @@ include_directories(../../../PEvents)
 add_executable(tests_exec ${TestsSrc} ${TestsInc})
 
 
-target_link_libraries(tests_exec cunit log4cxx concurrent /usr/local/lib/libpevents.a)
+target_link_libraries(tests_exec cunit log4cxx concurrent /usr/local/lib/pevents/libpevents.a pthread)
 target_link_libraries(tests_exec 
   ${Boost_THREAD_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}

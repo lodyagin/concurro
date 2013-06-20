@@ -23,7 +23,6 @@
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
 
-
 #ifdef _WIN32
 #  define _T L
 #else
@@ -35,25 +34,25 @@ typedef unsigned long ulong;
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
-
 // cut out not more than maxCount chars that equal to passed one. If maxCount == -1 then cut out all
-std::string trimLeft ( const std::string &, char = ' ', int maxCount = -1 );
-std::string trimRight( const std::string &, char = ' ', int maxCount = -1 );
-std::string trimBoth ( const std::string &, char = ' ', int maxCount = -1 );
+std::string trimLeft(const std::string &, char = ' ', int maxCount =
+    -1);
+std::string trimRight(const std::string &, char = ' ',
+    int maxCount = -1);
+std::string trimBoth(const std::string &, char = ' ', int maxCount =
+    -1);
 
-const char * strnchr( const char * str, int chr, size_t maxLen );
+const char * strnchr(const char * str, int chr, size_t maxLen);
 //int strnlen( const char * str, size_t maxLen );  // returns -1 if len > maxLen
 
- /* Copy string src to buffer dest (of buffer size dest_size).  At most
+/* Copy string src to buffer dest (of buffer size dest_size).  At most
  * dest_size-1 characters will be copied.  Always NUL terminates
  * (unless dest_size == 0).  This function does NOT allocate memory.
  * Unlike strncpy, this function doesn't pad dest (so it's often faster).
  * Returns size of attempted result, strlen(src),
  * so if retval >= dest_size, truncation occurred.
  */
-size_t strlcpy (char       *dest,
-                const char *src,
-                size_t      dest_size);
+size_t strlcpy(char *dest, const char *src, size_t dest_size);
 
 /* It is got from glib 2.0.
  *
@@ -68,9 +67,7 @@ size_t strlcpy (char       *dest,
  * so if retval >= dest_size, truncation occurred.
  */
 size_t
-strlcat (char       *dest,
-         const char *src,
-         size_t      dest_size);
+strlcat(char *dest, const char *src, size_t dest_size);
 
 #ifdef _WIN32
 /**
@@ -87,14 +84,14 @@ strlcat (char       *dest,
  *
  * Returns: the number of bytes printed.
  **/
-int 
-vasprintf (char      **string,
-           char const *format,
-           va_list      args);
+int
+vasprintf (char **string,
+    char const *format,
+    va_list args);
 #endif
 
 char *
-strsep (char **stringp, const char *delim);
+strsep(char **stringp, const char *delim);
 
 #ifdef _WIN32
 // convert windows error code to string
@@ -102,7 +99,7 @@ std::wstring sWinErrMsg (DWORD errorCode);
 #endif
 
 // formats string a la sprintf, max 10k size
-std::wstring sFormat( std::wstring format, ... );
+std::wstring sFormat(std::wstring format, ...);
 
 #define WSFORMAT(e) ((dynamic_cast<const std::wostringstream&>(std::wostringstream().flush() << e)).str())
 #ifndef UNICODE
@@ -112,14 +109,14 @@ std::wstring sFormat( std::wstring format, ... );
 #endif
 
 std::string AmountFormat(double amt, int precision = 2);
-std::string StripDotZeros (const std::string& s);
+std::string StripDotZeros(const std::string& s);
 std::string RateFormat(double rate);	//2 or 4 fractional digits
 std::string FixFormat(double lot, int precision = 1);	//0 or 1 fractional digit
 
-std::wstring sFormatVa( const std::wstring & format, va_list list );
+std::wstring sFormatVa(const std::wstring & format, va_list list);
 
 // ansi version
-std::string sFormatVaA( const std::string & format, va_list list );
+std::string sFormatVaA(const std::string & format, va_list list);
 
 //string uni2ascii (const std::wstring & str);
 //std::wstring ascii2uni (const string & str);
@@ -129,88 +126,83 @@ std::string sFormatVaA( const std::string & format, va_list list );
    << sWinErrMsg (sysErr) << "' has occured (#" << sysErr << ")."))
 
 // throws std::logic_error, formating string first
-__declspec(noreturn) void sThrow( const wchar_t * format, ... );
+__declspec(noreturn)void sThrow(const wchar_t * format, ...);
 
 // load string with given id from resources. Maximum string length is 10k
-std::string loadResourceStr( int id );
+std::string loadResourceStr(int id);
 
 #ifdef _WIN32
 void checkHR( HRESULT );
 #endif
 
-std::wstring str2wstr( const std::string & );
-std::string wstr2str( const std::wstring & );
+std::wstring str2wstr(const std::string &);
+std::string wstr2str(const std::wstring &);
 
-std::string toUTF8 (const std::wstring&);
-std::wstring fromUTF8 (const std::string&);
+std::string toUTF8(const std::wstring&);
+std::wstring fromUTF8(const std::string&);
 
-inline const char * ptr2ptr( const std::string & s )
-{
+inline const char * ptr2ptr(const std::string & s) {
   return s.c_str();
 }
 
-inline const wchar_t * ptr2ptr( const std::wstring & s )
-{
+inline const wchar_t * ptr2ptr(const std::wstring & s) {
   return s.c_str();
 }
 
-inline const char * sptr( const char * p )
-{
+inline const char * sptr(const char * p) {
   return p ? p : "";
 }
 
-inline const char * szptr( const char * p )
-{
+inline const char * szptr(const char * p) {
   return p && *p ? p : 0;
 }
 
-
 template<class T>
-inline const char * ptr2sptr( const T & s )
-{
+inline const char * ptr2sptr(const T & s) {
   return sptr(ptr2ptr(s));
 }
 
 template<class T>
-inline const char * ptr2szptr( const T & s )
-{
+inline const char * ptr2szptr(const T & s) {
   return szptr(ptr2ptr(s));
 }
 
 // append a string representation of an object
 // to a string
-template <class T>
-void toString (const T& object, std::string & s)
-{
+template<class T>
+void toString(const T& object, std::string & s) {
   s = boost::lexical_cast<std::string>(object);
 }
 
-template <class T>
-std::string toString (const T& object)
-{
+template<class T>
+std::string toString(const T& object) {
   return boost::lexical_cast<std::string>(object);
 }
 
+class FromStringCastException;
+
+
 // FIXME raise exception when the string is not a number
-template <class T, class String>
-T fromString (String&& s)
-{
-  T object;
-  std::istringstream is (std::forward<String>(s));
-  is >> object;
-  return object;
+template<class T, class String>
+T fromString(String&& s) {
+  try {
+  return boost::lexical_cast<T>(s);
+  } catch (boost::bad_lexical_cast e) {
+    throw FromStringCastException(e);
+  }
 }
 
-#define SMAKE_THROW_FN_DECL(name, XClass)  \
-void name( const wchar_t * fmt, ... ); void name(const std::wstring& msg); 
-//void name( const char * fmt, ... ); void name(const std::string& msg); 
 
-SMAKE_THROW_FN_DECL(sThrow,SException)
+
+#define SMAKE_THROW_FN_DECL(name, XClass)  \
+void name( const wchar_t * fmt, ... ); void name(const std::wstring& msg);
+//void name( const char * fmt, ... ); void name(const std::string& msg);
+
+SMAKE_THROW_FN_DECL(sThrow, SException)
 
 #define SMAKE_THROW_MEMBER_DECL(name, XClass)  \
 static void name( const wchar_t * fmt, ... );
-//static void name( const char * fmt, ... ); 
-
+//static void name( const char * fmt, ... );
 
 #define SMAKE_THROW_FN_IMPL(name, XClass)  \
   \
@@ -234,11 +226,9 @@ time_t FileTimeToTimet (FILETIME ft);
 // copy if (see Stroustrup 3rd ed, 18.6.1)
 
 template<class In, class Out, class Pred>
-Out copy_if (In first, In last, Out res, Pred p)
-{
-  while (first != last)
-  {
-    if (p (*first))
+Out copy_if(In first, In last, Out res, Pred p) {
+  while (first != last) {
+    if (p(*first))
       *res++ = *first;
     ++first;
   }
@@ -248,7 +238,7 @@ Out copy_if (In first, In last, Out res, Pred p)
 /**
  * Allocate a new char* string by the std::string arg.
  */
-char* string2char_ptr (const std::string& str);
+char* string2char_ptr(const std::string& str);
 
 //! Calculate the logic implication: a -> b
 #define IMPLICATION(a, b) ((b) || (!(a)))
@@ -258,27 +248,27 @@ char* string2char_ptr (const std::string& str);
  * has pointer to any method of any class derived from
  * Base. 
  */
-template<class Base, class... Args>
-class AbstractMethodCallWrapper 
-{
+template<class Base, class ... Args>
+class AbstractMethodCallWrapper {
 public:
-  virtual void call(Base* obj, Args... args) = 0;
+  virtual void call(Base* obj, Args ... args) = 0;
 };
 
 /**
  * An AbstractMethodCallWrapper descendant for holding
  * pointers of class Derived.
  */
-template<class Derived, class Base, class... Args>
-class MethodCallWrapper
-  : public AbstractMethodCallWrapper<Base, Args...>
-{
+template<class Derived, class Base, class ... Args>
+class MethodCallWrapper: public AbstractMethodCallWrapper<Base,
+    Args...> {
 public:
-  typedef void (Derived::*Method) (Args... args);
+  typedef void (Derived::*Method)(Args ... args);
 
-  MethodCallWrapper(Method a_method) : method(a_method) {}
+  MethodCallWrapper(Method a_method) :
+      method(a_method) {
+  }
 
-  void call(Base* obj, Args... args) override
+  void call(Base* obj, Args ... args) override
   {
     (dynamic_cast<Derived*>(obj)->*method)(args...);
   }

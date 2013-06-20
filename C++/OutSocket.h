@@ -92,9 +92,9 @@ protected:
     ~WaitThread() { destroy(); }
   }* wait_thread;
 
-  DEFAULT_LOGGER(OutSocket)
+  SOCKET notify_fd;
 
-    SOCKET notify_fd;
+  DEFAULT_LOGGER(OutSocket);
 };
 
 #endif

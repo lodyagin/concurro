@@ -51,9 +51,9 @@ protected:
   RMutex() : name (":a mutex with an undefined name:") {}
   boost::recursive_mutex mx;
 
+private:
   typedef Logger<RMutex> log;
   
-private:
   std::string name;
 };
 

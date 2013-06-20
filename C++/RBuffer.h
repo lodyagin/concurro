@@ -118,12 +118,12 @@ public:
   void clear() { resize(0); }
   void start_charging();
 
-  DEFAULT_LOGGER(RSingleBuffer)
-
 protected:
   char* buf;
   size_t size_;
   size_t reserved_;
+
+  DEFAULT_LOGGER(RSingleBuffer)
 };
 
 class RMultipleBuffer : public RBuffer

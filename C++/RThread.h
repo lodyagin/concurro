@@ -313,9 +313,7 @@ public:
     main_thread_id = std::this_thread::get_id();
   }
 
-  DEFAULT_LOGGER(RThread<std::thread>)
-
-    protected:
+protected:
   //! It is for creation from ThreadRepository
   RThread(const ObjectCreationInfo& oi, const Par& par)
     : RThreadBase(oi, par),
@@ -326,6 +324,8 @@ public:
   std::unique_ptr<std::thread> th;
 
   static std::thread::id main_thread_id;
+
+  DEFAULT_LOGGER(RThread<std::thread>)
 };
 
 #endif

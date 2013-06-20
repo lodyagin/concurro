@@ -137,6 +137,29 @@ inline LogBase* Logger<LOG::States>::init_base
   return new LogBase ("States");
 }
 
+template<>
+inline LogBase* Logger<LOG::Events>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("Events");
+}
+
+/**
+ * An abstract parent of "Object with logging" - an entity
+ * with its own logging namespace.
+ */
+class ObjectWithLogging
+{
+public:
+  //! It should be overriden. The default implementation
+  //! is for logging from constructors to prevent a pure
+  //! virtual function call.
+  virtual log4cxx::LoggerPtr logger() const
+  {
+    return Logger<LOG::Root>::logger();
+  }
+};
+
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {										\
@@ -228,6 +251,8 @@ inline LogBase* Logger<LOG::States>::init_base
   LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 #define LOG_DEBUG_STATIC_PLACE(log, place, message)					\
   LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+#define LOGGER_DEBUG_PLACE(log, place, message)					\
+  LOGGER_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 
 #define LOG_TRACE_LOC(log, message, loc)		 \
   LOGGER_TRACE_LOC(log::logger(), message, loc)
@@ -289,9 +314,10 @@ inline LogBase* Logger<LOG::States>::init_base
 //! Add this to a class declaration for implement logging
 //! in the class
 #define DEFAULT_LOGGER(class_) \
+private: \
   typedef Logger<class_> log; \
   \
-  log4cxx::LoggerPtr logger() const \
+  log4cxx::LoggerPtr logger() const override \
   { \
 	 return log::logger(); \
   }

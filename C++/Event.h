@@ -23,9 +23,21 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <memory>
 #include <assert.h>
 
-class EventInterface
+class EventInterface : public ObjectWithLogging
 {
 public:
+  struct LogParams {
+    bool set, reset;
+    ObjectWithLogging* log_obj;
+
+    LogParams(ObjectWithLogging* obj) 
+    : set(true), reset(true), log_obj(obj)
+    {
+      assert(log_obj);
+    }
+  } log_params;
+  
+  EventInterface() : log_params(this) {}
   virtual ~EventInterface() {}
 
   //! Wait for event or time in msecs. 
@@ -40,14 +52,12 @@ class EvtBase : public EventInterface
 {
   friend class Event;
   friend class CompoundEvent;
-public:
-  struct LogParams {
-	 bool set, reset;
-    LogParams() : set(true), reset(true) {}
-  } log_params;
 
+public:
   EvtBase(const EvtBase&) = delete;
   virtual ~EvtBase();
+
+  log4cxx::LoggerPtr logger() const override;
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
@@ -96,11 +106,8 @@ public:
   }
 
   const std::string universal_object_id;
+
 protected:
-  typedef Logger<LOG::Events> log;
-
-  //std::atomic<bool> is_signalled;
-
   //! It is set if the event was occured at least once.
   std::atomic<bool> shadow;
 
@@ -213,9 +220,10 @@ public:
   }
 
 protected:
-  typedef Logger<LOG::Events> log;
-
   std::shared_ptr<EvtBase> evt_ptr;
+
+private:
+  typedef Logger<LOG::Events> log;
 };
 
 DEFINE_EXCEPTION(
@@ -300,8 +308,6 @@ public:
   }
 
 protected:
-  typedef Logger<LOG::Events> log;
-
   //! a set for accumulate handles
   std::set<Event> handle_set;
   //! a vector to pass to WaitForMultipleEvents
@@ -314,6 +320,9 @@ protected:
   //! update the vector by the set if vector_need_update
   //! == true.
   void update_vector() const;
+
+private:
+  typedef Logger<LOG::Events> log;
 };
 
 std::ostream&

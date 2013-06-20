@@ -46,4 +46,3 @@ include_directories(../../PEvents)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_LIBRARY(concurrent ${concurrent_SOURCES})
-#target_link_libraries(${Boost_SYSTEM_LIBRARY})

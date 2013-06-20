@@ -64,8 +64,6 @@ public:
   DECLARE_STATE_CONST(St, check_passed);
   DECLARE_STATE_CONST(St, check_failed);
 
-  DEFAULT_LOGGER(T1);
-
   /*StateAxis& get_axis() const override
   {
     return T1Axis::self();
@@ -174,6 +172,8 @@ public:
   }
 
   const std::string name;
+
+  DEFAULT_LOGGER(T1);
 };
 
 static bool check_my_name(const std::string& n)

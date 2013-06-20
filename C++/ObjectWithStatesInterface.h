@@ -9,7 +9,7 @@
 #ifndef CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 #define CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 
-#include <log4cxx/logger.h>
+#include "Logging.h"
 #include "StateMap.h"
 
 template<class Axis1, class Axis2> class RMixedAxis;
@@ -55,7 +55,8 @@ class RObjectWithStatesBase;
 /// state-aware class.
 template<class Axis>
 class ObjectWithStatesInterface
-: public virtual AbstractObjectWithStates
+: public virtual AbstractObjectWithStates,
+  public virtual ObjectWithLogging
 {
   template<class Axis1, class Axis2> 
 	 friend class RMixedAxis;
@@ -67,8 +68,6 @@ public:
   typedef RState<Axis> State;
 
   virtual ~ObjectWithStatesInterface() {}
-
-  virtual log4cxx::LoggerPtr logger() const = 0;
 
   virtual std::string object_name() const
   {
@@ -111,7 +110,8 @@ protected:
 
 template<class Axis>
 class ObjectWithEventsInterface
-: public virtual AbstractObjectWithEvents
+: public virtual AbstractObjectWithEvents,
+  public virtual ObjectWithLogging
 {
   template<class Axis1, class Axis2> 
 	 friend class RMixedEvent;
@@ -122,15 +122,6 @@ public:
   virtual ~ObjectWithEventsInterface() {}
 
 protected:
-#if 0
-  //! Query an event object by UniversalEvent. 
-  virtual Event get_event(const UniversalEvent& ue) = 0;
-
-  //! Query an event object by UniversalEvent. 
-  virtual Event get_event
-     (const UniversalEvent& ue) const = 0;
-#endif
-
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
   virtual CompoundEvent create_event

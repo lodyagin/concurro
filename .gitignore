@@ -6,6 +6,7 @@
 *.so
 *.so.*
 *.vpp.work*
+*.bak
 core
 CMakeCache.txt
 GPATH

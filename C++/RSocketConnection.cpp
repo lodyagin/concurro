@@ -147,6 +147,7 @@ RSocketConnection& RSingleSocketConnection
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
   SCHECK(out_sock);
 
+  out_sock->msg.is_discharged().wait();
   out_sock->msg.move(&buf);
   return *this;
 }

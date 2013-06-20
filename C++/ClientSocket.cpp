@@ -154,7 +154,7 @@ void ClientSocket::Thread::run()
    FD_SET(fd, &wfds);
    rSocketCheck(
       ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
-   LOG_DEBUG(log, "ClientSocket>\t ::select");
+   LOG_DEBUG(ClientSocket::log, "ClientSocket>\t ::select");
 
    int error = 0;
    socklen_t error_len = sizeof(error);

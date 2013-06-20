@@ -82,20 +82,6 @@ public:
       ::current_state(ax);
   }
 
-#if 0
-  Event get_event (const UniversalEvent& ue) override
-  {
-    return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-      ::get_event(ue);
-  }
-
-  Event get_event (const UniversalEvent& ue) const override
-  {
-    return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-      ::get_event(ue);
-  }
-#endif
-
   CompoundEvent create_event
     (const UniversalEvent& ue) const override
   {
@@ -108,14 +94,7 @@ public:
      TransitionId trans_id, 
      uint32_t to) override
   {
-#if 1
     ax.update_events(this, trans_id, to);
-#else
-    LOG_TRACE(log, "update_events");
-    return RStateSplitter
-      <ClientSocketAxis, SocketBaseAxis>
-      ::update_events(trans_id, to);
-#endif
   }
 
 protected:
@@ -143,14 +122,14 @@ protected:
 
     void run();
   protected:
-  Thread(const ObjectCreationInfo& oi, const Par& p)
-    : SocketThread(oi, p) {}
+    Thread(const ObjectCreationInfo& oi, const Par& p)
+      : SocketThread(oi, p) {}
     ~Thread() { destroy(); }
   }* thread;
 
-  DEFAULT_LOGGER(ClientSocket)
+  void process_error(int error);
 
-    void process_error(int error);
+  DEFAULT_LOGGER(ClientSocket);
 };
 
 #endif

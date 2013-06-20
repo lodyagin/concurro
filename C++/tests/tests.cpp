@@ -14,6 +14,7 @@ extern CU_TestInfo RBufferTests[];
 extern CU_TestInfo RSignalTests[];
 extern CU_TestInfo RSocketTests[];
 extern CU_TestInfo RConnectionTests[];
+extern CU_TestInfo SCommonTests[];
 
 int RepositoryCUInit(void);
 int RepositoryCUClean(void);
@@ -35,10 +36,14 @@ int RSocketCUInit(void);
 int RSocketCUClean(void);
 int RConnectionCUInit(void);
 int RConnectionCUClean(void);
+int SCommoCUInit(void);
+int SCommoCUClean(void);
 
 CU_SuiteInfo suites[] = {	
   { "Repository", RepositoryCUInit, RepositoryCUClean, 0, 0,
 	  RepositoryTests },
+  { "Common", SCommoCUInit, SCommoCUClean, 0, 0,
+      SCommonTests },
   { "Event", EventCUInit, EventCUClean, 0, 0,
 	  EventTests },
   { "RState", RStateCUInit, RStateCUClean, 0, 0,
@@ -59,6 +64,7 @@ CU_SuiteInfo suites[] = {
 	  RConnectionTests },
 	CU_SUITE_INFO_NULL
 };
+
 
 using namespace std;
 

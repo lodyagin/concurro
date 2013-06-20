@@ -31,9 +31,8 @@ TestObject()
     return CompoundEvent();
   }
 
-protected:
   DEFAULT_LOGGER(TestObject)
-    };
+};
 
 DECLARE_AXIS(DerivedAxis, TestAxis);
 

@@ -103,8 +103,6 @@ public:
 }
 
 protected:
-  typedef Logger<TCPSocket> log;
-  
   //! It is set in the constructor by 
   //! ::getprotobyname("TCP") call
   struct protoent* tcp_protoent;
@@ -172,6 +170,9 @@ protected:
       : SocketThread(oi, p), notify_fd(p.notify_fd) {}
     ~WaitThread() { destroy(); }
   }* wait_thread;
+
+private:
+  typedef Logger<TCPSocket> log;
 };
 
 #endif

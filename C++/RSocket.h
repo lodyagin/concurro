@@ -241,8 +241,6 @@ protected:
   ~RSocket();
 
   DEFAULT_LOGGER(RSocket<Bases...>);
-
-  //std::unordered_map<std::type_info> axes;
 };
 
 //=================================================
