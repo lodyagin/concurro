@@ -95,7 +95,17 @@ void RMixedAxis<Axis, Axis2>
       throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  LOGGER_DEBUG(logger, 
+               "thread " 
+               << RThread<std::thread>::current_pretty_id()
+               << ">\t object " << obj.object_name()
+               << ">\t axis " << typeid(Axis).name()
+               << "/" << typeid(Axis2).name()
+               << ">\tmove_to:\t "
+               << UniversalState(from).name()
+               << std::hex << " (0x" << from
+               << ") -> " << to.name() << " (0x" 
+               << (uint32_t) to << ")");
 
   if (auto p = 
       dynamic_cast<ObjectWithEventsInterface<Axis2>*>
@@ -107,15 +117,7 @@ void RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  LOGGER_DEBUG(logger, 
-               "thread " 
-               << RThread<std::thread>::current_pretty_id()
-               << ">\t object " << obj.object_name()
-               << ">\t axis " << typeid(Axis).name()
-               << ">\t " << UniversalState(from).name()
-               << std::hex << " (0x" << from
-               << ") -> " << to.name() << " (0x" 
-               << (uint32_t) to << ")");
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
 }
 
 template<class Axis, class Axis2>
@@ -130,18 +132,28 @@ bool RMixedAxis<Axis, Axis2>
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
   
-  if (STATE_IDX(current) != STATE_IDX(from))
+  uint32_t expected = current;
+  if (STATE_IDX(expected) != STATE_IDX(from))
     return false;
 
   if (!(trans_id= StateMapInstance<Axis>::stateMap
         -> get_transition_id(from, to)))
     throw InvalidStateTransition(from, to);
 
-  uint32_t expected = current;
   if (!current.compare_exchange_strong(expected, to))
     return false;
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  LOGGER_DEBUG(obj.logger(),
+            "thread " 
+            << RThread<std::thread>::current_pretty_id()
+            << ">\t object " << obj.object_name()
+            << ">\t axis " << typeid(Axis).name()
+            << "/" << typeid(Axis2).name()
+            << ">\tcompare_and_move:\t "
+            << UniversalState(expected).name()
+            << std::hex << " (0x" << (uint32_t) from
+            << ") -> " << to.name() << " (0x" 
+            << (uint32_t) to << ")");
   
   if (auto p = dynamic_cast<AbstractObjectWithEvents*>
       (&obj)) {
@@ -149,15 +161,8 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  LOG_DEBUG(log,
-            "thread " 
-            << RThread<std::thread>::current_pretty_id()
-            << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << ">\t " << UniversalState(from).name()
-            << std::hex << " (0x" << (uint32_t) from
-            << ") -> " << to.name() << " (0x" 
-            << (uint32_t) to << ")");
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+
   return true;
 }
 
@@ -189,23 +194,25 @@ bool RMixedAxis<Axis, Axis2>
 
   } while(!current.compare_exchange_strong(from, to));
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
-
+  LOGGER_DEBUG(obj.logger(),
+            "thread " 
+            << RThread<std::thread>::current_pretty_id()
+            << ">\t object " << obj.object_name()
+            << ">\t axis " << typeid(Axis).name()
+            << "/" << typeid(Axis2).name()
+            << ">\tcompare_and_move:\t "
+            << UniversalState(from).name()
+            << std::hex << " (0x" << from
+            << ") -> " << to.name() << " (0x" 
+            << (uint32_t) to << ")");
   if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
       (&obj)) {
     assert(trans_id > 0);
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  LOG_DEBUG(log,
-            "thread " 
-            << RThread<std::thread>::current_pretty_id()
-            << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << ">\t " << UniversalState(from).name()
-            << std::hex << " (0x" << from
-            << ") -> " << to.name() << " (0x" 
-            << (uint32_t) to << ")");
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+
   return true;
 }
 
@@ -238,7 +245,17 @@ bool RMixedAxis<Axis, Axis2>
 
   } while(!current.compare_exchange_strong(from_, to));
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  LOGGER_DEBUG(obj.logger(),
+            "thread " 
+            << RThread<std::thread>::current_pretty_id()
+            << ">\t object " << obj.object_name()
+            << ">\t axis " << typeid(Axis).name()
+            << "/" << typeid(Axis2).name()
+            << ">\tneg_compare_and_move:\t "
+            << UniversalState(from_).name()
+            << std::hex << " (0x" << from_
+            << ") -> " << to.name() << " (0x" 
+            << (uint32_t) to << ")");
 
   if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
       (&obj)) {
@@ -246,15 +263,8 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  LOG_DEBUG(log,
-            "thread " 
-            << RThread<std::thread>::current_pretty_id()
-            << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << ">\t " << UniversalState(from).name()
-            << std::hex << " (0x" << from_
-            << ") -> " << to.name() << " (0x" 
-            << (uint32_t) to << ")");
+  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+
   return true;
 }
 

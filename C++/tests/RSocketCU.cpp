@@ -91,10 +91,13 @@ void test_client_socket_connection_refused()
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
   cli_sock->ask_connect();
-  cli_sock->ClientSocket::is_terminal_state().wait();
+  cli_sock->is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
-    ClientSocket::State::state_is
-    (*cli_sock, ClientSocket::connection_refusedState));
+    RSocketBase::State::state_is
+    (*cli_sock, RSocketBase::connection_refusedState));
+  // <NB> it is splitted state, the ClientSocketAxis
+  // is updated with delay
+  cli_sock->is_connection_refused().wait();
 }
 
 void test_client_socket_connection_timed_out()
@@ -115,8 +118,9 @@ void test_client_socket_connection_timed_out()
   cli_sock->ask_connect();
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
-    ClientSocket::State::state_is
-    (*cli_sock, ClientSocket::connection_timed_outState));
+    RSocketBase::State::state_is
+    (*cli_sock, RSocketBase::connection_timed_outState));
+  cli_sock->is_connection_timed_out().wait();
 }
 
 void test_client_socket_destination_unreachable()
@@ -137,8 +141,9 @@ void test_client_socket_destination_unreachable()
   cli_sock->ask_connect();
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
-    ClientSocket::State::state_is
-    (*cli_sock, ClientSocket::destination_unreachableState));
+    RSocketBase::State::state_is
+    (*cli_sock, RSocketBase::destination_unreachableState));
+  cli_sock->is_destination_unreachable().wait();
 }
 
 void test_client_socket_connected()
@@ -152,8 +157,7 @@ void test_client_socket_connected()
     (sr.create_object
      (*RSocketAddressRepository()
       . create_addresses<NetworkProtocol::TCP, IPVer::v4>
-      //("kiddy", 8811) . front()));
-      ("oreh.dp.ua", 80) . front()));
+      ("rutracker.org", 80) . front()));
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*> 
     (cli_sock);
 
@@ -165,8 +169,9 @@ void test_client_socket_connected()
   tcp_sock->is_ready().wait();
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
-    ClientSocket::State::state_is
-    (*cli_sock, ClientSocket::closedState));
+    RSocketBase::State::state_is
+    (*cli_sock, RSocketBase::closedState));
+  cli_sock->is_closed().wait();
   tcp_sock->is_closed().wait();
 }
 
