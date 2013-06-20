@@ -165,6 +165,7 @@ public:
   DECLARE_STATE_CONST(State, aborted);
   DECLARE_STATE_CONST(State, clearly_closed);
 
+  //! Only input thread.
   typedef ConnectionThread<RSingleSocketConnection>
     Thread;
   friend Thread;
