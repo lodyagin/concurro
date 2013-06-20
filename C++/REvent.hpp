@@ -31,8 +31,7 @@ RMixedEvent<Axis, Axis2>
   for (Event ev : *this) {
    ev.log_params().set = 
      ev.log_params().reset = false;
-   ev.log_params().logger = 
-     Logger<RMixedEvent<Axis, Axis2>>::logger();
+   ev.log_params().log_obj = obj_ptr;
    // if you tune it tune it also 
    // in the second constructor
   }
@@ -56,8 +55,7 @@ RMixedEvent<Axis, Axis2>
   for (Event ev : *this) {
    ev.log_params().set = 
      ev.log_params().reset = false;
-   ev.log_params().logger = 
-     Logger<RMixedEvent<Axis, Axis2>>::logger();
+   ev.log_params().log_obj = obj_ptr;
   }
 }
 

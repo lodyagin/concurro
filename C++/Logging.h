@@ -144,6 +144,22 @@ inline LogBase* Logger<LOG::Events>::init_base
   return new LogBase ("Events");
 }
 
+/**
+ * An abstract parent of "Object with logging" - an entity
+ * with its own logging namespace.
+ */
+class ObjectWithLogging
+{
+public:
+  //! It should be overriden. The default implementation
+  //! is for logging from constructors to prevent a pure
+  //! virtual function call.
+  virtual log4cxx::LoggerPtr logger() const
+  {
+    return Logger<LOG::Root>::logger();
+  }
+};
+
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {										\

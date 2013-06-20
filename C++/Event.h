@@ -23,9 +23,21 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <memory>
 #include <assert.h>
 
-class EventInterface
+class EventInterface : public ObjectWithLogging
 {
 public:
+  struct LogParams {
+    bool set, reset;
+    ObjectWithLogging* log_obj;
+
+    LogParams(ObjectWithLogging* obj) 
+    : set(true), reset(true), log_obj(obj)
+    {
+      assert(log_obj);
+    }
+  } log_params;
+  
+  EventInterface() : log_params(this) {}
   virtual ~EventInterface() {}
 
   //! Wait for event or time in msecs. 
@@ -40,17 +52,12 @@ class EvtBase : public EventInterface
 {
   friend class Event;
   friend class CompoundEvent;
+
 public:
-  struct LogParams {
-    bool set, reset;
-    log4cxx::LoggerPtr logger;
-
-    LogParams() : set(true), reset(true), 
-      logger(Logger<LOG::Events>::logger()) {}
-  } log_params;
-
   EvtBase(const EvtBase&) = delete;
   virtual ~EvtBase();
+
+  log4cxx::LoggerPtr logger() const override;
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
