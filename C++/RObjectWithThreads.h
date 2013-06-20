@@ -38,6 +38,11 @@ struct ThreadOfObjectPar
   : public RThread<std::thread>::Par
 {
 public:
+  ThreadOfObjectPar(const std::string& pretty_name)
+  { 
+    thread_name = pretty_name; 
+  }
+
   Object* object;
 };
 
