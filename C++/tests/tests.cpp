@@ -11,6 +11,7 @@ extern CU_TestInfo RThreadTests[];
 extern CU_TestInfo RMutexTests[];
 extern CU_TestInfo REventTests[];
 extern CU_TestInfo RBufferTests[];
+extern CU_TestInfo RWindowTests[];
 extern CU_TestInfo RSignalTests[];
 extern CU_TestInfo RSocketTests[];
 extern CU_TestInfo RConnectionTests[];
@@ -29,6 +30,8 @@ int REventCUInit(void);
 int REventCUClean(void);
 int RBufferCUInit(void);
 int RBufferCUClean(void);
+int RWindowCUInit(void);
+int RWindowCUClean(void);
 int RSignalCUInit(void);
 int RSignalCUClean(void);
 int RSocketCUInit(void);
@@ -51,6 +54,8 @@ CU_SuiteInfo suites[] = {
 	  RMutexTests },
   { "RBuffer", RBufferCUInit, RBufferCUClean, 0, 0,
 	  RBufferTests },
+  { "RWindow", RWindowCUInit, RWindowCUClean, 0, 0,
+	  RWindowTests },
 //  { "RSignal", RSignalCUInit, RSignalCUClean, 0, 0,
 //	  RSignalTests },
   { "RSocket", RSocketCUInit, RSocketCUClean, 0, 0,

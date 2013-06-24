@@ -191,7 +191,7 @@ void RSingleBuffer::extend_bottom(const RWindow& wnd)
   assert(sz > 0);
   SCHECK(sz <= bottom_reserved_);
   STATE(RSingleBuffer, move_to, bottom_extending);
-  memcpy(buf + bottom_reserved_ - sz, &wnd[0], sz);
+  memcpy(buf + bottom_reserved_ - sz, wnd.cdata(), sz);
   size_ += sz;
   STATE(RSingleBuffer, move_to, bottom_extended);
 }

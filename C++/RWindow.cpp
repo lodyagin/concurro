@@ -95,8 +95,8 @@ RWindow& RWindow::attach_to(RWindow& w,
 
   if (-shift_bottom > bottom 
       || shift_bottom + bottom >= (ssize_t) buf->size()
-      || -shift_top >= (ssize_t) top 
-      || shift_top + top > buf->size() ) 
+      || -shift_top >= top 
+      || shift_top + top > (ssize_t) buf->size() ) 
   {
     STATE(RWindow, move_to, filled);
     throw std::out_of_range("RWindow: improper shift");
@@ -142,13 +142,18 @@ size_t RWindow::size() const
 const char& RWindow::operator[] (size_t idx) const
 {
   STATE(RConnectedWindow, ensure_state, filled);
-  size_t idx2 = bottom + idx;
-  if (idx2 >= top) 
+  if (bottom + (ssize_t)idx >= top) 
     throw std::out_of_range
       (SFORMAT("RWindow: index " << idx 
                << " is out of range (max="
                << top - bottom - 1 << ")"));
-  return *((const char*)buf->cdata() + idx2);
+  return *(cdata() + idx);
+}
+
+const char* RWindow::cdata() const
+{
+  assert(bottom < top);
+  return (const char*)buf->cdata() + bottom;
 }
 
 // RConnectedWindow
@@ -193,7 +198,7 @@ void RConnectedWindow::move_forward()
     top = bottom + std::min(sz, buf->size());
   }
 
-  if (!buf || bottom + sz > top)
+  if (!buf || (bottom + (ssize_t)sz > top))
     STATE(RConnectedWindow, move_to, wait_for_buffer);
   else
     STATE(RConnectedWindow, move_to, filled);

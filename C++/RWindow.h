@@ -21,7 +21,10 @@ class RWindow
 : public RObjectWithEvents<WindowAxis>,
   StdIdMember
 {
+  friend class RSingleBuffer;
+
   DECLARE_EVENT(WindowAxis, filled);
+
 public:
   DECLARE_STATES(WindowAxis, State);
   DECLARE_STATE_CONST(State, ready);
@@ -63,12 +66,14 @@ public:
   }
 
 protected:
-  DEFAULT_LOGGER(RWindow);
+  const char* cdata() const;
 
   std::shared_ptr<RSingleBuffer> buf;
   ssize_t bottom;
-  size_t top;
+  ssize_t top;
   size_t sz;
+
+  DEFAULT_LOGGER(RWindow);
 };
 
 DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
