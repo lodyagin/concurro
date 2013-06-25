@@ -35,6 +35,7 @@ public:
   DECLARE_STATE_CONST(State, charged);
   DECLARE_STATE_CONST(State, discharged);
   DECLARE_STATE_CONST(State, welded);
+  DECLARE_STATE_CONST(State, undoing);
 
   RBuffer();
   // temporary, to fix ticket:93
@@ -52,7 +53,11 @@ public:
 
   //! Prepare the buffer to charging.
   virtual void start_charging() = 0;
+  //! Move state charged -> discharged
   virtual void clear() = 0;
+  //! Cancel start_charging() 
+  //! (charging -> undoing -> discharged).
+  virtual void cancel_charging() = 0;
 
   //! Move the buffer
   virtual void move(RBuffer* from) = 0;
@@ -88,6 +93,8 @@ public:
                    "Can't resize RSingleBuffer "
                    "over its initial capacity");
 
+  //! Construct a buffer without reserved space. Need to
+  //! call reserve() before using.
   RSingleBuffer();
   //! Construct a buffer with maximal size res.
   explicit RSingleBuffer(size_t res);
@@ -111,12 +118,13 @@ public:
   //! start_charging().
   const void* cdata() const { return buf; }
   //! Return used buffer size
-  size_t size() const { return size_; }
+  size_t size() const override { return size_; }
   //! Mark the buffer as holding data. Also set filled.
   //! \throw ResizeOverCapacity
   void resize(size_t sz);
-  void clear() { resize(0); }
-  void start_charging();
+  void clear() override { resize(0); }
+  void start_charging() override;
+  void cancel_charging() override;
 
 protected:
   char* buf;
