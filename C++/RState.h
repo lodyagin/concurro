@@ -146,6 +146,11 @@ public:
     (const ObjectWithStatesInterface<Axis2>& obj, 
      const std::initializer_list<RState<Axis>>& set);
 
+  //! Atomic check the obj state is in the set
+  static bool state_in
+    (const ObjectWithStatesInterface<Axis2>& obj, 
+     const std::set<RState<Axis>>& set);
+
   //! Raise InvalidState when a state is not expected.
   static void ensure_state
     (const ObjectWithStatesInterface<Axis2>& obj, 

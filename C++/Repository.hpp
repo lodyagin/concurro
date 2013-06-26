@@ -165,7 +165,7 @@ template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 template<class Out, class Pred>
 Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::get_object_ids_by_pred (Out res, Pred p)
+::get_object_ids_by_pred (Out res, Pred p) const
 {
   RLOCK(objectsM);
 
@@ -193,7 +193,8 @@ template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 template<class Out, class State>
 Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::get_object_ids_by_state (Out res, const State& state)
+::get_object_ids_by_state 
+  (Out res, const State& state) const
 {
   return get_object_ids_by_pred<Out, StateMatch<Obj,
   State>> 
