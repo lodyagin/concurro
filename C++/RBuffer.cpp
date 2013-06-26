@@ -10,13 +10,18 @@ DEFINE_AXIS(
   {   "charging", // is locked for filling
       "charged", // has data
       "discharged", // data was red (moved)
-      "welded"  // own a buffer together with another
+      "welded", // own a buffer together with another
                 // RBuffer
+      "undoing" // no data was red after start charging
       },
   { {"discharged", "charging"},
     {"charging", "charged"},
       //{"charging", "discharged"}, 
-      // there is a week control if its enabled
+      // there is a week control if its enabled.
+      // Below is an alternative.
+    {"charging", "undoing"},  // by cancel_charging
+    {"undoing", "discharged"},// by cancel_charging
+
     {"discharged", "welded"},
     {"welded", "discharged"},
     {"welded", "charged"},
@@ -29,6 +34,7 @@ DEFINE_STATE_CONST(RBuffer, State, charged);
 DEFINE_STATE_CONST(RBuffer, State, charging);
 DEFINE_STATE_CONST(RBuffer, State, discharged);
 DEFINE_STATE_CONST(RBuffer, State, welded);
+DEFINE_STATE_CONST(RBuffer, State, undoing);
 
 RBuffer::RBuffer() 
 : Parent(dischargedState),
@@ -140,3 +146,12 @@ void RSingleBuffer::start_charging()
     }
   State::move_to(*this, chargingState);
 }
+
+void RSingleBuffer::cancel_charging()
+{
+  State::move_to(*this, undoingState);
+  size_ = 0;
+  // delete[] buf; buf = nullptr;
+  State::move_to(*this, dischargedState);
+}
+

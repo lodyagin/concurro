@@ -3,10 +3,12 @@
 
 void test_move_rbuffer();
 void test_resize_rbuffer();
+void test_cancel_charging();
 
 CU_TestInfo RBufferTests[] = {
   {"resize RBuffer", test_resize_rbuffer},
   {"move RBuffer", test_move_rbuffer},
+  {"cancel_charging", test_cancel_charging},
   CU_TEST_INFO_NULL
 };
 
@@ -163,3 +165,15 @@ void test_resize_rbuffer()
   delete b;
 }
 
+void test_cancel_charging()
+{
+  RSingleBuffer a(10);
+  CU_ASSERT_TRUE_FATAL(
+    STATE_OBJ(RSingleBuffer, state_is, a, discharged));
+  a.data();
+  CU_ASSERT_TRUE_FATAL(
+    STATE_OBJ(RSingleBuffer, state_is, a, charging));
+  a.cancel_charging();
+  CU_ASSERT_TRUE_FATAL(
+    STATE_OBJ(RSingleBuffer, state_is, a, discharged));
+}

@@ -121,8 +121,7 @@ void InSocket::SelectThread::run()
         //InSocket::State::move_to(*in_sock, emptyState);
       }
       else {
-        in_sock->msg.resize(1); //FIXME!
-        in_sock->msg.resize(0);
+        in_sock->msg.cancel_charging();
         if (socket->is_terminal_state().signalled()) {
           break;
         }
