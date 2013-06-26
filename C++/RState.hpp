@@ -301,6 +301,26 @@ bool RMixedAxis<Axis, Axis2>
 }
 
 template<class Axis, class Axis2>
+bool RMixedAxis<Axis, Axis2>
+//
+::state_in(
+  const ObjectWithStatesInterface<Axis2>& obj, 
+  const std::set<RState<Axis>>& set )
+{
+  static_assert(is_ancestor<Axis2, Axis>(), 
+                "This state mixing is invalid.");
+  const auto current = 
+    const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
+    . current_state(Axis2::self()) . load();
+  for (auto it = set.begin(); it != set.end(); it++)
+  {
+    if (STATE_IDX(current) == STATE_IDX(*it))
+      return true;
+  }
+  return false;
+}
+
+template<class Axis, class Axis2>
 void RMixedAxis<Axis, Axis2>
 //
 ::ensure_state

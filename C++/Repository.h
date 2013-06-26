@@ -24,21 +24,21 @@
 #include <atomic>
 
 DEFINE_EXCEPTION(InvalidObjectParameters,
-  "Invalid parameters for repository object creation"
-)
+                 "Invalid parameters for repository object creation"
+  )
 
 class AbstractRepositoryBase 
 {
 public:
   struct Traits 
   {
-	 std::string obj, par, obj_id;
+    std::string obj, par, obj_id;
 
-	 bool operator== (const Traits& t) const
-	 {
-		return obj == t.obj && par == t.par 
-		  && obj_id == t.obj_id;
-	 }
+    bool operator== (const Traits& t) const
+      {
+        return obj == t.obj && par == t.par 
+        && obj_id == t.obj_id;
+      }
   };
 
   virtual ~AbstractRepositoryBase() {}
@@ -50,26 +50,27 @@ public:
  * is abstracted from a Container template parameter.
  */
 template<class Obj, class Par, class ObjId>
-class RepositoryInterface 
+  class RepositoryInterface 
   : public AbstractRepositoryBase
 {
 public:
 
+  typedef ObjId ObjIdType;
   static const Traits traits;
 
   //! No object with such id exists.
   class NoSuchId : public SException
   {
   public:
-	 NoSuchId (ObjId the_id) 
-		: SException (SFORMAT("No object with id [" 
-									 << the_id 
-									 << "] exists")),
-		id (the_id) {}
+    NoSuchId (ObjId the_id) 
+      : SException (SFORMAT("No object with id [" 
+                            << the_id 
+                            << "] exists")),
+      id (the_id) {}
 
-	 ~NoSuchId () throw () {}
+    ~NoSuchId () throw () {}
 
-	 const ObjId id;
+    const ObjId id;
   };
 
   //! It can be raised, for example, when the repository
@@ -78,22 +79,22 @@ public:
   class IdIsAlreadyUsed : public SException
   {
   public:
-	 IdIsAlreadyUsed (const ObjId& the_id) 
-		: SException (SFORMAT("The object id [" 
-			 << the_id << "] is used already.")),
-		  id (the_id)	 {}
+    IdIsAlreadyUsed (const ObjId& the_id) 
+      : SException (SFORMAT("The object id [" 
+                            << the_id << "] is used already.")),
+      id (the_id)	 {}
 
-	 ~IdIsAlreadyUsed () throw () {}
+    ~IdIsAlreadyUsed () throw () {}
 
-	 const ObjId id;
+    const ObjId id;
   };
 
   //! A method for debug dynamic_cast issues
   static bool is_compatible
-	 (const AbstractRepositoryBase* r)
+    (const AbstractRepositoryBase* r)
   { 
-	 assert(r);
-	 return r->get_traits() == traits;
+    assert(r);
+    return r->get_traits() == traits;
   }
 
   Traits get_traits() const
@@ -108,7 +109,7 @@ public:
   //! Delete obj from the repository. freeMemory means
   //! to call the object desctructor after it.
   virtual void delete_object
-	 (Obj* obj, bool freeMemory) = 0;
+    (Obj* obj, bool freeMemory) = 0;
 
   //! Delete the object with id.
   //! \param freeMemory call delete on the object itself
@@ -116,7 +117,7 @@ public:
   //!  registration in the repository.
   //! \exception NoSuchId
   virtual void delete_object_by_id 
-	 (ObjId id, bool freeMemory) = 0;
+    (ObjId id, bool freeMemory) = 0;
 
   virtual Obj* get_object_by_id (ObjId id) const = 0;
 
@@ -126,7 +127,7 @@ public:
   //!   wrong with param.
   //! \exception NoSuchId
   virtual Obj* replace_object 
-	 (ObjId id, const Par& param, bool freeMemory) = 0;
+    (ObjId id, const Par& param, bool freeMemory) = 0;
 };
 
 //! It is used for object creation as an argument to
@@ -137,29 +138,29 @@ struct ObjectCreationInfo
   std::string objectId;
   Event* objectCreated;
 
-  ObjectCreationInfo()
-  : repository(0), objectCreated(0) {}
+ObjectCreationInfo()
+: repository(0), objectCreated(0) {}
 };
 
 template<
-  class Obj, class ObjId,
+class Obj, class ObjId,
   template<class...> class ObjMap
->
-class RepositoryMapType
+  >
+  class RepositoryMapType
 {
 public:
   typedef ObjMap<Obj*> Map;
 };
 
 template<class Obj, class ObjId>
-class RepositoryMapType<Obj, ObjId, std::unordered_map>
+  class RepositoryMapType<Obj, ObjId, std::unordered_map>
 {
 public:
   typedef std::unordered_map<ObjId, Obj*> Map;
 };
 
 template<class Obj, class ObjId>
-class RepositoryMapType<Obj, ObjId, std::map>
+  class RepositoryMapType<Obj, ObjId, std::map>
 {
 public:
   typedef std::map<ObjId, Obj*> Map;
@@ -168,8 +169,8 @@ public:
 //! Tune a logging
 struct RepositoryLogParams
 {
-  RepositoryLogParams()
-  : get_object_by_id(true) {}
+RepositoryLogParams()
+: get_object_by_id(true) {}
 
   bool get_object_by_id;
 };
@@ -190,13 +191,13 @@ public:
   typedef RepositoryInterface<Obj, Par, ObjId> Parent;
   typedef typename Parent::NoSuchId NoSuchId;
   typedef typename Parent::IdIsAlreadyUsed 
-	 IdIsAlreadyUsed;
+    IdIsAlreadyUsed;
   
   RepositoryBase
-	 (const std::string& repo_name) 
-	 : objectsM (SFORMAT(repo_name << ".objectsM")),
-	 objects(0)
-	 {}
+    (const std::string& repo_name) 
+    : objectsM (SFORMAT(repo_name << ".objectsM")),
+    objects(0)
+    {}
 
   virtual ~RepositoryBase ();
 
@@ -206,17 +207,17 @@ public:
   Obj* get_object_by_id (ObjId id) const;
 
   Obj* replace_object 
-	 (ObjId id, const Par& param, bool freeMemory);
+    (ObjId id, const Par& param, bool freeMemory);
 
   //! return ids of objects selected by a predicate
   template<class Out, class Pred>
-  Out get_object_ids_by_pred (Out res, Pred p);
+  Out get_object_ids_by_pred (Out res, Pred p) const;
 
   //! return ids of objects selected by  an UniversalState
   //TODO add event on change possible result
   template<class Out, class State>
   Out get_object_ids_by_state
-    (Out res, const State& state);
+    (Out res, const State& state) const;
 
   template<class Op>
   void for_each (Op& f);
@@ -243,12 +244,12 @@ protected:
 
   RMutex objectsM;
   typename RepositoryMapType<Obj, ObjId, ObjMap>
-	 ::Map* objects;
+    ::Map* objects;
 
   //! Calculate an id for a new object, possible based on
   //! Par (depending of the Repository type)
   virtual ObjId get_object_id 
-	 (ObjectCreationInfo& oi, const Par&) = 0;
+    (ObjectCreationInfo& oi, const Par&) = 0;
 
   //! Insert new object into objects
   virtual void insert_object (ObjId, Obj*) = 0;
@@ -271,7 +272,7 @@ template<
 >
 class Repository 
   : public RepositoryBase<Obj, Par, ObjMap, ObjId>,
-  public SNotCopyable
+public SNotCopyable
 {
 public:
   typedef RepositoryBase<Obj, Par, ObjMap, ObjId> Parent;
@@ -281,21 +282,21 @@ public:
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
   Repository(const std::string& repository_name,
-				 size_t initial_capacity)
-	 : Parent (repository_name),
-	 obj_count(0)
-  {
-	 this->objects = new typename RepositoryMapType<Obj,
-		ObjId, ObjMap>::Map (initial_capacity);
-	 this->objects->push_back (0); // id 0 is not used for
-											 // real objects
-  }
+           size_t initial_capacity)
+  : Parent (repository_name),
+    obj_count(0)
+    {
+      this->objects = new typename RepositoryMapType<Obj,
+        ObjId, ObjMap>::Map (initial_capacity);
+      this->objects->push_back (0); // id 0 is not used for
+      // real objects
+    }
 
   size_t size() const
   {
-	 assert(this->objects);
-	 assert(this->objects->size() > obj_count);
-	 return obj_count.load();
+    assert(this->objects);
+    assert(this->objects->size() > obj_count);
+    return obj_count.load();
   }
 
 protected:
@@ -304,43 +305,43 @@ protected:
   //! This specialization takes the first unused (numeric)
   //! id and ignores Par
   ObjId get_object_id 
-	 (ObjectCreationInfo&, const Par&)
+    (ObjectCreationInfo&, const Par&)
   {
-	 RLOCK(this->objectsM);
+    RLOCK(this->objectsM);
 
-	 // FIXME ! change to stack
-	 for (ObjId id = 1; id < this->objects->size (); id++)
-	 {
-		if (!(*this->objects)[id]) return id;
-	 }
+    // FIXME ! change to stack
+    for (ObjId id = 1; id < this->objects->size (); id++)
+    {
+      if (!(*this->objects)[id]) return id;
+    }
 
-	 if (this->objects->size () 
-		  == this->objects->capacity ())
-		this->objects->reserve 
-		  (this->objects->size () 
-			+ this->objects->size () * 0.2);
-	 // TODO check the stepping
+    if (this->objects->size () 
+        == this->objects->capacity ())
+      this->objects->reserve 
+        (this->objects->size () 
+         + this->objects->size () * 0.2);
+    // TODO check the stepping
 
-	 this->objects->push_back (0);
-	 return this->objects->size () - 1;
+    this->objects->push_back (0);
+    return this->objects->size () - 1;
   }
 
   void insert_object (ObjId id, Obj* obj)
   {
-	 {
-		RLOCK(this->objectsM);
-		this->objects->at(id) = obj;
-	 }
-	 obj_count++;
+    {
+      RLOCK(this->objectsM);
+      this->objects->at(id) = obj;
+    }
+    obj_count++;
   }
 
   void delete_object_id (ObjId id)
   {
-	 {
-		RLOCK(this->objectsM);
-		this->objects->at(id) = 0;
-	 }
-	 obj_count--;
+    {
+      RLOCK(this->objectsM);
+      this->objects->at(id) = 0;
+    }
+    obj_count--;
   }
 };
 
@@ -348,7 +349,7 @@ template<
   class Obj, class Par, 
   template<class...> class ObjMap, 
   class ObjId, class ObjMapValue>
-class Destructor 
+  class Destructor 
   : public std::unary_function<ObjMapValue, void>
 {};
 
@@ -362,7 +363,7 @@ class Destructor<Obj, Par, ObjMap, ObjId, Obj*>
 {
 public:
   Destructor 
-	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
+    (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
     : repo (_repo)
   {}
 
@@ -385,16 +386,16 @@ class Destructor<
   Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>
 > 
 : public std::unary_function
-   <std::pair<const ObjId, Obj*>, void>
+  <std::pair<const ObjId, Obj*>, void>
 {
 public:
   Destructor 
-	 (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
+    (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
     : repo (_repo)
   {}
 
   void operator() 
-	 (const std::pair<const ObjId, Obj*>& pair)
+    (const std::pair<const ObjId, Obj*>& pair)
   { 
     if (pair.second) 
       repo->delete_object (pair.second, true); 
@@ -409,13 +410,14 @@ protected:
  * std::unordered_map.
  */
 template<class Obj, class Par, class ObjId>
-class Repository<Obj, Par, std::unordered_map, ObjId>
-: public RepositoryBase<Obj, Par, std::unordered_map, ObjId>,
+  class Repository<Obj, Par, std::unordered_map, ObjId>
+: public RepositoryBase
+  <Obj, Par, std::unordered_map, ObjId>,
   public SNotCopyable
 {
 public:
   typedef RepositoryBase<Obj, Par, std::unordered_map,
-	 ObjId> Parent;
+    ObjId> Parent;
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
@@ -423,49 +425,49 @@ public:
 
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
-  Repository(const std::string& repository_name, 
-				 size_t initial_value)
-	 : Parent (repository_name)
+Repository(const std::string& repository_name, 
+           size_t initial_value)
+  : Parent (repository_name)
   {
-	 this->objects = new ObjMap (initial_value);
+    this->objects = new ObjMap (initial_value);
   }
 
   size_t size() const
   {
-	 assert(this->objects);
-	 RLOCK(this->objectsM);
-	 return this->objects->size();
+    assert(this->objects);
+    RLOCK(this->objectsM);
+    return this->objects->size();
   }
 
 protected:
   //! This specialization takes the key value from pars.
   ObjId get_object_id 
-	 (ObjectCreationInfo& oi, const Par& param)
+    (ObjectCreationInfo& oi, const Par& param)
   {
-	 RLOCK(this->objectsM);
+    RLOCK(this->objectsM);
 
-	 ObjId id = param.get_id(oi);
+    ObjId id = param.get_id(oi);
 
-	 if (this->objects->find(id) != this->objects->end()) {
-		throw typename Parent::IdIsAlreadyUsed (id);
-	 }
+    if (this->objects->find(id) != this->objects->end()) {
+      throw typename Parent::IdIsAlreadyUsed (id);
+    }
 	 
-	 return id;
+    return id;
   }
 
   void insert_object (ObjId id, Obj* obj)
   {
-	 RLOCK(this->objectsM);
-	 // will be add new element if id doesn't exists
-	 (*this->objects)[id] = obj;
+    RLOCK(this->objectsM);
+    // will be add new element if id doesn't exists
+    (*this->objects)[id] = obj;
   }
 
   void delete_object_id(ObjId id)
   {
-	 assert(this->objects);
-	 RLOCK(this->objectsM);
-	 const size_t n = this->objects->erase(id);
-	 assert(n == 1);
+    assert(this->objects);
+    RLOCK(this->objectsM);
+    const size_t n = this->objects->erase(id);
+    assert(n == 1);
   }
 };
 
@@ -473,13 +475,13 @@ protected:
  * This is a specialization of Repository for std::map.
  */
 template<class Obj, class Par, class ObjId>
-class Repository<Obj, Par, std::map, ObjId>
+  class Repository<Obj, Par, std::map, ObjId>
   : public RepositoryBase<Obj, Par, std::map, ObjId>,
   public SNotCopyable
 {
 public:
   typedef RepositoryBase<Obj, Par, std::map,
-	 ObjId> Parent;
+    ObjId> Parent;
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
@@ -487,49 +489,49 @@ public:
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
   Repository 
-	 (const std::string& repository_name, 
-	  size_t initial_value)
-	 : Parent (repository_name)
+    (const std::string& repository_name, 
+     size_t initial_value)
+    : Parent (repository_name)
   {
-	 this->objects = new ObjMap ();
+    this->objects = new ObjMap ();
   }
 
   size_t size() const
   {
-	 assert(this->objects);
-	 RLOCK(this->objectsM);
-	 return this->objects->size();
+    assert(this->objects);
+    RLOCK(this->objectsM);
+    return this->objects->size();
   }
 
 protected:
   //! This specialization takes the key value from pars.
   ObjId get_object_id 
-	 (ObjectCreationInfo& oi, const Par& param)
+    (ObjectCreationInfo& oi, const Par& param)
   {
-	 RLOCK(this->objectsM);
+    RLOCK(this->objectsM);
 
-	 ObjId id = param.get_id (oi);
+    ObjId id = param.get_id (oi);
 
-	 if (this->objects->find(id) != this->objects->end()) {
-		throw typename Parent::IdIsAlreadyUsed (id);
-	 }
+    if (this->objects->find(id) != this->objects->end()) {
+      throw typename Parent::IdIsAlreadyUsed (id);
+    }
 	 
-	 return id;
+    return id;
   }
 
   void insert_object (ObjId id, Obj* obj)
   {
-	 RLOCK(this->objectsM);
-	 // will be add new element if id doesn't exists
-	 (*this->objects)[id] = obj;
+    RLOCK(this->objectsM);
+    // will be add new element if id doesn't exists
+    (*this->objects)[id] = obj;
   }
 
   void delete_object_id(ObjId id)
   {
-	 assert(this->objects);
-	 RLOCK(this->objectsM);
-	 const size_t n = this->objects->erase(id);
-	 assert(n == 1);
+    assert(this->objects);
+    RLOCK(this->objectsM);
+    const size_t n = this->objects->erase(id);
+    assert(n == 1);
   }
 };
 
@@ -542,7 +544,7 @@ DEFINE_EXCEPTION(
   SeveralObjects, 
   "The param leads to several objects creation, "
   "you should use create_several_objects."
-);
+  );
 
 /**
  * A repository which replase create_object with
@@ -553,7 +555,7 @@ template<
   template<class...> class ObjMap, class ObjId,
   template<class...> class List = std::list
 >
-class SparkRepository
+  class SparkRepository
   : public Repository<Obj, Par, ObjMap, ObjId>
 {
 public:
@@ -561,17 +563,17 @@ public:
 
   SparkRepository
     (const std::string& repo_name, size_t init_capacity)
- : Repository<Obj, Par, ObjMap, ObjId>
-      (repo_name, init_capacity) {}
+    : Repository<Obj, Par, ObjMap, ObjId>
+    (repo_name, init_capacity) {}
 
   Obj* create_object (const Par& param);
 
   //! Some kind of params cause creation more than one
-  //object.
+  //! object.
   virtual List<Obj*> create_several_objects(Par& param);
 private:
-typedef Logger<
-  SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;
+  typedef Logger<
+    SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;
 };
 
 
@@ -584,7 +586,7 @@ typedef Logger<
  * A repository parameter general template.
  */
 template<class Par, class Object>
-class GeneralizedPar
+  class GeneralizedPar
 {
 public:
   virtual Object* create_derivation
@@ -608,38 +610,38 @@ class StdIdMember
 public:
   const std::string universal_object_id;
 
-  StdIdMember(const std::string& id)
-    : universal_object_id(id) {}
+StdIdMember(const std::string& id)
+  : universal_object_id(id) {}
 
   std::string universal_id() const
   { return universal_object_id; }
 };
 
 //! The simplest form of a derivation
-#define PAR_CREATE_DERIVATION(type, parent, object) \
-struct Par : public parent::Par \
-{ \
-  object* create_derivation \
-	 (const ObjectCreationInfo& oi) const \
-  { return new type(oi, *this); } \
-};
+#define PAR_CREATE_DERIVATION(type, parent, object)     \
+  struct Par : public parent::Par                       \
+  {                                                     \
+    object* create_derivation                           \
+      (const ObjectCreationInfo& oi) const              \
+    { return new type(oi, *this); }                     \
+  };
 
-#define PAR_DEFAULT_MEMBERS(object) \
-  object* create_derivation \
-	 (const ObjectCreationInfo& oi) const \
-  { return new object(oi, *this); } \
-  \
-  object* transform_object \
-    (const object*) const \
+#define PAR_DEFAULT_MEMBERS(object)             \
+  object* create_derivation                     \
+  (const ObjectCreationInfo& oi) const          \
+  { return new object(oi, *this); }             \
+                                                \
+  object* transform_object                      \
+  (const object*) const                         \
   { THROW_NOT_IMPLEMENTED; }
 
-#define PAR_DEFAULT_VIRTUAL_MEMBERS(object) \
-  virtual object* create_derivation \
-	 (const ObjectCreationInfo& oi) const \
-  { return new object(oi, *this); } \
-  \
-  virtual object* transform_object \
-    (const object*) const \
+#define PAR_DEFAULT_VIRTUAL_MEMBERS(object)     \
+  virtual object* create_derivation             \
+  (const ObjectCreationInfo& oi) const          \
+  { return new object(oi, *this); }             \
+                                                \
+  virtual object* transform_object              \
+  (const object*) const                         \
   { THROW_NOT_IMPLEMENTED; }
 
 
