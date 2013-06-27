@@ -98,12 +98,6 @@ void RSocketBase::set_blocking (bool blocking)
 #endif
 }
 
-/*void RSocketBase::process_error(int error)
-{
-  LOG_INFO(log, "Socket error: " << rErrorMsg(error));
-  State::move_to(*this, errorState);
-  }*/
-
 std::ostream&
 operator<< (std::ostream& out, const RSocketBase& s)
 {
@@ -123,4 +117,43 @@ SocketThreadWithPair::~SocketThreadWithPair()
 {
   rSocketCheck(::close(sock_pair[ForSelect]) == 0);
   rSocketCheck(::close(sock_pair[ForNotify]) == 0);
+}
+
+/*=================================*/
+/*======= RSocketRepository =======*/
+/*=================================*/
+
+RSocketRepository::RSocketRepository(
+  const std::string& id,
+  size_t reserved,
+  RThreadFactory *const tf
+) : 
+  Parent(id, reserved),
+  thread_factory(tf),
+  connect_timeout{0},
+  use_connect_timeout(false)
+{}
+
+void RSocketRepository::set_connect_timeout_u(int64_t usecs)
+{
+  constexpr int64_t million = 1000000;
+  if (usecs < 0) {
+    use_connect_timeout = false;
+  }
+  else {
+    const auto qr = std::div(usecs, million);
+    {
+      RLOCK(this->objectsM);
+      connect_timeout = {qr.quot, qr.rem};
+    }
+    use_connect_timeout = true;
+  }
+}
+
+const std::unique_ptr<struct timeval> RSocketRepository
+::connect_timeout_timeval() const
+{
+  RLOCK(this->objectsM);
+  return std::unique_ptr<struct timeval>
+    (new struct timeval(connect_timeout));
 }

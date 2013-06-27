@@ -79,9 +79,9 @@ public:
 
   Event is_construction_complete_event;
 
-protected:
-  RSocketRepository* repository;
+  RSocketRepository *const repository;
 
+protected:
   const CompoundEvent is_terminal_state_event;
 
   //! A socket address
@@ -284,11 +284,26 @@ public:
 
   RThreadFactory *const thread_factory;
 
-  RSocketRepository(const std::string& id,
-                    size_t reserved,
-                    RThreadFactory *const tf)
-    : Parent(id, reserved),
-    thread_factory(tf) {}
+  RSocketRepository(
+    const std::string& id,
+    size_t reserved,
+    RThreadFactory *const tf);
+
+  // Set timeout for usecs. If usecs < 0 - do not use timeout.
+  void set_connect_timeout_u(int64_t usecs);
+
+  bool is_use_connect_timeout() const
+  { 
+    return use_connect_timeout; 
+  }
+
+  //! Return a copy of timeval
+  const std::unique_ptr<struct timeval> 
+    connect_timeout_timeval() const;
+
+protected:
+  struct timeval connect_timeout;
+  std::atomic<bool> use_connect_timeout;
 };
 
 #endif

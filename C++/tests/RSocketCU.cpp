@@ -25,6 +25,8 @@ CU_TestInfo RSocketTests[] = {
    test_localhost_socket_address},
   {"test Client_Socket connection_refused",
    test_client_socket_connection_refused},
+  {"test Client_Socket connection_timed_out",
+   test_client_socket_connection_timed_out},
   {"test Client_Socket connected",
     test_client_socket_connected},
   {"test InSocket new msg",
@@ -34,8 +36,6 @@ CU_TestInfo RSocketTests[] = {
 #if 0
   {"test Client_Socket destination unreachable",
    test_client_socket_destination_unreachable},
-  {"test Client_Socket connection_timed_out",
-   test_client_socket_connection_timed_out},
 #endif
   CU_TEST_INFO_NULL
 };
@@ -86,7 +86,7 @@ void test_client_socket_connection_refused()
     (sr.create_object
      (*RSocketAddressRepository()
       . create_addresses<NetworkProtocol::TCP, IPVer::v4>
-      ("192.168.10.14", 5555) . front()));
+      ("localhost", 5555) . front()));
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
@@ -115,6 +115,7 @@ void test_client_socket_connection_timed_out()
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
+  sr.set_connect_timeout_u(1000000);
   cli_sock->ask_connect();
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(

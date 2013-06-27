@@ -67,8 +67,6 @@ ClientSocket::ClientSocket
 {
    SCHECK(thread);
    RStateSplitter<ClientSocketAxis, SocketBaseAxis>::init();
-   /*this->RSocketBase::ancestor_terminals.push_back
-     (is_terminal_state());*/
    this->RSocketBase::threads_terminals.push_back
       (thread->is_terminal_state());
 }
@@ -152,8 +150,24 @@ void ClientSocket::Thread::run()
 
    // Wait for termination of a connection process
    FD_SET(fd, &wfds);
-   rSocketCheck(
-      ::select(fd+1, NULL, &wfds, NULL, NULL) > 0);
+
+   const bool use_timeout = 
+     socket->repository->is_use_connect_timeout();
+   const int res = ::select(
+     fd+1, NULL, &wfds, NULL, 
+     (use_timeout) 
+     ? socket->repository->connect_timeout_timeval().get() 
+     : NULL
+   );
+   if (res == 0) {
+     // process time out by the repository request
+     assert(use_timeout);
+      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+        (*cli_sock, ClientSocket::connection_timed_outState);
+     return;
+   }
+   else rSocketCheck(res > 0);
+   
    LOG_DEBUG(ClientSocket::log, "ClientSocket>\t ::select");
 
    int error = 0;
