@@ -319,5 +319,41 @@ void update_events \
   ax.update_events(this, trans_id, to); \
 }
 
+#define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS(Main)  \
+void state_changed( \
+  StateAxis& ax, \
+  const StateAxis& state_ax,     \
+  AbstractObjectWithStates* object) \
+{ \
+  ax.state_changed(this, object, state_ax); \
+} \
+\
+std::atomic<uint32_t>& \
+current_state(const StateAxis& ax) override \
+{ \
+  return ax.current_state(this); \
+} \
+\
+const std::atomic<uint32_t>& \
+current_state(const StateAxis& ax) const override \
+{ \
+  return ax.current_state(this); \
+} \
+\
+CompoundEvent create_event \
+(const UniversalEvent& ue) const override \
+{ \
+  return Main::create_event(ue); \
+} \
+\
+void update_events \
+(StateAxis& ax, \
+ TransitionId trans_id, \
+ uint32_t to) override \
+{ \
+  ax.update_events(this, trans_id, to); \
+}
+  
+
 #endif
 

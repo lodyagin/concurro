@@ -451,7 +451,8 @@ protected:
     ObjId id = param.get_id(oi);
 
     if (this->objects->find(id) != this->objects->end()) {
-      throw typename Parent::IdIsAlreadyUsed (id);
+      THROW_EXCEPTION(
+        typename Parent::IdIsAlreadyUsed, id);
     }
 	 
     return id;
