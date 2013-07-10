@@ -220,9 +220,13 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 {
   RLOCK(objectsM);
 
+  for (auto& i : *objects){
+      f(i);
+  }
+  /*
   for (ObjId i = 0; i < objects->size (); i++)
     if ((*objects)[i])
-      f (*(*objects)[i]);
+      f (*(*objects)[i]);*/
 }
 
 /*=====================================*/
