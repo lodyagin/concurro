@@ -5,7 +5,7 @@ project(concurrent)
 #set(Boost_USE_STATIC_LIBS OFF)
 #set(Boost_USE_STATIC_RUNTIME OFF)
 #set(CMAKE_PREFIX_PATH /usr/local)
-set(Boost_USE_MULTITHREADED OFF)  
+set(Boost_USE_MULTITHREADED ON)  
 # it is alwais multithreaded on Linux
 #set(Boost_NO_SYSTEM_PATHS TRUE)
 find_package(Boost 1.49 COMPONENTS thread system REQUIRED)

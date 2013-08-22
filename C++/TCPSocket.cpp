@@ -264,8 +264,12 @@ void TCPSocket::SelectThread::run()
 #if 0
           std::this_thread::yield();
 #else
+#if 0
           std::this_thread::sleep_for
             (std::chrono::milliseconds(1000));
+#else
+	  sleep(1);
+#endif
 #endif
         }
       }
