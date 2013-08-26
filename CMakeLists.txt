@@ -5,4 +5,4 @@ set (pevents_SOURCES
 # Enable WaitForMultipleEvents
 add_definitions(-DWFMO)
 
-add_library(pevents ${pevents_SOURCES})
+add_library(pevents SHARED ${pevents_SOURCES})
