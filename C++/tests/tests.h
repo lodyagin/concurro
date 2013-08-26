@@ -8,11 +8,6 @@
 
 typedef RThread<std::thread> RT;
 
-#if __GNUC_MINOR__< 6
-#define USLEEP(msec) usleep(msec)
-#else
-#define USLEEP(msec) std::this_thread::sleep_for \
-  (std::chrono::milliseconds(msec))
-#endif
+#define USLEEP(msec) usleep((msec) * 1000)
 
 #endif

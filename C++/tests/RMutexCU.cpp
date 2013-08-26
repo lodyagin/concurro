@@ -59,7 +59,7 @@ void test_same_thread_overrelease()
 
 typedef RThread<std::thread> RT;
 
-typedef std::chrono::milliseconds MS;
+typedef unsigned int MS;
 
 struct TestT : public RT
 {
@@ -73,7 +73,7 @@ public:
   void run(){
   	RT::ThreadState::move_to(*this, workingState);
     MUTEX_ACQUIRE(mx);
-    std::this_thread::sleep_for(sleept);
+    usleep(sleept * 1000);
     arg = ++test;
     MUTEX_RELEASE(mx);
   }
