@@ -34,6 +34,8 @@
 #include "RThread.h"
 #include "RThreadRepository.h"
 
+namespace curr {
+
 template<class Thread, class... Args>
 Thread* RThread<std::thread>::create(Args&&... args)
 {
@@ -42,5 +44,6 @@ Thread* RThread<std::thread>::create(Args&&... args)
 	  . create_thread(typename Thread::Par(args...)));
 }
 
+}
 #endif
 

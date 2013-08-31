@@ -27,8 +27,8 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef LOGGING_H_
-#define LOGGING_H_
+#ifndef CONCURRO_LOGGING_H_
+#define CONCURRO_LOGGING_H_
 //#pragma warning(disable: 4250 4251)
 
 #include <log4cxx/logger.h>
@@ -37,6 +37,8 @@
 #include "SSingleton.h"
 #include <string>
 #include <typeinfo>
+
+namespace curr {
 
 /**
  * An abstract base for the Logging and Log classes.
@@ -349,4 +351,5 @@ private: \
 	 return log::logger(); \
   }
 
+}
 #endif

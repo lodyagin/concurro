@@ -35,6 +35,8 @@
 #include "Event.h"
 #include <set>
 
+namespace curr {
+
 template<class Axis, class Axis2>
 class RMixedEvent
 : public Axis,
@@ -69,5 +71,7 @@ private:
 
 #define CONSTRUCT_EVENT(event)		\
   is_ ## event ## _event(this, #event)
+
+}
 
 #endif 

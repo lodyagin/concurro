@@ -32,6 +32,8 @@
 
 #include <cstdatomic>
 
+namespace curr {
+
 /**
  * A value with wait-free update implementation.
  */
@@ -45,4 +47,5 @@ public:
   T get() const;
 };
 
+}
 #endif

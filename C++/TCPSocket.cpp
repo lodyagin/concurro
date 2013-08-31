@@ -33,6 +33,8 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+namespace curr {
+
 DEFINE_AXIS(
   TCPAxis, 
   {
@@ -291,3 +293,4 @@ void TCPSocket::WaitThread::run()
   rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }
 
+}

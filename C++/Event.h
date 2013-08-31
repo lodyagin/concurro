@@ -44,6 +44,8 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <memory>
 #include <assert.h>
 
+namespace curr {
+
 class EventInterface : public ObjectWithLogging
 {
 public:
@@ -397,4 +399,5 @@ inline CompoundEvent operator|
   a |= b; return a;
 }
 
+}
 #endif

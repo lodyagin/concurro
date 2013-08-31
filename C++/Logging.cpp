@@ -43,6 +43,8 @@
 #include <iostream>
 #include <unistd.h>
 
+namespace curr {
+
 LogBase::LogBase (const std::string& szName)
   : m_sName (szName)/*,
 							 logger (log4cxx::Logger::getLogger(szName.c_str()))*/
@@ -155,5 +157,7 @@ Log::Log (const std::string& szName,
 {}
 
 Log::~Log () {}
+
 #endif
 
+}

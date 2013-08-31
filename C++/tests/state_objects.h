@@ -3,6 +3,8 @@
 
 #include "CUnit.h"
 
+using namespace curr;
+
 DECLARE_AXIS(TestAxis, StateAxis);
 
 class TestObject : public RObjectWithEvents<TestAxis>

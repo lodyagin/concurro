@@ -39,6 +39,8 @@
 #include <boost/thread/recursive_mutex.hpp>
 #endif
 
+namespace curr {
+
 #define MUTEX_ACQUIRE(mutex) \
   do { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
 
@@ -249,5 +251,6 @@ inline RMutex::Unlock::~Unlock()
   mutex.acquire(location);
 }
 
+}
 #endif  
 

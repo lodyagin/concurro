@@ -34,6 +34,8 @@
 #include "RCheck.h"
 #include <signal.h>
 
+namespace curr {
+
 template<class Val>
 struct ThreadCanceller
   : std::unary_function<Val, void>
@@ -147,4 +149,5 @@ void RThreadRepository<Thread>
   }
 }
 
+}
 #endif

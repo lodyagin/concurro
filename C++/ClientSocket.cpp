@@ -33,6 +33,8 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+namespace curr {
+
 DEFINE_AXIS(
   ClientSocketAxis,
   {  "pre_connecting", // ask_connect
@@ -200,4 +202,5 @@ void ClientSocket::Thread::run()
    cli_sock->process_error(error);
 }
 
+}
 

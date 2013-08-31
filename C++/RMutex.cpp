@@ -29,6 +29,8 @@
 
 #include "RMutex.h"
 
+namespace curr {
+
 RMutexArray::RMutexArray(size_t sz, const std::string& initial_name)
   : size (sz),
 	 mutexes (new RMutex[sz])
@@ -37,3 +39,4 @@ RMutexArray::RMutexArray(size_t sz, const std::string& initial_name)
 	 mutexes[i].set_name(initial_name);
 }
 
+}

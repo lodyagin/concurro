@@ -36,6 +36,8 @@
 #include "RState.hpp"
 #include <assert.h>
 
+namespace curr {
+
 // RThread states  ========================================
 
 DEFINE_AXIS(
@@ -292,3 +294,4 @@ void RThread<std::thread>::remove()
   //<NB> invalidate itself, a destructor is already called
 }
 
+}

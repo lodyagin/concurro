@@ -34,6 +34,8 @@
 #include "RState.hpp"
 #include <set>
 
+namespace curr {
+
 template<class Obj, class Par, class ObjId>
 const AbstractRepositoryBase::Traits 
   RepositoryInterface<Obj, Par, ObjId>::traits
@@ -321,5 +323,7 @@ Object* GeneralizedPar<Par, Object>::create_derivation
   return new Object(oi, dynamic_cast<const Par&>(*this));
 }
 #endif
+
+}
 
 #endif

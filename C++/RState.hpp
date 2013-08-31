@@ -36,6 +36,8 @@
 #include "RObjectWithStates.hpp"
 #include <atomic>
 
+namespace curr {
+
 #define LOG_IN_OBJECT 1
 
 template<class Axis>
@@ -375,6 +377,25 @@ void RMixedAxis<Axis, Axis2>
   }
 }
 
+template<class Axis, class Axis2>
+void RMixedAxis<Axis, Axis2>
+//
+::ensure_state_in(
+  const ObjectWithStatesInterface<Axis2>& obj, 
+  const std::initializer_list<RState<Axis>>& set )
+{
+  static_assert(is_ancestor<Axis2, Axis>(), 
+                "This state mixing is invalid.");
+  if (!state_in(obj, set)) {
+    const auto current = 
+      const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
+      . current_state(Axis2::self()) . load();
+
+    throw InvalidState(current, 
+                       "expected a state from a set");
+  }
+}
+
 template<class Axis>
 RState<Axis>::RState (const char* name)
 : UniversalState
@@ -423,5 +444,5 @@ RState<Axis>
 		
 }
 
-
+}
 #endif

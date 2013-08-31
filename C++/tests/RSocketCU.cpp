@@ -80,8 +80,8 @@ void test_client_socket_connection_refused()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_refused::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
-      );
+     &RThreadRepository<RThread<std::thread>>::instance(),
+     1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
@@ -105,8 +105,8 @@ void test_client_socket_connection_timed_out()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_timed_out::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
-      );
+     &RThreadRepository<RThread<std::thread>>::instance(),
+     1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
@@ -129,8 +129,8 @@ void test_client_socket_destination_unreachable()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_destination_unreachable::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
-      );
+     &RThreadRepository<RThread<std::thread>>::instance(),
+     1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
@@ -152,8 +152,9 @@ void test_client_socket_connected()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connected::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
-      );
+     &RThreadRepository<RThread<std::thread>>::instance(),
+     1000 //TODO it has not a sence in this case
+     );
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
@@ -181,7 +182,8 @@ void test_in_socket_new_msg()
   RSocketRepository sr
     ("RSocketCU::test_in_socket_new_msg::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
+     &RThreadRepository<RThread<std::thread>>::instance(),
+     1000
       );
 
   auto* in_sock = dynamic_cast<InSocket*>
@@ -231,7 +233,8 @@ void test_out_socket_login()
   RSocketRepository sr
     ("RSocketCU::test_out_socket_login::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
+     &RThreadRepository<RThread<std::thread>>::instance(),
+     1000
       );
 
   auto* in_sock = dynamic_cast<InSocket*>
@@ -257,7 +260,7 @@ void test_out_socket_login()
   const char* login_request = 
     "Labcdeg12345678902H23456789         1\n";
   const size_t login_request_len = strlen(login_request);
-  out_sock->msg.reserve(login_request_len);
+  out_sock->msg.reserve(login_request_len, 0);
   strncpy((char*)out_sock->msg.data(), login_request,
           login_request_len);
   out_sock->msg.resize(login_request_len);

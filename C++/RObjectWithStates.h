@@ -35,6 +35,8 @@
 #include "ObjectWithStatesInterface.h"
 #include <atomic>
 
+namespace curr {
+
 class REventIsUnregistered : public SException
 {
 public:
@@ -375,6 +377,6 @@ void update_events \
   ax.update_events(this, trans_id, to); \
 }
   
-
+}
 #endif
 

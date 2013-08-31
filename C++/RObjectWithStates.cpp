@@ -29,6 +29,8 @@
 
 #include "RObjectWithStates.h"
 
+namespace curr {
+
 RObjectWithStatesBase::RObjectWithStatesBase()
   : is_frozen(false), is_changing(false)
 {}
@@ -95,3 +97,4 @@ void RObjectWithStatesBase
     sub.first->state_changed(*sub.second, state_ax, object);
 }
 
+}

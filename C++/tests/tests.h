@@ -6,6 +6,8 @@
 #include "RThread.h"
 #include "CUnit.h"
 
+using namespace curr;
+
 typedef RThread<std::thread> RT;
 
 #if __GNUC_MINOR__< 6

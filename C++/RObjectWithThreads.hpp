@@ -34,6 +34,8 @@
 #include "RThreadRepository.h"
 #include <memory>
 
+namespace curr {
+
 template<class Object>
 RObjectWithThreads<Object>
 ::RObjectWithThreads
@@ -100,5 +102,6 @@ void RObjectWithThreads<Object>
   destructor_delegate_is_called = true;
 }
 
+}
 #endif
 

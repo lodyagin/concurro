@@ -33,7 +33,7 @@
 #include <atlstr.h>
 #endif
 
-//using namespace std;
+namespace curr {
 
 #if 0
 string AmountFormat(double amt, int precision/* = 2*/) {
@@ -538,3 +538,4 @@ char* string2char_ptr (const std::string& str)
   return cstr;
 }
 
+}

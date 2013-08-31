@@ -30,6 +30,8 @@
 #include "StdAfx.h"
 #include "SShutdown.h"
 
+namespace curr {
+
 #ifdef _WIN32
 // SShutdown  ========================================================
 
@@ -97,4 +99,6 @@ void sCheckShuttingDown()
 {
   if ( SSHUTDOWN.isShuttingDown() ) xShuttingDown();
 }
+
 #endif
+}

@@ -27,10 +27,12 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef SSINGLETON_H_
-#define SSINGLETON_H_
+#ifndef CONCURRO_SSINGLETON_H_
+#define CONCURRO_SSINGLETON_H_
 
 #include "SCheck.h"
+
+namespace curr {
 
 class DeadReferenceException : public std::exception{};
 
@@ -115,5 +117,5 @@ T * SSingleton<T>::_instance = 0;
 template<class T> bool SSingleton<T>::destroyed = false;
 
 
-
+}
 #endif

@@ -27,13 +27,14 @@
  * @author Sergei Lodyagin
  */
 
-#pragma once
+#ifndex CONCURRO_PATH_H_
+#define CONCURRO_PATH_H_
 
 #include <string>
 #include <list>
 #include <locale>
 
-namespace pallib 
+namespace curr
 {
 
   class Path
@@ -151,15 +152,6 @@ namespace pallib
   bool operator== (const Path&, const Path&);
   bool operator!= (const Path&, const Path&);
 
+} // namespace curr
 
-/*
-  class WindowsPath : public Path
-  {
-  public:
-  WindowsPath (const std::wstring& _path, size_t lenLimit = MAX_PATH);
-  virtual std::wstring unix_form () const;
-
-  };
-*/
-} // namespace pallib
-
+#endif CONCURRO_PATH_H_

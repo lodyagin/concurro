@@ -27,9 +27,10 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef __SNOTCOPYABLE_H
-#define __SNOTCOPYABLE_H
+#ifndef CONCURRO_SNOTCOPYABLE_H_
+#define CONCURRO_SNOTCOPYABLE_H_
 
+namespace curr {
 
 // base for classes with disabled copy semantics
 
@@ -47,5 +48,5 @@ private:
 
 };
 
-
-#endif  // __SNOTCOPYABLE_H
+}
+#endif

@@ -31,6 +31,8 @@
 #include "SSingleton.h"
 #include <unordered_map>
 
+namespace curr {
+
 enum class RSignalAction { Ignore, Process };
 
 class RSignalBase
@@ -93,3 +95,4 @@ public:
   }
 };
 
+}

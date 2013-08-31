@@ -30,6 +30,8 @@
 #include "StdAfx.h"
 #include "RSignal.h"
 
+namespace curr {
+
 RSignalBase* RSignalBase::Par
 ::create_derivation(const ObjectCreationInfo& oi) const
 {
@@ -61,3 +63,4 @@ void RSignalRepository::tune_signal
   }
 }
 
+}

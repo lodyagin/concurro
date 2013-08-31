@@ -32,6 +32,8 @@
 
 #include "SCommon.h"
 
+namespace curr {
+
 #ifdef _WIN32
 void rCheck( BOOL );
 void rCheck( BOOL, const wchar_t * fmt, ... );
@@ -108,4 +110,5 @@ public:
 }
 #endif
 
-#endif  // __SWINCHECK_H
+}
+#endif  

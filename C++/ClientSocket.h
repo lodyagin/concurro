@@ -32,6 +32,8 @@
 
 #include "RSocket.h"
 
+namespace curr {
+
 DECLARE_AXIS(ClientSocketAxis, SocketBaseAxis);
 
 class ClientSocket : virtual public RSocketBase,
@@ -153,4 +155,5 @@ protected:
   DEFAULT_LOGGER(ClientSocket);
 };
 
+}
 #endif

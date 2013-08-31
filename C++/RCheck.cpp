@@ -30,6 +30,8 @@
 #include "stdafx.h"
 #include "SWinCheck.h"
 
+namespace curr {
+
 void sWinCheck (BOOL ok)
 {
   sWinCheck (ok, L"");
@@ -67,4 +69,5 @@ void sWinErrorCode( DWORD code, const wchar_t * fmt, ... )
   throw SException(L"Error "+str+L": "+sWinErrMsg(code));
 }
 
+}
 

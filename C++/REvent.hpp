@@ -33,6 +33,8 @@
 #include "REvent.h"
 #include "RState.h"
 
+namespace curr {
+
 template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
@@ -78,6 +80,8 @@ RMixedEvent<Axis, Axis2>
      ev.log_params().reset = false;
    ev.log_params().log_obj = obj_ptr;
   }
+}
+
 }
 
 #endif

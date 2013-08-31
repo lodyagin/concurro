@@ -33,6 +33,8 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+namespace curr {
+
 DEFINE_AXIS(
   WindowAxis,
   {
@@ -50,7 +52,14 @@ DEFINE_AXIS(
   }
   );
 
-DEFINE_AXIS(ConnectedWindowAxis, {}, {});
+DEFINE_AXIS(
+  ConnectedWindowAxis, 
+  { "wait_for_buffer" }, 
+  { 
+    { "filling"         , "wait_for_buffer" }, 
+    { "wait_for_buffer" , "filling" }
+  }
+);
 
 DEFINE_STATES(WindowAxis);
 
@@ -60,6 +69,8 @@ DEFINE_STATE_CONST(RWindow, State, filled);
 DEFINE_STATE_CONST(RWindow, State, welded);
 
 DEFINE_STATES(ConnectedWindowAxis);
+DEFINE_STATE_CONST(RConnectedWindow, State, 
+                   wait_for_buffer);
 
 RWindow::RWindow(const std::string& id)
 : RObjectWithEvents<WindowAxis>(readyState),
@@ -68,8 +79,22 @@ RWindow::RWindow(const std::string& id)
   bottom(0), top(0), sz(0)
 {}
 
-RWindow::RWindow(RWindow& w) 
-  : RWindow("RWindow")
+RWindow::~RWindow() {}
+
+void RWindow::detach() 
+{
+  if (RWindow::State::compare_and_move
+      (*this, RWindow::filledState, 
+       RWindow::weldedState)) 
+  {
+    // it already contains data, clear first
+    buf.reset();
+    bottom = top = sz = 0;
+    STATE(RWindow, move_to, ready);
+  }
+}
+
+RWindow& RWindow::attach_to(RWindow& w) 
 {
   w.is_filled().wait();
   STATE(RWindow, move_to, filling);
@@ -80,12 +105,12 @@ RWindow::RWindow(RWindow& w)
   sz = w.sz;
   STATE_OBJ(RWindow, move_to, w, filled);
   STATE(RWindow, move_to, filled);
+  return *this;
 }
 	
-RWindow::RWindow(RWindow& w, 
-                 ssize_t shift_bottom, 
-                 ssize_t shift_top) 
-  : RWindow("RWindow")
+RWindow& RWindow::attach_to(RWindow& w, 
+                            ssize_t shift_bottom, 
+                            ssize_t shift_top) 
 {
   w.is_filled().wait();
   STATE(RWindow, move_to, filling);
@@ -96,10 +121,10 @@ RWindow::RWindow(RWindow& w,
   sz = w.sz;
   STATE_OBJ(RWindow, move_to, w, filled);
 
-  if (-shift_bottom > (ssize_t) bottom 
-      || shift_bottom + bottom >= buf->size()
-      || -shift_top >= (ssize_t) top 
-      || shift_top + top > buf->size() ) 
+  if (-shift_bottom > bottom 
+      || shift_bottom + bottom >= (ssize_t) buf->size()
+      || -shift_top >= top 
+      || shift_top + top > (ssize_t) buf->size() ) 
   {
     STATE(RWindow, move_to, filled);
     throw std::out_of_range("RWindow: improper shift");
@@ -111,63 +136,12 @@ RWindow::RWindow(RWindow& w,
   sz += shift_top;
 
   STATE(RWindow, move_to, filled);
-}
-	
-RWindow::RWindow(RWindow&& w)
-  : RWindow("RWindow")
-{
-  w.is_filled().wait();
-  STATE(RWindow, move_to, filling);
-  STATE_OBJ(RWindow, move_to, w, welded);
-  buf = w.buf;
-  bottom = w.bottom;
-  top = w.top;
-  sz = w.sz;
-  STATE_OBJ(RWindow, move_to, w, ready);
-  STATE(RWindow, move_to, filled);
-}
-	
-size_t RWindow::size() const
-{
-  return sz;
-}
-
-RWindow& RWindow
-::operator= (RWindow& w)
-{
-  if (RWindow::State::compare_and_move
-      (*this, RWindow::filledState, 
-       RWindow::weldedState)) 
-  {
-    // it already contains data, clear first
-    buf.reset();
-    bottom = top = sz = 0;
-    STATE(RWindow, move_to, ready);
-  }
-  w.is_filled().wait();
-  STATE(RWindow, move_to, filling);
-  STATE_OBJ(RWindow, move_to, w, welded);
-  buf = w.buf;
-  bottom = w.bottom;
-  top = w.top;
-  sz = w.sz;
-  STATE_OBJ(RWindow, move_to, w, filled);
-  STATE(RWindow, move_to, filled);
   return *this;
 }
-
-RWindow& RWindow
-::operator= (RWindow&& w)
+	
+RWindow& RWindow::move(RWindow& w)
 {
-  if (RWindow::State::compare_and_move
-      (*this, RWindow::filledState, 
-       RWindow::weldedState)) 
-  {
-    // already contains data, clear first
-    buf.reset();
-    bottom = top = sz = 0;
-    STATE(RWindow, move_to, ready);
-  }
+  detach();
   w.is_filled().wait();
   STATE(RWindow, move_to, filling);
   STATE_OBJ(RWindow, move_to, w, welded);
@@ -179,53 +153,37 @@ RWindow& RWindow
   STATE(RWindow, move_to, filled);
   return *this;
 }
+	
+size_t RWindow::size() const
+{
+  return sz;
+}
 
 const char& RWindow::operator[] (size_t idx) const
 {
   STATE(RConnectedWindow, ensure_state, filled);
-  size_t idx2 = bottom + idx;
-  if (idx2 >= top) 
+  if (bottom + (ssize_t)idx >= top) 
     throw std::out_of_range
       (SFORMAT("RWindow: index " << idx 
                << " is out of range (max="
                << top - bottom - 1 << ")"));
-  return *((const char*)buf->cdata() + idx2);
+  return *(cdata() + idx);
 }
 
-#if 0
-void RWindow::resize(ssize_t shift_bottom, 
-                     ssize_t shif_top)
+const char* RWindow::cdata() const
 {
-  if (RAxis<WindowAxis>::compare_and_move(
-        *this, filledState, weldedState)) {
-    if (-shift_bottom > bottom 
-        || shift_bottom + bottom >= buf->size()
-        || -shift_top >= top 
-        || shift_top + top > buf->size() ) 
-    {
-      STATE(RWindow, move_to, filled);
-      throw std::out_of_range;
-    }
-
-    bottom += shift_bottom;
-    top += shift_top;
-    sz -= shift_bottom;
-    sz += shift_top;
-    STATE(RWindow, move_to, filled);
-  }
-  else 
-    throw InvalidState(current_state(), filledState);
+  assert(bottom < top);
+  return (const char*)buf->cdata() + bottom;
 }
-#endif
 
 // RConnectedWindow
 
 RConnectedWindow::RConnectedWindow(RSocketBase* sock)
   : 
-  RWindow(SFORMAT(sock->fd)),
+  RWindow((sock) ? SFORMAT(sock->fd) : "RConnectedWindow"),
   CONSTRUCT_EVENT(ready),
-  CONSTRUCT_EVENT(filling)
-//  CONSTRUCT_EVENT(filled)
+  CONSTRUCT_EVENT(filling),
+  CONSTRUCT_EVENT(wait_for_buffer)
 {}
 
 RConnectedWindow::RConnectedWindow
@@ -243,16 +201,51 @@ void RConnectedWindow::forward_top(size_t s)
   //if (s == 0) return;
   // s == 0 is used, for example, in SoupWindow
   
+  do { is_ready().wait(); }
+  while(!RAxis<WindowAxis>::compare_and_move
+        (*this, readyState, fillingState));
+
   sz = s;
-  STATE(RConnectedWindow, move_to, filling);
+  bottom = top;
+  move_forward();
 }
 
 void RConnectedWindow::move_forward()
 {
-  bottom = top;
-  top = bottom + sz;
-  if (top > buf->size())
-    THROW_NOT_IMPLEMENTED;
+  STATE(RConnectedWindow, ensure_state, filling);
+
+  if (buf) {
+    top = bottom + std::min(sz, buf->size());
+  }
+
+  if (!buf || (bottom + (ssize_t)sz > top))
+    STATE(RConnectedWindow, move_to, wait_for_buffer);
+  else
+    STATE(RConnectedWindow, move_to, filled);
+}
+
+void RConnectedWindow::new_buffer
+  (std::unique_ptr<RSingleBuffer>&& new_buf)
+{
+  assert(new_buf);
+
+  RMixedAxis<ConnectedWindowAxis, WindowAxis>
+    ::ensure_state(*this, wait_for_bufferState);
+
+  STATE_OBJ(RSingleBuffer, ensure_state, *new_buf, 
+            charged);
+
+  const size_t sz = filled_size(); //<NB> not wnd.size()
+  if (sz > 0) {
+    assert(buf);
+    new_buf->extend_bottom(*this);
+  }
+
+  buf = std::move(new_buf);
+  bottom = -sz;
+  top = 0;
+  STATE(RConnectedWindow, move_to, filling);
+  move_forward();
 }
 
 std::ostream&
@@ -274,4 +267,5 @@ operator<< (std::ostream& out,
   return out;
 }
 
+}
 					 

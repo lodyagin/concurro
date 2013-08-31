@@ -34,6 +34,8 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 
+namespace curr {
+
 DEFINE_AXIS(
   ClientConnectionAxis,
   { "aborting", // skiping data and closing buffers
@@ -154,8 +156,8 @@ RSocketConnection& RSingleSocketConnection
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
   SCHECK(out_sock);
 
-  out_sock->msg.is_discharged().wait();
-  out_sock->msg.reserve(str.size());
+  (out_sock->msg.is_discharged() | out_sock->msg.is_dummy()).wait();
+  out_sock->msg.reserve(str.size(), 0);
   ::strncpy((char*)out_sock->msg.data(), str.c_str(),
             str.size());
   out_sock->msg.resize(str.size());
@@ -168,7 +170,7 @@ RSocketConnection& RSingleSocketConnection
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
   SCHECK(out_sock);
 
-  out_sock->msg.is_discharged().wait();
+  (out_sock->msg.is_discharged() | out_sock->msg.is_dummy()).wait();
   out_sock->msg.move(&buf);
   return *this;
 }
@@ -189,74 +191,39 @@ void RSingleSocketConnection::run()
   socket->is_construction_complete_event.wait();
 
   for (;;) {
+    // The socket has a message.
     ( socket->msg.is_charged()
-      | is_aborting() ). wait();
+      | is_aborting() | is_terminal_state() ). wait();
 
-    if (is_aborting().signalled()) 
-      goto LAborting;
-
-    iw().buf.reset(new RSingleBuffer(&socket->msg));
-    // content of the buffer will be cleared after
-    // everybody stops using it
-    iw().buf->set_autoclear(true);
-    iw().top = 0;
-
-    CompoundEvent ce1 {
-      iw().is_filling(), is_aborting(), is_terminal_state()
-    };
-
-    do {
-      // wait a new data request 
-      // (e.g. RWindow::forward_top(size))
-      ce1.wait();
-
-      if (is_aborting().signalled()) 
-        goto LAborting;
-      else if (is_terminal_state().signalled()) 
-        goto LClosed;
-
-      iw().move_forward(); // filling the window
-      STATE_OBJ(RConnectedWindow, move_to, iw(), filled);
-
-    } while (iw().top < iw().buf->size());
-
-    // All the buffer is red
-    // Allocate a new buffer only on a next data request.
-    ce1.wait();
+    // We already need it.
+    ( iw().is_wait_for_buffer()
+      | is_aborting() | is_terminal_state() ). wait();
 
     if (is_aborting().signalled()) 
       goto LAborting;
     else if (is_terminal_state().signalled()) 
       goto LClosed;
 
-    iw().buf.reset();
+    std::unique_ptr<RSingleBuffer> buf 
+      (new RSingleBuffer(&socket->msg));
 
-    //if (is_terminal_state().signalled())
-    //  break;
+    // a content of the buffer will be cleared after
+    // everybody stops using it
+    buf->set_autoclear(true);
+    iw().new_buffer(std::move(buf));
   }
 
 LAborting:
-  {
-    is_aborting().wait();
-    ask_close();
-    socket->InSocket::is_terminal_state().wait();
-    // No sence to start aborting while a socket is working
+  is_aborting().wait();
+  ask_close();
+  socket->InSocket::is_terminal_state().wait();
+  // No sence to start aborting while a socket is working
+  iw().detach();
 
-    assert(iw().buf->get_autoclear());
-    RWindow dummy(iw()); // clear iw()
-#if 0
-    if (iw().buf) {
-      assert(iw().buf->get_autoclear());
-      iw().buf.reset(); // reset shared_ptr
-    }
-#endif
-    if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
-                   discharged))
-      socket->msg.clear();
-    return;
-  }
 LClosed:
-  STATE_OBJ(RConnectedWindow, move_to, iw(), filled);
+  if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
+                 discharged))
+    socket->msg.clear();
 }
 
 void RSingleSocketConnection::ask_abort()
@@ -275,4 +242,5 @@ void RSingleSocketConnection::ask_abort()
        RSingleSocketConnection::abortingState))
     is_aborted().wait();
 #endif
+}
 }

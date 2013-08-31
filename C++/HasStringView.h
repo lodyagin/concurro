@@ -32,6 +32,8 @@
 
 #include <ostream>
 
+namespace curr {
+
 class HasStringView
 {
 public:
@@ -42,4 +44,5 @@ public:
 std::ostream& operator << 
   (std::ostream& out, const HasStringView& hsv);
 
+}
 #endif

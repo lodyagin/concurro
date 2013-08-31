@@ -15,6 +15,7 @@ set(TestsSrc
   REventCU.cpp
   RMutexCU.cpp
   RBufferCU.cpp
+  RWindowCU.cpp
   RSignalCU.cpp
   RSocketCU.cpp
   RConnectionCU.cpp

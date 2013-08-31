@@ -35,6 +35,8 @@
 #include "ThreadRepository.h"
 #include <list>
 
+namespace curr {
+
 template<class Connection, class Map, class Id>
 class ConnectionRepository 
 //
@@ -147,4 +149,5 @@ void ConnectionRepository<Connection, Map, Id>
 	  Parent::Destroy (*this));
 }
 
+}
 #endif

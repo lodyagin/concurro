@@ -27,8 +27,8 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef __SSHUTDOWN_H
-#define __SSHUTDOWN_H
+#ifndef CONCURRO_SSHUTDOWN_H
+#define CONCURRO_SSHUTDOWN_H
 
 #ifdef _WIN32
 #include "SComplPort.h"
@@ -38,6 +38,7 @@
 #include "SCommon.h"
 #include <vector>
 
+namespace curr {
 
 #ifdef _WIN32
 #define SSHUTDOWN  SShutdown::instance()
@@ -88,4 +89,5 @@ private:
 void xShuttingDown( const std::string & interruptedAction = "unknown" );
 void sCheckShuttingDown();  // throws ZSD if is shuttind down
 
-#endif  // __SSHUTDOWN_H
+}
+#endif

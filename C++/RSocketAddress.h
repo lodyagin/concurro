@@ -44,6 +44,8 @@ typedef struct addrinfo addrinfo;
 
 #include <list>
 
+namespace curr {
+
 std::ostream& operator<< 
   (std::ostream& out, const addrinfo& ai);
 
@@ -419,4 +421,5 @@ public:
     (const std::string& host, uint16_t port);
 };
 
+}
 #endif

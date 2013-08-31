@@ -33,6 +33,8 @@
 #include "REvent.hpp"
 #include <memory>
 
+namespace curr {
+
 DEFINE_AXIS(
   ConstructibleAxis,
   { "in_construction", "complete_construction" },
@@ -57,7 +59,7 @@ RConstructibleObject::RConstructibleObject()
 {
 }
 
-
+}
 
 
 

@@ -43,6 +43,8 @@
 #include <atomic>
 #include <thread>
 
+namespace curr {
+
 class ThreadAxis;
 
 //! An ancestor of all states of a thread.
@@ -351,4 +353,5 @@ protected:
   DEFAULT_LOGGER(RThread<std::thread>)
 };
 
+}
 #endif

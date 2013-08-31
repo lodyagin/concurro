@@ -34,6 +34,8 @@
 #include "RState.h"
 #include <algorithm>
 
+namespace curr {
+
 template<class Axis>
 RObjectWithStates<Axis>
 //
@@ -263,4 +265,5 @@ void RStateSplitter<DerivedAxis, SplitAxis>
   }
 }
 
+}
 #endif

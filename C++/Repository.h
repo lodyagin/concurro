@@ -44,6 +44,8 @@
 #include <assert.h>
 #include <atomic>
 
+namespace curr {
+
 DEFINE_EXCEPTION(InvalidObjectParameters,
                  "Invalid parameters for repository object creation"
   )
@@ -668,6 +670,7 @@ StdIdMember(const std::string& id)
   (const object*) const                         \
   { THROW_NOT_IMPLEMENTED; }
 
+}
 
 #endif
 

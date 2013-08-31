@@ -36,6 +36,8 @@
 #include "Logging.h"
 #include <netdb.h>
 
+namespace curr {
+
 DECLARE_AXIS(TCPAxis, SocketBaseAxis);
 
 class TCPSocket : virtual public RSocketBase
@@ -202,5 +204,6 @@ private:
   typedef Logger<TCPSocket> log;
 };
 
+}
 #endif
 

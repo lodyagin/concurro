@@ -39,6 +39,8 @@
 #include <vector>
 #include <iostream>
 
+namespace curr {
+
 class RSocketConnection 
 : //public RObjectWithEvents<ConnectionAxis>,
 public StdIdMember
@@ -332,5 +334,6 @@ public:
   {}
 };
 
+}
 #endif
 

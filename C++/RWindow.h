@@ -36,27 +36,84 @@
 #include "RThread.h"
 #include "RObjectWithStates.h"
 
+namespace curr {
+
 DECLARE_AXIS(WindowAxis, StateAxis);
 
+/**
+ * A "view" to a part of RBuffer. One RBuffer can be
+ * attached to several RWindow (see attach_to()).
+ *
+ * @dot
+ * digraph {
+ *    start [shape = point]; 
+ *    stop [shape = point];
+ *    start -> ready;
+ *    ready -> stop;
+ *    ready -> filling [label = "attach_to()"];
+ *    filling -> filled [label = "attach_to()"];
+ *    filled -> welded;
+ *    welded -> filled;
+ *    welded -> ready [label = "detach()"];
+ * }
+ * @enddot
+ *
+ * - ready - not attached to RBuffer;
+ * - filling - attached but data is updating (e.g., reading
+ * from a socket);
+ * - filled - attached and can manipulate data;
+ * - welded - share window with another buffer (usually
+ * temporary, see methods). 
+ *
+ */
 class RWindow
 : public RObjectWithEvents<WindowAxis>,
   StdIdMember
 {
+  friend class RSingleBuffer;
+
   DECLARE_EVENT(WindowAxis, filled);
+
 public:
+  //! @cond
   DECLARE_STATES(WindowAxis, State);
   DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, filling);
   DECLARE_STATE_CONST(State, filled);
   DECLARE_STATE_CONST(State, welded);
+  //! @endcond
 
+  //! Create RWindow in "ready" state with the defined
+  //! object id. 
   RWindow(const std::string& = std::string("RWindow"));
-  RWindow(RWindow&);
-  RWindow(RWindow&, 
-          ssize_t shift_bottom, ssize_t shift_top);
-  RWindow(RWindow&&);
 
-  virtual ~RWindow() {}
+  //! A deleted constructor.
+  RWindow(const RWindow&) = delete;
+
+  virtual ~RWindow();
+
+  //! A deleted assignment.
+  RWindow& operator=(const RWindow&) = delete;
+
+  //! Detach from a buffer if in filled state. <NB> Do
+  //! nothing in other states.
+  void detach();
+
+  //! Wait when w will be in "filled" state and connect to
+  //! the same buffer.
+  RWindow& attach_to(RWindow& w);
+
+  //! Wait when w will be in "filled" state and connect to
+  //! the same buffer. This window will make view to the
+  //! buffer shifted by
+  //! shift_bottom and shift_top relatively to w. It can
+  //! be shifted only inside filled region.
+  RWindow& attach_to(RWindow& w, 
+          ssize_t shift_bottom, ssize_t shift_top);
+
+  //! Move a buffer from w to this window. Old buffer will
+  //! be detached.
+  RWindow& move(RWindow& w);
 
   CompoundEvent is_terminal_state() const
   {
@@ -64,10 +121,13 @@ public:
     return CompoundEvent();
   }
 
+  //! In a state "filling" it is wanted size requested by
+  //! forward_top(sz). 
   size_t size() const;
 
-  RWindow& operator=(RWindow&); 
-  RWindow& operator= (RWindow&&);
+  //! A size of a part already filled with a data.
+  size_t filled_size() const
+  { return top - bottom; }
 
   virtual const char& operator[](size_t) const;
 
@@ -76,12 +136,12 @@ public:
     return universal_object_id;
   }
 
-  //void resize(ssize_t shift_bottom, ssize_t shif_top);
-
 protected:
+  const char* cdata() const;
+
   std::shared_ptr<RSingleBuffer> buf;
-  size_t bottom;
-  size_t top;
+  ssize_t bottom;
+  ssize_t top;
   size_t sz;
 
   DEFAULT_LOGGER(RWindow);
@@ -89,10 +149,34 @@ protected:
 
 DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
 
-//! A window which have live connection access.
+/**
+ * A window which have a live connection access (typically
+ * RSocketConnection). A working thread from connection
+ * side will wait "wait_for_buffer" state and new packet
+ * arrival (in a form of RSingleBuffer). After the the
+ * working thread will call new_buffer(). I.e.,
+ * RConnectedWindow is a passive entity and
+ * RSocketConnection is an active one.
+ *
+ * @dot
+ * digraph {
+ *    start [shape = point]; 
+ *    stop [shape = point];
+ *    ready [label = "ready"];
+ *    start -> ready;
+ *    ready -> stop;
+ *    ready -> filling [label = "forward_top(sz)"];
+ *    filling -> wait_for_buffer;
+ *    wait_for_buffer -> filling [label="new_buffer()"];
+ *    filling -> filled;
+ *    filled -> welded;
+ *    welded -> filled;
+ *    welded -> ready;
+ * }
+ * @enddot
+ */
 class RConnectedWindow : public RWindow
 {
-  friend class RSingleSocketConnection;
   friend std::ostream&
     operator<<(std::ostream&, const RConnectedWindow&);
 
@@ -100,10 +184,14 @@ class RConnectedWindow : public RWindow
                   ready);
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
                   filling);
-  //A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
-  //                filled);
-
+  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+                  wait_for_buffer);
 public:
+  //! @cond
+  DECLARE_STATES(ConnectedWindowAxis, State);
+  DECLARE_STATE_CONST(State, wait_for_buffer);
+  //! @endcond
+
   struct Par {
     RSocketBase* socket;
     Par(RSocketBase* sock) : socket(sock) {}
@@ -112,7 +200,17 @@ public:
       { return socket->fd; }
   };
 
+  //! Create RConnectedWindows with object id = socket
+  //! file descriptor number or just "RConnectedWindow" if
+  //! sock == nullptr. <NB> sock is used only to form id.
+  // TODO using sock as a parameter is ugly 
   RConnectedWindow(RSocketBase* sock);
+
+  //! Construct a window which owns buf.
+  //TODO move to RWindow
+  //explicit RConnectedWindow(RSingleBuffer* buf);
+
+  //! Will wait till underlaying buffer is discharged.
   virtual ~RConnectedWindow();
 
   CompoundEvent is_terminal_state() const
@@ -120,14 +218,23 @@ public:
     return is_ready_event;
   }
 
+  //! Increase the window and start waiting new data.
+  //! Will move the object to the wait_for_buffer
+  //! state. You should call is_filled().wait() after it.
   void forward_top(size_t);
+
+  //! Append the new RSingleBuffer to the window. It
+  //! should be new buffer (not simultaneously used by
+  //! another class), e.g., a move copy of a socket
+  //! buffer, see RSingleSocketConnection::run().
+  void new_buffer(std::unique_ptr<RSingleBuffer>&&);
 
 protected:
   RConnectedWindow(const ObjectCreationInfo& oi,
                    const Par& par);
 
-  //! A logic block reading implementation. It must set
-  //! a filled state at the end. 
+  //! Determine a data ready state. After return the state
+  //! is wait_for_buffer or filled.
   virtual void move_forward();
 
   DEFAULT_LOGGER(RConnectedWindow);
@@ -145,5 +252,6 @@ RConnectedWindow,
   >
   RConnectedWindowRepository;
 
+}
 #endif
 

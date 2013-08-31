@@ -36,6 +36,8 @@
 #include "InSocket.h"
 #include "OutSocket.h"
 
+namespace curr {
+
 template<class... Bases>
 RSocket<Bases...>
 //
@@ -160,6 +162,7 @@ inline RSocketBase* RSocketAllocator
   return new RSocket<InSocket, OutSocket, Bases...>
 	 (oi, addr);
 }
-    
+
+}    
 #endif
 

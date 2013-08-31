@@ -52,6 +52,8 @@
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
 
+namespace curr {
+
 #ifdef _WIN32
 #  define _T L
 #else
@@ -305,4 +307,5 @@ protected:
   Method method;
 };
 
+}
 #endif

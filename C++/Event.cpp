@@ -37,6 +37,8 @@
 using namespace neosmart;
 #endif
 
+namespace curr {
+
 // EvtBase  ===============================================
 
 EvtBase::EvtBase(const std::string& id, 
@@ -420,4 +422,6 @@ size_t waitMultipleSD( HANDLE * _evts, size_t count )
   if ( idx == 0 ) xShuttingDown("waitMultipleSD");
   return idx - 1;
 }
+
 #endif
+}

@@ -35,6 +35,8 @@
 #include <exception>
 #include <ostream>
 
+namespace curr {
+
 // base for the all SCommon exceptions
 
 class SException : public std::exception, public HasStringView
@@ -112,4 +114,5 @@ public:
     SException("FromStringCastException, bad cast"){}
 };
 
+}
 #endif

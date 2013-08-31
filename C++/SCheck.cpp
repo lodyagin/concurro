@@ -31,6 +31,7 @@
 #include "SCheck.h"
 #include <stdarg.h>
 
+namespace curr {
 
 void sWarn( bool cond, const wchar_t * fmt, ... )
 {
@@ -48,4 +49,6 @@ void sTrace( const wchar_t * fmt, ... )
   va_start(va, fmt);
   OutputDebugString(sFormatVa(fmt, va).c_str());
   va_end(va);
+}
+
 }

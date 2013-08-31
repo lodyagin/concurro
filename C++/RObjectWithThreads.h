@@ -34,6 +34,8 @@
 #include <list>
 #include <queue>
 
+namespace curr {
+
 DECLARE_AXIS(ConstructibleAxis, StateAxis);
 
 //! A technical object. Must be moved to the
@@ -100,6 +102,7 @@ protected:
   std::list<CompoundEvent> threads_terminals;
 };
 
+}
 #endif
 
 

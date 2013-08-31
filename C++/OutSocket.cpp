@@ -32,6 +32,8 @@
 //#include "REvent.hpp"
 #include "RState.hpp"
 
+namespace curr {
+
 /*
 DEFINE_STATES(OutSocketAxis);
 
@@ -156,3 +158,4 @@ void OutSocket::WaitThread::run()
   rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }
 
+}

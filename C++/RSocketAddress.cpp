@@ -41,6 +41,8 @@
 #endif
 #include "RCheck.h"
 
+namespace curr {
+
 std::ostream& operator << 
   (std::ostream& out, const addrinfo& ai)
 {
@@ -346,4 +348,5 @@ RSocketAddressRepository
 //
 ::create_addresses<NetworkProtocol::TCP, IPVer::v4>
     (const std::string& host, uint16_t port);
-;
+
+}

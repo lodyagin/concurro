@@ -34,6 +34,8 @@
 #include <sys/socket.h>
 #include <algorithm>
 
+namespace curr {
+
 InSocket::InSocket
   (const ObjectCreationInfo& oi, 
    const RSocketAddress& par)
@@ -51,6 +53,10 @@ InSocket::InSocket
         (this, 
          select_thread->get_notify_fd()))))
 {
+  const size_t packet_max_size = 
+    dynamic_cast<RSocketRepository*>
+    (oi.repository)->get_max_input_packet_size();
+
   SCHECK(select_thread && wait_thread);
   //add_delegate(this);
   /*this->RSocketBase::ancestor_terminals.push_back
@@ -67,7 +73,7 @@ InSocket::InSocket
   socket_rd_buf_size++; //to allow catch an overflow error
   LOG_DEBUG(log, "socket_rd_buf_size = " 
             << socket_rd_buf_size);
-  msg.reserve(socket_rd_buf_size);
+  msg.reserve(socket_rd_buf_size, packet_max_size-1);
   select_thread->start();
   wait_thread->start();
 }
@@ -136,7 +142,7 @@ void InSocket::SelectThread::run()
         in_sock->msg.resize(red);
         //InSocket::State::move_to(*in_sock, new_dataState);
 
-        // <NB> do not read more data until a client read
+        // <NB> do not read more data until a client reads
         // this piece
         in_sock->msg.is_discharged().wait();
         //InSocket::State::move_to(*in_sock, emptyState);
@@ -182,3 +188,4 @@ void InSocket::WaitThread::run()
   rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }
 
+}

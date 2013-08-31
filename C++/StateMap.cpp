@@ -34,6 +34,8 @@
 #include <assert.h>
 #include <atomic>
 
+namespace curr {
+
 UniversalState::UniversalState
   (const StateMap* new_map, uint32_t st)
   : the_state((new_map->numeric_id << STATE_MAP_SHIFT) 
@@ -462,4 +464,4 @@ StateMapId StateMapRepository::get_map_id
   else return it->second;
 }
 
-
+}

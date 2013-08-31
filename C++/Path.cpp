@@ -27,7 +27,7 @@
  * @author Sergei Lodyagin
  */
 
-
+#include "Path.h"
 #include <portable.h>
 #include "path.h"
 #include <locale>
@@ -41,8 +41,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-namespace pallib
-{
+namespace curr {
 
   // Use the default locale for case conversion
   const std::locale Path::loc;

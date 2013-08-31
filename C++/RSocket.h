@@ -43,6 +43,8 @@
 #endif
 #include <list>
 
+namespace curr {
+
 DECLARE_AXIS(SocketBaseAxis, StateAxis);
 
 class RSocketRepository;
@@ -304,12 +306,20 @@ public:
 
   RThreadFactory *const thread_factory;
 
+  //! Create repository (RSocket factory).
+  //! @param id The repository name.
+  //! @param reserved The initially allocated space.
+  //! @param tf The thread factory.
+  //! @param max_input_packet The max input packet size.
   RSocketRepository(
     const std::string& id,
     size_t reserved,
-    RThreadFactory *const tf);
+    RThreadFactory *const tf,
+    size_t max_input_packet
+    );
 
-  // Set timeout for usecs. If usecs < 0 - do not use timeout.
+  //! Set timeout for usecs. If usecs < 0 - do not use
+  //! timeout.
   void set_connect_timeout_u(int64_t usecs);
 
   bool is_use_connect_timeout() const
@@ -321,9 +331,15 @@ public:
   const std::unique_ptr<struct timeval> 
     connect_timeout_timeval() const;
 
+  //! Return a max input packet size
+  const size_t get_max_input_packet_size() const
+  { return max_input_packet_size; }
+
 protected:
   struct timeval connect_timeout;
   std::atomic<bool> use_connect_timeout;
+  std::atomic<size_t> max_input_packet_size;
 };
 
+}
 #endif

@@ -32,6 +32,8 @@
 #include "SCommon.h"
 #include <typeinfo>
 
+namespace curr {
+
 // SException  ==================================================================
 
 #ifdef _WIN32
@@ -73,4 +75,6 @@ std::ostream& operator<< (std::ostream& out, const SException& exc)
 {
   out << typeid(exc).name() << ": " << exc.what();
   return out;
+}
+
 }

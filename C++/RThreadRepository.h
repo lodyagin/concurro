@@ -36,6 +36,8 @@
 #include <algorithm>
 #include <vector>
 
+namespace curr {
+
 class RThreadFactory
 {
 public:
@@ -151,5 +153,6 @@ template<class Key, class Val>
   }
 };
 
+}
 #endif
 

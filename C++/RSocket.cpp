@@ -35,6 +35,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+namespace curr {
+
 /*=================================*/
 /*========== RSocketBase ==========*/
 /*=================================*/
@@ -146,13 +148,18 @@ SocketThreadWithPair::~SocketThreadWithPair()
 RSocketRepository::RSocketRepository(
   const std::string& id,
   size_t reserved,
-  RThreadFactory *const tf
+  RThreadFactory *const tf,
+  size_t max_input_packet
 ) : 
   Parent(id, reserved),
   thread_factory(tf),
   connect_timeout{0},
-  use_connect_timeout(false)
-{}
+  use_connect_timeout(false),
+  max_input_packet_size(max_input_packet)
+{
+  assert(thread_factory);
+  assert(max_input_packet > 0);
+}
 
 void RSocketRepository::set_connect_timeout_u(int64_t usecs)
 {
@@ -176,4 +183,6 @@ const std::unique_ptr<struct timeval> RSocketRepository
   RLOCK(this->objectsM);
   return std::unique_ptr<struct timeval>
     (new struct timeval(connect_timeout));
+}
+
 }

@@ -33,6 +33,7 @@
 #include "RSocketAddress.h"
 #include "SException.h"
 
+namespace curr {
 
 /*==================================*/
 /*========== HintsBuilder ==========*/
@@ -82,4 +83,5 @@ std::list<RSocketAddress*> RSocketAddressRepository
   return create_several_objects(par);
 }
 
+}
 #endif

@@ -33,6 +33,8 @@
 #include "Logging.h"
 #include "StateMap.h"
 
+namespace curr {
+
 template<class Axis1, class Axis2> class RMixedAxis;
 template<class Axis> class RState;
 template<class Axis1, class Axis2> class RMixedEvent;
@@ -155,4 +157,5 @@ protected:
       uint32_t to) = 0;
 };
 
+}
 #endif

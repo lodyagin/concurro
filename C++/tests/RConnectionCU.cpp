@@ -9,7 +9,7 @@ void test_connection_clearly_closed();
 
 CU_TestInfo RConnectionTests[] = {
   {"test RConnection (aborted)", 
-  test_connection_aborted},
+    test_connection_aborted},
   {"test RConnection (clearly closed)", 
    test_connection_clearly_closed},
   CU_TEST_INFO_NULL
@@ -52,7 +52,9 @@ public:
                     << ":RSocketRepository"),
             1,
             dynamic_cast<RConnectionRepository*>
-            (oi.repository)->thread_factory));
+            (oi.repository)->thread_factory, 
+            1000)
+          );
         socket = socket_rep->create_object(*sock_addr);
         return new TestConnection(oi, *this);
       }
@@ -76,8 +78,8 @@ static void test_connection(bool do_abort)
 
   auto* con = dynamic_cast<TestConnection*>
     (con_rep.create_object
-     //(TestConnection::Par("192.168.25.240", 31001)));
-     (TestConnection::Par("localhost", 31001)));
+     (TestConnection::Par("192.168.25.240", 31001)));
+  //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
   con->ask_connect();
@@ -85,12 +87,14 @@ static void test_connection(bool do_abort)
   *con << "Labcdef12345678902H23456789         1\n";
   const std::string answer("+Soup2.0\n");
   con->iw().forward_top(answer.size());
-  con->iw().is_filled().wait();
+  (con->iw().is_filled() | con->is_terminal_state()).wait();
+  if (con->is_terminal_state().signalled())
+    CU_FAIL_FATAL("The connection is closed unexpectedly.");
   const std::string a(&con->iw()[0], con->iw().size());
   CU_ASSERT_EQUAL_FATAL(answer, a);
 
   // just take a copy
-  wc = con->iw();
+  wc.attach_to(con->iw());
   const std::string a2(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a2);
   CU_ASSERT_TRUE_FATAL(
@@ -100,7 +104,7 @@ static void test_connection(bool do_abort)
     STATE_OBJ(RWindow, state_is, wc, filled));
 
   // move whole content
-  wc = std::move(con->iw());
+  wc.move(con->iw());
   const std::string a3(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a3);
   CU_ASSERT_TRUE_FATAL(
@@ -110,7 +114,7 @@ static void test_connection(bool do_abort)
     con->ask_abort();
   else {
     con->ask_close();
-    RWindow(con->iw());
+    con->iw().detach();
   }
 }
 

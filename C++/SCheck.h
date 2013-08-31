@@ -33,6 +33,7 @@
 #include "SCommon.h"
 #include "SException.h"
 
+namespace curr {
 
 #define SCHECK(val) {		\
   if (!(val)) { \
@@ -61,5 +62,5 @@ void sTrace( const wchar_t * fmt, ... );
 
 inline void sNullTrace(...) {}
 
-
+}
 #endif  // __SCHECK_H

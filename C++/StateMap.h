@@ -42,6 +42,8 @@
 #include <initializer_list>
 #include <boost/multi_array.hpp>
 
+namespace curr {
+
 // <NB> the same size (see UniversalEvent)
 typedef uint16_t StateIdx;
 typedef uint16_t TransitionId;
@@ -515,5 +517,5 @@ StateMapId StateMapPar<Axis>
   return StateMapParBase::get_map_id(oi, typeid(Axis));
 }
 
-
+}
 #endif

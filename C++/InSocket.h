@@ -35,6 +35,8 @@
 #include "RThread.h"
 #include "RState.h"
 
+namespace curr {
+
 class InSocket : virtual public RSocketBase
 {
 public:
@@ -122,4 +124,5 @@ protected:
   DEFAULT_LOGGER(InSocket);
 };
 
+}
 #endif

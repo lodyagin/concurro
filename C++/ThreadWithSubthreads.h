@@ -35,6 +35,8 @@
 #include "Logging.h"
 #include <algorithm>
 
+namespace curr {
+
 // SubthreadParameter is a parameter
 // for subthread creation
 
@@ -124,4 +126,5 @@ void ThreadWithSubthreads<Thread, ThreadParameter>::
   out << ")\n";
 }
 
+}
 #endif
