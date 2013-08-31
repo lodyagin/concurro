@@ -60,9 +60,9 @@ using REvent = RMixedEvent<Axis, Axis>;
 
 #define A_DECLARE_EVENT(axis_, axis_2, event)		\
 protected: \
-RMixedEvent<axis_, axis_2> is_ ## event ## _event;	\
+curr::RMixedEvent<axis_, axis_2> is_ ## event ## _event;	\
 public: \
-  const RMixedEvent<axis_, axis_2>& is_ ## event ()	\
+  const curr::RMixedEvent<axis_, axis_2>& is_ ## event ()	\
   { return is_ ## event ## _event; } \
 private:
 

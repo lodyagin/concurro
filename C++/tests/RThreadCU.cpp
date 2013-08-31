@@ -115,10 +115,10 @@ public:
     USLEEP(100);
   }
 
-  std::string universal_id() const override
-    {
-      return universal_object_id;
-    }
+  std::string object_name() const override
+  {
+    return SFORMAT("T1:" << universal_object_id);
+  }
 
   void state_changed
     (StateAxis& ax, 

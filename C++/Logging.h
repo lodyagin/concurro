@@ -344,7 +344,7 @@ public:
 //! in the class
 #define DEFAULT_LOGGER(class_) \
 private: \
-  typedef Logger<class_> log; \
+  typedef curr::Logger<class_> log;               \
   \
   log4cxx::LoggerPtr logger() const override \
   { \

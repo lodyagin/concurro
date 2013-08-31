@@ -72,14 +72,74 @@ DEFINE_STATES(ConnectedWindowAxis);
 DEFINE_STATE_CONST(RConnectedWindow, State, 
                    wait_for_buffer);
 
-RWindow::RWindow(const std::string& id)
+RWindow::RWindow()
 : RObjectWithEvents<WindowAxis>(readyState),
-  StdIdMember(id),
   CONSTRUCT_EVENT(filled),
   bottom(0), top(0), sz(0)
 {}
 
+RWindow::RWindow(RWindow& w) : RWindow()
+{
+  w.is_filled().wait();
+  STATE(RWindow, move_to, filling);
+  STATE_OBJ(RWindow, move_to, w, welded);
+  buf = w.buf;
+  bottom = w.bottom;
+  top = w.top;
+  sz = w.sz;
+  STATE_OBJ(RWindow, move_to, w, filled);
+  STATE(RWindow, move_to, filled);
+}
+	
+RWindow::RWindow(RWindow& w, 
+                 ssize_t shift_bottom, 
+                 ssize_t shift_top) 
+  : RWindow()
+{
+  w.is_filled().wait();
+  STATE(RWindow, move_to, filling);
+  STATE_OBJ(RWindow, move_to, w, welded);
+  buf = w.buf;
+  bottom = w.bottom;
+  top = w.top;
+  sz = w.sz;
+  STATE_OBJ(RWindow, move_to, w, filled);
+
+  if (-shift_bottom > (ssize_t) bottom 
+      || shift_bottom + bottom >= (ssize_t) buf->size()
+      || -shift_top >= (ssize_t) top 
+      || shift_top + top > (ssize_t) buf->size() ) 
+  {
+    STATE(RWindow, move_to, filled);
+    throw std::out_of_range("RWindow: improper shift");
+  }
+
+  bottom += shift_bottom;
+  top += shift_top;
+  sz -= shift_bottom;
+  sz += shift_top;
+
+  STATE(RWindow, move_to, filled);
+}
+	
+RWindow::RWindow(RWindow&& w)
+: RObjectWithEvents<WindowAxis>(std::move(w)),
+  CONSTRUCT_EVENT(filled),
+  buf(std::move(w.buf)),
+  bottom(w.bottom), top(w.top), sz(w.sz)
+{}
+
 RWindow::~RWindow() {}
+
+RWindow& RWindow::operator=(RWindow&& w)
+{
+  RObjectWithEvents<WindowAxis>::operator=(std::move(w));
+  buf = std::move(w.buf);
+  bottom = w.bottom;
+  top = w.top;
+  sz = w.sz;
+  return *this;
+}
 
 void RWindow::detach() 
 {
@@ -178,17 +238,13 @@ const char* RWindow::cdata() const
 
 // RConnectedWindow
 
-RConnectedWindow::RConnectedWindow(RSocketBase* sock)
+RConnectedWindow
+::RConnectedWindow(const std::string& connection_id)
   : 
-  RWindow((sock) ? SFORMAT(sock->fd) : "RConnectedWindow"),
   CONSTRUCT_EVENT(ready),
   CONSTRUCT_EVENT(filling),
-  CONSTRUCT_EVENT(wait_for_buffer)
-{}
-
-RConnectedWindow::RConnectedWindow
-(const ObjectCreationInfo& oi, const Par& par)
-  : RConnectedWindow(par.socket)
+  CONSTRUCT_EVENT(wait_for_buffer),
+  conn_id(connection_id)
 {}
 
 RConnectedWindow::~RConnectedWindow()

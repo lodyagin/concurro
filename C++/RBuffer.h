@@ -97,9 +97,9 @@ public:
   //! Move the buffer
   virtual void move(RBuffer* from) = 0;
 
-  std::string universal_id() const override
+  std::string object_name() const override
   {
-    return "?";
+    return "RBuffer";
   }
 
   //! Autoclear means call clear() in the destructor

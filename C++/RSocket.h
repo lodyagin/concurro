@@ -89,11 +89,11 @@ public:
 
   virtual void ask_close_out() = 0;
 
-  std::string universal_id() const override
+  virtual std::string universal_id() const
   {
     return StdIdMember::universal_id();
   }
-
+  
   CompoundEvent is_terminal_state() const override
   {
     return is_terminal_state_event;

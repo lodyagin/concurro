@@ -113,6 +113,7 @@ RObjectWithEvents<Axis>& RObjectWithEvents<Axis>
 {
   Parent::operator= (static_cast<Parent&&>(std::move(o)));
   events = std::move(o.events);
+  return *this;
 }
 
 template<class Axis>

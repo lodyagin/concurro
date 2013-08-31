@@ -46,9 +46,6 @@ class AbstractObjectWithStates
 public:
   virtual ~AbstractObjectWithStates() {}
 
-  // Retrieve a main axis
-  //virtual StateAxis& get_axis() const = 0;
-
   //! the "update parent" callback on state changing in
   //! the `object' on the `state_ax'.
   //! \param ax is used for dispatching to particular
@@ -64,7 +61,6 @@ public:
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
 
-//protected:
   virtual std::atomic<uint32_t>& 
 	 current_state(const StateAxis&) = 0;
 
@@ -92,13 +88,7 @@ public:
 
   virtual ~ObjectWithStatesInterface() {}
 
-  virtual std::string object_name() const
-  {
-	 return SFORMAT(typeid(this).name() 
-                        << ":" << universal_id());
-  }
-
-  virtual std::string universal_id() const = 0;
+  virtual std::string object_name() const = 0;
 };
 
 class AbstractObjectWithEvents

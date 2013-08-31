@@ -193,7 +193,7 @@ void test_extend_bottom()
   memcpy(a->data(), "12345", 5);
   memcpy(b->data(), "67890", 5);
   a->resize(5); b->resize(5);
-  RConnectedWindow w(nullptr);
+  RConnectedWindow w;
   w.forward_top(5);
   a->set_autoclear(true);
   w.new_buffer(std::move(a));
@@ -214,7 +214,7 @@ void test_extend_bottom_ovf()
   memcpy(a->data(), "12345", 5);
   memcpy(b->data(), "67890", 5);
   a->resize(5); b->resize(5);
-  RConnectedWindow w(nullptr);
+  RConnectedWindow w;
   w.forward_top(5);
   a->set_autoclear(true);
   w.new_buffer(std::move(a));

@@ -49,18 +49,15 @@ public:
   struct Par {
     //! Available addresses for socket(s)
     std::unique_ptr<RSocketAddressRepository> sar;
-    size_t win_rep_capacity;
 
     Par() 
-    : sar(new RSocketAddressRepository),
-      win_rep_capacity(3)
-      {
-        assert(sar);
-      }
+      : sar(new RSocketAddressRepository)
+    {
+      assert(sar);
+    }
 
     Par(Par&& par)
     : sar(std::move(par.sar)),
-      win_rep_capacity(par.win_rep_capacity),
       socket_rep(std::move(par.socket_rep)) {}
 
     virtual ~Par() {}
@@ -111,9 +108,6 @@ public:
 
   //! Skip all data (non-blocking)
   virtual void ask_abort() = 0;
-
-  //! A window repostiry
-  RConnectedWindowRepository win_rep;
 
 protected:
   RSocketConnection
@@ -183,10 +177,12 @@ class RSingleSocketConnection
   DECLARE_EVENT(ClientConnectionAxis, clearly_closed);
 
 public:
+  //! @cond
   DECLARE_STATES(ClientConnectionAxis, State);
   DECLARE_STATE_CONST(State, aborting);
   DECLARE_STATE_CONST(State, aborted);
   DECLARE_STATE_CONST(State, clearly_closed);
+  //! @endcond
 
   //! Only input thread.
   typedef ConnectionThread<RSingleSocketConnection>
@@ -215,13 +211,6 @@ public:
     {
       return std::unique_ptr<Thread::Par>
         (new Thread::Par(c));
-    }
-
-    virtual std::unique_ptr<RConnectedWindow::Par>
-      get_window_par(RSocketBase* sock) const
-    {
-      return std::unique_ptr<RConnectedWindow::Par>
-        (new RConnectedWindow::Par(sock));
     }
 
     mutable RSocketBase* socket;
@@ -272,16 +261,6 @@ public:
     return is_terminal_state_event;
   }
   
-  std::string universal_id() const override
-  {
-    return universal_object_id;
-  }
-
-  /*void state_hook
-    (AbstractObjectWithStates* object,
-     const StateAxis& ax,
-     const UniversalState& new_state);*/
-
 protected:
   RSingleSocketConnection
     (const ObjectCreationInfo& oi,
@@ -295,7 +274,7 @@ protected:
   InSocket* socket;
   ClientSocket* cli_sock;
   SocketThread* thread;
-  RConnectedWindow* in_win;
+  std::unique_ptr<RConnectedWindow> in_win;
 
   A_DECLARE_EVENT(ClientConnectionAxis, 
                   ClientSocketAxis, closed);
@@ -307,7 +286,6 @@ protected:
 
 public:
   //! A current window
-  //std::unique_ptr<RConnectedWindow> win;
   RConnectedWindow& iw() { return *in_win; }
 };
 

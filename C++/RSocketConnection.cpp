@@ -70,8 +70,6 @@ RSocketConnection::RSocketConnection
 (const ObjectCreationInfo& oi,
  const Par& par)
   : StdIdMember(oi.objectId),
-    win_rep("RSocketConnection::win_rep", 
-            par.win_rep_capacity),
     socket_rep(std::move(par.socket_rep))
 {
   assert(socket_rep);
@@ -93,8 +91,7 @@ RSingleSocketConnection::RSingleSocketConnection
            (RThreadRepository<RThread<std::thread>>
             ::instance().create_thread
             (*par.get_thread_par(this)))),
-    in_win(win_rep.create_object
-           (*par.get_window_par(cli_sock))),
+    in_win(new RConnectedWindow(SFORMAT(cli_sock->fd))),
     is_closed_event(cli_sock, "closed"),
     is_terminal_state_event { 
       is_clearly_closed_event,

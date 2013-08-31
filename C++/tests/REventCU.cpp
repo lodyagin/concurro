@@ -66,10 +66,10 @@ public:
       State::move_to(*this, dischargedState);
     }
 
-  std::string universal_id() const override
-    {
-      return RT::universal_id();
-    }
+  std::string object_name() const override
+  {
+    return SFORMAT("Test:" << universal_object_id);
+  }
 
   CompoundEvent is_terminal_state() const override
     {

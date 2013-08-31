@@ -66,21 +66,23 @@ protected:
 
 #define THROW_EXCEPTION(exception_class, par...) do { \
 	 exception_class exc_{par};								\
-  LOG_DEBUG(Logger<LOG::Root>, "Throw exception " << exc_); \
+  LOG_DEBUG(curr::Logger<curr::LOG::Root>, \
+    "Throw exception " << exc_); \
   throw exc_; \
   } while (0)
 
 #define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
 	 exception_class exc_{par};			 \
-  LOG_DEBUG_PLACE(Logger<LOG::Root>, place, "Throw exception " << exc_); \
+  LOG_DEBUG_PLACE(curr::Logger<curr::LOG::Root>, place,   \
+    "Throw exception " << exc_); \
   throw exc_; \
   } while (0)
 
 #define THROW_PROGRAM_ERROR \
-  THROW_EXCEPTION(SException, "Program Error")
+  THROW_EXCEPTION(curr::SException, "Program Error")
 
 #define THROW_NOT_IMPLEMENTED \
-  THROW_EXCEPTION(SException, "Not implemented")
+  THROW_EXCEPTION(curr::SException, "Not implemented")
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException
@@ -100,10 +102,10 @@ SMAKE_THROW_FN_DECL(sUserError, SUserError)
 std::ostream& operator<< (std::ostream&, const SException& exc);
 
 #define DEFINE_EXCEPTION(class_, msg) \
-class class_ : public SException \
+class class_ : public curr::SException \
 { \
 public: \
-  class_() : SException(msg) {} \
+  class_() : curr::SException(msg) {} \
 };
 
 class FromStringCastException: public boost::bad_lexical_cast,

@@ -66,9 +66,7 @@ DECLARE_AXIS(WindowAxis, StateAxis);
  * temporary, see methods). 
  *
  */
-class RWindow
-: public RObjectWithEvents<WindowAxis>,
-  StdIdMember
+class RWindow : public RObjectWithEvents<WindowAxis>
 {
   friend class RSingleBuffer;
 
@@ -83,17 +81,31 @@ public:
   DECLARE_STATE_CONST(State, welded);
   //! @endcond
 
-  //! Create RWindow in "ready" state with the defined
-  //! object id. 
-  RWindow(const std::string& = std::string("RWindow"));
+  //! Create RWindow in "ready" state. 
+  RWindow();
 
-  //! A deleted constructor.
-  RWindow(const RWindow&) = delete;
+  //! Clone w view to buffer.
+  RWindow(RWindow& w);
+
+  //! Clone w view to buffer with bottom and top shifts.
+  RWindow(RWindow&, 
+          ssize_t shift_bottom, ssize_t shift_top);
+
+  //! A move constructor takes a buffer ownership from w.
+  RWindow(RWindow&& w);
 
   virtual ~RWindow();
 
   //! A deleted assignment.
   RWindow& operator=(const RWindow&) = delete;
+
+  //! A move assignment.
+  RWindow& operator=(RWindow&& w);
+
+  std::string object_name() const override
+  {
+    return "RWindow";
+  }
 
   //! Detach from a buffer if in filled state. <NB> Do
   //! nothing in other states.
@@ -130,11 +142,6 @@ public:
   { return top - bottom; }
 
   virtual const char& operator[](size_t) const;
-
-  std::string universal_id() const override
-  {
-    return universal_object_id;
-  }
 
 protected:
   const char* cdata() const;
@@ -192,19 +199,10 @@ public:
   DECLARE_STATE_CONST(State, wait_for_buffer);
   //! @endcond
 
-  struct Par {
-    RSocketBase* socket;
-    Par(RSocketBase* sock) : socket(sock) {}
-    PAR_DEFAULT_VIRTUAL_MEMBERS(RConnectedWindow)
-    SOCKET get_id(const ObjectCreationInfo& oi) const 
-      { return socket->fd; }
-  };
-
-  //! Create RConnectedWindows with object id = socket
-  //! file descriptor number or just "RConnectedWindow" if
-  //! sock == nullptr. <NB> sock is used only to form id.
-  // TODO using sock as a parameter is ugly 
-  RConnectedWindow(RSocketBase* sock);
+  //! Create RConnectedWindows with connection_id (it is
+  //! used for logging).
+  RConnectedWindow(const std::string& connection_id 
+                   = std::string());
 
   //! Construct a window which owns buf.
   //TODO move to RWindow
@@ -212,6 +210,11 @@ public:
 
   //! Will wait till underlaying buffer is discharged.
   virtual ~RConnectedWindow();
+
+  std::string object_name() const override
+  {
+    return SFORMAT("RConnectedWindow");
+  }
 
   CompoundEvent is_terminal_state() const
   {
@@ -230,8 +233,7 @@ public:
   void new_buffer(std::unique_ptr<RSingleBuffer>&&);
 
 protected:
-  RConnectedWindow(const ObjectCreationInfo& oi,
-                   const Par& par);
+  const std::string conn_id;
 
   //! Determine a data ready state. After return the state
   //! is wait_for_buffer or filled.
@@ -242,15 +244,6 @@ protected:
 
 std::ostream&
 operator<<(std::ostream&, const RConnectedWindow&);
-
-typedef Repository
-<
-RConnectedWindow,
-  RConnectedWindow::Par,
-  std::unordered_map,
-  SOCKET
-  >
-  RConnectedWindowRepository;
 
 }
 #endif

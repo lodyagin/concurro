@@ -185,6 +185,7 @@ void test_in_socket_new_msg()
      &RThreadRepository<RThread<std::thread>>::instance(),
      1000
       );
+  sr.set_connect_timeout_u(3500000);
 
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
@@ -196,7 +197,11 @@ void test_in_socket_new_msg()
 
   cli_sock->ask_connect();
 
-  in_sock->msg.is_charged().wait();
+  (in_sock->msg.is_charged() |in_sock->is_terminal_state()
+  ).wait();
+
+  if (in_sock->is_terminal_state().signalled())
+    CU_FAIL_FATAL("The connection has been closed.");
 
   CU_ASSERT_TRUE_FATAL(
     RBuffer::State::state_is
@@ -236,6 +241,7 @@ void test_out_socket_login()
      &RThreadRepository<RThread<std::thread>>::instance(),
      1000
       );
+  sr.set_connect_timeout_u(3500000);
 
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
@@ -248,7 +254,12 @@ void test_out_socket_login()
 
   cli_sock->ask_connect();
 
-  in_sock->msg.is_charged().wait();
+  (in_sock->msg.is_charged() |in_sock->is_terminal_state()
+  ).wait();
+
+  if (in_sock->is_terminal_state().signalled())
+    CU_FAIL_FATAL("The connection has been closed.");
+
   const char* tst_string = "+Soup2.0\n";
   CU_ASSERT_EQUAL_FATAL(
     in_sock->msg.size(), strlen(tst_string));

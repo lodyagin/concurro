@@ -648,13 +648,13 @@ StdIdMember(const std::string& id)
   struct Par : public parent::Par                       \
   {                                                     \
     object* create_derivation                           \
-      (const ObjectCreationInfo& oi) const              \
+      (const curr::ObjectCreationInfo& oi) const        \
     { return new type(oi, *this); }                     \
   };
 
 #define PAR_DEFAULT_MEMBERS(object)             \
   object* create_derivation                     \
-  (const ObjectCreationInfo& oi) const          \
+  (const curr::ObjectCreationInfo& oi) const    \
   { return new object(oi, *this); }             \
                                                 \
   object* transform_object                      \
@@ -663,7 +663,7 @@ StdIdMember(const std::string& id)
 
 #define PAR_DEFAULT_VIRTUAL_MEMBERS(object)     \
   virtual object* create_derivation             \
-  (const ObjectCreationInfo& oi) const          \
+  (const curr::ObjectCreationInfo& oi) const    \
   { return new object(oi, *this); }             \
                                                 \
   virtual object* transform_object              \

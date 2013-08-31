@@ -18,14 +18,15 @@ public:
   DECLARE_STATE_CONST(State, s3);
   DECLARE_STATE_CONST(State, s4);
   DECLARE_STATE_CONST(State, s5);
-TestObject() 
+
+  TestObject() 
   : RObjectWithEvents<TestAxis>(s1State),
     CONSTRUCT_EVENT(s3)
     {}
 
-  std::string universal_id() const
+  std::string object_name() const override
   {
-    return "?";
+    return "TestObject";
   }
 
   CompoundEvent is_terminal_state() const override
@@ -96,9 +97,9 @@ SplittedStateObject(TestObject* orig)
     return CompoundEvent();
   }
 
-  std::string universal_id() const override
+  std::string object_name() const override
   {
-    return "?";
+    return "SplittedStateObject";
   }
 
   DEFAULT_LOGGER(SplittedStateObject);

@@ -30,7 +30,7 @@ void test_rconnectedwindow()
 
   memcpy(a->data(), "1234", 5);
   a->resize(4);
-  RConnectedWindow w(nullptr);
+  RConnectedWindow w;
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RConnectedWindow, state_is, w, ready));
   w.forward_top(5);
@@ -76,7 +76,7 @@ void test_extend_bottom_w()
   memcpy(a4->data(), "90", 3);
   a4->resize(2); a4->set_autoclear(true);
 
-  RConnectedWindow w(nullptr);
+  RConnectedWindow w;
   w.forward_top(10);
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RConnectedWindow, state_is, w, 

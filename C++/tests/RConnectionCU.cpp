@@ -55,6 +55,7 @@ public:
             (oi.repository)->thread_factory, 
             1000)
           );
+        socket_rep->set_connect_timeout_u(3500000);
         socket = socket_rep->create_object(*sock_addr);
         return new TestConnection(oi, *this);
       }
@@ -63,6 +64,12 @@ public:
   TestConnection(const ObjectCreationInfo& oi,
                  const Par& par)
     : RSingleSocketConnection(oi, par) {}
+
+  std::string object_name() const override
+  {
+    return "TestConnection";
+  }
+
 };
 
 static void test_connection(bool do_abort)

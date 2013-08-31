@@ -48,6 +48,7 @@ class ClientSocket : virtual public RSocketBase,
   DECLARE_EVENT(ClientSocketAxis, closed);
 
 public:
+  //! @cond
   DECLARE_STATES(ClientSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, pre_connecting);
@@ -57,6 +58,7 @@ public:
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
   DECLARE_STATE_CONST(State, closed);
+  //! @endcond
 
   const CompoundEvent is_terminal_state_event;
 
@@ -64,6 +66,11 @@ public:
     {
     return is_terminal_state_event;
     }*/
+
+  std::string object_name() const override
+  {
+    return SFORMAT("ClientSocket:" << universal_id());
+  }
 
   ~ClientSocket();
 

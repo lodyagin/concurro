@@ -32,7 +32,6 @@
 #define CONCURRO_RTHREAD_H_
 
 #include "SNotCopyable.h"
-#include "RThread.h"
 #include "RMutex.h"
 #include "REvent.h"
 #include "RState.h"
@@ -118,6 +117,11 @@ public:
   {
     return (thread_name.empty())
       ? universal_object_id : thread_name;
+  }
+
+  std::string object_name() const override
+  {
+    return pretty_id();
   }
 
   /* 

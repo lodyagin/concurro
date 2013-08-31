@@ -212,94 +212,94 @@ struct axis : public parent \
     return &axis::self() == ax.vself();        \
   } \
   \
-  static StateMapPar<axis> get_state_map_par(); \
+  static curr::StateMapPar<axis> get_state_map_par(); \
   \
-  const StateAxis* vself() const override \
+  const curr::StateAxis* vself() const override \
   { \
     return &axis::self(); \
   } \
   \
   const std::atomic<uint32_t>& current_state \
-    (const AbstractObjectWithStates* obj) const override \
+    (const curr::AbstractObjectWithStates* obj) const override \
   { \
-    return dynamic_cast<const RObjectWithStates<axis>*> \
+    return dynamic_cast<const curr::RObjectWithStates<axis>*>  \
       (obj)			\
-      -> RObjectWithStates<axis>::current_state(*this); \
+      -> curr::RObjectWithStates<axis>::current_state(*this);  \
   } \
   \
   std::atomic<uint32_t>& current_state \
-    (AbstractObjectWithStates* obj) const override	\
+    (curr::AbstractObjectWithStates* obj) const override	\
   { \
-    return dynamic_cast<RObjectWithStates<axis>*>(obj) \
-     -> RObjectWithStates<axis>::current_state(*this); \
+    return dynamic_cast<curr::RObjectWithStates<axis>*>(obj)   \
+      -> curr::RObjectWithStates<axis>::current_state(*this);  \
   } \
   \
   void update_events \
-     (AbstractObjectWithEvents* obj, \
-      TransitionId trans_id,  \
+    (curr::AbstractObjectWithEvents* obj,       \
+     curr::TransitionId trans_id,               \
       uint32_t to) override \
   { \
-    return dynamic_cast<RObjectWithEvents<axis>*>(obj) \
-    -> RObjectWithEvents<axis>::update_events \
+    return dynamic_cast<curr::RObjectWithEvents<axis>*>(obj)   \
+      -> curr::RObjectWithEvents<axis>::update_events          \
       (*this, trans_id, to); \
   } \
   \
   void state_changed \
-     (AbstractObjectWithStates* subscriber, \
-      AbstractObjectWithStates* publisher, \
-      const StateAxis& state_ax) override    \
+    (curr::AbstractObjectWithStates* subscriber,   \
+     curr::AbstractObjectWithStates* publisher,    \
+     const curr::StateAxis& state_ax) override     \
   { \
-    return dynamic_cast<RObjectWithStates<axis>*> \
+    return dynamic_cast<curr::RObjectWithStates<axis>*>  \
     (subscriber) \
-    -> RObjectWithStates<axis>::state_changed \
+      -> curr::RObjectWithStates<axis>::state_changed \
       (*this, state_ax, publisher);            \
   } \
   \
-  UniversalState bound(uint32_t st) const override \
+  curr::UniversalState bound(uint32_t st) const override \
   { \
-    return RState<axis>(st); \
+    return curr::RState<axis>(st);              \
   } \
 }; 
 
 #define DEFINE_AXIS(axis, pars...)	\
-  StateMapPar<axis> axis::get_state_map_par()    \
+  curr::StateMapPar<axis> axis::get_state_map_par()   \
   {	\
-    return StateMapPar<axis>(pars, \
-      StateMapInstance<typename axis::Parent>::init()); \
+    return curr::StateMapPar<axis>(pars,                \
+      curr::StateMapInstance<typename axis::Parent>::init()); \
   } \
-  template class RMixedAxis<axis, axis>;	\
-  template class RState<axis>; \
-  template class RMixedEvent<axis, axis>;		
+  template class curr::RMixedAxis<axis, axis>;	\
+  template class curr::RState<axis>;            \
+  template class curr::RMixedEvent<axis, axis>;		
 
 #define DEFINE_AXIS_NS(axis, pars...)	\
-  StateMapPar<axis> axis::get_state_map_par()    \
+  curr::StateMapPar<axis> axis::get_state_map_par()   \
   {	\
-    return StateMapPar<axis>(pars, \
-      StateMapInstance<typename axis::Parent>::init()); \
+    return curr::StateMapPar<axis>(pars,                \
+       curr::StateMapInstance<typename axis::Parent>::init()); \
   } 
 
 #define DECLARE_STATES(axis, state_class)	\
-  typedef RAxis<axis> state_class; \
-  friend RAxis<axis>;
+  typedef curr::RAxis<axis> state_class;  \
+  friend curr::RAxis<axis>;
 
 #define DEFINE_STATES(axis)				\
-  static RAxis<axis> raxis__ ## axis; 
+  static curr::RAxis<axis> raxis__ ## axis; 
 
 #define DECLARE_STATE_CONST(state_class, state)	\
-  static const RState<state_class::axis> state ## State;
+  static const curr::RState<state_class::axis> state ## State;
 
 
 #define DEFINE_STATE_CONST(class_, state_class, state)	\
-  const RState<class_::state_class::axis>					\
+  const curr::RState<class_::state_class::axis>					\
     class_::state ## State(#state);
 
 #define STATE_OBJ(class_, action, object, state) \
-  RMixedAxis<typename class_::State::axis, \
+  curr::RMixedAxis<typename class_::State::axis, \
              typename class_::axis>::action \
 	 ((object), class_::state ## State)
 
 #define A_STATE_OBJ(class_, axis_, action, object, state) \
-  RAxis<axis_>::action \
+  curr::RAxis<axis_>::action \
 	 ((object), class_::state ## State)
 
 #define STATE(class_, action, state) \
