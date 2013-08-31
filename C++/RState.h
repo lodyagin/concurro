@@ -290,7 +290,7 @@ struct axis : public parent \
 
 
 #define DEFINE_STATE_CONST(class_, state_class, state)	\
-  const curr::RState<class_::state_class::axis>					\
+  const curr::RState<typename class_::state_class::axis>					\
     class_::state ## State(#state);
 
 #define STATE_OBJ(class_, action, object, state) \

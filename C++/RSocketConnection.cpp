@@ -91,7 +91,7 @@ RSingleSocketConnection::RSingleSocketConnection
            (RThreadRepository<RThread<std::thread>>
             ::instance().create_thread
             (*par.get_thread_par(this)))),
-    in_win(new RConnectedWindow(SFORMAT(cli_sock->fd))),
+    in_win(RConnectedWindow<SOCKET>::create(cli_sock->fd)),
     is_closed_event(cli_sock, "closed"),
     is_terminal_state_event { 
       is_clearly_closed_event,

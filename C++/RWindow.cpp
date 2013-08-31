@@ -69,8 +69,6 @@ DEFINE_STATE_CONST(RWindow, State, filled);
 DEFINE_STATE_CONST(RWindow, State, welded);
 
 DEFINE_STATES(ConnectedWindowAxis);
-DEFINE_STATE_CONST(RConnectedWindow, State, 
-                   wait_for_buffer);
 
 RWindow::RWindow()
 : RObjectWithEvents<WindowAxis>(readyState),
@@ -221,7 +219,7 @@ size_t RWindow::size() const
 
 const char& RWindow::operator[] (size_t idx) const
 {
-  STATE(RConnectedWindow, ensure_state, filled);
+  STATE(RWindow, ensure_state, filled);
   if (bottom + (ssize_t)idx >= top) 
     throw std::out_of_range
       (SFORMAT("RWindow: index " << idx 
@@ -236,16 +234,18 @@ const char* RWindow::cdata() const
   return (const char*)buf->cdata() + bottom;
 }
 
+
+#if 0
 // RConnectedWindow
 
-RConnectedWindow
-::RConnectedWindow(const std::string& connection_id)
+/*RConnectedWindow
+::RConnectedWindow(int connection_id)
   : 
   CONSTRUCT_EVENT(ready),
   CONSTRUCT_EVENT(filling),
   CONSTRUCT_EVENT(wait_for_buffer),
   conn_id(connection_id)
-{}
+  {}*/
 
 RConnectedWindow::~RConnectedWindow()
 {
@@ -322,6 +322,8 @@ operator<< (std::ostream& out,
   out << ", state=" << RState<WindowAxis>(win) << ")";
   return out;
 }
+
+#endif
 
 }
 					 

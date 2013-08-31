@@ -50,15 +50,15 @@ public:
     //! Available addresses for socket(s)
     std::unique_ptr<RSocketAddressRepository> sar;
 
-    Par() 
-      : sar(new RSocketAddressRepository)
+    Par() : sar(new RSocketAddressRepository)
     {
       assert(sar);
     }
 
     Par(Par&& par)
     : sar(std::move(par.sar)),
-      socket_rep(std::move(par.socket_rep)) {}
+      socket_rep(std::move(par.socket_rep)) 
+    {}
 
     virtual ~Par() {}
     virtual RSocketConnection* create_derivation
@@ -108,6 +108,9 @@ public:
 
   //! Skip all data (non-blocking)
   virtual void ask_abort() = 0;
+
+  //! A window repostiry
+  //RConnectedWindowRepository<SOCKET> win_rep;
 
 protected:
   RSocketConnection
@@ -274,7 +277,7 @@ protected:
   InSocket* socket;
   ClientSocket* cli_sock;
   SocketThread* thread;
-  std::unique_ptr<RConnectedWindow> in_win;
+  RConnectedWindow<SOCKET>* in_win;
 
   A_DECLARE_EVENT(ClientConnectionAxis, 
                   ClientSocketAxis, closed);
@@ -286,7 +289,7 @@ protected:
 
 public:
   //! A current window
-  RConnectedWindow& iw() { return *in_win; }
+  RConnectedWindow<SOCKET>& iw() { return *in_win; }
 };
 
 class RConnectionRepository

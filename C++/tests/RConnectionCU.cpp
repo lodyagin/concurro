@@ -105,7 +105,7 @@ static void test_connection(bool do_abort)
   const std::string a2(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a2);
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, con->iw(),
+    STATE_OBJ(RConnectedWindow<int>, state_is, con->iw(),
               filled));
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RWindow, state_is, wc, filled));

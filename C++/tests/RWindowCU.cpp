@@ -30,27 +30,26 @@ void test_rconnectedwindow()
 
   memcpy(a->data(), "1234", 5);
   a->resize(4);
-  RConnectedWindow w;
+  RConnectedWindow<int>* w = RConnectedWindow<int>::create(1);
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, ready));
-  w.forward_top(5);
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, ready));
+  w->forward_top(5);
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, 
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
              wait_for_buffer));
-  w.new_buffer(std::move(a));
+  w->new_buffer(std::move(a));
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, 
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
              wait_for_buffer));
   a.reset(new RSingleBuffer(10, 5));
   a->set_autoclear(true);
   memcpy(a->data(), "5", 1);
   a->resize(1);
-  w.new_buffer(std::move(a));
+  w->new_buffer(std::move(a));
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, filled));
-  CU_ASSERT_EQUAL_FATAL(w.filled_size(), 5);
-  CU_ASSERT_NSTRING_EQUAL_FATAL(&w[0], "12345", 5);
-  RWindow().move(w);
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, filled));
+  CU_ASSERT_EQUAL_FATAL(w->filled_size(), 5);
+  CU_ASSERT_NSTRING_EQUAL_FATAL(&(*w)[0], "12345", 5);
 }
 
 void test_extend_bottom_w()
@@ -76,27 +75,26 @@ void test_extend_bottom_w()
   memcpy(a4->data(), "90", 3);
   a4->resize(2); a4->set_autoclear(true);
 
-  RConnectedWindow w;
-  w.forward_top(10);
+  auto* w = RConnectedWindow<int>::create(2);
+  w->forward_top(10);
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, 
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
               wait_for_buffer));
-  w.new_buffer(std::move(a1));
+  w->new_buffer(std::move(a1));
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, 
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
               wait_for_buffer));
-  w.new_buffer(std::move(a2));
+  w->new_buffer(std::move(a2));
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, 
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
               wait_for_buffer));
-  w.new_buffer(std::move(a3));
+  w->new_buffer(std::move(a3));
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, 
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
               wait_for_buffer));
-  w.new_buffer(std::move(a4));
+  w->new_buffer(std::move(a4));
   CU_ASSERT_TRUE_FATAL(
-    STATE_OBJ(RConnectedWindow, state_is, w, filled));
-  CU_ASSERT_NSTRING_EQUAL_FATAL(&w[0], "1234567890", 10);
-  
-  RWindow().move(w);
+    STATE_OBJ(RConnectedWindow<int>, state_is, *w, 
+              filled));
+  CU_ASSERT_NSTRING_EQUAL_FATAL(&(*w)[0], "1234567890", 10);
 }

@@ -1,5 +1,5 @@
 #include "RBuffer.h"
-#include "RWindow.h"
+#include "RWindow.hpp"
 #include "tests.h"
 
 void test_move_rbuffer();
@@ -193,14 +193,14 @@ void test_extend_bottom()
   memcpy(a->data(), "12345", 5);
   memcpy(b->data(), "67890", 5);
   a->resize(5); b->resize(5);
-  RConnectedWindow w;
-  w.forward_top(5);
+  auto* w = RConnectedWindow<int>::create(3);
+  w->forward_top(5);
   a->set_autoclear(true);
-  w.new_buffer(std::move(a));
-  b->extend_bottom(w);
+  w->new_buffer(std::move(a));
+  b->extend_bottom(*w);
   CU_ASSERT_NSTRING_EQUAL_FATAL(
     (const char*)b->cdata() - 5, "1234567890", 10);
-  RWindow().move(w);
+//  RWindow().move(w);
   b->resize(0);
 }
 
@@ -214,19 +214,19 @@ void test_extend_bottom_ovf()
   memcpy(a->data(), "12345", 5);
   memcpy(b->data(), "67890", 5);
   a->resize(5); b->resize(5);
-  RConnectedWindow w;
-  w.forward_top(5);
+  auto* w = RConnectedWindow<int>::create(4);
+  w->forward_top(5);
   a->set_autoclear(true);
-  w.new_buffer(std::move(a));
+  w->new_buffer(std::move(a));
   try {
-    b->extend_bottom(w);
+    b->extend_bottom(*w);
     CU_FAIL_FATAL("No exception.");
   }
   catch (const SException&) {
   }
   CU_ASSERT_NSTRING_EQUAL_FATAL(
     (const char*)b->cdata(), "67890", 5);
-  RWindow().move(w);
+//  RWindow().move(w);
   b->resize(0);
 }
 

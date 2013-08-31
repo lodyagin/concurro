@@ -35,6 +35,7 @@
 #include "RState.h"
 #include "RThread.h"
 #include "RObjectWithStates.h"
+#include "AutoRepository.h"
 
 namespace curr {
 
@@ -84,7 +85,7 @@ public:
   //! Create RWindow in "ready" state. 
   RWindow();
 
-  //! Clone w view to buffer.
+  //! Clone a view to w's buffer.
   RWindow(RWindow& w);
 
   //! Clone w view to buffer with bottom and top shifts.
@@ -182,10 +183,12 @@ DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
  * }
  * @enddot
  */
-class RConnectedWindow : public RWindow
+template<class ConnectionId>
+class RConnectedWindow : public RWindow, public StdIdMember
 {
+  template<class ConnId>
   friend std::ostream&
-    operator<<(std::ostream&, const RConnectedWindow&);
+    operator<<(std::ostream&, const RConnectedWindow<ConnId>&);
 
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
                   ready);
@@ -199,10 +202,20 @@ public:
   DECLARE_STATE_CONST(State, wait_for_buffer);
   //! @endcond
 
+  struct Par {
+    ConnectionId id;
+    Par(const ConnectionId& conn_id) : id(conn_id) {}
+    PAR_DEFAULT_VIRTUAL_MEMBERS(RConnectedWindow)
+    ConnectionId get_id(const ObjectCreationInfo& oi) const 
+      { return id; }
+  };
+
   //! Create RConnectedWindows with connection_id (it is
   //! used for logging).
-  RConnectedWindow(const std::string& connection_id 
-                   = std::string());
+  //RConnectedWindow(int connection_id = 0);
+
+  //! A delete copy constructor.
+  RConnectedWindow(const RConnectedWindow&) = delete;
 
   //! Construct a window which owns buf.
   //TODO move to RWindow
@@ -211,10 +224,17 @@ public:
   //! Will wait till underlaying buffer is discharged.
   virtual ~RConnectedWindow();
 
+  //! A delete assignment.
+  RConnectedWindow& operator=
+    (const RConnectedWindow&) = delete;
+
   std::string object_name() const override
   {
-    return SFORMAT("RConnectedWindow");
+    return SFORMAT("RConnectedWindow:" << universal_id());
   }
+
+  static RConnectedWindow<ConnectionId>* create
+    (const ConnectionId& connection_id);
 
   CompoundEvent is_terminal_state() const
   {
@@ -233,7 +253,8 @@ public:
   void new_buffer(std::unique_ptr<RSingleBuffer>&&);
 
 protected:
-  const std::string conn_id;
+  RConnectedWindow(const ObjectCreationInfo& oi,
+                   const Par& par);
 
   //! Determine a data ready state. After return the state
   //! is wait_for_buffer or filled.
@@ -242,8 +263,18 @@ protected:
   DEFAULT_LOGGER(RConnectedWindow);
 };
 
+template<class ConnectionId>
 std::ostream&
-operator<<(std::ostream&, const RConnectedWindow&);
+operator<<(std::ostream&, 
+           const RConnectedWindow<ConnectionId>&);
+
+
+/**
+ * 
+ */
+template<class ConnectionId>
+using RConnectedWindowRepository = 
+  AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>;
 
 }
 #endif
