@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 2.6.4)
 
 project(concurrent)
 
-#set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_STATIC_LIBS OFF)
 #set(Boost_USE_STATIC_RUNTIME OFF)
 #set(CMAKE_PREFIX_PATH /usr/local)
-set(Boost_USE_MULTITHREADED OFF)  
+set(Boost_USE_MULTITHREADED ON)  
 # it is alwais multithreaded on Linux
 #set(Boost_NO_SYSTEM_PATHS TRUE)
 find_package(Boost 1.49 COMPONENTS thread system REQUIRED)
@@ -45,4 +45,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 include_directories(../../PEvents)
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_LIBRARY(concurrent ${concurrent_SOURCES})
+add_LIBRARY(concurrent SHARED ${concurrent_SOURCES})
+
+target_link_libraries(concurrent pevents)
+

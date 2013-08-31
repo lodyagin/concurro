@@ -35,7 +35,7 @@ int REventCUClean()
 
 typedef RThread<std::thread> RT;
 
-static const std::chrono::milliseconds ms100(100);
+static const unsigned int ms100 = 100;
 
 DECLARE_AXIS(CDAxis, StateAxis);
 
