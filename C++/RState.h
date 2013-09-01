@@ -35,6 +35,34 @@
 
 namespace curr {
 
+/**
+ * @defgroup states
+ *
+ *  A state is an element from some set named "state
+ *  space". A state defines a point in that space where a
+ *  particular object resides (and this point is not
+ *  constant for the class of objects). Thus, we can treat
+ *  state both as a source and a feature of an object
+ *  mutability.
+ *
+ *  A state space is not singular but each object class
+ *  can have its own state spaces (e.g., the object class
+ *  "a door with solid painted sides" has 3 spaces:
+ *  (opened, closed) and 2 color spaces (for each
+ *  side) but they are not universal state spaces because
+ *  not each object class uses it).
+ *
+ *  An essential property of a state is a mutability and
+ *  the mutability has its own rules. We always should
+ *  control state transitions. Also, we can extend state
+ *  and transitions sets in descendants (see ... and ...).
+ *
+ *  And we always use a notion of state space axis because the
+ *  space can be multidirectional. See RAxis and RMixedAxis. 
+ *
+ * @{
+ */
+
 template<class Axis>
 struct UnitializedAxis : public SException
 {
@@ -75,6 +103,7 @@ public:
 template<class Axis, class Axis2> 
 class RMixedAxis;
 
+//! @class RAxis
 template<class Axis>
 using RAxis = RMixedAxis<Axis, Axis>;
 
@@ -308,5 +337,8 @@ struct axis : public parent \
 #define A_STATE(class_, axis_, action, state)			\
   A_STATE_OBJ(class_, axis_, action, *this, state)
 
+//! @}
+
 }
+
 #endif

@@ -37,6 +37,13 @@
 
 namespace curr {
 
+/**
+ * An AutoSingleton which allows have one and only one
+ * Repository for each Object/ObjectId par. <NB> There are
+ * can be different repositories for the same Object type
+ * differs by an identification schema (ObjectId).
+ * @ingroup repositories
+ */
 template<class Object, class ObjectId>
 class AutoRepository 
 : 

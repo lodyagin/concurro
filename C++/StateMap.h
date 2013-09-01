@@ -44,6 +44,9 @@
 
 namespace curr {
 
+//! @addtogroup states
+//! @{
+
 // <NB> the same size (see UniversalEvent)
 typedef uint16_t StateIdx;
 typedef uint16_t TransitionId;
@@ -267,6 +270,10 @@ public:
                      const StateMap* map);
 };
 
+/**
+ * Exception: two states are incompatible on StateMap
+ * level (when try to use in some operation).
+ */
 class IncompatibleMap : public SException
 {
 public:
@@ -516,6 +523,8 @@ StateMapId StateMapPar<Axis>
 {
   return StateMapParBase::get_map_id(oi, typeid(Axis));
 }
+
+//! @}
 
 }
 #endif

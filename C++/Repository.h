@@ -46,6 +46,9 @@
 
 namespace curr {
 
+//! @defgroup repositories
+//! @{
+
 DEFINE_EXCEPTION(InvalidObjectParameters,
                  "Invalid parameters for repository object creation"
   )
@@ -669,6 +672,8 @@ StdIdMember(const std::string& id)
   virtual object* transform_object              \
   (const object*) const                         \
   { THROW_NOT_IMPLEMENTED; }
+
+//! @}
 
 }
 
