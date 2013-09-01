@@ -216,12 +216,19 @@ public:
         (new Thread::Par(c));
     }
 
+    virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
+      get_window_par(RSocketBase* sock) const
+    {
+      return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
+        (new RConnectedWindow<SOCKET>::Par(sock->fd));
+    }
+
     mutable RSocketBase* socket;
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
-    struct InetClientPar 
-    : public Par,
+  struct InetClientPar 
+  : public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
     InetClientPar(const std::string& a_host,
@@ -294,7 +301,7 @@ public:
 
 class RConnectionRepository
 : public Repository<
-RSocketConnection, 
+  RSocketConnection, 
   RSocketConnection::Par,
   std::vector,
   size_t>
