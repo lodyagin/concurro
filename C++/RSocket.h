@@ -85,8 +85,6 @@ public:
   //! A socket file descriptor.
   const SOCKET fd;
 
-  //virtual CompoundEvent is_terminal_state() const = 0;
-
   virtual void ask_close_out() = 0;
 
   virtual std::string universal_id() const
