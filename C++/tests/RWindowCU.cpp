@@ -1,4 +1,4 @@
-#include "RWindow.h"
+#include "RWindow.hpp"
 #include "tests.h"
 
 void test_rconnectedwindow();

@@ -29,7 +29,7 @@
 
 #include "StdAfx.h"
 #include "RBuffer.h"
-#include "RWindow.h"
+#include "RWindow.hpp"
 #include "REvent.hpp"
 #include "RState.hpp"
 

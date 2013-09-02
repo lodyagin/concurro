@@ -31,6 +31,8 @@
 #define CONCURRO_RWINDOW_HPP_
 
 #include "RWindow.h"
+#include "RState.hpp"
+#include "REvent.hpp"
 
 namespace curr {
 

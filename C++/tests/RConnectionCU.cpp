@@ -1,7 +1,7 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
 #include "RSocketConnection.h"
-#include "RWindow.h"
+#include "RWindow.hpp"
 #include "tests.h"
 
 void test_connection_aborted();

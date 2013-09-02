@@ -33,6 +33,7 @@
 #include "ClientSocket.h"
 #include "REvent.hpp"
 #include "RState.hpp"
+#include "RWindow.hpp"
 
 namespace curr {
 

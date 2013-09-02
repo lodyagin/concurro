@@ -36,6 +36,7 @@
 #include "SShutdown.h"
 #include "Logging.h"
 #include "Event.h"
+#include <string>
 #include <algorithm>
 #include <utility>
 #include <list>
@@ -639,11 +640,27 @@ class StdIdMember
 public:
   const std::string universal_object_id;
 
-StdIdMember(const std::string& id)
+  StdIdMember(const std::string& id)
   : universal_object_id(id) {}
+
+  //! A default copy constructor.
+  StdIdMember(const StdIdMember&) = default;
+
+  //! An empty virtual destructor.
+  virtual ~StdIdMember() {}
+
+  //! A default assignment operator.
+  StdIdMember& operator=(const StdIdMember&) = default;
 
   std::string universal_id() const
   { return universal_object_id; }
+
+  //! Form an object name as a typeid : univeral_id.
+  virtual std::string object_name() const
+  {
+    return SFORMAT(typeid(*this).name() << ':' 
+                   << universal_id()); 
+  }
 };
 
 //! The simplest form of a derivation

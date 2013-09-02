@@ -28,7 +28,7 @@
  */
 
 #include "StdAfx.h"
-#include "RWindow.h"
+#include "RWindow.hpp"
 #include "RThread.hpp"
 #include "REvent.hpp"
 #include "RState.hpp"
