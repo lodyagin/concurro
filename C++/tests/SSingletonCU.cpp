@@ -76,6 +76,6 @@ void test_concurrent_creation()
          } ;
          
          T::instance();
-       });
+       })->start();
   }
 }

@@ -1,6 +1,7 @@
 *~*
 *#*
 *.a
+*.cbp
 *.cmake
 *.log
 *.so
@@ -8,7 +9,7 @@
 *.vpp.work*
 *.bak
 *.vpp~*
-core
+core*
 CMakeCache.txt
 GPATH
 GRTAGS
