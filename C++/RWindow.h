@@ -128,7 +128,7 @@ public:
   //! be detached.
   RWindow& move(RWindow& w);
 
-  CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
     //<NB> it is always terminal
     return CompoundEvent();
@@ -236,7 +236,7 @@ public:
   static RConnectedWindow<ConnectionId>* create
     (const ConnectionId& connection_id);
 
-  CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
     return is_ready_event;
   }

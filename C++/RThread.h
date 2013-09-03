@@ -44,6 +44,9 @@
 
 namespace curr {
 
+//! @defgroup Threads
+//! @{
+
 class ThreadAxis;
 
 //! An ancestor of all states of a thread.
@@ -53,6 +56,21 @@ DECLARE_AXIS(ThreadAxis, StateAxis);
  * It is a base class for RThread. It contains the base
  * implementation which not depends on a particular
  * physical thread.
+ *
+ * @dot
+ * digraph {
+ *    start [shape = point]; 
+ *    terminated [shape = doublecircle];
+ *    cancelled [shape = doublecircle];
+ *    start -> ready;
+ *    ready -> starting [label = "start()"];
+ *    starting -> working;
+ *    working -> terminated;
+ *    ready -> cancelled [label = "cancel()"];
+ *    cancelled -> cancelled;
+ * }
+ * @enddot
+ *
  */
 class RThreadBase
 : public SNotCopyable,
@@ -81,7 +99,7 @@ public:
     std::string thread_name;
   };
 
-  CompoundEvent is_terminal_state() const
+  CompoundEvent is_terminal_state() const override
   {
     return is_terminal_state_event;
   }
@@ -139,6 +157,7 @@ public:
   //! Do nothing for started threads and return false.
   virtual bool cancel();
 
+  //! Return true if the state is "working".
   bool is_running () const
   {
     return RAxis<ThreadAxis>::state_is
@@ -148,17 +167,21 @@ public:
 
   // Overrides
   void outString (std::ostream& out) const;
-
+  
+  //! @cond
   DECLARE_STATES(ThreadAxis, ThreadState);
   DECLARE_STATE_CONST(ThreadState, ready);
   DECLARE_STATE_CONST(ThreadState, starting);
   DECLARE_STATE_CONST(ThreadState, working);
   DECLARE_STATE_CONST(ThreadState, terminated);
   DECLARE_STATE_CONST(ThreadState, cancelled);
+  //! @endcond
 
   void state (ThreadState& state) const /* overrides */;
 
+  //! @cond
   DEFAULT_LOGGER(RThreadBase);
+  //! @endcond
 
 protected:
   struct LogParams {
@@ -214,8 +237,8 @@ typedef RThreadBase::ThreadState RThreadState;
   several times.  */
 
 /**
- * Any kind thread-wrapper object. Thread is the real
- * thread class. Each RThread object must be member of a
+ * Any kind thread-wrapper object. %Thread is the real
+ * thread class. Each RThread object must be a member of a
  * ThreadRepository.
  */
 template<class Thread> class RThread {};
@@ -356,6 +379,8 @@ protected:
 
   DEFAULT_LOGGER(RThread<std::thread>)
 };
+
+//! @}
 
 }
 #endif
