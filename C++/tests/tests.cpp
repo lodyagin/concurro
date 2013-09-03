@@ -16,6 +16,7 @@ extern CU_TestInfo RSignalTests[];
 extern CU_TestInfo RSocketTests[];
 extern CU_TestInfo RConnectionTests[];
 extern CU_TestInfo SCommonTests[];
+extern CU_TestInfo SSingletonTests[];
 
 int RepositoryCUInit(void);
 int RepositoryCUClean(void);
@@ -39,13 +40,15 @@ int RSocketCUInit(void);
 int RSocketCUClean(void);
 int RConnectionCUInit(void);
 int RConnectionCUClean(void);
-int SCommoCUInit(void);
-int SCommoCUClean(void);
+int SCommonCUInit(void);
+int SCommonCUClean(void);
+int SSingletonCUInit(void);
+int SSingletonCUClean(void);
 
 CU_SuiteInfo suites[] = {	
   { "Repository", RepositoryCUInit, RepositoryCUClean, 0, 0,
 	  RepositoryTests },
-  { "Common", SCommoCUInit, SCommoCUClean, 0, 0,
+  { "Common", SCommonCUInit, SCommonCUClean, 0, 0,
       SCommonTests },
   { "Event", EventCUInit, EventCUClean, 0, 0,
 	  EventTests },
@@ -67,6 +70,8 @@ CU_SuiteInfo suites[] = {
 	  RSocketTests },
   { "RConnection", RConnectionCUInit, RConnectionCUClean, 0, 0,
 	  RConnectionTests },
+  { "SSingleton", SSingletonCUInit, SSingletonCUClean, 0, 0,
+	  SSingletonTests },
 	CU_SUITE_INFO_NULL
 };
 

@@ -21,6 +21,7 @@ set(TestsSrc
   RSocketCU.cpp
   RConnectionCU.cpp
   SCommonCU.cpp
+  SSingletonCU.cpp
   tests.cpp
 )
 

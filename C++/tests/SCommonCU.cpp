@@ -13,13 +13,13 @@ CU_TestInfo SCommonTests[] = {
 };
 
 // init the test suite
-int SCommoCUInit()
+int SCommonCUInit()
 {
   return 0;
 }
 
 // clean the test suite
-int SCommoCUClean()
+int SCommonCUClean()
 {
   return 0;
 }

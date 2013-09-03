@@ -134,7 +134,7 @@ struct StateMapInstance<StateAxis>
  */
 template<class Axis, class Axis2>
 class RMixedAxis : public Axis, 
-  public SSingleton<RAxis<Axis>>
+  public SAutoSingleton<RAxis<Axis>>
 {
 public:
   typedef Axis axis;
@@ -311,15 +311,15 @@ struct axis : public parent \
   typedef curr::RAxis<axis> state_class;  \
   friend curr::RAxis<axis>;
 
-#define DEFINE_STATES(axis)				\
-  static curr::RAxis<axis> raxis__ ## axis; 
+#define DEFINE_STATES(axis)				
+//  static curr::RAxis<axis> raxis__ ## axis; 
 
 #define DECLARE_STATE_CONST(state_class, state)	\
   static const curr::RState<state_class::axis> state ## State;
 
 
-#define DEFINE_STATE_CONST(class_, state_class, state)	\
-  const curr::RState<typename class_::state_class::axis>					\
+#define DEFINE_STATE_CONST(class_, state_class, state)	 \
+  const curr::RState<typename class_::state_class::axis> \
     class_::state ## State(#state);
 
 #define STATE_OBJ(class_, action, object, state) \
