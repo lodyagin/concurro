@@ -260,7 +260,7 @@ public:
   class Par : public RThreadBase::Par
   {
   public:
-  Par(Event* ext_terminated = 0)
+    Par(Event* ext_terminated = 0)
     : RThreadBase::Par(ext_terminated),
       rthreadCreated(
         "RThread<std::thread>::Par::rthreadCreated",
@@ -338,7 +338,8 @@ public:
     th->join(); 
   }
 
-  //! Create in the repository
+  //! Create in the repository. args are parameters to
+  //! a %Thread::Par constructor.
   template<class Thread, class... Args>
     static Thread* create(Args&&... args);
 

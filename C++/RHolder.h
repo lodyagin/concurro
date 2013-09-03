@@ -34,6 +34,9 @@
 
 namespace curr {
 
+//! @addtogroup Repositories
+//! @{
+
 enum class HolderType { 
   Singular, //<! a view of one object
   Plural    //<! a view of an array of objects
@@ -46,6 +49,7 @@ DECLARE_AXIS(HolderAxis, StateAxis);
  */
 class RHolder : public RObjectWithStates<HolderAxis>
 {
+public:
   RHolder(const RHolder&);
   RHolder(RHolder&&);
   ~RHolder();
@@ -53,6 +57,8 @@ class RHolder : public RObjectWithStates<HolderAxis>
   RHolder& operator=(const RHolder&);
   RHolder& operator=(RHolder&&);
 };
+
+//! @}
 
 }
 
