@@ -30,71 +30,62 @@
 #ifndef CONCURRO_EXISTENT_H_
 #define CONCURRO_EXISTENT_H_
 
-#include "RObjectWithStates.h"
-#include <atomic>
+#include "ClassWithStates.h"
+#include "RState.h"
 
 namespace curr {
 
 DECLARE_AXIS(ExistenceAxis, StateAxis);
 
+char existent_class_initial_state[] = "not_exist";
+
 /**
  * Every object has two main states - exist and not_exist
  * which forms the ExistenceAxis. An object should be
- * derived from Existent if we need observe class copy
+ * derived from Existent if we need observe class 
  * existence (e.g., in SSingleton).
+ *
+ * @dot
+ * digraph {
+ *   start [shape = point]; 
+ *   not_exist [shape = doublecircle];
+ *   start -> not_exist;
+ *   not_exist -> exist_one
+ *     [label="notify_construction()"];
+ *   exist_one -> exist_several
+ *     [label="notify_construction()"];
+ *   exist_several -> exist_several
+ *     [label="notify_{construction,destruction}()"];
+ *   exist_several -> exist_one
+ *     [label="notify_destruction()"];
+ *   exist_one -> not_exist
+ *     [label="notify_destruction()"];
+ * }
+ * @enddot
+ *
  */
 template<class T>
-class Existent
+class Existent 
+: public ClassWithStates
+  <
+    ExistenceAxis, 
+    existent_class_initial_state
+  >
 {
-  friend class Existent::Watcher;
 public:
-  /**
-   * This is a "metaclass" for watch an Existent existence.
-   *
-   * @dot
-   * digraph {
-   *   start [shape = point]; 
-   *   not_exist [shape = doublecircle];
-   *   start -> not_exist;
-   *   not_exist -> exist_one
-   *     [label="notify_construction()"];
-   *   exist_one -> exist_several
-   *     [label="notify_construction()"];
-   *   exist_several -> exist_several
-   *     [label="notify_{construction,destruction}()"];
-   *   exist_several -> exist_one
-   *     [label="notify_destruction()"];
-   *   exist_one -> not_exist
-   *     [label="notify_destruction()"];
-   * }
-   * @enddot
-   *
-   */
-  class Watcher : public RObjectWithStates<ExistenceAxis>
-  {
-  public:
-    //! @cond
-    DECLARE_STATES(ExistenceAxis, State);
-    DECLARE_STATE_CONST(State, not_exist);
-    DECLARE_STATE_CONST(State, exist_one);
-    DECLARE_STATE_CONST(State, exist_several);
-    //! @endcond
+  //! @cond
+  DECLARE_STATES(ExistenceAxis, State);
+  DECLARE_STATE_CONST(State, not_exist);
+  DECLARE_STATE_CONST(State, exist_one);
+  DECLARE_STATE_CONST(State, exist_several);
+  //! @endcond
 
-    Watcher();
-    virtual ~Watcher();
+  //! Return a number of Existent objects
+  static unsigned get_obj_count()
+  { return obj_count; }
 
-    //! Return a number of Existent objects
-    unsigned get_obj_count() const
-    { return obj_count; }
-
-  protected:
-    std::atomic<int> obj_count;
-
-    virtual void notify_construction();
-    virtual void notify_destruction();
-  };
-
-  static Watcher watcher;
+protected:
+  static std::atomic<int> obj_count;
 
   Existent();
   Existent(const Existent&);

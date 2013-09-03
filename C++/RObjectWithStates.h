@@ -37,6 +37,9 @@
 
 namespace curr {
 
+//! @addtogroup states
+//! @{
+
 class REventIsUnregistered : public SException
 {
 public:
@@ -376,6 +379,8 @@ void update_events \
 { \
   ax.update_events(this, trans_id, to); \
 }
+
+//! @}
   
 }
 #endif
