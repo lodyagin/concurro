@@ -37,6 +37,8 @@ namespace curr {
 //! @defgroup Singletons
 //! @{
 
+class DeadReferenceException : public std::exception{};
+
 /**
  * Base class for classes that can have only one instance
  * parametrised by the actual singleton class, use as:
