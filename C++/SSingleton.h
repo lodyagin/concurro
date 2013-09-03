@@ -34,12 +34,22 @@
 
 namespace curr {
 
-class DeadReferenceException : public std::exception{};
+//! @defgroup Singletons
+//! @{
 
 /**
  * Base class for classes that can have only one instance
- * parametrised by the actual singleton class use as:
+ * parametrised by the actual singleton class, use as:
  * class MyClass : public SSingleton<MyClass>
+ *
+ * @dot
+ * digraph {
+ *    start [shape = point]; 
+ *    stop [shape = point];
+ *    destroyed;
+ * }
+ * @enddot
+ *
  */
 template<class T>
 class SSingleton
@@ -116,6 +126,7 @@ template<class T>
 T * SSingleton<T>::_instance = 0;
 template<class T> bool SSingleton<T>::destroyed = false;
 
+//! @}
 
 }
 #endif
