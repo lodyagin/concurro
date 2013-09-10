@@ -29,8 +29,11 @@
 
 #include "Existent.hpp"
 #include "RState.hpp"
+#include "RObjectWithStates.hpp"
 
 namespace curr {
+
+char existent_class_initial_state[] = "not_exist";
 
 DEFINE_AXIS(
   ExistenceAxis,
@@ -44,15 +47,23 @@ DEFINE_AXIS(
     {"not_exist", "pre_exist_one"},
     {"pre_exist_one", "exist_one"},
     {"exist_one", "pre_exist_several"},
-    {"pre_exist_several", "exist_several"}, //also dec
-    {"exist_several", "exist_several"},
+    {"pre_exist_several", "exist_several"},
 
     // dec_existence()
-    {"exist_several", "pre_exist_several"},
+    {"exist_several", "pre_exist_several"}, //also inc
     {"pre_exist_several", "exist_one"},
     {"exist_one", "pre_exist_one"},
     {"pre_exist_one", "not_exist"}
   }
   );
+
+#if 0
+DEFINE_STATE_CONST(ExistentStates, State, not_exist);
+DEFINE_STATE_CONST(ExistentStates, State, pre_exist_one);
+DEFINE_STATE_CONST(ExistentStates, State, exist_one);
+DEFINE_STATE_CONST(ExistentStates, State, exist_several);
+DEFINE_STATE_CONST(ExistentStates, State, 
+                   pre_exist_several);
+#endif
 
 }

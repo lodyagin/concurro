@@ -27,37 +27,44 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_CLASSWITHSTATES_H_
-#define CONCURRO_CLASSWITHSTATES_H_
+#ifndef CONCURRO_STATEAXIS_HPP_
+#define CONCURRO_STATEAXIS_HPP_
 
-#include "ObjectWithStatesInterface.h"
+#include "StateAxis.h"
+#include "SException.h"
 
 namespace curr {
 
-//! @addtogroup states
-//! @{
-
-template<class T, class Axis, const char* initial_state>
-class ClassWithStates
-: public ObjectWithStatesInterface<Axis>
+const std::atomic<uint32_t>& StateAxis::current_state
+  (const AbstractObjectWithStates*) const
 {
-public:
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
+  THROW_NOT_IMPLEMENTED;
+}
 
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override;
+std::atomic<uint32_t>& StateAxis::current_state
+  (AbstractObjectWithStates*) const
+{
+    THROW_NOT_IMPLEMENTED;
+}
 
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override;
-};
+void StateAxis::update_events
+  (AbstractObjectWithEvents* obj, 
+   TransitionId trans_id, 
+   uint32_t to)
+{
+  THROW_NOT_IMPLEMENTED;
+}
 
-//! @}
+void StateAxis::state_changed
+  (AbstractObjectWithStates* subscriber,
+   AbstractObjectWithStates* publisher,
+   const StateAxis& state_ax)
+{
+  THROW_NOT_IMPLEMENTED;
+}
+
+
 
 }
+
 #endif
-
-

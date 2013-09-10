@@ -33,7 +33,7 @@
 #include "RMutex.h"
 #include "SNotCopyable.h"
 #include "SException.h"
-#include "SShutdown.h"
+//#include "SShutdown.h"
 #include "Logging.h"
 #include "Event.h"
 #include <string>

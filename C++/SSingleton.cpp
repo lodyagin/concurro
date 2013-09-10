@@ -27,37 +27,43 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_CLASSWITHSTATES_H_
-#define CONCURRO_CLASSWITHSTATES_H_
-
-#include "ObjectWithStatesInterface.h"
+#include "SSingleton.hpp"
+#include "StateMapRepository.h"
+#include "RThreadRepository.h"
 
 namespace curr {
 
-//! @addtogroup states
-//! @{
-
-template<class T, class Axis, const char* initial_state>
-class ClassWithStates
-: public ObjectWithStatesInterface<Axis>
+RMixedAxis<ExistenceAxis, ExistenceAxis>&
+SAutoSingleton<RMixedAxis<ExistenceAxis, ExistenceAxis>> 
+::instance()
 {
-public:
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
 
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override;
+StateMapRepository& 
+SAutoSingleton<StateMapRepository> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
 
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override;
-};
-
-//! @}
+RThreadRepository<RThread<std::thread>>& 
+SAutoSingleton<RThreadRepository<RThread<std::thread>>> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
 
 }
-#endif
-
-

@@ -22,6 +22,7 @@ set (concurrent_SOURCES
   HasStringView.cpp
   InSocket.cpp
   Logging.cpp
+  ObjectWithLogging.cpp
   OutSocket.cpp
   RBuffer.cpp
   RMutex.cpp
@@ -36,6 +37,8 @@ set (concurrent_SOURCES
   SCommon.cpp
   SException.cpp
   SShutdown.cpp
+  SSingleton.cpp
+  StateAxis.cpp
   StateMap.cpp
   StdAfx.cpp
   TCPSocket.cpp

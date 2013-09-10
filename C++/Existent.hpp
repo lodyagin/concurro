@@ -31,25 +31,23 @@
 #define CONCURRO_EXISTENT_HPP_
 
 #include "Existent.h"
-#include "RObjectWithStates.hpp"
-#include "RState.hpp"
+#include "RState.h"
+#include "ClassWithStates.hpp"
 
 namespace curr {
 
-template<class T>
-DEFINE_STATE_CONST(Existent<T>, State, not_exist);
-
-template<class T>
-DEFINE_STATE_CONST(Existent<T>, State, pre_exist_one);
-
-template<class T>
-DEFINE_STATE_CONST(Existent<T>, State, exist_one);
-
-template<class T>
-DEFINE_STATE_CONST(Existent<T>, State, exist_several);
-
-template<class T>
-DEFINE_STATE_CONST(Existent<T>, State, pre_exist_several);
+class ExistentStates
+{
+public:
+  //! @cond
+  DECLARE_STATES(ExistenceAxis, State);
+  DECLARE_STATE_FUN(State, not_exist);
+  DECLARE_STATE_FUN(State, pre_exist_one);
+  DECLARE_STATE_FUN(State, exist_one);
+  DECLARE_STATE_FUN(State, exist_several);
+  DECLARE_STATE_FUN(State, pre_exist_several);
+  //! @endcond
+};
 
 template<class T>
 std::atomic<int> Existent<T>::obj_count(0);
@@ -94,22 +92,31 @@ void Existent<T>::inc_existence()
   bool b = false, a;
 
   while (
-   ! ((a = State::compare_and_move(
-       *this, not_existState, pre_exist_oneState))
-     || (b = State::compare_and_move(
-       *this, exist_oneState, pre_exist_severalState))
-     || State::compare_and_move(
-       *this, exist_severalState, exist_severalState)
-     )
+    ! ((a = ExistentStates::State::compare_and_move(
+       *this, 
+       ExistentStates::not_existFun(), 
+       ExistentStates::pre_exist_oneFun()))
+     || 
+       (b = ExistentStates::State::compare_and_move(
+       *this, 
+       { ExistentStates::exist_oneFun(), 
+         ExistentStates::exist_severalFun() 
+       },
+       ExistentStates::pre_exist_severalFun()))
+      )
    );
 
   obj_count++;
   assert (obj_count > 0);
   assert ((obj_count == 1) == a); 
-  assert (IMPLICATION(b, obj_count > 1));
+  assert ((obj_count > 1) == b);
 
-  if (a) State::move_to(*this, exist_oneState);
-  else if (b) State::move_to(*this, exist_severalState);
+  if (a) 
+    ExistentStates::State::move_to(
+      *this, ExistentStates::exist_oneFun());
+  else if (b) 
+    ExistentStates::State::move_to(
+      *this, ExistentStates::exist_severalFun());
 }
 
 template<class T>
@@ -118,10 +125,14 @@ void Existent<T>::dec_existence()
   bool b = false, a;
 
   while (
-   ! ((a = State::compare_and_move(
-     *this, exist_severalState, pre_exist_severalState))
-     || (b = State::compare_and_move(
-       *this, exist_oneState, pre_exist_oneState))
+   ! ((a = ExistentStates::State::compare_and_move(
+     *this, 
+     ExistentStates::exist_severalFun(), 
+     ExistentStates::pre_exist_severalFun()))
+     || (b = ExistentStates::State::compare_and_move(
+       *this, 
+       ExistentStates::exist_oneFun(), 
+       ExistentStates::pre_exist_oneFun()))
      )
    );
 
@@ -129,11 +140,14 @@ void Existent<T>::dec_existence()
   assert (obj_count >= 0);
 
   if (obj_count == 1)
-    State::move_to(*this, exist_oneState);
+    ExistentStates::State::move_to(
+      *this, ExistentStates::exist_oneFun());
   else if (a)
-    State::move_to(*this, exist_severalState);
+    ExistentStates::State::move_to(
+      *this, ExistentStates::exist_severalFun());
   else if (b)
-    State::move_to(*this, not_existState);
+    ExistentStates::State::move_to(
+      *this, ExistentStates::not_existFun());
 }
 
 }

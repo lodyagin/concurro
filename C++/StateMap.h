@@ -30,7 +30,7 @@
 #ifndef CONCURRO_STATEMAP_H_
 #define CONCURRO_STATEMAP_H_
 
-#include "SSingleton.h"
+//#include "SSingleton.h"
 #include "HasStringView.h"
 #include "Logging.h"
 #include "SException.h"
@@ -94,47 +94,6 @@ class AbstractObjectWithEvents;
 class StateMap;
 //class UniversalState;
 
-//! A state space axis abstract base. Real axises will be
-//! inherited.
-struct StateAxis 
-{
-  //! To make this type polymorphic
-  virtual ~StateAxis() {} 
-
-  virtual const std::atomic<uint32_t>& current_state
-  (const AbstractObjectWithStates*) const
-    {
-      THROW_NOT_IMPLEMENTED;
-    }
-
-  virtual std::atomic<uint32_t>& current_state
-  (AbstractObjectWithStates*) const
-    {
-      THROW_NOT_IMPLEMENTED;
-    }
-
-  virtual void update_events
-  (AbstractObjectWithEvents* obj, 
-   TransitionId trans_id, 
-   uint32_t to)
-    {
-      THROW_NOT_IMPLEMENTED;
-    }
-
-  virtual void state_changed
-  (AbstractObjectWithStates* subscriber,
-   AbstractObjectWithStates* publisher,
-   const StateAxis& state_ax)
-    {
-      THROW_NOT_IMPLEMENTED;
-    }
-
-  //! Change StateMap in us to the map of the axis.
-  virtual UniversalState bound(uint32_t st) const = 0;
-
-  virtual const StateAxis* vself() const = 0;
-};
-
 //! Return true if DerivedAxis is same or derived from
 //! Axis
 template<class Axis, class DerivedAxis>
@@ -145,16 +104,6 @@ template<class Axis, class DerivedAxis>
   return dynamic_cast<const Axis*>(&DerivedAxis::self_) 
     != nullptr;
 #pragma GCC diagnostic pop
-}
-
-template<class Axis>
-inline bool is_same_axis(const StateAxis& ax)
-{
-#if 1
-  return Axis::is_same(ax);
-#else
-  return typeid(Axis) == typeid(ax);
-#endif
 }
 
 #define STATE_MAP_MASK 0x7fff0000
@@ -460,59 +409,6 @@ protected:
 
 private:
   typedef Logger<LOG::States> log;
-};
-
-/**
- * A repository for state maps. It also maintains
- * additional global data.
- */
-class StateMapRepository 
-: public Repository<
-StateMap, 
-  StateMapParBase, 
-  std::unordered_map,
-  StateMapId
-  >,
-  public SAutoSingleton<StateMapRepository>
-{
-  friend class StateMap;
-  friend class StateMapParBase;
-public:
-  typedef Repository< 
-    StateMap, 
-    StateMapParBase, 
-    std::unordered_map,
-    StateMapId > Parent;
-
-StateMapRepository() 
-  : Parent("StateMapRepository", 50), 
-    max_trans_id(0), last_map_id(0) {}
-
-  //! For id == 0 return empty map.
-  StateMap* get_object_by_id(StateMapId id) const override;
-
-  //! Return max used transition id
-  TransitionId max_transition_id() const
-  { return max_trans_id; }
-
-  //! Return a state map by a state axis
-  StateMap* get_map_for_axis(const std::type_info& axis);
-
-  //! Return a map id by an axis type.
-  //! It creates new StateMapId 
-  //! if it is new (unregistered) axis.
-  StateMapId get_map_id(const std::type_info& axis);
-
-  std::string get_state_name(uint32_t state) const;
-
-protected:
-  //! It is incremented in a StateMap constructor.
-  std::atomic<TransitionId> max_trans_id;
-
-  StateMapId last_map_id;
-  std::map<std::string, StateMapId> axis2map_id;
-
-  static StateMap* empty_map;
 };
 
 

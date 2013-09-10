@@ -30,6 +30,7 @@
 #ifndef __RMutex_H
 #define __RMutex_H
 
+#include "Logging.h"
 #include <assert.h>
 #include "SNotCopyable.h"
 #include "Logging.h"

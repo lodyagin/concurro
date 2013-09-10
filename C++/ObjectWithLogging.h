@@ -27,37 +27,32 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_CLASSWITHSTATES_H_
-#define CONCURRO_CLASSWITHSTATES_H_
+#ifndef CONCURRO_OBJECTWITHLOGGING_H_
+#define CONCURRO_OBJECTWITHLOGGING_H_
 
-#include "ObjectWithStatesInterface.h"
+#include <log4cxx/logger.h>
 
 namespace curr {
 
-//! @addtogroup states
+//! @addtogroup logging
 //! @{
 
-template<class T, class Axis, const char* initial_state>
-class ClassWithStates
-: public ObjectWithStatesInterface<Axis>
+/**
+ * An abstract parent of "Object with logging" - an entity
+ * with its own logging namespace.
+ */
+class ObjectWithLogging
 {
 public:
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
-
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override;
-
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override;
+  //! It should be overriden. The default implementation
+  //! is for logging from constructors to prevent a pure
+  //! virtual function call.
+  virtual log4cxx::LoggerPtr logger() const;
 };
 
 //! @}
 
 }
-#endif
 
+#endif
 

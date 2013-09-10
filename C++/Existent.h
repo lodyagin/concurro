@@ -31,14 +31,15 @@
 #define CONCURRO_EXISTENT_H_
 
 #include "ClassWithStates.h"
-#include "RState.h"
-#include "REvent.h"
+#include "StateAxis.h"
+//#include "RState.h"
+//#include "REvent.h"
 
 namespace curr {
 
 DECLARE_AXIS(ExistenceAxis, StateAxis);
 
-char existent_class_initial_state[] = "not_exist";
+extern char existent_class_initial_state[];
 
 /**
  * Every object has two main states - exist and not_exist
@@ -59,10 +60,8 @@ char existent_class_initial_state[] = "not_exist";
  *     [label="inc_existence()"];
  *   pre_exist_several -> exist_several
  *     [label="{inc,dec}_existence()"];
- *   exist_several -> exist_several
- *     [label="inc_existence()"];
  *   exist_several -> pre_exist_several
- *     [label="dec_existence()"];
+ *     [label="{inc,dec}_existence()"];
  *   pre_exist_several -> exist_one
  *     [label="dec_existence()"];
  *   exist_one -> pre_exist_one
@@ -72,24 +71,18 @@ char existent_class_initial_state[] = "not_exist";
  * }
  * @enddot
  *
+ * State constants are declared separately in
+ * ExistentState class to prevent cyclic dependencies.
  */
 template<class T>
 class Existent 
 : public ClassWithStates
-  <
+  < T,
     ExistenceAxis, 
     existent_class_initial_state
   >
 {
 public:
-  //! @cond
-  DECLARE_STATES(ExistenceAxis, State);
-  DECLARE_STATE_CONST(State, not_exist);
-  DECLARE_STATE_CONST(State, pre_exist_one);
-  DECLARE_STATE_CONST(State, exist_one);
-  DECLARE_STATE_CONST(State, exist_several);
-  DECLARE_STATE_CONST(State, pre_exist_several);
-  //! @endcond
 
   Existent();
   Existent(const Existent&);

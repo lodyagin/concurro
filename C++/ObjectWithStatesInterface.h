@@ -30,11 +30,18 @@
 #ifndef CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 #define CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 
-#include "Logging.h"
-#include "StateMap.h"
+//#include "Logging.h"
+//#include "StateMap.h"
+#include "StateAxis.h"
+#include "Event.h"
 #include <typeinfo>
 
 namespace curr {
+
+class UniversalEvent;
+
+//! @addtogroup states
+//! @{
 
 template<class Axis1, class Axis2> class RMixedAxis;
 template<class Axis> class RState;
@@ -152,6 +159,8 @@ protected:
       TransitionId trans_id, 
       uint32_t to) = 0;
 };
+
+//! @}
 
 }
 #endif

@@ -30,7 +30,10 @@
 #ifndef CONCURRO_SSINGLETON_H_
 #define CONCURRO_SSINGLETON_H_
 
+#include "Existent.h"
 #include "SException.h"
+#include <atomic>
+#include <thread>
 
 namespace curr {
 
@@ -56,18 +59,9 @@ class MustBeSingleton;
  * Base class for classes that can have only one instance
  * parametrised by the actual singleton class, use as:
  * class MyClass : public SSingleton<MyClass>
- *
- * @dot
- * digraph {
- *    start [shape = point]; 
- *    stop [shape = point];
- *    destroyed;
- * }
- * @enddot
- *
  */
 template<class T>
-class SSingleton
+class SSingleton : public Existent<T>
 {
 public:
   //! One and only one class instance must be created with
@@ -76,24 +70,43 @@ public:
   //! already exists.
   SSingleton();
 
+  //! A deleted copy constructor
+  SSingleton(const SSingleton&) = delete;
+
+  //! The move constructor doesn't change existence.
+  SSingleton(SSingleton&&) {}
+
   virtual ~SSingleton();
 
+  //! A deleted assignment operator.
+  SSingleton& operator=(const SSingleton&) = delete;
+
+  //! The move assignment doesn't change existence.
+  SSingleton& operator=(SSingleton&&) {}
+
   //! Return the reference to the class instance. 
+  //! Not safe in multithreading environment (need to
+  //! redesign with RHolder).
+  //!
   //! @exception NotExistingSingleton If no
   //! class is crated with SSingleton() raise exception.
   static T & instance();
 
-  // Added by slod to prevent assertion with MainWin in
-  // Common::ErrorMessage.
-  // It is not true singleton (why?) and thus we need a
-  // trick.
   static bool isConstructed ()
   {
-     return _instance != NULL;
+     return _instance;
   }
 
+protected:
+  //! Disable change to ExistenceAxis exist_several state
+  //! @exception MustBeSingleton
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,
+     AbstractObjectWithStates* object) override;
+
 private:
-  static T * _instance;
+  static std::atomic<T*> _instance;
 };
 
 /**
@@ -104,8 +117,88 @@ template<class T>
 class SAutoSingleton : public SSingleton<T>
 {
 public:
+  //! Return the reference to the class instance. 
+  //! Not safe in multithreading environment (need to
+  //! redesign with RHolder).
   static T & instance ();
 };
+
+template<>
+class SAutoSingleton<
+  RMixedAxis<ExistenceAxis, ExistenceAxis>> 
+{
+public:
+  typedef RMixedAxis<ExistenceAxis, ExistenceAxis> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+
+template<>
+class SAutoSingleton<StateMapRepository> 
+{
+public:
+  typedef StateMapRepository T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+
+template<class Thread>
+class RThreadRepository;
+
+#if 0
+template<class Thread>
+class SAutoSingleton<RThreadRepository<Thread>> 
+{
+public:
+  typedef RThreadRepository<Thread> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+#else
+template<class SystemThread>
+class RThread;
+
+template<>
+class SAutoSingleton<RThreadRepository<RThread<std::thread>>> 
+{
+public:
+  typedef RThreadRepository<RThread<std::thread>> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+#endif
 
 //! @}
 

@@ -5,12 +5,16 @@
 #include <thread>
 #include <functional>
 
+void test_sautosingleton_raxis();
 void test_ssingleton();
 void test_sautosingleton_auto();
 void test_sautosingleton_manual();
 void test_concurrent_creation();
 
 CU_TestInfo SSingletonTests[] = {
+  {"test SAutosingleton"
+   "<RMixedAxis<ExistenceAxis, ExistenceAxis>>",
+   test_sautosingleton_raxis},
   {"test SSingleton", test_ssingleton},
   {"test SAutoSingleton automatic construction", 
    test_sautosingleton_auto},
@@ -68,6 +72,16 @@ LightThread::LightThread
 void LightThread::run()
 {
   fun();
+}
+
+void test_sautosingleton_raxis()
+{
+  typedef RMixedAxis<ExistenceAxis, ExistenceAxis> T;
+
+  T* p1, *p2;
+  p1 = &T::instance();
+  p2 = &T::instance();
+  CU_ASSERT_PTR_EQUAL_FATAL(p1, p2);
 }
 
 void test_ssingleton()

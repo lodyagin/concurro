@@ -33,6 +33,8 @@
 #include "SSingleton.h"
 #include "Logging.h"
 #include "SCheck.h"
+#include "Existent.hpp"
+#include <mutex>
 
 namespace curr {
 
@@ -49,16 +51,15 @@ DEFINE_EXCEPTION(
 template<class T>
 SSingleton<T>::SSingleton()
 {
-  if (_instance)
-    THROW_EXCEPTION(MustBeSingleton);
-
   _instance = static_cast<T *>(this);
+  assert(this->get_obj_count() == 1);
 }
 
 template<class T>
 SSingleton<T>::~SSingleton()
 {
   _instance = nullptr;
+  assert(this->get_obj_count() == 1);
 }
 
 template<class T>
@@ -66,15 +67,39 @@ inline T & SSingleton<T>::instance()
 {
   if (!_instance)
     THROW_EXCEPTION(NotExistingSingleton);
-    
+ 
+  //FIXME need redesign (singleton existence during the
+  //method call).
+   
   return *_instance;
 }
 
 template<class T>
-T * SSingleton<T>::_instance(nullptr);
+void SSingleton<T>::state_changed
+  (StateAxis& ax, 
+   const StateAxis& state_ax,
+   AbstractObjectWithStates* object)
+{
+  Existent<T>::state_changed(ax, state_ax, object);
+
+  if (ExistentStates::State::compare_and_move(
+        *this, 
+        ExistentStates::pre_exist_severalFun(),
+        // <NB> prior obj_count++
+        ExistentStates::exist_oneFun()
+        // <NB> constructor will be failed
+     ))
+    THROW_EXCEPTION(MustBeSingleton);
+}
 
 template<class T>
-T& SAutoSingleton<T>::instance ()
+std::atomic<T*> SSingleton<T>::_instance(nullptr);
+
+
+// SAutoSingleton
+
+template<class T>
+T& SAutoSingleton<T>::instance()
 {
   if (!SSingleton<T>::isConstructed ()) 
     new T (); 
@@ -82,7 +107,20 @@ T& SAutoSingleton<T>::instance ()
   return SSingleton<T>::instance ();
 }
 
+#if 0
+template<class Thread>
+RThreadRepository<Thread>& 
+SAutoSingleton<RThreadRepository<Thread>> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
 }
+#endif
 
+}
 #endif
 

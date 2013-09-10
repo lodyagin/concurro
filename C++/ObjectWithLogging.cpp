@@ -27,37 +27,14 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_CLASSWITHSTATES_H_
-#define CONCURRO_CLASSWITHSTATES_H_
-
-#include "ObjectWithStatesInterface.h"
+#include "Logging.h"
+#include "ObjectWithLogging.h"
 
 namespace curr {
 
-//! @addtogroup states
-//! @{
-
-template<class T, class Axis, const char* initial_state>
-class ClassWithStates
-: public ObjectWithStatesInterface<Axis>
+log4cxx::LoggerPtr ObjectWithLogging::logger() const
 {
-public:
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
-
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override;
-
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override;
-};
-
-//! @}
+  return Logger<LOG::Root>::logger();
+}
 
 }
-#endif
-
-

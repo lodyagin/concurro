@@ -30,12 +30,15 @@
 #ifndef CONCURRO_REVENT_H_
 #define CONCURRO_REVENT_H_
 
-#include "StateMap.h"
-#include "RObjectWithStates.hpp"
+//#include "StateMap.h"
+#include "RObjectWithStates.h"
 #include "Event.h"
 #include <set>
 
 namespace curr {
+
+//! @addtogroup events
+//! @{
 
 template<class Axis, class Axis2>
 class RMixedEvent
@@ -73,5 +76,7 @@ private:
   is_ ## event ## _event(this, #event)
 
 }
+
+//! @}
 
 #endif 

@@ -27,37 +27,35 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_CLASSWITHSTATES_H_
-#define CONCURRO_CLASSWITHSTATES_H_
+#ifndef CONCURRO_CLASSWITHSTATES_HPP_
+#define CONCURRO_CLASSWITHSTATES_HPP_
 
-#include "ObjectWithStatesInterface.h"
+#include "ClassWithStates.h"
+//#include "RState.hpp"
 
 namespace curr {
 
-//! @addtogroup states
-//! @{
+template<class T, class Axis, const char* initial_state>
+std::atomic<uint32_t>& 
+ClassWithStates<T, Axis, initial_state>
+::current_state(const StateAxis& ax)
+{
+  static std::atomic<uint32_t> currentState( 
+    RAxis<Axis>::instance().state_map()
+    -> create_state(initial_state));
+  return currentState;
+}
 
 template<class T, class Axis, const char* initial_state>
-class ClassWithStates
-: public ObjectWithStatesInterface<Axis>
+const std::atomic<uint32_t>& 
+ClassWithStates<T, Axis, initial_state>
+::current_state(const StateAxis& ax) const
 {
-public:
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
-
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override;
-
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override;
-};
-
-//! @}
+  return const_cast<
+    ClassWithStates<T, Axis, initial_state>*>
+      (this) -> current_state(ax);
+}
 
 }
 #endif
-
 

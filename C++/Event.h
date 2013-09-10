@@ -46,6 +46,11 @@ typedef neosmart::neosmart_event_t HANDLE;
 
 namespace curr {
 
+/**
+ * @defgroup events
+ * @{
+ */
+
 class EventInterface : public ObjectWithLogging
 {
 public:
@@ -398,6 +403,8 @@ inline CompoundEvent operator|
 {
   a |= b; return a;
 }
+
+//! @}
 
 }
 #endif

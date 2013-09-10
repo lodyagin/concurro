@@ -35,6 +35,7 @@
 #include "Repository.hpp"
 #include "RObjectWithStates.hpp"
 #include "SSingleton.hpp"
+#include "StateMapRepository.h"
 #include <atomic>
 
 namespace curr {
