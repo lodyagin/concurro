@@ -76,9 +76,18 @@ public:
   //! @cond
   DECLARE_STATES(ExistenceAxis, State);
   DECLARE_STATE_CONST(State, not_exist);
+  DECLARE_STATE_CONST(State, pre_exist_one);
   DECLARE_STATE_CONST(State, exist_one);
   DECLARE_STATE_CONST(State, exist_several);
+  DECLARE_STATE_CONST(State, pre_exist_several);
   //! @endcond
+
+  Existent();
+  Existent(const Existent&);
+  Existent(Existent&&);
+  virtual ~Existent();
+  Existent& operator=(const Existent&);
+  Existent& operator=(Existent&&);
 
   //! Return a number of Existent objects
   static unsigned get_obj_count()
@@ -87,12 +96,8 @@ public:
 protected:
   static std::atomic<int> obj_count;
 
-  Existent();
-  Existent(const Existent&);
-  Existent(Existent&&);
-  virtual ~Existent();
-  Existent& operator=(const Existent&);
-  Existent& operator=(Existent&&);
+  void inc_existence();
+  void dec_existence();
 };
 
 }

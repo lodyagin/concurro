@@ -30,21 +30,22 @@
 #ifndef CONCURRO_EXISTENT_HPP_
 #define CONCURRO_EXISTENT_HPP_
 
+#include "Existent.h"
 #include "RObjectWithStates.hpp"
+#include "RState.hpp"
 
-template<class T>
-Existent<T>::Watcher Existent<T>::watcher;
+namespace curr {
 
 template<class T>
 Existent<T>::Existent()
 {
-  watcher.notify_construction();
+  inc_existence();
 }
 
 template<class T>
 Existent<T>::Existent(const Existent&)
 {
-  watcher.notify_construction();
+  inc_existence();
 }
 
 template<class T>
@@ -55,24 +56,63 @@ Existent<T>::Existent(Existent&&)
 template<class T>
 Existent<T>::~Existent()
 {
-  watcher.notify_destruction();
+  dec_existence();
 }
 
 template<class T>
-Existent<T>::Existent& operator=(const Existent&)
+Existent<T>& Existent<T>::operator=(const Existent&)
 {
-  watcher.notify_construction();
+  inc_existence();
 }
 
 template<class T>
-Existent<T>::Existent& operator=(Existent&&)
+Existent<T>& Existent<T>::operator=(Existent&&)
 {
 }
 
 template<class T>
-Existent<T>::Watcher::Watcher()
-  : RObjectWithStates<ExistenceAxis>(not_exist)
+void Existent<T>::inc_existence()
 {
+  bool a, b = false;
+
+  while (
+	 ! ((a = State::compare_and_move(
+			 *this, not_existState, pre_exist_oneState))
+		 || (b = State::compare_and_move(
+			 *this, exist_oneState, pre_exist_severalState)))
+	 );
+
+  obj_count++;
+  assert (obj_count > 0);
+  assert ((obj_count == 1) == a); 
+  assert ((obj_count > 1) == b);
+
+  if (a) State::move_to(*this, exist_oneState);
+  else if (b) State::move_to(*this, exist_severalState);
 }
 
+template<class T>
+void Existent<T>::dec_existence()
+{
+  bool a, b = false;
+
+  while (
+	 ! ((a = State::compare_and_move(
+		 *this, exist_severalState, pre_exist_severalState))
+		 || (b = State::compare_and_move(
+			 *this, exist_oneState, pre_exist_oneState)))
+	 );
+
+  obj_count--;
+  assert (obj_count >= 0);
+
+  if (obj_count == 1)
+	 State::move_to(*this, exist_oneState);
+  else if (a)
+	 State::move_to(*this, exist_severalState);
+  else if (b)
+	 State::move_to(*this, not_existState);
+}
+
+}
 #endif
