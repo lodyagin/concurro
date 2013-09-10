@@ -32,6 +32,7 @@
 
 #include "ClassWithStates.h"
 #include "RState.h"
+#include "REvent.h"
 
 namespace curr {
 
@@ -50,16 +51,24 @@ char existent_class_initial_state[] = "not_exist";
  *   start [shape = point]; 
  *   not_exist [shape = doublecircle];
  *   start -> not_exist;
- *   not_exist -> exist_one
- *     [label="notify_construction()"];
- *   exist_one -> exist_several
- *     [label="notify_construction()"];
+ *   not_exist -> pre_exist_one
+ *     [label="inc_existence()"];
+ *   pre_exist_one -> exist_one
+ *     [label="inc_existence()"];
+ *   exist_one -> pre_exist_several
+ *     [label="inc_existence()"];
+ *   pre_exist_several -> exist_several
+ *     [label="{inc,dec}_existence()"];
  *   exist_several -> exist_several
- *     [label="notify_{construction,destruction}()"];
- *   exist_several -> exist_one
- *     [label="notify_destruction()"];
- *   exist_one -> not_exist
- *     [label="notify_destruction()"];
+ *     [label="inc_existence()"];
+ *   exist_several -> pre_exist_several
+ *     [label="dec_existence()"];
+ *   pre_exist_several -> exist_one
+ *     [label="dec_existence()"];
+ *   exist_one -> pre_exist_one
+ *     [label="dec_existence()"];
+ *   pre_exist_one -> not_exist
+ *     [label="dec_existence()"];
  * }
  * @enddot
  *
@@ -88,6 +97,13 @@ public:
   virtual ~Existent();
   Existent& operator=(const Existent&);
   Existent& operator=(Existent&&);
+
+  //! Return an empty event (no object-observable terminal
+  //! state).
+  curr::CompoundEvent is_terminal_state() const override
+  {
+    return curr::CompoundEvent();
+  }
 
   //! Return a number of Existent objects
   static unsigned get_obj_count()

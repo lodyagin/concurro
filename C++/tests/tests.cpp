@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+extern CU_TestInfo ExistentTests[];
 extern CU_TestInfo RepositoryTests[];
 extern CU_TestInfo EventTests[];
 extern CU_TestInfo RStateTests[];
@@ -18,6 +19,8 @@ extern CU_TestInfo RConnectionTests[];
 extern CU_TestInfo SCommonTests[];
 extern CU_TestInfo SSingletonTests[];
 
+int ExistentCUInit(void);
+int ExistentCUClean(void);
 int RepositoryCUInit(void);
 int RepositoryCUClean(void);
 int EventCUInit(void);
@@ -46,6 +49,8 @@ int SSingletonCUInit(void);
 int SSingletonCUClean(void);
 
 CU_SuiteInfo suites[] = {	
+  { "Existent", ExistentCUInit, ExistentCUClean, 0, 0,
+	  ExistentTests },
   { "Repository", RepositoryCUInit, RepositoryCUClean, 0, 0,
 	  RepositoryTests },
   { "Common", SCommonCUInit, SCommonCUClean, 0, 0,

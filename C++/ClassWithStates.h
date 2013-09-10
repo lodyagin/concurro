@@ -67,9 +67,9 @@ protected:
 
 template<class Axis, const char* initial_state>
 std::atomic<uint32_t> 
-ClassWithStates<Axis, initial_state>::currentState = 
+ClassWithStates<Axis, initial_state>::currentState( 
   RAxis<Axis>::instance().state_map()
-  -> create_state(initial_state);
+  -> create_state(initial_state));
 
 //! @}
 

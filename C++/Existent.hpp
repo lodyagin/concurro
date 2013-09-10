@@ -37,6 +37,24 @@
 namespace curr {
 
 template<class T>
+DEFINE_STATE_CONST(Existent<T>, State, not_exist);
+
+template<class T>
+DEFINE_STATE_CONST(Existent<T>, State, pre_exist_one);
+
+template<class T>
+DEFINE_STATE_CONST(Existent<T>, State, exist_one);
+
+template<class T>
+DEFINE_STATE_CONST(Existent<T>, State, exist_several);
+
+template<class T>
+DEFINE_STATE_CONST(Existent<T>, State, pre_exist_several);
+
+template<class T>
+std::atomic<int> Existent<T>::obj_count(0);
+
+template<class T>
 Existent<T>::Existent()
 {
   inc_existence();
@@ -73,19 +91,22 @@ Existent<T>& Existent<T>::operator=(Existent&&)
 template<class T>
 void Existent<T>::inc_existence()
 {
-  bool a, b = false;
+  bool b = false, a;
 
   while (
-	 ! ((a = State::compare_and_move(
-			 *this, not_existState, pre_exist_oneState))
-		 || (b = State::compare_and_move(
-			 *this, exist_oneState, pre_exist_severalState)))
-	 );
+   ! ((a = State::compare_and_move(
+       *this, not_existState, pre_exist_oneState))
+     || (b = State::compare_and_move(
+       *this, exist_oneState, pre_exist_severalState))
+     || State::compare_and_move(
+       *this, exist_severalState, exist_severalState)
+     )
+   );
 
   obj_count++;
   assert (obj_count > 0);
   assert ((obj_count == 1) == a); 
-  assert ((obj_count > 1) == b);
+  assert (IMPLICATION(b, obj_count > 1));
 
   if (a) State::move_to(*this, exist_oneState);
   else if (b) State::move_to(*this, exist_severalState);
@@ -94,24 +115,25 @@ void Existent<T>::inc_existence()
 template<class T>
 void Existent<T>::dec_existence()
 {
-  bool a, b = false;
+  bool b = false, a;
 
   while (
-	 ! ((a = State::compare_and_move(
-		 *this, exist_severalState, pre_exist_severalState))
-		 || (b = State::compare_and_move(
-			 *this, exist_oneState, pre_exist_oneState)))
-	 );
+   ! ((a = State::compare_and_move(
+     *this, exist_severalState, pre_exist_severalState))
+     || (b = State::compare_and_move(
+       *this, exist_oneState, pre_exist_oneState))
+     )
+   );
 
   obj_count--;
   assert (obj_count >= 0);
 
   if (obj_count == 1)
-	 State::move_to(*this, exist_oneState);
+    State::move_to(*this, exist_oneState);
   else if (a)
-	 State::move_to(*this, exist_severalState);
+    State::move_to(*this, exist_severalState);
   else if (b)
-	 State::move_to(*this, not_existState);
+    State::move_to(*this, not_existState);
 }
 
 }
