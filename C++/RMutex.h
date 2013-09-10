@@ -49,11 +49,11 @@ namespace curr {
 
 /// RAII version of MUTEX_ACQUIRE
 #define RLOCK(mutex) \
-  RMutex::Lock _lock(mutex, true, LOG4CXX_LOCATION)
+  curr::RMutex::Lock _lock(mutex, true, LOG4CXX_LOCATION)
 
 /// RAII version of MUTEX_RELEASE (will acquire the mutex back on destruction)
 #define RUNLOCK(mutex) \
-  RMutex::Unlock _unlock(mutex, LOG4CXX_LOCATION)
+  curr::RMutex::Unlock _unlock(mutex, LOG4CXX_LOCATION)
 
 class RMutex : public SNotCopyable
 {
