@@ -37,6 +37,7 @@
 #  include <unistd.h>
 #endif
 #include "Logging.h"
+#include "SCheck.h"
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/properties.h>
 #include <fstream>

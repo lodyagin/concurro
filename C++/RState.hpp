@@ -34,6 +34,7 @@
 #include "RThread.h"
 #include "Repository.hpp"
 #include "RObjectWithStates.hpp"
+#include "SSingleton.hpp"
 #include <atomic>
 
 namespace curr {
