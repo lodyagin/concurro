@@ -32,6 +32,7 @@
 
 #include "Logging.h"
 #include "StateMap.h"
+#include <typeinfo>
 
 namespace curr {
 
@@ -88,7 +89,12 @@ public:
 
   virtual ~ObjectWithStatesInterface() {}
 
-  virtual std::string object_name() const = 0;
+  //! The default implementation returns just
+  //! typeid(*this).name(). 
+  virtual std::string object_name() const
+  {
+    return typeid(*this).name();
+  }
 };
 
 class AbstractObjectWithEvents
