@@ -49,45 +49,45 @@ public:
   //! @endcond
 };
 
-template<class T>
-std::atomic<int> Existent<T>::obj_count(0);
+  template<class T, class StateHook>
+std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
-template<class T>
-Existent<T>::Existent()
+template<class T, class StateHook>
+Existent<T, StateHook>::Existent()
 {
   inc_existence();
 }
 
-template<class T>
-Existent<T>::Existent(const Existent&)
+template<class T, class StateHook>
+Existent<T, StateHook>::Existent(const Existent&)
 {
   inc_existence();
 }
 
-template<class T>
-Existent<T>::Existent(Existent&&)
+template<class T, class StateHook>
+Existent<T, StateHook>::Existent(Existent&&)
 {
 }
 
-template<class T>
-Existent<T>::~Existent()
+template<class T, class StateHook>
+Existent<T, StateHook>::~Existent()
 {
   dec_existence();
 }
 
-template<class T>
-Existent<T>& Existent<T>::operator=(const Existent&)
+template<class T, class StateHook>
+Existent<T, StateHook>& Existent<T, StateHook>::operator=(const Existent&)
 {
   inc_existence();
 }
 
-template<class T>
-Existent<T>& Existent<T>::operator=(Existent&&)
+template<class T, class StateHook>
+Existent<T, StateHook>& Existent<T, StateHook>::operator=(Existent&&)
 {
 }
 
-template<class T>
-void Existent<T>::inc_existence()
+template<class T, class StateHook>
+void Existent<T, StateHook>::inc_existence()
 {
   bool b = false, a;
 
@@ -119,8 +119,8 @@ void Existent<T>::inc_existence()
       *this, ExistentStates::exist_severalFun());
 }
 
-template<class T>
-void Existent<T>::dec_existence()
+template<class T, class StateHook>
+void Existent<T, StateHook>::dec_existence()
 {
   bool b = false, a;
 

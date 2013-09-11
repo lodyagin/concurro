@@ -55,13 +55,23 @@ class NotExistingSingleton;
  */ 
 class MustBeSingleton;
 
+struct SingletonStateHook
+{
+  //! Disable change to ExistenceAxis exist_several state
+  //! @exception MustBeSingleton
+  void operator() 
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state);
+};
+
 /**
  * Base class for classes that can have only one instance
  * parametrised by the actual singleton class, use as:
  * class MyClass : public SSingleton<MyClass>
  */
 template<class T>
-class SSingleton : public Existent<T>
+class SSingleton : public Existent<T, SingletonStateHook>
 {
 public:
   //! One and only one class instance must be created with
@@ -96,14 +106,6 @@ public:
   {
      return _instance;
   }
-
-protected:
-  //! Disable change to ExistenceAxis exist_several state
-  //! @exception MustBeSingleton
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,
-     AbstractObjectWithStates* object) override;
 
 private:
   static std::atomic<T*> _instance;

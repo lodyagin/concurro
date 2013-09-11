@@ -31,13 +31,25 @@
 #define CONCURRO_CLASSWITHSTATES_HPP_
 
 #include "ClassWithStates.h"
-//#include "RState.hpp"
 
 namespace curr {
 
-template<class T, class Axis, const char* initial_state>
+template<class T, class Axis, const char* initial_state,
+         class StateHook>
+void ClassWithStates<T, Axis, initial_state, StateHook>
+::state_changed
+  (StateAxis& ax, 
+   const StateAxis& state_ax,     
+   AbstractObjectWithStates* object)
+{
+  StateHook()(this, state_ax, 
+              state_ax.bound(object->current_state(state_ax)));
+}
+
+template<class T, class Axis, const char* initial_state,
+         class StateHook>
 std::atomic<uint32_t>& 
-ClassWithStates<T, Axis, initial_state>
+ClassWithStates<T, Axis, initial_state, StateHook>
 ::current_state(const StateAxis& ax)
 {
   static std::atomic<uint32_t> currentState( 
@@ -46,13 +58,14 @@ ClassWithStates<T, Axis, initial_state>
   return currentState;
 }
 
-template<class T, class Axis, const char* initial_state>
+template<class T, class Axis, const char* initial_state,
+         class StateHook>
 const std::atomic<uint32_t>& 
-ClassWithStates<T, Axis, initial_state>
+ClassWithStates<T, Axis, initial_state, StateHook>
 ::current_state(const StateAxis& ax) const
 {
   return const_cast<
-    ClassWithStates<T, Axis, initial_state>*>
+    ClassWithStates<T, Axis, initial_state, StateHook>*>
       (this) -> current_state(ax);
 }
 

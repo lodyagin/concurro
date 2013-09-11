@@ -32,8 +32,7 @@
 
 #include "ClassWithStates.h"
 #include "StateAxis.h"
-//#include "RState.h"
-//#include "REvent.h"
+#include <functional>
 
 namespace curr {
 
@@ -74,12 +73,16 @@ extern char existent_class_initial_state[];
  * State constants are declared separately in
  * ExistentState class to prevent cyclic dependencies.
  */
-template<class T>
+template<
+  class T, 
+  class StateHook = EmptyStateHook
+>
 class Existent 
 : public ClassWithStates
   < T,
     ExistenceAxis, 
-    existent_class_initial_state
+    existent_class_initial_state,
+    StateHook
   >
 {
 public:

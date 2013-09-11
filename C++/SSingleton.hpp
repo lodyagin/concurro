@@ -75,24 +75,6 @@ inline T & SSingleton<T>::instance()
 }
 
 template<class T>
-void SSingleton<T>::state_changed
-  (StateAxis& ax, 
-   const StateAxis& state_ax,
-   AbstractObjectWithStates* object)
-{
-  Existent<T>::state_changed(ax, state_ax, object);
-
-  if (ExistentStates::State::compare_and_move(
-        *this, 
-        ExistentStates::pre_exist_severalFun(),
-        // <NB> prior obj_count++
-        ExistentStates::exist_oneFun()
-        // <NB> constructor will be failed
-     ))
-    THROW_EXCEPTION(MustBeSingleton);
-}
-
-template<class T>
 std::atomic<T*> SSingleton<T>::_instance(nullptr);
 
 

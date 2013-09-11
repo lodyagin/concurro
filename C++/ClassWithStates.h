@@ -37,7 +37,8 @@ namespace curr {
 //! @addtogroup states
 //! @{
 
-template<class T, class Axis, const char* initial_state>
+template<class T, class Axis, const char* initial_state,
+         class StateHook>
 class ClassWithStates
 : public ObjectWithStatesInterface<Axis>
 {
@@ -45,14 +46,23 @@ public:
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
-  {}
+     AbstractObjectWithStates* object) override;
 
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override;
 
   const std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) const override;
+};
+
+class EmptyStateHook
+{
+public:
+  void operator() 
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state)
+  {}
 };
 
 //! @}

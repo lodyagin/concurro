@@ -71,6 +71,7 @@ LightThread::LightThread
 
 void LightThread::run()
 {
+  STATE(LightThread, move_to, working);
   fun();
 }
 
