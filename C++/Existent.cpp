@@ -38,32 +38,26 @@ char existent_class_initial_state[] = "not_exist";
 DEFINE_AXIS(
   ExistenceAxis,
   {   "not_exist",
-      "pre_exist_one",
+      "predec_exist_one",
+      "preinc_exist_one",
       "exist_one",
-      "pre_exist_several",
-      "exist_several"    
+      "predec_exist_several",
+      "preinc_exist_several",
+      "exist_several"
   },
   { // inc_existence()
-    {"not_exist", "pre_exist_one"},
-    {"pre_exist_one", "exist_one"},
-    {"exist_one", "pre_exist_several"},
-    {"pre_exist_several", "exist_several"},
+    {"not_exist", "preinc_exist_one"},
+    {"preinc_exist_one", "exist_one"},
+    {"exist_one", "preinc_exist_several"},
+    {"preinc_exist_several", "exist_several"},
+    {"exist_several", "preinc_exist_several"},
 
     // dec_existence()
-    {"exist_several", "pre_exist_several"}, //also inc
-    {"pre_exist_several", "exist_one"},
-    {"exist_one", "pre_exist_one"},
-    {"pre_exist_one", "not_exist"}
+    {"exist_several", "predec_exist_several"},
+    {"predec_exist_several", "exist_several"},
+    {"predec_exist_several", "exist_one"},
+    {"exist_one", "predec_exist_one"},
+    {"predec_exist_one", "not_exist"}
   }
   );
-
-#if 0
-DEFINE_STATE_CONST(ExistentStates, State, not_exist);
-DEFINE_STATE_CONST(ExistentStates, State, pre_exist_one);
-DEFINE_STATE_CONST(ExistentStates, State, exist_one);
-DEFINE_STATE_CONST(ExistentStates, State, exist_several);
-DEFINE_STATE_CONST(ExistentStates, State, 
-                   pre_exist_several);
-#endif
-
 }

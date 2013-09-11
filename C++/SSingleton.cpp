@@ -43,8 +43,10 @@ void SingletonStateHook::operator()
   //TODO need optimize by StateAxis? Or upper calls select
   //this hook only for ExistentAxis?
   if (ExistentStates::State::compare_and_move(
-        *dynamic_cast<ObjectWithStatesInterface<ExistenceAxis>*>(object), 
-        ExistentStates::pre_exist_severalFun(),
+        *dynamic_cast<
+          ObjectWithStatesInterface<ExistenceAxis>*
+        >(object), 
+        ExistentStates::preinc_exist_severalFun(),
         // <NB> prior obj_count++
         ExistentStates::exist_oneFun()
         // <NB> constructor will be failed

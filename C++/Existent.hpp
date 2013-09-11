@@ -42,10 +42,12 @@ public:
   //! @cond
   DECLARE_STATES(ExistenceAxis, State);
   DECLARE_STATE_FUN(State, not_exist);
-  DECLARE_STATE_FUN(State, pre_exist_one);
+  DECLARE_STATE_FUN(State, predec_exist_one);
+  DECLARE_STATE_FUN(State, preinc_exist_one);
   DECLARE_STATE_FUN(State, exist_one);
   DECLARE_STATE_FUN(State, exist_several);
-  DECLARE_STATE_FUN(State, pre_exist_several);
+  DECLARE_STATE_FUN(State, predec_exist_several);
+  DECLARE_STATE_FUN(State, preinc_exist_several);
   //! @endcond
 };
 
@@ -95,14 +97,14 @@ void Existent<T, StateHook>::inc_existence()
     ! ((a = ExistentStates::State::compare_and_move(
        *this, 
        ExistentStates::not_existFun(), 
-       ExistentStates::pre_exist_oneFun()))
+       ExistentStates::preinc_exist_oneFun()))
      || 
        (b = ExistentStates::State::compare_and_move(
        *this, 
        { ExistentStates::exist_oneFun(), 
          ExistentStates::exist_severalFun() 
-       },
-       ExistentStates::pre_exist_severalFun()))
+       }, 
+       ExistentStates::preinc_exist_severalFun()))
       )
    );
 
@@ -128,11 +130,11 @@ void Existent<T, StateHook>::dec_existence()
    ! ((a = ExistentStates::State::compare_and_move(
      *this, 
      ExistentStates::exist_severalFun(), 
-     ExistentStates::pre_exist_severalFun()))
-     || (b = ExistentStates::State::compare_and_move(
+     ExistentStates::predec_exist_severalFun()))
+   || (b = ExistentStates::State::compare_and_move(
        *this, 
        ExistentStates::exist_oneFun(), 
-       ExistentStates::pre_exist_oneFun()))
+       ExistentStates::predec_exist_oneFun()))
      )
    );
 

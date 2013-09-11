@@ -51,21 +51,25 @@ extern char existent_class_initial_state[];
  *   start [shape = point]; 
  *   not_exist [shape = doublecircle];
  *   start -> not_exist;
- *   not_exist -> pre_exist_one
+ *   not_exist -> preinc_exist_one
  *     [label="inc_existence()"];
- *   pre_exist_one -> exist_one
+ *   preinc_exist_one -> exist_one
  *     [label="inc_existence()"];
- *   exist_one -> pre_exist_several
+ *   exist_one -> preinc_exist_several
  *     [label="inc_existence()"];
- *   pre_exist_several -> exist_several
- *     [label="{inc,dec}_existence()"];
- *   exist_several -> pre_exist_several
- *     [label="{inc,dec}_existence()"];
- *   pre_exist_several -> exist_one
+ *   preinc_exist_several -> exist_several
+ *     [label="inc_existence()"];
+ *   exist_several -> preinc_exist_several
+ *     [label="inc_existence()"];
+ *   exist_several -> predec_exist_several
  *     [label="dec_existence()"];
- *   exist_one -> pre_exist_one
+ *   predec_exist_several -> exist_several
  *     [label="dec_existence()"];
- *   pre_exist_one -> not_exist
+ *   predec_exist_several -> exist_one
+ *     [label="dec_existence()"];
+ *   exist_one -> predec_exist_one
+ *     [label="dec_existence()"];
+ *   predec_exist_one -> not_exist
  *     [label="dec_existence()"];
  * }
  * @enddot
