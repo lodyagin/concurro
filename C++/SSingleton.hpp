@@ -48,6 +48,8 @@ DEFINE_EXCEPTION(
   "Somebody tries to create more than one "
   "SSingleton instance");
 
+//FIXME concurrency problems still here
+
 template<class T>
 SSingleton<T>::SSingleton()
 {
