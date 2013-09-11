@@ -48,27 +48,100 @@ DEFINE_EXCEPTION(
   "Somebody tries to create more than one "
   "SSingleton instance");
 
+// SingletonStateHook
+
+template<class T>
+typename SingletonStateHook<T>::Instance* 
+SingletonStateHook<T>::instance; // <NB> no explicit init
+
+template<class T>
+SingletonStateHook<T>
+::SingletonStateHook(Instance* inst)
+: last_instance(inst)
+{
+  SCHECK(last_instance);
+}
+
+template<class T>
+void SingletonStateHook<T>::operator() 
+  (AbstractObjectWithStates* object,
+   const StateAxis&,
+   const UniversalState& new_state)
+{
+  auto* obj_ptr = dynamic_cast
+    <ObjectWithStatesInterface<ExistenceAxis>*>(object);
+  SCHECK(obj_ptr);
+  auto& obj = *obj_ptr;
+
+  if (RState<ExistenceAxis>(new_state) ==
+      ExistentStates::preinc_exist_severalFun()
+      // it is obligatory to check reason of enter to
+      // disable intercept preinc_exist_several set by
+      // others.
+      && 
+      RMixedAxis<SingletonAxis, ExistenceAxis>
+      ::compare_and_move(
+        obj,
+        ExistentStates::preinc_exist_severalFun(),
+        // <NB> prior obj_count++
+        ExistentStates::exist_oneFun()
+        // <NB> constructor will be failed
+     ))
+    THROW_EXCEPTION(MustBeSingleton);
+
+  if (RMixedAxis<SingletonAxis, ExistenceAxis>
+      ::state_is(
+        obj, ExistentStates::preinc_exist_oneFun())
+    ) 
+  {
+    SCHECK(!instance);
+    instance = last_instance;
+  }
+  else if (RMixedAxis<SingletonAxis, ExistenceAxis>
+           ::state_is(
+             obj, ExistentStates::predec_exist_oneFun())
+    ) 
+  {
+    SCHECK(instance);
+    instance = nullptr;
+  }
+}
+
+// SSingleton
+
 //FIXME concurrency problems still here
+
+template<class T>
+typename SingletonStateHook<T>::Instance* 
+SSingleton<T>::instance0; // <NB> no explicit init
+
+template<class T>
+T* SSingleton<T>::_instance; // <NB> no explicit init
 
 template<class T>
 SSingleton<T>::SSingleton()
 {
-  _instance = static_cast<T *>(this);
   assert(this->get_obj_count() == 1);
+  set_instance(SingletonStateHook<T>::instance);
+  assert(instance0);
 }
 
 template<class T>
 SSingleton<T>::~SSingleton()
 {
-  _instance = nullptr;
   assert(this->get_obj_count() == 1);
+  assert(instance0);
+  instance0 = _instance = nullptr;
 }
 
 template<class T>
 inline T & SSingleton<T>::instance()
 {
-  if (!_instance)
+  if (!instance0)
     THROW_EXCEPTION(NotExistingSingleton);
+  else if (!_instance)
+    _instance = dynamic_cast<T*>(instance0);
+  SCHECK(_instance);
  
   //FIXME need redesign (singleton existence during the
   //method call).
@@ -77,33 +150,28 @@ inline T & SSingleton<T>::instance()
 }
 
 template<class T>
-std::atomic<T*> SSingleton<T>::_instance(nullptr);
-
+bool SSingleton<T>::isConstructed()
+{
+  return instance0;
+}
 
 // SAutoSingleton
 
 template<class T>
 T& SAutoSingleton<T>::instance()
 {
-  if (!SSingleton<T>::isConstructed ()) 
-    new T (); 
+  if (!SSingleton<T>::isConstructed())
+  {
+    try 
+    { 
+      new T(); 
+    } 
+    catch (const MustBeSingleton&) {}
+  }
 
+  // FIXME need to wait a complete construction
   return SSingleton<T>::instance ();
 }
-
-#if 0
-template<class Thread>
-RThreadRepository<Thread>& 
-SAutoSingleton<RThreadRepository<Thread>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-#endif
 
 }
 #endif

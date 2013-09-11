@@ -4,6 +4,7 @@
 #include "tests.h"
 #include <thread>
 #include <functional>
+#include <atomic>
 
 void test_sautosingleton_raxis();
 void test_ssingleton();
@@ -185,17 +186,26 @@ void test_sautosingleton_manual()
 
 void test_concurrent_creation()
 {
-  for (int i = 0; i < 100; i++)
+  std::atomic<bool> exception_in_thread(false);
+
+  for (int i = 0; i < 5000; i++)
   {
     RThread<std::thread>::create<LightThread>
-      ([]()
+      ([&exception_in_thread]()
        {
          struct T : public SAutoSingleton<T>
          { 
-           T() { usleep(1000000); }
+           T() { usleep(20000); }
          } ;
          
-         T::instance();
+         try {
+           T::instance();
+         }
+         catch(...) {
+           exception_in_thread = true;
+           throw;
+         }
        })->start();
   }
+  CU_ASSERT_FALSE_FATAL(exception_in_thread);
 }

@@ -20,8 +20,6 @@ int ExistentCUClean()
   return 0;
 }
 
-using E = Existent<int>;
-
 #define ASSERT_STATE(obj, state) \
    CU_ASSERT_TRUE_FATAL( \
      ExistentStates::State::state_is(      \
@@ -29,6 +27,8 @@ using E = Existent<int>;
 
 void test_existent()
 {
+  struct E : public Existent<E> {};
+
   CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 0);
   {
     E e1;

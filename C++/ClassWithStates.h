@@ -37,8 +37,9 @@ namespace curr {
 //! @addtogroup states
 //! @{
 
-template<class T, class Axis, const char* initial_state,
-         class StateHook>
+template<class T, class Axis, const char* initial,
+        class StateHook
+>
 class ClassWithStates
 : public ObjectWithStatesInterface<Axis>
 {
@@ -55,9 +56,14 @@ public:
     current_state(const StateAxis& ax) const override;
 };
 
+template<class T, class Axis, const char* initial>
 class EmptyStateHook
 {
 public:
+  EmptyStateHook
+    (ClassWithStates<T, Axis, initial, EmptyStateHook>*) 
+  {}
+
   void operator() 
     (AbstractObjectWithStates* object,
      const StateAxis& ax,

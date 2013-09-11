@@ -43,6 +43,10 @@ DECLARE_AXIS(ExistenceAxis, StateAxis);
 
 extern char existent_class_initial_state[];
 
+template<class T>
+using ExistentEmptyStateHook = EmptyStateHook
+  <T, ExistenceAxis, existent_class_initial_state>;
+
 /**
  * Every object has two main states - exist and not_exist
  * which forms the ExistenceAxis. An object should be
@@ -82,7 +86,7 @@ extern char existent_class_initial_state[];
  */
 template<
   class T, 
-  class StateHook = EmptyStateHook
+  class StateHook = ExistentEmptyStateHook<T>
 >
 class Existent 
 : public ClassWithStates

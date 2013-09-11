@@ -40,28 +40,6 @@ DEFINE_AXIS(
   { {"preinc_exist_several", "exist_one"} // failback
   });
 
-// SingletonStateHook
-
-void SingletonStateHook::operator() 
-  (AbstractObjectWithStates* object,
-   const StateAxis&,
-   const UniversalState&)
-{
-  //TODO need optimize by StateAxis? Or upper calls select
-  //this hook only for ExistentAxis?
-  if (RMixedAxis<SingletonAxis, ExistenceAxis>
-      ::compare_and_move(
-        *dynamic_cast<
-          ObjectWithStatesInterface<ExistenceAxis>*
-        >(object), 
-        ExistentStates::preinc_exist_severalFun(),
-        // <NB> prior obj_count++
-        ExistentStates::exist_oneFun()
-        // <NB> constructor will be failed
-     ))
-    THROW_EXCEPTION(MustBeSingleton);
-}
-
 // SAutoSingleton
 
 RMixedAxis<ExistenceAxis, ExistenceAxis>&

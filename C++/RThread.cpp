@@ -269,6 +269,8 @@ void RThreadBase::_run()
   }
   catch ( std::exception & x )
   {
+    // TODO make an additional state
+    // "terminated_by_exception", store the exception.
     LOG_WARN(log, "Exception in thread: " 
              << x.what ());
   }

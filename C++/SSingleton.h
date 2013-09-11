@@ -32,7 +32,6 @@
 
 #include "Existent.h"
 #include "SException.h"
-#include <atomic>
 #include <thread>
 
 namespace curr {
@@ -57,24 +56,73 @@ class NotExistingSingleton;
  */ 
 class MustBeSingleton;
 
-struct SingletonStateHook
+template<class T>
+class SSingleton;
+
+template<class T>
+class SingletonStateHook
 {
+  friend SSingleton<T>;
+public:
+  using Instance = ClassWithStates
+    <T, ExistenceAxis, existent_class_initial_state, 
+    SingletonStateHook<T>>;
+
+  SingletonStateHook(Instance*);
+
   //! Disable change to ExistenceAxis exist_several state
   //! @exception MustBeSingleton
   void operator() 
     (AbstractObjectWithStates* object,
      const StateAxis& ax,
      const UniversalState& new_state);
+
+protected:
+  Instance* last_instance;
+  static Instance* instance;
 };
 
 /**
- * Base class for classes that can have only one instance
+ * A base class for classes that can have only one instance
  * parametrised by the actual singleton class, use as:
  * class MyClass : public SSingleton<MyClass>
+ *
+ * @dot
+ * digraph {
+ *   start [shape = point]; 
+ *   not_exist [shape = doublecircle];
+ *   start -> not_exist;
+ *   not_exist -> preinc_exist_one
+ *     [label="ctr:0"];
+ *   preinc_exist_one -> exist_one
+ *     [label="ctr:1"];
+ *   exist_one -> preinc_exist_several
+ *     [label="ctr:0"];
+ *   preinc_exist_several -> exist_one
+ *     [label="ctr (throw MustBeSingleton)"];
+ *   preinc_exist_several -> exist_several
+ *     [label="ctr:1"];
+ *   exist_several -> preinc_exist_several
+ *     [label="ctr:0"];
+ *   exist_several -> predec_exist_several
+ *     [label="dtr:0"];
+ *   predec_exist_several -> exist_several
+ *     [label="dtr:1"];
+ *   predec_exist_several -> exist_one
+ *     [label="dtr:1"];
+ *   exist_one -> predec_exist_one
+ *     [label="dtr:0"];
+ *   predec_exist_one -> not_exist
+ *     [label="dtr:1"];
+ * }
+ * @enddot
+ *
  */
 template<class T>
-class SSingleton : public Existent<T, SingletonStateHook>
+class SSingleton 
+  : public Existent<T, SingletonStateHook<T>>
 {
+  friend SingletonStateHook<T>;
 public:
   //! One and only one class instance must be created with
   //! this function.
@@ -104,13 +152,17 @@ public:
   //! class is crated with SSingleton() raise exception.
   static T & instance();
 
-  static bool isConstructed ()
-  {
-     return _instance;
-  }
+  static bool isConstructed();
 
 private:
-  static std::atomic<T*> _instance;
+  static typename SingletonStateHook<T>::Instance* instance0;
+  static T* _instance;
+
+  void set_instance
+    (typename SingletonStateHook<T>::Instance* inst)
+  { 
+     instance0 = inst; 
+  }
 };
 
 /**

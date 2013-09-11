@@ -34,16 +34,18 @@
 
 namespace curr {
 
+// TODO specialization for EmptyStateHook (avoid dynamic
+// cast and other parameters).
 template<class T, class Axis, const char* initial_state,
          class StateHook>
 void ClassWithStates<T, Axis, initial_state, StateHook>
 ::state_changed
   (StateAxis& ax, 
    const StateAxis& state_ax,     
-   AbstractObjectWithStates* object)
+   AbstractObjectWithStates* object,
+   const UniversalState& new_state)
 {
-  StateHook()(this, state_ax, 
-              state_ax.bound(object->current_state(state_ax)));
+  StateHook(this)(this, state_ax, new_state);
 }
 
 template<class T, class Axis, const char* initial_state,

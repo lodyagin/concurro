@@ -51,7 +51,7 @@ public:
   //! @endcond
 };
 
-  template<class T, class StateHook>
+template<class T, class StateHook>
 std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
