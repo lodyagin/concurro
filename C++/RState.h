@@ -66,7 +66,7 @@ typedef int16_t StateMapId;
  * @{
  */
 
-template<class Axis>
+/*template<class Axis>
 struct UnitializedAxis : public SException
 {
 UnitializedAxis()
@@ -76,7 +76,7 @@ UnitializedAxis()
                  ))
   {}
   
-};
+  };*/
 
 template<class Axis>
 class RState : public UniversalState
@@ -110,22 +110,39 @@ class RMixedAxis;
 template<class Axis>
 using RAxis = RMixedAxis<Axis, Axis>;
 
-//! Server stateMap for RMixedAxis
+//! It serves stateMap for RMixedAxis
 //! (only one map per main Axis)
 template<class Axis>
-struct StateMapInstance
+class StateMapInstance 
+: public SAutoSingleton<StateMapInstance<Axis>>
 {
-  static StateMap* stateMap;
+public:
   //! initialize the stateMap member if it is nullptr
-  static StateMapId init();
+  StateMapInstance() { id = init(); }
+
+  StateMap* get_map() const
+  { return stateMap; }
+
+  StateMapId get_map_id() const
+  { return id; }
+
+protected:
+  StateMap* stateMap;
+  StateMapId id;
+
+private:
+  StateMapId init();
 };
 
 //! Dummy StateAxis specialization of StateMapInstance
-//! (to alloc recursive init).
+//! (to allow recursive init).
 template<>
-struct StateMapInstance<StateAxis> 
+class StateMapInstance<StateAxis> 
+  : public SAutoSingleton<StateMapInstance<StateAxis>>
 {
-  static StateMapId init() { return 0; }
+public:
+  StateMapId get_map_id() const
+  { return 0; }
 };
 
 /**
@@ -220,7 +237,7 @@ public:
   { 
     static_assert(is_ancestor<Axis2, Axis>(), 
                   "This state mixing is invalid.");
-    return StateMapInstance<Axis>::stateMap; 
+    return StateMapInstance<Axis>::instance().get_map(); 
   }
 
 protected:
@@ -272,7 +289,7 @@ private:
   {	\
     return curr::StateMapPar<axis>(pars,                \
       curr::StateMapInstance<typename axis::Parent> \
-        ::init()); \
+        ::instance().get_map_id());  \
   } \
   curr::UniversalState axis::bound(uint32_t st) const \
   { \

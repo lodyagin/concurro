@@ -36,6 +36,9 @@
 
 namespace curr {
 
+//! @addtogroup Singletons
+//! @{
+
 DECLARE_AXIS(ExistenceAxis, StateAxis);
 
 extern char existent_class_initial_state[];
@@ -115,6 +118,8 @@ protected:
   void inc_existence();
   void dec_existence();
 };
+
+//! @}
 
 }
 

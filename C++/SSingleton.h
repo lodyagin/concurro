@@ -40,6 +40,8 @@ namespace curr {
 //! @defgroup Singletons
 //! @{
 
+DECLARE_AXIS(SingletonAxis, ExistenceAxis);
+
 /** 
  * @class NotExistingSingleton
  * An exception raised when somebody
@@ -144,6 +146,24 @@ private:
 };
 
 template<>
+class SAutoSingleton<
+  RMixedAxis<SingletonAxis, SingletonAxis>> 
+{
+public:
+  typedef RMixedAxis<SingletonAxis, SingletonAxis> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+
+template<>
 class SAutoSingleton<StateMapRepository> 
 {
 public:
@@ -185,7 +205,8 @@ template<class SystemThread>
 class RThread;
 
 template<>
-class SAutoSingleton<RThreadRepository<RThread<std::thread>>> 
+class SAutoSingleton<
+  RThreadRepository<RThread<std::thread>>> 
 {
 public:
   typedef RThreadRepository<RThread<std::thread>> T;
@@ -200,6 +221,61 @@ public:
 private:
   SAutoSingleton() {}
 };
+
+template<class Axis>
+class StateMapInstance;
+
+template<>
+class SAutoSingleton<StateMapInstance<StateAxis>>
+{
+public:
+  typedef StateMapInstance<StateAxis> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+
+template<>
+class SAutoSingleton<StateMapInstance<ExistenceAxis>>
+{
+public:
+  typedef StateMapInstance<ExistenceAxis> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+
+template<>
+class SAutoSingleton<StateMapInstance<SingletonAxis>>
+{
+public:
+  typedef StateMapInstance<SingletonAxis> T;
+  friend T;
+
+  SAutoSingleton(const SAutoSingleton&) = delete;
+  virtual ~SAutoSingleton() {}
+  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
+
+  static T& instance();
+
+private:
+  SAutoSingleton() {}
+};
+
 #endif
 
 //! @}

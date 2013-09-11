@@ -30,8 +30,15 @@
 #include "SSingleton.hpp"
 #include "StateMapRepository.h"
 #include "RThreadRepository.h"
+#include "RState.hpp"
 
 namespace curr {
+
+DEFINE_AXIS(
+  SingletonAxis,
+  {},
+  { {"preinc_exist_several", "exist_one"} // failback
+  });
 
 // SingletonStateHook
 
@@ -42,7 +49,8 @@ void SingletonStateHook::operator()
 {
   //TODO need optimize by StateAxis? Or upper calls select
   //this hook only for ExistentAxis?
-  if (ExistentStates::State::compare_and_move(
+  if (RMixedAxis<SingletonAxis, ExistenceAxis>
+      ::compare_and_move(
         *dynamic_cast<
           ObjectWithStatesInterface<ExistenceAxis>*
         >(object), 
@@ -67,6 +75,17 @@ SAutoSingleton<RMixedAxis<ExistenceAxis, ExistenceAxis>>
   return *instance;
 }
 
+RMixedAxis<SingletonAxis, SingletonAxis>&
+SAutoSingleton<RMixedAxis<SingletonAxis, SingletonAxis>> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
+
 StateMapRepository& 
 SAutoSingleton<StateMapRepository> 
 ::instance()
@@ -80,6 +99,39 @@ SAutoSingleton<StateMapRepository>
 
 RThreadRepository<RThread<std::thread>>& 
 SAutoSingleton<RThreadRepository<RThread<std::thread>>> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
+
+StateMapInstance<StateAxis>&
+SAutoSingleton<StateMapInstance<StateAxis>> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
+
+StateMapInstance<ExistenceAxis>&
+SAutoSingleton<StateMapInstance<ExistenceAxis>> 
+::instance()
+{
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
+
+StateMapInstance<SingletonAxis>&
+SAutoSingleton<StateMapInstance<SingletonAxis>> 
 ::instance()
 {
   static std::once_flag of;

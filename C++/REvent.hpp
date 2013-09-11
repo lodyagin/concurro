@@ -43,7 +43,7 @@ RMixedEvent<Axis, Axis2>
               const char* to)
   : UniversalEvent
        (
-     StateMapInstance<Axis>::stateMap
+     StateMapInstance<Axis>::instance().get_map()
       -> get_transition_id(from, to)
       ),
    // G++-4.7.3 bug when use copy constructor
@@ -67,7 +67,7 @@ RMixedEvent<Axis, Axis2>
               const char* to)
   : UniversalEvent
        (
-     StateMapInstance<Axis>::stateMap
+     StateMapInstance<Axis>::instance().get_map()
      -> create_state(to), true
       ),
    // G++-4.7.3 bug when use copy constructor
