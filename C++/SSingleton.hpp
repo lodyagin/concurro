@@ -74,11 +74,12 @@ void SingletonStateHook<T>::operator()
   auto& obj = *obj_ptr;
 
   if (RState<ExistenceAxis>(new_state) ==
-      ExistentStates::preinc_exist_severalFun()
+      ExistentStates::preinc_exist_severalFun())
       // it is obligatory to check reason of enter to
       // disable intercept preinc_exist_several set by
       // others.
-      && 
+  {
+    if(
       RMixedAxis<SingletonAxis, ExistenceAxis>
       ::compare_and_move(
         obj,
@@ -86,8 +87,11 @@ void SingletonStateHook<T>::operator()
         // <NB> prior obj_count++
         ExistentStates::exist_oneFun()
         // <NB> constructor will be failed
-     ))
-    THROW_EXCEPTION(MustBeSingleton);
+        ))
+      THROW_EXCEPTION(MustBeSingleton);
+    else
+      THROW_PROGRAM_ERROR; // check the state design
+  }
 
   if (RMixedAxis<SingletonAxis, ExistenceAxis>
       ::state_is(
