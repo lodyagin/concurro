@@ -64,7 +64,9 @@ void RObjectWithThreads<Object>
 ::state_changed
   (StateAxis& ax, 
    const StateAxis& state_ax,     
-   AbstractObjectWithStates* object)
+   AbstractObjectWithStates* object,
+   const UniversalState& new_state
+  )
 {
   if (RAxis<ConstructibleAxis>::state_is(
         *this, complete_constructionState))
@@ -83,7 +85,8 @@ void RObjectWithThreads<Object>
       th->start();
     }
   }
-  RConstructibleObject::state_changed(ax, state_ax, object);
+  RConstructibleObject::state_changed
+    (ax, state_ax, object, new_state);
 }
 
 template<class Object>

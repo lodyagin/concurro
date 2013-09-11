@@ -86,7 +86,8 @@ void RObjectWithStatesBase
 ::state_changed
   (StateAxis& ax, 
    const StateAxis& state_ax,     
-   AbstractObjectWithStates* object)
+   AbstractObjectWithStates* object,
+   const UniversalState& new_state)
 {
   // A guard
   is_frozen = true;
@@ -94,7 +95,8 @@ void RObjectWithStatesBase
 	 THROW_PROGRAM_ERROR;
 
   for (auto sub : subscribers) 
-    sub.first->state_changed(*sub.second, state_ax, object);
+    sub.first->state_changed
+      (*sub.second, state_ax, object, new_state);
 }
 
 }

@@ -55,13 +55,15 @@ public:
   virtual ~AbstractObjectWithStates() {}
 
   //! the "update parent" callback on state changing in
-  //! the `object' on the `state_ax'.
-  //! \param ax is used for dispatching to particular
-  //! RObjectWithStates class 
+  //! the `object' on the `state_ax' to `new_state'.
+  //! @param ax is used for dispatching to particular
+  //! RObjectWithStates class (used in RStateSplitter to
+  //! monitor SplitAxis changes from DerivedAxis).
   virtual void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,
-     AbstractObjectWithStates* object) = 0;
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) = 0;
 
   //! Terminal state means 
   //! 1) no more state activity;

@@ -40,7 +40,7 @@ template<class T, class Axis, const char* initial_state,
          class StateHook>
 void ClassWithStates<T, Axis, initial_state, StateHook>
 ::state_changed
-  (StateAxis& ax, 
+  (StateAxis&, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
    const UniversalState& new_state)

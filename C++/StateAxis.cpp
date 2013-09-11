@@ -58,7 +58,8 @@ void StateAxis::update_events
 void StateAxis::state_changed
   (AbstractObjectWithStates* subscriber,
    AbstractObjectWithStates* publisher,
-   const StateAxis& state_ax)
+   const StateAxis& state_ax,
+   const UniversalState& new_state)
 {
   THROW_NOT_IMPLEMENTED;
 }

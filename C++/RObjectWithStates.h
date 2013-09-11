@@ -71,7 +71,8 @@ public:
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override;
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override;
 
 protected:
   //! No more changes in subscribers list
@@ -140,7 +141,8 @@ public:
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override;
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override;
 
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override
@@ -270,7 +272,8 @@ public:
   virtual void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,    
-     AbstractObjectWithStates* object) = 0;
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) = 0;
 
 protected:
   //! The 2nd stage init.
@@ -317,9 +320,10 @@ protected:
 void state_changed \
   (StateAxis& ax,  \
    const StateAxis& state_ax, \
-   AbstractObjectWithStates* object) override \
+   AbstractObjectWithStates* object, \
+   const curr::UniversalState& new_state) override \
 { \
-  ax.state_changed(this, object, state_ax); \
+  ax.state_changed(this, object, state_ax, new_state);  \
 } \
 \
 std::atomic<uint32_t>& current_state(const StateAxis& ax) override \
@@ -349,9 +353,10 @@ void update_events \
 void state_changed( \
   StateAxis& ax, \
   const StateAxis& state_ax,     \
-  AbstractObjectWithStates* object) \
+  AbstractObjectWithStates* object, \
+  const curr::UniversalState& new_state)        \
 { \
-  ax.state_changed(this, object, state_ax); \
+  ax.state_changed(this, object, state_ax, new_state); \
 } \
 \
 std::atomic<uint32_t>& \

@@ -81,15 +81,14 @@ void RObjectWithStates<Axis>
 ::state_changed
   (StateAxis& ax, 
    const StateAxis& state_ax,     
-   AbstractObjectWithStates* object)
+   AbstractObjectWithStates* object,
+   const UniversalState& new_state)
 {
   assert(is_same_axis<Axis>(ax));
   RObjectWithStatesBase::state_changed
-    (ax, state_ax, object);
+    (ax, state_ax, object, new_state);
   if (mcw)
-    mcw->call
-      (this, object, state_ax, 
-       state_ax.bound(object->current_state(state_ax)));
+    mcw->call(this, object, state_ax, new_state);
 }
 
 template<class Axis>

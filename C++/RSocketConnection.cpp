@@ -119,9 +119,11 @@ RSingleSocketConnection::~RSingleSocketConnection()
 }
 
 void RSingleSocketConnection::state_changed
-  (StateAxis& ax, 
+  (StateAxis&, 
    const StateAxis& state_ax,     
-   AbstractObjectWithStates* object)
+   AbstractObjectWithStates* object,
+   const UniversalState&
+   )
 {
   //FIXME no parent call
 

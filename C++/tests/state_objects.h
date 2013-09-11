@@ -80,7 +80,8 @@ SplittedStateObject(TestObject* orig)
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
   {
     if (object != this) {
       auto* obj1 = dynamic_cast<TestObject*>(object);

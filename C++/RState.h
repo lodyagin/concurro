@@ -278,12 +278,13 @@ private:
   void axis::state_changed \
     (curr::AbstractObjectWithStates* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \
-     const curr::StateAxis& state_ax) \
+     const curr::StateAxis& state_ax, \
+     const UniversalState& new_state)             \
   { \
     return dynamic_cast<curr::RObjectWithStates<axis>*>  \
     (subscriber) \
       -> curr::RObjectWithStates<axis>::state_changed \
-      (*this, state_ax, publisher);            \
+      (*this, state_ax, publisher, new_state);        \
   } \
   curr::StateMapPar<axis> axis::get_state_map_par()   \
   {	\

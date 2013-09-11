@@ -88,7 +88,8 @@ public:
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
   {
     THROW_PROGRAM_ERROR;
   }

@@ -87,7 +87,8 @@ protected:
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override;
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override;
 
   //! A real work of a destructor is here. All descendants
   //! must call it in the destructor. It waits a

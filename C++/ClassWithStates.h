@@ -47,7 +47,8 @@ public:
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
-     AbstractObjectWithStates* object) override;
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override;
 
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override;

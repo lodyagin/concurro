@@ -137,7 +137,8 @@ void RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  obj.state_changed
+    (Axis2::self(), Axis2::self(), &obj, to);
 }
 
 template<class Axis, class Axis2>
@@ -181,7 +182,8 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  obj.state_changed
+    (Axis2::self(), Axis2::self(), &obj, to);
 
   return true;
 }
@@ -231,7 +233,8 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  obj.state_changed
+    (Axis2::self(), Axis2::self(), &obj, to);
 
   return true;
 }
@@ -283,7 +286,8 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed(Axis2::self(), Axis2::self(), &obj);
+  obj.state_changed
+    (Axis2::self(), Axis2::self(), &obj, to);
 
   return true;
 }

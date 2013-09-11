@@ -44,6 +44,7 @@ typedef uint16_t TransitionId;
 class AbstractObjectWithStates;
 class AbstractObjectWithEvents;
 class StateMap;
+class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited.
@@ -66,7 +67,8 @@ struct StateAxis
   virtual void state_changed
   (AbstractObjectWithStates* subscriber,
    AbstractObjectWithStates* publisher,
-   const StateAxis& state_ax);
+   const StateAxis& state_ax,
+   const UniversalState& new_state);
 
   //! Change StateMap in us to the map of the axis.
   virtual UniversalState bound(uint32_t st) const = 0;
@@ -116,7 +118,8 @@ struct axis : public parent \
   void state_changed \
     (curr::AbstractObjectWithStates* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \
-     const curr::StateAxis& state_ax) override;    \
+     const curr::StateAxis& state_ax, \
+     const curr::UniversalState& new_state) override;    \
   \
   curr::UniversalState bound(uint32_t st) const override;\
 }; 
