@@ -37,6 +37,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup connections
+ * @{
+ */
+
 template<class Connection, class Map, class Id>
 class ConnectionRepository 
 //
@@ -148,6 +153,8 @@ void ConnectionRepository<Connection, Map, Id>
 	 (terminated.begin (), terminated.end (),
 	  Parent::Destroy (*this));
 }
+
+//! @}
 
 }
 #endif

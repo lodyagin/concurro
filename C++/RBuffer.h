@@ -37,6 +37,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup sockets
+ * @{
+ */
+
 //! A data buffer states axis
 DECLARE_AXIS(DataBufferStateAxis, StateAxis);
 
@@ -201,6 +206,8 @@ protected:
   std::list<RSingleBuffer> bufs;
 };
 #endif
+
+//! @}
 
 }
 #endif

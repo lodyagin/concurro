@@ -39,6 +39,11 @@
 
 namespace curr {
 
+/**
+ * @defgroup connections
+ * @{
+ */
+
 DECLARE_AXIS(WindowAxis, StateAxis);
 
 /**
@@ -149,6 +154,8 @@ protected:
 
   std::shared_ptr<RSingleBuffer> buf;
   ssize_t bottom;
+  //! shift from start of a buffer to the fist cell above
+  //! the buffer
   ssize_t top;
   size_t sz;
 
@@ -210,16 +217,20 @@ public:
       { return id; }
   };
 
+#if 0
   //! Create RConnectedWindows with connection_id (it is
   //! used for logging).
-  //RConnectedWindow(int connection_id = 0);
+  RConnectedWindow(int connection_id = 0);
+#endif
 
-  //! A delete copy constructor.
+  //! The copy constructor is deleted.
   RConnectedWindow(const RConnectedWindow&) = delete;
 
+#if 0
   //! Construct a window which owns buf.
   //TODO move to RWindow
-  //explicit RConnectedWindow(RSingleBuffer* buf);
+  explicit RConnectedWindow(RSingleBuffer* buf);
+#endif
 
   //! Will wait till underlaying buffer is discharged.
   virtual ~RConnectedWindow();
@@ -275,6 +286,8 @@ operator<<(std::ostream&,
 template<class ConnectionId>
 using RConnectedWindowRepository = 
   AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>;
+
+//! @}
 
 }
 #endif

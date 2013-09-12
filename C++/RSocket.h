@@ -45,14 +45,35 @@
 
 namespace curr {
 
+/**
+ * @defgroup sockets
+ * @{
+ */
+
 DECLARE_AXIS(SocketBaseAxis, StateAxis);
 
 class RSocketRepository;
 class SocketThread;
 
 /**
- * An abstract socket base.  In the Concurro library
- * each separate RSocket is connected to one an
+ * An abstract socket base.
+ *
+ * @dot
+ * digraph {
+ *   start [shape = point]; 
+ *   connection_timed_out [shape = doublecircle];
+ *   connection_refused [shape = doublecircle];
+ *   destination_unreachable [shape = doublecircle];
+ *   closed [shape = doublecircle];
+ *   start -> created;
+ *   created -> ready;
+ *   created -> connection_timed_out;
+ *   created -> connection_refused;
+ *   created -> destination_unreachable;
+ *   ready -> closed;
+ *   closed -> closed;
+ * }
+ * @enddot
  *
  */
 class RSocketBase 
@@ -340,6 +361,8 @@ protected:
   std::atomic<bool> use_connect_timeout;
   std::atomic<size_t> max_input_packet_size;
 };
+
+//! @}
 
 }
 #endif

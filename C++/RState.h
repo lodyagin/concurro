@@ -247,7 +247,7 @@ private:
   typedef Logger<RAxis<Axis>> log;
 };
 
-#define DEFINE_AXIS(axis, pars...)	\
+#define DEFINE_AXIS_NS(axis, pars...)	\
   const std::atomic<uint32_t>& axis::current_state    \
     (const curr::AbstractObjectWithStates* obj) const \
   { \
@@ -270,8 +270,9 @@ private:
      curr::TransitionId trans_id,               \
       uint32_t to) \
   { \
-    return dynamic_cast<curr::RObjectWithEvents<axis>*>(obj)   \
-      -> curr::RObjectWithEvents<axis>::update_events          \
+    return dynamic_cast<curr::RObjectWithEvents<axis>*> \
+       (obj)   \
+      -> curr::RObjectWithEvents<axis>::update_events \
       (*this, trans_id, to); \
   } \
   \
@@ -295,17 +296,13 @@ private:
   curr::UniversalState axis::bound(uint32_t st) const \
   { \
     return curr::RState<axis>(st);              \
-  } \
+  } 
+
+#define DEFINE_AXIS(axis, pars...)	\
+  DEFINE_AXIS_NS(axis, pars) \
   template class curr::RMixedAxis<axis, axis>;	\
   template class curr::RState<axis>;            \
   template class curr::RMixedEvent<axis, axis>;		
-
-#define DEFINE_AXIS_NS(axis, pars...)	\
-  curr::StateMapPar<axis> axis::get_state_map_par()   \
-  {	\
-    return curr::StateMapPar<axis>(pars,                \
-       curr::StateMapInstance<typename axis::Parent>::init()); \
-  } 
 
 #define DECLARE_STATES(axis, state_class)	\
   typedef curr::RAxis<axis> state_class;  \

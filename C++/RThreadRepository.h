@@ -38,6 +38,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup threads
+ * @{
+ */
+
 class RThreadFactory
 {
 public:
@@ -152,6 +157,8 @@ template<class Key, class Val>
       p.second->is_terminated().wait();
   }
 };
+
+//! @}
 
 }
 #endif

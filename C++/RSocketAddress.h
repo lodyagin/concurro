@@ -46,6 +46,11 @@ typedef struct addrinfo addrinfo;
 
 namespace curr {
 
+/**
+ * @addtogroup sockets
+ * @{
+ */
+
 std::ostream& operator<< 
   (std::ostream& out, const addrinfo& ai);
 
@@ -420,6 +425,8 @@ public:
   std::list<RSocketAddress*> create_addresses
     (const std::string& host, uint16_t port);
 };
+
+//! @}
 
 }
 #endif

@@ -35,6 +35,11 @@
 namespace curr {
 
 /**
+ * @addtogroup synchronization
+ * @{
+ */
+
+/**
  * A value with wait-free update implementation.
  */
 template<class T, class TUpdate>
@@ -46,6 +51,8 @@ public:
   /// Get the last updated state.
   T get() const;
 };
+
+//! @}
 
 }
 #endif

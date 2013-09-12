@@ -39,7 +39,7 @@ namespace curr {
 
 DEFINE_AXIS(
   ClientConnectionAxis,
-  { "aborting", // skiping data and closing buffers
+  { "aborting", // skipping data and closing buffers
      "aborted",   // after aborting
      "clearly_closed" // all pending data 
                       // was received / sent

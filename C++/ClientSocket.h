@@ -36,6 +36,36 @@ namespace curr {
 
 DECLARE_AXIS(ClientSocketAxis, SocketBaseAxis);
 
+/**
+ * A socket component which responds to performing
+ * aclient-side connection.
+ *
+ * @dot
+ * digraph {
+ *   start [shape = point]; 
+ *   connection_timed_out [shape = doublecircle];
+ *   connection_refused [shape = doublecircle];
+ *   destination_unreachable [shape = doublecircle];
+ *   closed [shape = doublecircle];
+ *   start -> created;
+ *   created -> ready;
+ *   created -> connection_timed_out;
+ *   created -> connection_refused;
+ *   created -> destination_unreachable;
+ *   ready -> closed;
+ *   closed -> closed;
+ *   created -> closed;
+ *   created -> pre_connecting;
+ *   pre_connecting -> connecting;
+ *   connecting -> ready;
+ *   connecting -> connection_timed_out;
+ *   connecting -> connection_refused;
+ *   connecting -> destination_unreachable;
+ *   ready -> closed;
+ * }
+ * @enddot
+ *
+ */
 class ClientSocket : virtual public RSocketBase,
   public RStateSplitter<ClientSocketAxis, SocketBaseAxis>
 {

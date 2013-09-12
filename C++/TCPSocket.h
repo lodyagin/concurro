@@ -38,6 +38,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup sockets
+ * @{
+ */
+
 DECLARE_AXIS(TCPAxis, SocketBaseAxis);
 
 class TCPSocket : virtual public RSocketBase
@@ -204,6 +209,8 @@ protected:
 private:
   typedef Logger<TCPSocket> log;
 };
+
+//! @}
 
 }
 #endif
