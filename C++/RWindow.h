@@ -36,6 +36,7 @@
 #include "RThread.h"
 #include "RObjectWithStates.h"
 #include "AutoRepository.h"
+#include <iostream>
 
 namespace curr {
 
