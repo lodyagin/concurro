@@ -101,6 +101,7 @@ public:
   class Concurrency {};
   class States {};
   class Events {};
+  class Connections {};
 };
 
 /**
@@ -177,6 +178,13 @@ inline LogBase* Logger<LOG::Events>::init_base
 (const std::string& name)
 {
   return new LogBase ("Events");
+}
+
+template<>
+inline LogBase* Logger<LOG::Connections>::init_base 
+(const std::string& name)
+{
+  return new LogBase ("Connections");
 }
 
 // Define a custom log macros for put streams into log

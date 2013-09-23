@@ -42,6 +42,11 @@
 
 namespace curr {
 
+/**
+ * @defgroup synchronization
+ * @{
+ */
+
 #define MUTEX_ACQUIRE(mutex) \
   do { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
 
@@ -251,6 +256,8 @@ inline RMutex::Unlock::~Unlock()
 {
   mutex.acquire(location);
 }
+
+//! @}
 
 }
 #endif  

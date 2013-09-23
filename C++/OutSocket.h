@@ -37,6 +37,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup sockets
+ * @{
+ */
+
 class OutSocket : virtual public RSocketBase
 {
 public:
@@ -119,6 +124,8 @@ protected:
 
   DEFAULT_LOGGER(OutSocket);
 };
+
+//! @}
 
 }
 #endif

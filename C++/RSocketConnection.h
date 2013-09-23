@@ -41,6 +41,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup connections
+ * @{
+ */
+
 class RSocketConnection 
 : //public RObjectWithEvents<ConnectionAxis>,
 public StdIdMember
@@ -169,7 +174,46 @@ protected:
 
 DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
 
-//! A connection which always uses only one socket
+/**
+ * A connection which always uses only one socket.
+ *
+ * @dot
+ * digraph {
+ *   start [shape = point]; 
+ *   connection_timed_out [shape = doublecircle];
+ *   connection_refused [shape = doublecircle];
+ *   destination_unreachable [shape = doublecircle];
+ *   closed [shape = doublecircle];
+ *   clearly_closed [shape = doublecircle];
+ *   aborted [shape = doublecircle];
+ *   start -> created;
+ *   created -> ready;
+ *   created -> connection_timed_out;
+ *   created -> connection_refused;
+ *   created -> destination_unreachable;
+ *   ready -> closed;
+ *   closed -> closed;
+ *   created -> closed;
+ *   created -> pre_connecting
+ *      [label="ask_connect()"];
+ *   pre_connecting -> connecting
+ *      [label="EINPROGRESS"];
+ *   connecting -> ready;
+ *   connecting -> connection_timed_out
+ *      [label="ETIMEDOUT"];
+ *   connecting -> connection_refused
+ *      [label="ECONNREFUSED"];
+ *   connecting -> destination_unreachable
+ *      [label="ENETUNREACH"];
+ *   ready -> closed;
+ *   ready -> aborting;
+ *   aborting -> aborted;
+ *   closed -> clearly_closed;
+ *   closed -> aborting;
+ * }
+ * @enddot
+ *
+ */
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
@@ -322,6 +366,8 @@ public:
   : Parent(id, reserved), thread_factory(tf)
   {}
 };
+
+//! @}
 
 }
 #endif

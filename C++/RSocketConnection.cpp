@@ -39,7 +39,7 @@ namespace curr {
 
 DEFINE_AXIS(
   ClientConnectionAxis,
-  { "aborting", // skiping data and closing buffers
+  { "aborting", // skipping data and closing buffers
      "aborted",   // after aborting
      "clearly_closed" // all pending data 
                       // was received / sent
@@ -188,6 +188,8 @@ void RSingleSocketConnection::ask_close()
 
 void RSingleSocketConnection::run()
 {
+  typedef Logger<LOG::Connections> clog;
+
   //<NB> it is not a thread run(), it is called from it
   socket->is_construction_complete_event.wait();
 
@@ -195,15 +197,22 @@ void RSingleSocketConnection::run()
     // The socket has a message.
     ( socket->msg.is_charged()
       | is_aborting() | is_terminal_state() ). wait();
+    LOG_DEBUG(clog, *socket << " has a new state or packet");
 
     // We already need it.
     ( iw().is_wait_for_buffer()
       | is_aborting() | is_terminal_state() ). wait();
 
-    if (is_aborting().signalled()) 
+    if (is_aborting().signalled()) {
+      LOG_DEBUG(clog, "the connection is aborting");
       goto LAborting;
-    else if (is_terminal_state().signalled()) 
+    }
+    else if (is_terminal_state().signalled()) {
+      LOG_DEBUG(clog, "the connection is closing");
       goto LClosed;
+    }
+
+    LOG_DEBUG(clog, iw() << " asked for more data");
 
     std::unique_ptr<RSingleBuffer> buf 
       (new RSingleBuffer(&socket->msg));

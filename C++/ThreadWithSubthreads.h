@@ -37,6 +37,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup threads
+ * @{
+ */
+
 // SubthreadParameter is a parameter
 // for subthread creation
 
@@ -125,6 +130,8 @@ void ThreadWithSubthreads<Thread, ThreadParameter>::
 #endif
   out << ")\n";
 }
+
+//! @}
 
 }
 #endif

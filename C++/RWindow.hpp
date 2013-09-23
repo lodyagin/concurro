@@ -69,21 +69,24 @@ RConnectedWindow<ObjectId>* RConnectedWindow<ObjectId>
 template<class ObjectId>
 void RConnectedWindow<ObjectId>::forward_top(size_t s)
 {
-  //if (s == 0) return;
-  // s == 0 is used, for example, in SoupWindow
-  
+  typedef Logger<LOG::Connections> clog;
+
   do { is_ready().wait(); }
   while(!RAxis<WindowAxis>::compare_and_move
         (*this, readyState, fillingState));
 
   sz = s;
   bottom = top;
+  LOG_DEBUG(clog, *this << " forward_top(" << s << ')');
   move_forward();
 }
 
 template<class ObjectId>
 void RConnectedWindow<ObjectId>::move_forward()
 {
+  typedef Logger<LOG::Connections> clog;
+  LOG_DEBUG(clog, *this << " move_forward()");
+
   STATE(RConnectedWindow, ensure_state, filling);
 
   if (buf) {
@@ -94,12 +97,29 @@ void RConnectedWindow<ObjectId>::move_forward()
     STATE(RConnectedWindow, move_to, wait_for_buffer);
   else
     STATE(RConnectedWindow, move_to, filled);
+
+  if (LOG4CXX_UNLIKELY(clog::logger()->isDebugEnabled())) {
+    if (buf) {
+      const std::string red_part(
+        (const char*)buf->cdata() + bottom, 
+        top - bottom);
+      LOG_DEBUG(clog, *this 
+                << " RConnectedWindow::move_forward(), "
+                << "red_part = [" << red_part << ']');
+    }
+    else {
+      LOG_DEBUG(clog, *this 
+                << " RConnectedWindow::move_forward(), "
+                "buf is nullptr");
+    } 
+  }
 }
 
 template<class ObjectId>
 void RConnectedWindow<ObjectId>::new_buffer
   (std::unique_ptr<RSingleBuffer>&& new_buf)
 {
+  typedef Logger<LOG::Connections> clog;
   assert(new_buf);
 
   RMixedAxis<ConnectedWindowAxis, WindowAxis>
@@ -118,6 +138,7 @@ void RConnectedWindow<ObjectId>::new_buffer
   bottom = -sz;
   top = 0;
   STATE(RConnectedWindow, move_to, filling);
+  LOG_DEBUG(clog, *this << " new_buffer(.)");
   move_forward();
 }
 
@@ -133,7 +154,9 @@ operator<< (std::ostream& out,
       << ", buf=";
 
   if (win.buf)
-    out << win.buf->cdata();
+    out << '[' << std::string(
+      (const char*)win.buf->cdata(), win.buf->size())
+        << ']';
   else
     out << "unallocated";
 

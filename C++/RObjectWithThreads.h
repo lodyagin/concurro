@@ -36,6 +36,11 @@
 
 namespace curr {
 
+/**
+ * @addtogroup threads
+ * @{
+ */
+
 DECLARE_AXIS(ConstructibleAxis, StateAxis);
 
 //! A technical object. Must be moved to the
@@ -102,6 +107,8 @@ protected:
   std::list<RThreadBase*> threads;
   std::list<CompoundEvent> threads_terminals;
 };
+
+//! @}
 
 }
 #endif
