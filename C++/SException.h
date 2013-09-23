@@ -101,15 +101,20 @@ SMAKE_THROW_FN_DECL(sUserError, SUserError)
 
 std::ostream& operator<< (std::ostream&, const SException& exc);
 
+// This macro is disabled because it hides exceptions from doxygen
+#if 0
 #define DEFINE_EXCEPTION(class_, msg) \
 class class_ : public curr::SException \
 { \
 public: \
   class_() : curr::SException(msg) {} \
 };
+#endif
 
-class FromStringCastException: public boost::bad_lexical_cast,
-   public SException {
+class FromStringCastException
+  : public boost::bad_lexical_cast,
+    public SException 
+{
 public:
   FromStringCastException(boost::bad_lexical_cast e) :
     boost::bad_lexical_cast(e.source_type(), e.target_type()),

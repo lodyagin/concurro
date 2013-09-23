@@ -50,9 +50,16 @@ namespace curr {
 //! @defgroup repositories
 //! @{
 
-DEFINE_EXCEPTION(InvalidObjectParameters,
-                 "Invalid parameters for repository object creation"
-  )
+//! Exception: invalid parameters were defined for
+//! creation of a repository object.
+class InvalidObjectParameters : public curr::SException
+{
+public:
+  InvalidObjectParameters()
+    : curr::SException(
+      "Invalid parameters were defined for creation "
+      "of a repository object");
+};
 
 class AbstractRepositoryBase 
 {
@@ -570,11 +577,16 @@ protected:
 /*========== SparkRepository ==========*/
 /*=====================================*/
 
-DEFINE_EXCEPTION(
-  SeveralObjects, 
-  "The param leads to several objects creation, "
-  "you should use create_several_objects."
-  );
+//! Exception: the param leads to several objects
+//! creation, you should use create_several_objects.
+class SeveralObjects : public curr::SException
+{
+public:
+  SeveralObjects() 
+    : curr::SException(
+      "The param leads to several objects creation, "
+      "you should use create_several_objects.");
+};
 
 /**
  * A repository which replase create_object with

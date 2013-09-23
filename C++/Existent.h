@@ -101,6 +101,16 @@ public:
     <T, ExistenceAxis, existent_class_initial_state,
      StateHook>;
 
+  class TheClass : public Parent::TheClass
+  {
+  public:
+    TheClass(Existent* inst)
+      : instance(inst) { assert(instance); }
+  protected:
+    //! Instance of the class
+    Existent* instance;
+  };
+
   Existent();
   Existent(const Existent&);
   Existent(Existent&&);
@@ -113,6 +123,11 @@ public:
   { return obj_count; }
 
 protected:
+  //! The class state. <NB> it is not static to omit
+  //! problems with static initialization order (all
+  //! internal methods use static variables in itself).
+  TheClass theClass;
+
   static std::atomic<int> obj_count;
 
   void inc_existence();

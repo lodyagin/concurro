@@ -55,37 +55,69 @@ template<class T, class StateHook>
 std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent()
+Existent<T, StateHook>::Existent() : theClass(this)
 {
   inc_existence();
 }
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent(const Existent&)
+Existent<T, StateHook>::Existent(const Existent&) : theClass(this)
 {
   inc_existence();
 }
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent(Existent&&)
+Existent<T, StateHook>::Existent(Existent&& e) : theClass(this)
 {
+  while(!(ExistentStates::State::compare_and_move(
+            this->theClass,
+            ExistentStates::exist_oneFun(),
+            ExistentStates::moving_when_oneFun())
+          || 
+          ExistentStates::State::compare_and_move(
+            this->theClass,
+            ExistentStates::exist_severalFun(),
+            ExistentStates::moving_when_severalFun()));
 }
 
 template<class T, class StateHook>
 Existent<T, StateHook>::~Existent()
 {
+  ExistentStates::State::compare_and_move(
+    this->theClass,
+    ExistentStates::moving_when_oneFun(),
+    ExistentStates::exist_oneFun())
+    ||
+  ExistentStates::State::compare_and_move(
+    this->theClass,
+    ExistentStates::moving_when_severalFun(),
+    ExistentStates::exist_severalFun())
   dec_existence();
 }
 
 template<class T, class StateHook>
-Existent<T, StateHook>& Existent<T, StateHook>::operator=(const Existent&)
+Existent<T, StateHook>& Existent<T, StateHook>
+::operator=(const Existent& e)
 {
+  theClass = e.theClass;
   inc_existence();
 }
 
 template<class T, class StateHook>
-Existent<T, StateHook>& Existent<T, StateHook>::operator=(Existent&&)
+Existent<T, StateHook>& Existent<T, StateHook>
+::operator=(Existent&& e)
 {
+  theClass = e.theClass;
+
+  while(!(ExistentStates::State::compare_and_move(
+            this->theClass,
+            ExistentStates::exist_oneFun(),
+            ExistentStates::moving_when_oneFun())
+          || 
+          ExistentStates::State::compare_and_move(
+            this->theClass,
+            ExistentStates::exist_severalFun(),
+            ExistentStates::moving_when_severalFun()));
 }
 
 template<class T, class StateHook>

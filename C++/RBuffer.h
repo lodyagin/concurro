@@ -136,9 +136,15 @@ class RSingleBuffer : public RBuffer
   DECLARE_EVENT(DataBufferStateAxis, dummy);
 
 public:
-  DEFINE_EXCEPTION(ResizeOverCapacity, 
-                   "Can't resize RSingleBuffer "
-                   "over its initial capacity");
+  //! Exception: unable to resize RSingleBuffer over its
+initial capacity
+  class ResizeOverCapacity : public curr::SException
+  {
+  public:
+    ResizeOverCapacity()
+      : curr::SException("Unable to resize RSingleBuffer "
+                         "over its initial capacity");
+  };
 
   //! Construct a buffer without reserved space. Need to
   //! call reserve() before using.

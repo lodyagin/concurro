@@ -38,15 +38,27 @@
 
 namespace curr {
 
-DEFINE_EXCEPTION(
-  NotExistingSingleton, 
-  "Somebody tries to get an SSingleton::instance() when "
-  "no one available");
+//! Exception: somebody tries to get an
+//! SSingleton::instance() when no one is available
+class NotExistingSingleton : public curr::SException
+{
+public:
+  NotExistingSingleton()
+    : curr::SException("Somebody tries to get "
+                       "an SSingleton::instance() when "
+                       "no one is available");
+};
 
-DEFINE_EXCEPTION(
-  MustBeSingleton, 
-  "Somebody tries to create more than one "
-  "SSingleton instance");
+//! Exception: somebody tries to create more than one
+//! SSingleton instance
+class MustBeSingleton : public curr::SException
+{
+public:
+  MustBeSingleton()
+    : curr::SException(
+      "Somebody tries to create more than one "
+      "SSingleton instance");
+};
 
 // SingletonStateHook
 

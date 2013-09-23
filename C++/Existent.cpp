@@ -41,9 +41,11 @@ DEFINE_AXIS(
       "predec_exist_one",
       "preinc_exist_one",
       "exist_one",
+      "moving_when_one",
       "predec_exist_several",
       "preinc_exist_several",
-      "exist_several"
+      "exist_several",
+      "moving_when_several"
   },
   { // inc_existence()
     {"not_exist", "preinc_exist_one"},
@@ -57,7 +59,13 @@ DEFINE_AXIS(
     {"predec_exist_several", "exist_several"},
     {"predec_exist_several", "exist_one"},
     {"exist_one", "predec_exist_one"},
-    {"predec_exist_one", "not_exist"}
+    {"predec_exist_one", "not_exist"},
+
+    // moving constructor/assignment
+    {"exist_one", "moving_when_one"},
+    {"moving_when_one", "exist_one"},
+    {"exist_several", "moving_when_several"},
+    {"moving_when_several", "exist_several"},
   }
   );
 }

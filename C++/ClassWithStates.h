@@ -51,10 +51,6 @@ public:
   class TheClass: public ObjectWithStatesInterface<Axis>
   {
   public:
-    TheClass(ClassWithStates* inst)
-      : instance(inst) { assert(instance); }
-    virtual ~TheClass() {}
-    
     void state_changed
       (StateAxis& ax, 
        const StateAxis& state_ax,     
@@ -73,23 +69,9 @@ public:
     {
       return curr::CompoundEvent();
     }
-  protected:
-    //! Instance of the class
-    ClassWithStates* instance;
   };
 
-  ClassWithStates() : theClass(this) {}
-  ClassWithStates(const ClassWithStates&);
-  ClassWithStates(ClassWithStates&&);
   virtual ~ClassWithStates() {}
-
-  ClassWithStates& operator=(const ClassWithStates&);
-  ClassWithStates& operator=(ClassWithStates&&);
-
-  //! The class state. <NB> it is not static to omit
-  //! problems with static initialization order (all
-  //! internal methods use static variables in itself).
-  TheClass theClass;
 };
 
 template<class T, class Axis, const char* initial>

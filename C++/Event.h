@@ -254,10 +254,17 @@ private:
   typedef Logger<LOG::Events> log;
 };
 
-DEFINE_EXCEPTION(
-  AutoresetInCompound,
-  "Unable to have an autoreset event "
-  "as a member of CompoundEvent");
+/**
+ * Exception: unable to have an autoreset event 
+ * as a member of CompoundEvent.
+ */
+class AutoresetInCompound : public curr::SException
+{
+public:
+  AutoresetInCompound()
+    : curr::SException("Unable to have an autoreset event "
+                       "as a member of CompoundEvent");
+};
 
 #define STL_BUG 1
 

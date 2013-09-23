@@ -173,8 +173,8 @@ public:
      const RState<Axis>& to);
 
   //! Atomic compare-and-change the state
-  //! \return true if the object in the `from' state and
-  //! false otherwise.
+  //! \return false if the object was not in `from' state,
+  //! otherwise return true if the transition was done.
   //! \throw InvalidStateTransition if threre is no
   //! transition from->to and the object is in the `from'
   //! state.  
@@ -183,10 +183,25 @@ public:
      const RState<Axis>& from,
      const RState<Axis>& to);
 	 
+  //! Compare-and-change the state for several object. It
+  //! is not atomic for the bunch but it is atomic for each
+  //! object. In a case of some object is not moved it
+  //! rollback all changes done or raise an exception if fail to do it.
+  //! \return false if the object was not in `from' state,
+  //! otherwise return true if the transition was done.
+  //! \throw InvalidStateTransition if threre is no
+  //! transition from->to for at least one object. It
+  //! guarantees all changes rollbacked.
+  template<class Collection>
+  static bool compare_and_move
+    (Collection& objs, 
+     const RState<Axis>& from,
+     const RState<Axis>& to);
+	 
   //! Atomic compare-and-change the state which uses a
   //! set of possible from-states.
-  //! \return true if the object in one of the `from'
-  //! states and false otherwise.
+  //! \return false if the object was not in `from' states,
+  //! otherwise return true if the transition was done.
   //! \throw InvalidStateTransition if threre is no
   //! transition current->to and the current state is in
   //! the `from' set.
@@ -196,8 +211,8 @@ public:
      const RState<Axis>& to);
 	 
   //! Atomic compare-and-change the state
-  //! \return true if the object NOT in the `from' state and
-  //! false otherwise.
+  //! \return false if the object was in `not_from' state,
+  //! otherwise return true if the transition was done.
   //! \throw InvalidStateTransition if threre is no
   //! transition from->to and the object is in the `from'
   //! state.  
