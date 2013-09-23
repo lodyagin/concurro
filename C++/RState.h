@@ -33,6 +33,7 @@
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 #include "SSingleton.h"
+#include "StateAxis.h"
 
 namespace curr {
 
