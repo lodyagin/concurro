@@ -48,10 +48,10 @@ using ExistentEmptyStateHook = EmptyStateHook
   <T, ExistenceAxis, existent_class_initial_state>;
 
 /**
- * Every object has two main states - exist and not_exist
- * which forms the ExistenceAxis. An object should be
- * derived from Existent if we need observe class 
- * existence (e.g., in SSingleton).
+ * Every class has two main states - exist and not_exist
+ * which forms the ExistenceAxis. A class should be
+ * derived from Existent if we need observe
+ * existence of its copies (e.g., in SSingleton).
  *
  * @dot
  * digraph {
@@ -97,6 +97,9 @@ class Existent
   >
 {
 public:
+  using Parent = ClassWithStates
+    <T, ExistenceAxis, existent_class_initial_state,
+     StateHook>;
 
   Existent();
   Existent(const Existent&);
@@ -104,13 +107,6 @@ public:
   virtual ~Existent();
   Existent& operator=(const Existent&);
   Existent& operator=(Existent&&);
-
-  //! Return an empty event (no object-observable terminal
-  //! state).
-  curr::CompoundEvent is_terminal_state() const override
-  {
-    return curr::CompoundEvent();
-  }
 
   //! Return a number of Existent objects
   static unsigned get_obj_count()

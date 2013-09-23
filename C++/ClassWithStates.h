@@ -41,20 +41,55 @@ template<class T, class Axis, const char* initial,
         class StateHook
 >
 class ClassWithStates
-: public ObjectWithStatesInterface<Axis>
 {
 public:
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) override;
+  /** States implementation. It is in an inner class
+   * because we won't mix class states with object states
+   * (class states are like state of repository or another
+   * structure compound from separate members - classes.
+   */
+  class TheClass: public ObjectWithStatesInterface<Axis>
+  {
+  public:
+    TheClass(ClassWithStates* inst)
+      : instance(inst) { assert(instance); }
+    virtual ~TheClass() {}
+    
+    void state_changed
+      (StateAxis& ax, 
+       const StateAxis& state_ax,     
+       AbstractObjectWithStates* object,
+       const UniversalState& new_state) override;
 
-  std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override;
+    std::atomic<uint32_t>& 
+      current_state(const StateAxis& ax) override;
 
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override;
+    const std::atomic<uint32_t>& 
+      current_state(const StateAxis& ax) const override;
+
+    //! Return an empty event (no object-observable terminal
+    //! state).
+    curr::CompoundEvent is_terminal_state() const override
+    {
+      return curr::CompoundEvent();
+    }
+  protected:
+    //! Instance of the class
+    ClassWithStates* instance;
+  };
+
+  ClassWithStates() : theClass(this) {}
+  ClassWithStates(const ClassWithStates&);
+  ClassWithStates(ClassWithStates&&);
+  virtual ~ClassWithStates() {}
+
+  ClassWithStates& operator=(const ClassWithStates&);
+  ClassWithStates& operator=(ClassWithStates&&);
+
+  //! The class state. <NB> it is not static to omit
+  //! problems with static initialization order (all
+  //! internal methods use static variables in itself).
+  TheClass theClass;
 };
 
 template<class T, class Axis, const char* initial>

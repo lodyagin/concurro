@@ -39,20 +39,20 @@ namespace curr {
 template<class T, class Axis, const char* initial_state,
          class StateHook>
 void ClassWithStates<T, Axis, initial_state, StateHook>
-::state_changed
+::TheClass::state_changed
   (StateAxis&, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
    const UniversalState& new_state)
 {
-  StateHook(this)(this, state_ax, new_state);
+  StateHook(this->instance)(this, state_ax, new_state);
 }
 
 template<class T, class Axis, const char* initial_state,
          class StateHook>
 std::atomic<uint32_t>& 
 ClassWithStates<T, Axis, initial_state, StateHook>
-::current_state(const StateAxis& ax)
+::TheClass::current_state(const StateAxis& ax)
 {
   static std::atomic<uint32_t> currentState( 
     RAxis<Axis>::instance().state_map()
@@ -64,10 +64,11 @@ template<class T, class Axis, const char* initial_state,
          class StateHook>
 const std::atomic<uint32_t>& 
 ClassWithStates<T, Axis, initial_state, StateHook>
-::current_state(const StateAxis& ax) const
+::TheClass::current_state(const StateAxis& ax) const
 {
   return const_cast<
-    ClassWithStates<T, Axis, initial_state, StateHook>*>
+    ClassWithStates<T, Axis, initial_state, StateHook>
+    ::TheClass*>
       (this) -> current_state(ax);
 }
 

@@ -17,6 +17,7 @@ CU_TestInfo SSingletonTests[] = {
    "<RMixedAxis<ExistenceAxis, ExistenceAxis>>",
    test_sautosingleton_raxis},
   {"test SSingleton", test_ssingleton},
+  {"test SSingleton move", test_ssingleton_move},
   {"test SAutoSingleton automatic construction", 
    test_sautosingleton_auto},
   {"test SAutoSingleton manual construction", 
@@ -209,3 +210,7 @@ void test_concurrent_creation()
   }
   CU_ASSERT_FALSE_FATAL(exception_in_thread);
 }
+
+class P : public SAutoSingleton<P> {};
+
+P p;

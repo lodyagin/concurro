@@ -349,37 +349,59 @@ void update_events \
   ax.update_events(this, trans_id, to); \
 }
 
-#define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS(Main)  \
+#define MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS  \
 void state_changed( \
-  StateAxis& ax, \
-  const StateAxis& state_ax,     \
-  AbstractObjectWithStates* object, \
+  curr::StateAxis& ax, \
+  const curr::StateAxis& state_ax,     \
+  curr::AbstractObjectWithStates* object, \
   const curr::UniversalState& new_state)        \
 { \
   ax.state_changed(this, object, state_ax, new_state); \
 } \
 \
 std::atomic<uint32_t>& \
-current_state(const StateAxis& ax) override \
+current_state(const curr::StateAxis& ax) override \
 { \
   return ax.current_state(this); \
 } \
 \
 const std::atomic<uint32_t>& \
-current_state(const StateAxis& ax) const override \
+current_state(const curr::StateAxis& ax) const override \
+{ \
+  return ax.current_state(this); \
+} \
+
+#define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS(Main)  \
+void state_changed( \
+  curr::StateAxis& ax,           \
+  const curr::StateAxis& state_ax,     \
+  curr::AbstractObjectWithStates* object, \
+  const curr::UniversalState& new_state)        \
+{ \
+  ax.state_changed(this, object, state_ax, new_state); \
+} \
+\
+std::atomic<uint32_t>& \
+current_state(const curr::StateAxis& ax) override \
+{ \
+  return ax.current_state(this); \
+} \
+\
+const std::atomic<uint32_t>& \
+current_state(const curr::StateAxis& ax) const override \
 { \
   return ax.current_state(this); \
 } \
 \
 CompoundEvent create_event \
-(const UniversalEvent& ue) const override \
+(const curr::UniversalEvent& ue) const override \
 { \
   return Main::create_event(ue); \
 } \
 \
 void update_events \
-(StateAxis& ax, \
- TransitionId trans_id, \
+(curr::StateAxis& ax, \
+ curr::TransitionId trans_id, \
  uint32_t to) override \
 { \
   ax.update_events(this, trans_id, to); \

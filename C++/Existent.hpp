@@ -95,12 +95,12 @@ void Existent<T, StateHook>::inc_existence()
 
   while (
     ! ((a = ExistentStates::State::compare_and_move(
-       *this, 
+       this->theClass, 
        ExistentStates::not_existFun(), 
        ExistentStates::preinc_exist_oneFun()))
      || 
        (b = ExistentStates::State::compare_and_move(
-       *this, 
+       this->theClass, 
        { ExistentStates::exist_oneFun(), 
          ExistentStates::exist_severalFun() 
        }, 
@@ -115,10 +115,10 @@ void Existent<T, StateHook>::inc_existence()
 
   if (a) 
     ExistentStates::State::move_to(
-      *this, ExistentStates::exist_oneFun());
+      this->theClass, ExistentStates::exist_oneFun());
   else if (b) 
     ExistentStates::State::move_to(
-      *this, ExistentStates::exist_severalFun());
+      this->theClass, ExistentStates::exist_severalFun());
 }
 
 template<class T, class StateHook>
@@ -128,11 +128,11 @@ void Existent<T, StateHook>::dec_existence()
 
   while (
    ! ((a = ExistentStates::State::compare_and_move(
-     *this, 
+     this->theClass, 
      ExistentStates::exist_severalFun(), 
      ExistentStates::predec_exist_severalFun()))
    || (b = ExistentStates::State::compare_and_move(
-       *this, 
+       this->theClass, 
        ExistentStates::exist_oneFun(), 
        ExistentStates::predec_exist_oneFun()))
      )
@@ -143,13 +143,13 @@ void Existent<T, StateHook>::dec_existence()
 
   if (obj_count == 1)
     ExistentStates::State::move_to(
-      *this, ExistentStates::exist_oneFun());
+      this->theClass, ExistentStates::exist_oneFun());
   else if (a)
     ExistentStates::State::move_to(
-      *this, ExistentStates::exist_severalFun());
+      this->theClass, ExistentStates::exist_severalFun());
   else if (b)
     ExistentStates::State::move_to(
-      *this, ExistentStates::not_existFun());
+      this->theClass, ExistentStates::not_existFun());
 }
 
 }
