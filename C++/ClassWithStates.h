@@ -45,6 +45,9 @@ class ClassWithStates
 public:
   virtual ~ClassWithStates() {}
 
+  ClassWithStates* get_paired() //const
+  { return paired; }
+
 protected:
   /** States implementation. It is in an inner class
    * because we won't mix class states with object states
@@ -80,6 +83,12 @@ protected:
     //! Instance of ClassWithStates
     ClassWithStates* instance;
   };
+
+  //! Paired obj ptr, for example, in the middle of a move
+  //! constructor. It's used in descendants but declared
+  //! here to access from StateHook-s (without dynamic
+  //! casting).
+  ClassWithStates* paired = nullptr;
 };
 
 template<class T, class Axis, const char* initial>

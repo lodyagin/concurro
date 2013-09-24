@@ -8,6 +8,7 @@
 
 void test_sautosingleton_raxis();
 void test_ssingleton();
+void test_ssingleton_move();
 void test_sautosingleton_auto();
 void test_sautosingleton_manual();
 void test_concurrent_creation();
@@ -131,6 +132,25 @@ void test_ssingleton()
     CU_FAIL_FATAL("an exception must be raised");
   }
   catch (const NotExistingSingleton&) {}
+}
+
+void test_ssingleton_move()
+{
+  struct S : public SSingleton<S>
+  {
+  };
+
+  try {
+    S s1;
+    CU_ASSERT_PTR_EQUAL_FATAL(&S::instance(), &s1);
+    S s2(std::move(s1));
+    CU_ASSERT_PTR_EQUAL_FATAL(&S::instance(), &s2);
+  }
+  catch(...) 
+  { 
+    CU_FAIL_FATAL("The move constructor is broken");
+  }
+  CU_ASSERT_FALSE_FATAL(S::isConstructed());
 }
 
 void test_sautosingleton_auto()

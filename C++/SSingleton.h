@@ -146,8 +146,9 @@ public:
   //! A deleted assignment operator.
   SSingleton& operator=(const SSingleton&) = delete;
 
-  //! The move assignment doesn't change existence.
-  SSingleton& operator=(SSingleton&& s) = default;
+  //! The move assignment is impossible unless lvalue and
+  //! rvalue is the same object.
+  SSingleton& operator=(SSingleton&& s) = delete;
 
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to

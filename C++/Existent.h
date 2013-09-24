@@ -141,10 +141,6 @@ protected:
   //! internal methods use static variables in itself).
   TheClass theClass;
 
-  //! Paired obj ptr, for example, in the middle of a move
-  //! constructor.
-  Parent* paired = nullptr;
-
   static std::atomic<int> obj_count;
 
   void inc_existence();

@@ -106,10 +106,10 @@ void SingletonStateHook<T>::operator()
                            // you get it
   }
   else if (newst == ExistentStates::exist_oneFun())
-  {
-    auto* p = dynamic_cast<SSingleton<T>*>(last_instance);
-    if (p->paired)
-      instance = p->paired;
+  { 
+    assert(last_instance);
+    if (last_instance->get_paired())
+      instance = last_instance->get_paired();
     // move the instance in move construction/assignment
   }
 
