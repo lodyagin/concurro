@@ -105,13 +105,6 @@ void SingletonStateHook<T>::operator()
       THROW_PROGRAM_ERROR; // check the state design if
                            // you get it
   }
-  else if (newst == ExistentStates::exist_oneFun())
-  { 
-    assert(last_instance);
-    if (last_instance->get_paired())
-      instance = last_instance->get_paired();
-    // move the instance in move construction/assignment
-  }
 
   if (RMixedAxis<SingletonAxis, ExistenceAxis>
       ::state_is(
@@ -151,11 +144,29 @@ SSingleton<T>::SSingleton()
 }
 
 template<class T>
-SSingleton<T>::~SSingleton()
+SSingleton<T>::SSingleton(SSingleton&& s)
+ : Parent(std::move(s))
 {
   assert(this->get_obj_count() == 1);
-  assert(instance0);
-  instance0 = _instance = nullptr;
+  set_instance(this);
+  _instance = nullptr;
+  RMixedAxis<SingletonAxis, ExistenceAxis>::move_to
+    (this->theClass, ExistentStates::exist_oneFun());
+  assert(this->get_obj_count() == 1);
+}
+
+template<class T>
+SSingleton<T>::~SSingleton()
+{
+  if (!this->paired)
+  {
+    // do not call it for moved-from objects (that have
+    // paired pointed to a new moved-to instance)
+
+    SCHECK(this->get_obj_count() == 1);
+    assert(instance0);
+    instance0 = _instance = nullptr;
+  }
 }
 
 template<class T>

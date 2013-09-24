@@ -36,8 +36,11 @@
 
 namespace curr {
 
-//! @defgroup Singletons
-//! @{
+/**
+ * @defgroup singletons
+ * Objects with counted number of instances.
+ * @{
+ */
 
 DECLARE_AXIS(SingletonAxis, ExistenceAxis);
 
@@ -139,7 +142,7 @@ public:
   SSingleton(const SSingleton&) = delete;
 
   //! The move constructor doesn't change existence.
-  SSingleton(SSingleton&& s) = default;
+  SSingleton(SSingleton&& s);
 
   virtual ~SSingleton();
 

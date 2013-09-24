@@ -32,11 +32,12 @@
 
 #include "ClassWithStates.h"
 #include "StateAxis.h"
+#include "Logging.h"
 #include <functional>
 
 namespace curr {
 
-//! @addtogroup Singletons
+//! @addtogroup singletons
 //! @{
 
 DECLARE_AXIS(ExistenceAxis, StateAxis);
@@ -111,19 +112,14 @@ public:
 
   using TheClass = typename Parent::TheClass;
 
-/*class TheClass : public Parent::TheClass
-  {
-  public:
-    TheClass(Existent* inst)
-      : instance(inst) { assert(instance); }
-  protected:
-    //! Instance of the class
-    Existent* instance;
-    };*/
-
   Existent();
   Existent(const Existent&);
+
+  //! It leaves the object in moving_when_one or
+  //! moving_when several state. Must be completed in
+  //! parent (-> {exist_one, exist_everal}).
   Existent(Existent&&);
+
   virtual ~Existent();
   Existent& operator=(const Existent&);
   Existent& operator=(Existent&&);
@@ -145,6 +141,9 @@ protected:
 
   void inc_existence();
   void dec_existence();
+
+private:
+  typedef Logger<Existent> log;
 };
 
 //! @}

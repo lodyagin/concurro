@@ -73,12 +73,10 @@ template<class T, class StateHook>
 Existent<T, StateHook>::Existent(Existent&& e) 
   : theClass(this)
 {
-  bool a;
-
-  while(!((a = ExistentStates::State::compare_and_move(
+  while(!(ExistentStates::State::compare_and_move(
             this->theClass,
             ExistentStates::exist_oneFun(),
-            ExistentStates::moving_when_oneFun()))
+            ExistentStates::moving_when_oneFun())
           || 
           ExistentStates::State::compare_and_move(
             this->theClass,
@@ -86,24 +84,15 @@ Existent<T, StateHook>::Existent(Existent&& e)
             ExistentStates::moving_when_severalFun())));
 
   e.paired = this;
-
-  // give a chance to a hook
-  if (a)
-    ExistentStates::State::compare_and_move(
-      this->theClass,
-      ExistentStates::moving_when_oneFun(),
-      ExistentStates::exist_oneFun());
-  else
-    ExistentStates::State::compare_and_move(
-      this->theClass,
-      ExistentStates::moving_when_severalFun(),
-      ExistentStates::exist_severalFun());
 }
 
 template<class T, class StateHook>
 Existent<T, StateHook>::~Existent()
 {
-  dec_existence();
+  if (!this->paired)
+    // do not call it for moved-from objects (that have
+    // paired pointed to a new moved-to instance)
+    dec_existence();
 }
 
 template<class T, class StateHook>
@@ -154,7 +143,9 @@ void Existent<T, StateHook>::inc_existence()
       )
    );
 
-  obj_count++;
+  ++obj_count;
+  LOG_DEBUG(log, "++obj_count == " << obj_count);
+
   assert (obj_count > 0);
   assert ((obj_count == 1) == a); 
   assert ((obj_count > 1) == b);
@@ -184,7 +175,8 @@ void Existent<T, StateHook>::dec_existence()
      )
    );
 
-  obj_count--;
+  --obj_count;
+  LOG_DEBUG(log, "--obj_count == " << obj_count);
   assert (obj_count >= 0);
 
   if (obj_count == 1)
