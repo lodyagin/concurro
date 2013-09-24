@@ -48,6 +48,8 @@ namespace curr {
 
 /**
  * @defgroup events
+ *
+ * All about events.
  * @{
  */
 

@@ -44,8 +44,11 @@
 
 namespace curr {
 
-//! @defgroup Threads
-//! @{
+/**
+ * @defgroup threads
+ * Threads.
+ * @{
+ */
 
 class ThreadAxis;
 

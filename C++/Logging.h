@@ -43,6 +43,8 @@ namespace curr {
 
 /**
  * @defgroup logging
+ *
+ * Just logging.
  * @{
  */
 

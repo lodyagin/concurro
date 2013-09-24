@@ -44,6 +44,7 @@ namespace curr {
 
 /**
  * @defgroup synchronization
+ * Sunchronization.
  * @{
  */
 

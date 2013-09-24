@@ -34,7 +34,7 @@
 
 namespace curr {
 
-//! @addtogroup Repositories
+//! @addtogroup repositories
 //! @{
 
 enum class HolderType { 

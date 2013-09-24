@@ -47,6 +47,7 @@ namespace curr {
 
 /**
  * @defgroup sockets
+ * Just sockets.
  * @{
  */
 

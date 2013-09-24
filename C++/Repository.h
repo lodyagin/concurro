@@ -47,8 +47,11 @@
 
 namespace curr {
 
-//! @defgroup repositories
-//! @{
+/**
+ * @defgroup repositories
+ * A repository is just a collection with a concurrency.
+ * @{
+ */
 
 //! Exception: invalid parameters were defined for
 //! creation of a repository object.

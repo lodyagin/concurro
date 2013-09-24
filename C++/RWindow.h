@@ -42,6 +42,7 @@ namespace curr {
 
 /**
  * @defgroup connections
+ * Connections.
  * @{
  */
 
