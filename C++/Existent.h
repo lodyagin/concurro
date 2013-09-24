@@ -78,6 +78,14 @@ using ExistentEmptyStateHook = EmptyStateHook
  *     [label="dec_existence()"];
  *   predec_exist_one -> not_exist
  *     [label="dec_existence()"];
+ *   exist_one -> moving_when_one
+ *     [label="std::move"];
+ *   moving_when_one -> exist_one
+ *     [label="std::move"];
+ *   exist_several -> moving_when_several
+ *     [label="std::move"];
+ *   moving_when_several -> exist_several
+ *     [label="std::move"];
  * }
  * @enddot
  *
@@ -101,7 +109,9 @@ public:
     <T, ExistenceAxis, existent_class_initial_state,
      StateHook>;
 
-  class TheClass : public Parent::TheClass
+  using TheClass = typename Parent::TheClass;
+
+/*class TheClass : public Parent::TheClass
   {
   public:
     TheClass(Existent* inst)
@@ -109,7 +119,7 @@ public:
   protected:
     //! Instance of the class
     Existent* instance;
-  };
+    };*/
 
   Existent();
   Existent(const Existent&);
@@ -122,11 +132,18 @@ public:
   static unsigned get_obj_count()
   { return obj_count; }
 
+  const TheClass& class_state() const
+  { return theClass; }
+
 protected:
   //! The class state. <NB> it is not static to omit
   //! problems with static initialization order (all
   //! internal methods use static variables in itself).
   TheClass theClass;
+
+  //! Paired obj ptr, for example, in the middle of a move
+  //! constructor.
+  Parent* paired = nullptr;
 
   static std::atomic<int> obj_count;
 

@@ -263,7 +263,8 @@ class AutoresetInCompound : public curr::SException
 public:
   AutoresetInCompound()
     : curr::SException("Unable to have an autoreset event "
-                       "as a member of CompoundEvent");
+                       "as a member of CompoundEvent")
+  {}
 };
 
 #define STL_BUG 1

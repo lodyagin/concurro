@@ -58,7 +58,7 @@ public:
   InvalidObjectParameters()
     : curr::SException(
       "Invalid parameters were defined for creation "
-      "of a repository object");
+      "of a repository object") {}
 };
 
 class AbstractRepositoryBase 
@@ -585,7 +585,7 @@ public:
   SeveralObjects() 
     : curr::SException(
       "The param leads to several objects creation, "
-      "you should use create_several_objects.");
+      "you should use create_several_objects.") {}
 };
 
 /**

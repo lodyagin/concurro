@@ -48,6 +48,8 @@ public:
   DECLARE_STATE_FUN(State, exist_several);
   DECLARE_STATE_FUN(State, predec_exist_several);
   DECLARE_STATE_FUN(State, preinc_exist_several);
+  DECLARE_STATE_FUN(State, moving_when_one);
+  DECLARE_STATE_FUN(State, moving_when_several);
   //! @endcond
 };
 
@@ -61,38 +63,48 @@ Existent<T, StateHook>::Existent() : theClass(this)
 }
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent(const Existent&) : theClass(this)
+Existent<T, StateHook>::Existent(const Existent&) 
+  : theClass(this)
 {
   inc_existence();
 }
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent(Existent&& e) : theClass(this)
+Existent<T, StateHook>::Existent(Existent&& e) 
+  : theClass(this)
 {
   while(!(ExistentStates::State::compare_and_move(
-            this->theClass,
+            *this,
             ExistentStates::exist_oneFun(),
             ExistentStates::moving_when_oneFun())
           || 
           ExistentStates::State::compare_and_move(
-            this->theClass,
+            *this,
             ExistentStates::exist_severalFun(),
-            ExistentStates::moving_when_severalFun()));
+            ExistentStates::moving_when_severalFun())));
+  e.paired = this;
 }
 
 template<class T, class StateHook>
 Existent<T, StateHook>::~Existent()
 {
-  ExistentStates::State::compare_and_move(
-    this->theClass,
-    ExistentStates::moving_when_oneFun(),
-    ExistentStates::exist_oneFun())
-    ||
-  ExistentStates::State::compare_and_move(
-    this->theClass,
-    ExistentStates::moving_when_severalFun(),
-    ExistentStates::exist_severalFun())
-  dec_existence();
+  if (paired &&
+      // the next is performed only in a destructor of
+      // moved object
+      (ExistentStates::State::compare_and_move(
+        this->theClass,
+        ExistentStates::moving_when_oneFun(),
+        ExistentStates::exist_oneFun())
+       ||
+       ExistentStates::State::compare_and_move(
+         this->theClass,
+         ExistentStates::moving_when_severalFun(),
+         ExistentStates::exist_severalFun()))
+    )
+    ; // <NB> the object was moved, the quantity wasn't
+      // changed
+  else
+    dec_existence();
 }
 
 template<class T, class StateHook>
@@ -117,7 +129,10 @@ Existent<T, StateHook>& Existent<T, StateHook>
           ExistentStates::State::compare_and_move(
             this->theClass,
             ExistentStates::exist_severalFun(),
-            ExistentStates::moving_when_severalFun()));
+            ExistentStates::moving_when_severalFun())))
+    ;
+
+  e.paired = this;
 }
 
 template<class T, class StateHook>

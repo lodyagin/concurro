@@ -137,13 +137,13 @@ class RSingleBuffer : public RBuffer
 
 public:
   //! Exception: unable to resize RSingleBuffer over its
-initial capacity
+  //! initial capacity
   class ResizeOverCapacity : public curr::SException
   {
   public:
     ResizeOverCapacity()
       : curr::SException("Unable to resize RSingleBuffer "
-                         "over its initial capacity");
+                         "over its initial capacity") {}
   };
 
   //! Construct a buffer without reserved space. Need to

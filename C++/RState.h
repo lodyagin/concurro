@@ -67,18 +67,6 @@ typedef int16_t StateMapId;
  * @{
  */
 
-/*template<class Axis>
-struct UnitializedAxis : public SException
-{
-UnitializedAxis()
-  : SException(SFORMAT(
-                 "The axis " << typeid(Axis).name()
-                 << " must be initialized before usage"
-                 ))
-  {}
-  
-  };*/
-
 template<class Axis>
 class RState : public UniversalState
 {
@@ -183,10 +171,13 @@ public:
      const RState<Axis>& from,
      const RState<Axis>& to);
 	 
+#if 0
   //! Compare-and-change the state for several object. It
   //! is not atomic for the bunch but it is atomic for each
   //! object. In a case of some object is not moved it
-  //! rollback all changes done or raise an exception if fail to do it.
+  //! rollbacks all changes previously done or call
+  //! ObjectWithStatesInterface::state_is_broken on all
+  //! failed objects.
   //! \return false if the object was not in `from' state,
   //! otherwise return true if the transition was done.
   //! \throw InvalidStateTransition if threre is no
@@ -197,6 +188,7 @@ public:
     (Collection& objs, 
      const RState<Axis>& from,
      const RState<Axis>& to);
+#endif
 	 
   //! Atomic compare-and-change the state which uses a
   //! set of possible from-states.

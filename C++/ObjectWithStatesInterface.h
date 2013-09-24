@@ -51,6 +51,7 @@ class AbstractObjectWithStates
 {
   template<class Axis>
   friend class RObjectWithStates;
+
 public:
   virtual ~AbstractObjectWithStates() {}
 
@@ -71,11 +72,37 @@ public:
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
 
+  //! Return access to a current state atomic value.
   virtual std::atomic<uint32_t>& 
-	 current_state(const StateAxis&) = 0;
+    current_state(const StateAxis&) = 0;
 
+  //! Return constant access to a current state atomic
+  //! value.
   virtual const std::atomic<uint32_t>& 
-	 current_state(const StateAxis&) const = 0;
+    current_state(const StateAxis&) const = 0;
+
+#if 0
+  /**
+   * Exception: it is thrown by the default implementation
+   * of state_is_broken.
+   */
+  class BrokenState : public curr::SException
+  {
+  public:
+    BrokenState
+      (const AbstractObjectWithStates& obj,
+       const UniversalState& rb_transition_from,
+       const UniversalState& rb_transition_to);
+  };
+
+  //! Notify the object when a compound operation needs to
+  //! rollback the state change rb_transition_from ->
+  //! rb_transition_to but unable to do so.
+  virtual void state_is_broken
+    (const UniversalState& rb_transition_from,
+     const UniversalState& rb_transition_to) = 0;
+
+#endif
 };
 
 class RObjectWithStatesBase;

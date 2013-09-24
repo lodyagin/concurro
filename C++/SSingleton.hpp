@@ -46,7 +46,7 @@ public:
   NotExistingSingleton()
     : curr::SException("Somebody tries to get "
                        "an SSingleton::instance() when "
-                       "no one is available");
+                       "no one is available") {}
 };
 
 //! Exception: somebody tries to create more than one
@@ -57,7 +57,7 @@ public:
   MustBeSingleton()
     : curr::SException(
       "Somebody tries to create more than one "
-      "SSingleton instance");
+      "SSingleton instance") {}
 };
 
 // SingletonStateHook
@@ -84,9 +84,9 @@ void SingletonStateHook<T>::operator()
     <ObjectWithStatesInterface<ExistenceAxis>*>(object);
   SCHECK(obj_ptr);
   auto& obj = *obj_ptr;
+  const RState<ExistenceAxis> newst(new_state);
 
-  if (RState<ExistenceAxis>(new_state) ==
-      ExistentStates::preinc_exist_severalFun())
+  if (newst == ExistentStates::preinc_exist_severalFun())
       // it is obligatory to check reason of enter to
       // disable intercept preinc_exist_several set by
       // others.
@@ -102,7 +102,15 @@ void SingletonStateHook<T>::operator()
         ))
       THROW_EXCEPTION(MustBeSingleton);
     else
-      THROW_PROGRAM_ERROR; // check the state design
+      THROW_PROGRAM_ERROR; // check the state design if
+                           // you get it
+  }
+  else if (newst == ExistentStates::exist_oneFun())
+  {
+    auto* p = dynamic_cast<SSingleton<T>*>(last_instance);
+    if (p->paired)
+      instance = p->paired;
+    // move the instance in move construction/assignment
   }
 
   if (RMixedAxis<SingletonAxis, ExistenceAxis>

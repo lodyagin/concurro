@@ -59,6 +59,9 @@ class MustBeSingleton;
 template<class T>
 class SSingleton;
 
+/**
+ * A hook for check whether object is still singleton.
+ */
 template<class T>
 class SingletonStateHook
 {
@@ -124,6 +127,8 @@ class SSingleton
 {
   friend SingletonStateHook<T>;
 public:
+  typedef Existent<T, SingletonStateHook<T>> Parent;
+
   //! One and only one class instance must be created with
   //! this function.
   //! @exception MustBeSingleton a copy of SSingleton<T>
@@ -134,7 +139,7 @@ public:
   SSingleton(const SSingleton&) = delete;
 
   //! The move constructor doesn't change existence.
-  SSingleton(SSingleton&&) {}
+  SSingleton(SSingleton&& s) = default;
 
   virtual ~SSingleton();
 
@@ -142,7 +147,7 @@ public:
   SSingleton& operator=(const SSingleton&) = delete;
 
   //! The move assignment doesn't change existence.
-  SSingleton& operator=(SSingleton&&) {}
+  SSingleton& operator=(SSingleton&& s) = default;
 
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to
@@ -155,7 +160,13 @@ public:
   static bool isConstructed();
 
 private:
-  static typename SingletonStateHook<T>::Instance* instance0;
+  //! The singleton instance set by a hook (it differs
+  //! with type from _instance)
+  static typename SingletonStateHook<T>::Instance* 
+    instance0;
+
+  //! The actual singleton instance. It is updated from
+  //! instance0 in instance() call.
   static T* _instance;
 
   void set_instance

@@ -43,6 +43,9 @@ template<class T, class Axis, const char* initial,
 class ClassWithStates
 {
 public:
+  virtual ~ClassWithStates() {}
+
+protected:
   /** States implementation. It is in an inner class
    * because we won't mix class states with object states
    * (class states are like state of repository or another
@@ -51,6 +54,9 @@ public:
   class TheClass: public ObjectWithStatesInterface<Axis>
   {
   public:
+    TheClass(ClassWithStates* inst)
+      : instance(inst) { assert(instance); }
+    
     void state_changed
       (StateAxis& ax, 
        const StateAxis& state_ax,     
@@ -69,9 +75,11 @@ public:
     {
       return curr::CompoundEvent();
     }
-  };
 
-  virtual ~ClassWithStates() {}
+  protected:
+    //! Instance of ClassWithStates
+    ClassWithStates* instance;
+  };
 };
 
 template<class T, class Axis, const char* initial>

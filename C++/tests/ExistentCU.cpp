@@ -23,7 +23,8 @@ int ExistentCUClean()
 #define ASSERT_STATE(obj, state) \
    CU_ASSERT_TRUE_FATAL( \
      ExistentStates::State::state_is(      \
-       (obj), ExistentStates::state ## Fun()));
+       (obj).class_state(), \
+       ExistentStates::state ## Fun()));
 
 void test_existent()
 {
