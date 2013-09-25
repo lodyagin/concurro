@@ -33,9 +33,9 @@
 #include "RMutex.h"
 #include "SNotCopyable.h"
 #include "SException.h"
-//#include "SShutdown.h"
 #include "Logging.h"
 #include "Event.h"
+#include "HasStringView.h"
 #include <string>
 #include <algorithm>
 #include <utility>
@@ -650,7 +650,7 @@ public:
  * A repository member with default universal id
  * implementation. 
  */
-class StdIdMember
+class StdIdMember : public HasStringView
 {
 public:
   const std::string universal_object_id;
@@ -666,6 +666,9 @@ public:
 
   //! A default assignment operator.
   StdIdMember& operator=(const StdIdMember&) = default;
+
+  void outString (std::ostream& out) const override
+  { out << object_name(); }
 
   std::string universal_id() const
   { return universal_object_id; }
@@ -704,6 +707,24 @@ public:
   virtual object* transform_object              \
   (const object*) const                         \
   { THROW_NOT_IMPLEMENTED; }
+
+#define PAR_DEFAULT_ABSTRACT(object)            \
+  virtual object* create_derivation             \
+  (const curr::ObjectCreationInfo& oi) const=0; \
+                                                \
+  virtual object* transform_object              \
+  (const object*) const                         \
+  { THROW_NOT_IMPLEMENTED; }
+
+#define PAR_DEFAULT_OVERRIDE(object)                   \
+  virtual object* create_derivation                    \
+  (const curr::ObjectCreationInfo& oi) const override  \
+  { return new object(oi, *this); }
+
+#define REPO_OBJ_CONSTRUCTOR(object)         \
+protected:                                   \
+  object(const curr::ObjectCreationInfo& oi, \
+         const object::Par& par);
 
 //! @}
 
