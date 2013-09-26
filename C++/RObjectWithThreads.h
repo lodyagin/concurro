@@ -74,17 +74,28 @@ public:
   Object* object;
 };
 
+/**
+ * An object which owns one or several threads.
+ */
 template<class Object>
 class RObjectWithThreads : public RConstructibleObject
 {
 public:
   using ThreadPar = ThreadOfObjectPar<Object>;
 
+  //! Create the object and remember thread initialization
+  //! pars. After the state will be changed to
+  //! complete_construction for each parameter a thread
+  //! will be created and started in
+  //! RThreadRepository<RThread<std::thread>>
   RObjectWithThreads(std::initializer_list<ThreadPar*>);
 
+  //! A deleted copy constructor.
   RObjectWithThreads(const RObjectWithThreads&) = delete;
+
   virtual ~RObjectWithThreads();
 
+  //! A deleted assignment.
   RObjectWithThreads& operator=
     (const RObjectWithThreads&) = delete;
 

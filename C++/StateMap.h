@@ -121,6 +121,8 @@ class UniversalEvent
 public:
   //! arrival events have this bit set
   enum { Mask = 0x8000 };
+
+  //! Exception: Need an arrival event type here
   class NeedArrivalType: public SException
   {
   public:

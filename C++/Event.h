@@ -73,6 +73,9 @@ public:
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
   virtual bool wait(int time = -1) = 0;
+
+  //! Wait for event or time in msecs. 
+  //! \return false on timeout.
   virtual bool wait(int time = -1) const = 0;
 
   virtual bool signalled() const = 0;
@@ -194,11 +197,15 @@ public:
     return evt_ptr->h == b.evt_ptr->h;
   }
 
+  //! Wait for event or time in msecs. 
+  //! \return false on timeout.
   bool wait(int time = -1)
   { 
     return evt_ptr->wait(time); 
   }
 
+  //! Wait for event or time in msecs. 
+  //! \return false on timeout.
   bool wait(int time = -1) const
   {
     return evt_ptr->wait(time); 
@@ -353,6 +360,7 @@ protected:
   //! the vector need to be updated by the set
   mutable bool vector_need_update;
 
+  //! wait time msecs
   bool wait_impl(int time) const;
 
   //! update the vector by the set if vector_need_update
