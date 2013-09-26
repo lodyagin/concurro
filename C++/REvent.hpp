@@ -32,6 +32,7 @@
 
 #include "REvent.h"
 #include "RState.h"
+#include <algorithm>
 
 namespace curr {
 
@@ -41,6 +42,20 @@ RMixedEvent<Axis, Axis2>
 ::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
               const char* from, 
               const char* to)
+  : RMixedEvent(obj_ptr, 
+                StateMapInstance<Axis>::instance().get_map()
+                -> create_state(from),
+                StateMapInstance<Axis>::instance().get_map()
+                -> create_state(to))
+{
+}
+
+template<class Axis, class Axis2>
+RMixedEvent<Axis, Axis2>
+//
+::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+              const RState<Axis>& from, 
+              const RState<Axis>& to)
   : UniversalEvent
        (
      StateMapInstance<Axis>::instance().get_map()
@@ -49,7 +64,8 @@ RMixedEvent<Axis, Axis2>
    // G++-4.7.3 bug when use copy constructor
    CompoundEvent
    (std::move(obj_ptr->create_event(
-            (UniversalEvent)*this)))
+                (UniversalEvent)*this))),
+   to_state(to)
 {
   for (Event ev : *this) {
    ev.log_params().set = 
@@ -65,15 +81,23 @@ RMixedEvent<Axis, Axis2>
 //
 ::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
               const char* to)
-  : UniversalEvent
-       (
-     StateMapInstance<Axis>::instance().get_map()
-     -> create_state(to), true
-      ),
+  : RMixedEvent(obj_ptr, 
+                StateMapInstance<Axis>::instance().get_map()
+                -> create_state(to))
+{
+}
+
+template<class Axis, class Axis2>
+RMixedEvent<Axis, Axis2>
+//
+::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+              const RState<Axis>& to)
+  : UniversalEvent(to, true),
    // G++-4.7.3 bug when use copy constructor
    CompoundEvent
    (std::move(obj_ptr->create_event(
-            (UniversalEvent)*this)))
+                (UniversalEvent)*this))),
+   to_state(to)
 {
   for (Event ev : *this) {
    ev.log_params().set = 
@@ -81,6 +105,17 @@ RMixedEvent<Axis, Axis2>
    ev.log_params().log_obj = obj_ptr;
   }
 }
+
+#if 0
+RCompoundEvent::RCompoundEvent
+  (std::initializer_list<UniversalEvent> ev_set)
+    : CompoundEvent(ev_set),
+      state_set(ev_set.begin(), ev_set.end())
+{
+/*  std::copy(ev_set.begin(), ev_set.end(), 
+    std::front_inserter(st_set))*/
+}
+#endif
 
 }
 

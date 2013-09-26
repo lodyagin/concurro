@@ -49,17 +49,40 @@ class RMixedEvent
 public:
   //! Create a from->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-				  const char* from, const char* to);
+              const char* from, const char* to);
+
+  //! Create a from->to event
+  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+              const RState<Axis>& from, 
+              const RState<Axis>& to);
 
   //! Create a *->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-				  const char* to);
+              const char* to);
+
+  //! Create a *->to event
+  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
+              const RState<Axis>& to);
+
+  //! to_state corresponding to the event
+  const RState<Axis> to_state;
+
 private:
   typedef Logger<LOG::Events> log;
 };
 
 template<class Axis>
 using REvent = RMixedEvent<Axis, Axis>;
+
+#if 0
+class RCompoundEvent : public CompoundEvent
+{
+public:
+  RCompoundEvent(std::initializer_list<UniversalEvent>);
+
+  const std::set<UniversalState> state_set;
+};
+#endif
 
 #define A_DECLARE_EVENT(axis_, axis_2, event)		\
 protected: \
@@ -74,6 +97,8 @@ private:
 
 #define CONSTRUCT_EVENT(event)		\
   is_ ## event ## _event(this, #event)
+
+#define E(event) is_ ## event ## _event
 
 }
 

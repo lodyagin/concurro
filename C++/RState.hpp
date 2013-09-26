@@ -446,5 +446,21 @@ RState<Axis>
 		
 }
 
+//! Wait is_from_event then perform 
+//! RMixedAxis<Axis,Axis2>::compare_and_move 
+template<class T>
+void wait_and_move
+  (T& obj, 
+   const REvent<typename T::State::axis>& is_from_event,
+   const RState<typename T::State::axis>& to)
+{
+  const auto from = is_from_event.to_state;
+
+  do { 
+    is_from_event.wait(); 
+  } 
+  while (!compare_and_move(obj, from, to));
+}
+
 }
 #endif

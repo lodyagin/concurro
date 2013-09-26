@@ -255,6 +255,100 @@ private:
   typedef Logger<RAxis<Axis>> log;
 };
 
+//! RMixedAxis<Axis,Axis2>::move_to adapter
+template<class T>
+void move_to
+  (T& obj, 
+   const curr::RState<typename T::State::axis>& to)
+{
+  curr::RMixedAxis<typename T::State::axis,
+                          typename T::axis>
+    :: move_to(obj, to);
+}
+
+//! RMixedAxis<Axis,Axis2>::compare_and_move adapter
+template<class T>
+bool compare_and_move
+  (T& obj, 
+   const curr::RState<typename T::State::axis>& from,
+   const curr::RState<typename T::State::axis>& to)
+{
+  return curr::RMixedAxis<typename T::State::axis,
+                          typename T::axis>
+    :: compare_and_move(obj, from, to);
+}
+
+//! RMixedAxis<Axis,Axis2>::compare_and_move adapter
+template<class T>
+bool compare_and_move
+  (T& obj, 
+   std::initializer_list
+   <curr::RState<typename T::State::axis>> from_set,
+   const curr::RState<typename T::State::axis>& to)
+{
+  return curr::RMixedAxis<typename T::State::axis,
+                          typename T::axis>
+    :: compare_and_move(obj, from_set, to);
+}
+
+//! RMixedAxis<Axis,Axis2>::compare_and_move adapter
+template<class T>
+bool compare_and_move
+  (T& obj, 
+   const std::set
+     <curr::RState<typename T::State::axis>>& from_set,
+   const curr::RState<typename T::State::axis>& to)
+{
+  return curr::RMixedAxis<typename T::State::axis,
+                          typename T::axis>
+    :: compare_and_move(obj, from_set, to);
+}
+
+template<class Axis, class Axis2> class RMixedEvent;
+
+template<class Axis>
+using REvent = RMixedEvent<Axis, Axis>;
+
+//! Wait is_from_event then perform 
+//! RMixedAxis<Axis,Axis2>::compare_and_move 
+template<class T>
+void wait_and_move
+  (T& obj, 
+   const REvent<typename T::State::axis>& is_from_event,
+   const RState<typename T::State::axis>& to);
+
+//! Wait is_from_event then perform 
+//! RMixedAxis<Axis,Axis2>::compare_and_move
+template<class T>
+void wait_and_move
+  (T& obj, 
+   std::initializer_list
+     <RState<typename T::State::axis>> from_set,
+   const CompoundEvent& is_from_event,
+   const RState<typename T::State::axis>& to)
+{
+  do { 
+    is_from_event.wait(); 
+  } 
+  while (!compare_and_move(obj, from_set, to));
+}
+
+//! Wait is_from_event then perform 
+//! RMixedAxis<Axis,Axis2>::compare_and_move
+template<class T>
+void wait_and_move
+  (T& obj, 
+   const std::set
+     <RState<typename T::State::axis>>& from_set,
+   const CompoundEvent& is_from_event,
+   const RState<typename T::State::axis>& to)
+{
+  do { 
+    is_from_event.wait(); 
+  } 
+  while (!compare_and_move(obj, from_set, to));
+}
+
 #define DEFINE_AXIS_NS(axis, pars...)	\
   const std::atomic<uint32_t>& axis::current_state    \
     (const curr::AbstractObjectWithStates* obj) const \
@@ -352,6 +446,8 @@ private:
 
 #define A_STATE(class_, axis_, action, state)			\
   A_STATE_OBJ(class_, axis_, action, *this, state)
+
+#define S(state) (state ## State)
 
 //! @}
 

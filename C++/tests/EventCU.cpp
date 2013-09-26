@@ -236,6 +236,8 @@ void test_wait_for_any()
   CU_ASSERT_EQUAL_FATAL(ce6.size(), 2);
 }
 
+#undef S
+
 void test_event_2threads()
 {
   static Event e("test_event_2threads::e", true, false);
