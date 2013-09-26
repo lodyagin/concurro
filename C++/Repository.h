@@ -378,9 +378,12 @@ protected:
   {
     {
       RLOCK(this->objectsM);
-      this->objects->at(id) = 0;
+      Obj*& obj = this->objects->at(id);
+      if (obj) {
+        obj = 0;
+        obj_count--;
+      }
     }
-    obj_count--;
   }
 };
 

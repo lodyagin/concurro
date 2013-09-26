@@ -130,6 +130,14 @@ void test_delete_object_by_id()
   r.delete_object_by_id(2, true);
   CU_ASSERT_TRUE_FATAL(destructor_called);
   CU_ASSERT_EQUAL_FATAL(r.size(), 0);
+
+  try {
+    r.delete_object_by_id(2, false);
+    CU_FAIL_FATAL("Must throw NoSuchId");
+  }
+  catch(const typename REP(Cont,Obj)::NoSuchId&) {}
+
+  CU_ASSERT_EQUAL_FATAL(r.size(), 0);
 }
 
 
