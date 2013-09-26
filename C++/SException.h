@@ -64,6 +64,20 @@ protected:
   bool alreadyLoggedFlag;
 };
 
+//! Exception: Program Error (means general logic error)
+class ProgramError : public SException
+{
+public:
+  ProgramError() : SException("Program Error") {}
+};
+
+//! Exception: Not implemented
+class NotImplemented : public SException
+{
+public:
+  NotImplemented() : SException("Not implemented") {}
+};
+
 #define THROW_EXCEPTION(exception_class, par...) do { \
 	 exception_class exc_{par};								\
   LOG_DEBUG(curr::Logger<curr::LOG::Root>, \
@@ -79,10 +93,10 @@ protected:
   } while (0)
 
 #define THROW_PROGRAM_ERROR \
-  THROW_EXCEPTION(curr::SException, "Program Error")
+  THROW_EXCEPTION(curr::ProgramError)
 
 #define THROW_NOT_IMPLEMENTED \
-  THROW_EXCEPTION(curr::SException, "Not implemented")
+  THROW_EXCEPTION(curr::NotImplemented)
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException
@@ -111,6 +125,7 @@ public: \
 };
 #endif
 
+//! Exception: invalid cast (fromString())
 class FromStringCastException
   : public boost::bad_lexical_cast,
     public SException 
