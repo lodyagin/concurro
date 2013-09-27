@@ -9,18 +9,19 @@ find_package(Boost 1.49 COMPONENTS system thread REQUIRED)
 message(${Boost_THREAD_LIBRARY})
 
 set(TestsSrc
-  ExistentCU.cpp
-  RepositoryCU.cpp
   EventCU.cpp
-  RStateCU.cpp
-  RThreadCU.cpp
-  REventCU.cpp
-  RMutexCU.cpp
+  ExistentCU.cpp
   RBufferCU.cpp
-  RWindowCU.cpp
+  RConnectionCU.cpp
+  REventCU.cpp
+  RHolderCU.cpp
+  RMutexCU.cpp
   RSignalCU.cpp
   RSocketCU.cpp
-  RConnectionCU.cpp
+  RStateCU.cpp
+  RThreadCU.cpp
+  RWindowCU.cpp
+  RepositoryCU.cpp
   SCommonCU.cpp
   SSingletonCU.cpp
   tests.cpp
