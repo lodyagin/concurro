@@ -95,7 +95,7 @@ public:
   typedef ObjId ObjIdType;
   static const Traits traits;
 
-  //! No object with such id exists.
+  //! Exception: No object with such id exists.
   class NoSuchId : public SException
   {
   public:
