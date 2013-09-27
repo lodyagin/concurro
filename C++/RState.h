@@ -315,7 +315,8 @@ template<class T>
 void wait_and_move
   (T& obj, 
    const REvent<typename T::State::axis>& is_from_event,
-   const RState<typename T::State::axis>& to);
+   const RState<typename T::State::axis>& to,
+   int wait_m = -1);
 
 //! Wait is_from_event then perform 
 //! RMixedAxis<Axis,Axis2>::compare_and_move
@@ -325,10 +326,12 @@ void wait_and_move
    std::initializer_list
      <RState<typename T::State::axis>> from_set,
    const CompoundEvent& is_from_event,
-   const RState<typename T::State::axis>& to)
+   const RState<typename T::State::axis>& to,
+   int wait_m = -1)
 {
   do { 
-    is_from_event.wait(); 
+    if (!is_from_event.wait(wait_m))
+      throw EventWaitingTimeOut(wait_m);
   } 
   while (!compare_and_move(obj, from_set, to));
 }
@@ -341,10 +344,12 @@ void wait_and_move
    const std::set
      <RState<typename T::State::axis>>& from_set,
    const CompoundEvent& is_from_event,
-   const RState<typename T::State::axis>& to)
+   const RState<typename T::State::axis>& to,
+   int wait_m = -1)
 {
   do { 
-    is_from_event.wait(); 
+    if (!is_from_event.wait(wait_m))
+      throw EventWaitingTimeOut(wait_m);
   } 
   while (!compare_and_move(obj, from_set, to));
 }

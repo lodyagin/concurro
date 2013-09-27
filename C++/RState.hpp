@@ -452,12 +452,14 @@ template<class T>
 void wait_and_move
   (T& obj, 
    const REvent<typename T::State::axis>& is_from_event,
-   const RState<typename T::State::axis>& to)
+   const RState<typename T::State::axis>& to,
+   int wait_m)
 {
   const auto from = is_from_event.to_state;
 
   do { 
-    is_from_event.wait(); 
+    if (!is_from_event.wait(wait_m))
+      throw EventWaitingTimeOut(wait_m);
   } 
   while (!compare_and_move(obj, from, to));
 }
