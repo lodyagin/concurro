@@ -41,6 +41,7 @@
 #include <string>
 #include <atomic>
 #include <thread>
+#include <memory>
 
 namespace curr {
 
@@ -346,8 +347,10 @@ public:
   template<class Thread, class... Args>
     static Thread* create(Args&&... args);
 
-  //! Destroy in the repository
-  void remove();
+  //! Destroy in the repository. 
+  //! @param freeMemory Call a destructor (for using with
+  //! threads created with create()) 
+  void remove(bool freeMemory = true);
 
   //! Return ptr to the current thread or nullptr if the
   //! current thread is not registered in a global
@@ -383,6 +386,74 @@ protected:
 
   DEFAULT_LOGGER(RThread<std::thread>)
 };
+
+typedef RThread<std::thread> StdThread;
+
+/**
+ * An easy-to-use thread object for starting small pieces
+ * of code in parallel to main execution.
+ *
+ * Example: StdThread::create<LightThread>([](){ ... })
+ *            ->start()
+ */
+class LightThread : public StdThread
+{
+public:
+  struct Par : public StdThread::Par
+  {
+    std::function<void()> fun;
+
+    Par(const std::function<void()>& funct) : fun(funct) {}
+
+    RThreadBase* create_derivation
+      (const ObjectCreationInfo& oi) const override
+    {
+      return new LightThread(oi, *this);
+    } 
+  };
+
+  ~LightThread() 
+  { 
+    destroy(); 
+    try {
+      remove(false); 
+    } 
+    catch(...) {}
+  }
+
+  void run() override;
+
+protected:
+  std::function<void()> fun;
+
+  LightThread(const ObjectCreationInfo&, const Par&);
+};
+
+/**
+ * A more light thread wrapper than ever LightThread.
+ * Example: SharedThread([]{}(...)) th1; // already
+ * started
+ */
+class SharedThread
+{
+public:
+  template<class Fun>
+  SharedThread(Fun fun) 
+    : thread_ptr(StdThread::create<LightThread>(fun)) 
+  {
+    thread_ptr->start();
+  }
+
+  LightThread* operator->()
+  {
+    return thread_ptr.get();
+  }
+
+protected:
+  std::shared_ptr<LightThread> thread_ptr;
+};
+
+// TODO LocalThread
 
 //! @}
 

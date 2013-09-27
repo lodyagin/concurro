@@ -56,7 +56,7 @@ public:
   //! It delegates the call to
   //! RThreadRepository::delete_object(thread, true)
   virtual void delete_thread
-	 (RThreadBase* thread) = 0;
+    (RThreadBase* thread, bool freeMemory = true) = 0;
 };
 
 template<class Thread>
@@ -79,6 +79,8 @@ public:
 	 > Parent;
   typedef typename Thread::Par Par;
   typedef typename Thread::Id ThreadId;
+  typedef typename Parent::NoSuchId NoSuchId;
+  typedef typename Parent::IdIsAlreadyUsed IdIsAlreadyUsed;
 
   RThreadRepository();
 
@@ -94,9 +96,11 @@ public:
   }
 
   //! It overrides RThreadFactory::delete_thread
-  void delete_thread(RThreadBase* thread)
+  void delete_thread
+    (RThreadBase* thread, bool freeMemory = true)
   {
-    delete_object(dynamic_cast<Thread*>(thread), true);
+    delete_object(dynamic_cast<Thread*>(thread), 
+                  freeMemory);
   }
 
   // Overrides

@@ -289,11 +289,26 @@ void RThreadBase::_run()
   // no code after that (destructor can be called)
 }
 
-void RThread<std::thread>::remove()
+void RThread<std::thread>::remove(bool freeMemory)
 {
   RThreadRepository<RThread<std::thread>>::instance()
-	 . delete_thread(this);
+    . delete_thread(this, freeMemory);
   //<NB> invalidate itself, a destructor is already called
+}
+
+// LightThread
+
+LightThread::LightThread
+  (const ObjectCreationInfo& oi, const Par& par)
+    : RThread<std::thread>(oi, par), fun(par.fun)
+{
+  assert(fun);
+}
+
+void LightThread::run()
+{
+  STATE(LightThread, move_to, working);
+  fun();
 }
 
 }
