@@ -7,6 +7,9 @@ void test_create_object();
 template<template<class...> class Cont>
 void test_delete_object_by_id();
 
+template<template<class...> class Cont>
+void test_for_each();
+
 #define TEST_FUN(name, cont) { #name "<" #cont ">", name<cont>}
 
 #define TEST_FUN_SET(name) \
@@ -17,6 +20,7 @@ void test_delete_object_by_id();
 CU_TestInfo RepositoryTests[] = {
   TEST_FUN_SET(test_create_object),
   TEST_FUN_SET(test_delete_object_by_id),
+  TEST_FUN_SET(test_for_each),
   CU_TEST_INFO_NULL
 };
 
@@ -43,14 +47,17 @@ struct ObjT : public StdIdMember
 {
 public:
   typedef unsigned int Id;
-  struct Par {
+  struct Par 
+  {
 	 Par(const std::string& str_) : str(str_) {}
+         Par(int i0) : i(i0) {}
 	 PAR_DEFAULT_MEMBERS(ObjT);
 	 Id get_id(const ObjectCreationInfo& oi) const 
 	 { 
 		return ++g_obj_id; 
 	 }
 	 const std::string str;
+         int i = 0;
   };
 
   ObjT(const ObjectCreationInfo& oi, const Par& par);
@@ -64,6 +71,7 @@ public:
   { return ! (*this == o); }
 
   const std::string str;
+  int i;
   REP(Cont, ObjT<Cont>)* repository;
 };
 
@@ -77,10 +85,11 @@ operator<< (std::ostream& out, const ObjT<Cont>& obj)
 
 template<template<class...> class Cont>
 ObjT<Cont>::ObjT(const ObjectCreationInfo& oi,
-					const Par& par)
+                 const Par& par)
   : StdIdMember(oi.objectId),
     str(par.str),
-	 repository(dynamic_cast<REP(Cont, ObjT)*>(oi.repository))
+    i(par.i),
+    repository(dynamic_cast<REP(Cont, ObjT)*>(oi.repository))
 {
   SCHECK(repository);
 }
@@ -140,6 +149,47 @@ void test_delete_object_by_id()
   CU_ASSERT_EQUAL_FATAL(r.size(), 0);
 }
 
+template<template<class...> class Cont>
+void test_for_each()
+{
+  typedef ObjT<Cont> Obj;
+  typedef typename Obj::Par Par;
+  REP(Cont, Obj) r("test_for_each::r", 0);
 
+  int count = 0;
+  int product = 1;
+
+  r.for_each([&count](Obj& o)
+  {
+    count++;
+  });
+  CU_ASSERT_EQUAL_FATAL(count, 0);
+
+  g_obj_id = 0;
+  r.create_object(Par(2));
+  r.create_object(Par(3));
+  r.create_object(Par(5));
+  r.create_object(Par(7));
+
+  count = 0; product = 1;
+  r.for_each([&count,&product](Obj& o)
+  {
+    count++;
+    product *= o.i;
+  });
+  CU_ASSERT_EQUAL_FATAL(count, 4);
+  CU_ASSERT_EQUAL_FATAL(product, 210);
+
+  r.delete_object_by_id(3, false);
+
+  count = 0; product = 1;
+  r.for_each([&count,&product](Obj& o)
+  {
+    count++;
+    product *= o.i;
+  });
+  CU_ASSERT_EQUAL_FATAL(count, 3);
+  CU_ASSERT_EQUAL_FATAL(product, 42);
+}
 
 

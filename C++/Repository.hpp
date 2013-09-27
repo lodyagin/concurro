@@ -225,28 +225,38 @@ Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 	 (res, StateMatch<Obj, State> (state));
 }
 
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
-template<class Op>
-void RepositoryBase<Obj, Par, ObjMap, ObjId>::for_each (Op& f)
-{
-  RLOCK(objectsM);
-
-  for (ObjId i = 0; i < objects->size (); i++)
-    if ((*objects)[i])
-      f (*(*objects)[i]);
-}
-
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
+template <
+  class Obj, class Par, template<class...> class ObjMap, 
+  class ObjId
+>
 template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::for_each (Op& f) const
+::for_each (Op f)
 {
   RLOCK(objectsM);
 
-  for (ObjId i = 0; i < objects->size (); i++)
-    if ((*objects)[i])
-      f (*(*objects)[i]);
+  Obj* ptr;
+  for (const auto& v : *objects)
+    if ((ptr = Value(v)))
+      f (*ptr);
+}
+
+template <
+  class Obj, class Par, template<class...> class ObjMap, 
+  class ObjId
+>
+template<class Op>
+void RepositoryBase<Obj, Par, ObjMap, ObjId>
+//
+::for_each (Op f) const
+{
+  RLOCK(objectsM);
+
+  Obj* ptr;
+  for (const auto& v : *objects)
+    if ((ptr = Value(v)))
+      f (const_cast<const Obj&>(*ptr));
 }
 
 /*=====================================*/

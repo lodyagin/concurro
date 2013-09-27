@@ -64,6 +64,12 @@ public:
       "of a repository object") {}
 };
 
+/**
+ * An abstract base for all repositories. Contains
+ * get_traits() for query type infos and methods not
+ * depending on template parameters unlike those declared
+ * in descendants.
+ */
 class AbstractRepositoryBase 
 {
 public:
@@ -79,7 +85,11 @@ public:
   };
 
   virtual ~AbstractRepositoryBase() {}
+
+  //! Return the number of (filled) elements
   virtual size_t size() const = 0;
+
+  //! Return parameterized type infos
   virtual Traits get_traits() const = 0;
 };
 
@@ -118,7 +128,7 @@ public:
   public:
     IdIsAlreadyUsed (const ObjId& the_id) 
       : SException (SFORMAT("The object id [" 
-                            << the_id << "] is used already.")),
+                     << the_id << "] is used already.")),
       id (the_id)	 {}
 
     ~IdIsAlreadyUsed () throw () {}
@@ -256,11 +266,14 @@ public:
   Out get_object_ids_by_state
     (Out res, const State& state) const;
 
+  //! It calls f(Obj&) for each object in the repository
   template<class Op>
-  void for_each (Op& f);
+  void for_each (Op f);
 
+  //! It calls f(const Obj&) for each object in the
+  //! repository
   template<class Op>
-  void for_each (Op& f) const;
+  void for_each (Op f) const;
 
   class Destroy 
     : public std::unary_function<int, void>
@@ -276,6 +289,18 @@ public:
   };
 
 protected:
+  //! Return the element itself or pair::second
+  class Value
+  {
+  public:
+    Value(Obj* t0) : t(t0) {}
+    Value(const std::pair<ObjId,Obj*>& p) : t(p.second) {}
+    operator Obj*() { return t; }
+
+  protected:
+    Obj* t;
+  };
+
   RepositoryLogParams log_params;
 
   RMutex objectsM;
@@ -315,6 +340,11 @@ public SNotCopyable
 {
 public:
   typedef RepositoryBase<Obj, Par, ObjMap, ObjId> Parent;
+
+  typedef Obj Object;
+  typedef Par Parameter;
+  typedef ObjId ObjectId;
+
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
