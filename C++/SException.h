@@ -78,6 +78,18 @@ public:
   NotImplemented() : SException("Not implemented") {}
 };
 
+//! Exception: event waiting time out 
+class EventWaitingTimeOut : public SException
+{
+public:
+  const int msecs;
+
+  EventWaitingTimeOut(int ms) : SException(
+    SFORMAT("Event waiting timed out after " << ms 
+            << "milliseconds")), 
+    msecs(ms) {}
+};
+ 
 #define THROW_EXCEPTION(exception_class, par...) do { \
 	 exception_class exc_{par};								\
   LOG_DEBUG(curr::Logger<curr::LOG::Root>, \
