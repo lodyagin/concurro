@@ -72,12 +72,14 @@ protected:
     const std::atomic<uint32_t>& 
       current_state(const StateAxis& ax) const override;
 
+#if 0
     //! Return an empty event (no object-observable terminal
     //! state).
     curr::CompoundEvent is_terminal_state() const override
     {
       return curr::CompoundEvent();
     }
+#endif
 
   protected:
     //! Instance of ClassWithStates

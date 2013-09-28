@@ -64,7 +64,7 @@ public:
     (RObjectWithStatesBase&&);
 
   void register_subscriber
-    (RObjectWithStatesBase*, StateAxis*);
+    (AbstractObjectWithEvents*, StateAxis*);
 
   //! An "update parent" callback on state changing in
   //! the `object'.
@@ -79,7 +79,7 @@ protected:
   std::atomic<bool> is_frozen;
   std::atomic<bool> is_changing;
 
-  typedef std::pair<RObjectWithStatesBase*, StateAxis*>
+  typedef std::pair<AbstractObjectWithEvents*, StateAxis*>
     Subscriber;
 
   //! Registered subscribers

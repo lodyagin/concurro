@@ -66,11 +66,13 @@ public:
      AbstractObjectWithStates* object,
      const UniversalState& new_state) = 0;
 
+#if 0
   //! Terminal state means 
   //! 1) no more state activity;
   //! 2) the object can be deleted (there are no more
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
+#endif
 
   //! Return access to a current state atomic value.
   virtual std::atomic<uint32_t>& 
@@ -145,6 +147,13 @@ public:
     (StateAxis& ax, 
      TransitionId trans_id, 
      uint32_t to) = 0;
+
+  //! Terminal state means 
+  //! 1) no more state activity;
+  //! 2) the object can be deleted (there are no more
+  //! dependencies on it).
+  virtual CompoundEvent is_terminal_state() const = 0;
+
 #if 0
 unable to have events from different axes in one class
 protected:

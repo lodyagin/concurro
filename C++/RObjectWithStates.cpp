@@ -62,7 +62,7 @@ RObjectWithStatesBase& RObjectWithStatesBase
 
 void RObjectWithStatesBase
 ::register_subscriber
-  (RObjectWithStatesBase* sub,
+  (AbstractObjectWithEvents* sub,
    StateAxis* ax
   )
 {
@@ -95,8 +95,9 @@ void RObjectWithStatesBase
 	 THROW_PROGRAM_ERROR;
 
   for (auto sub : subscribers) 
-    sub.first->state_changed
-      (*sub.second, state_ax, object, new_state);
+    dynamic_cast<AbstractObjectWithStates*>
+      (sub.first)->state_changed
+        (*sub.second, state_ax, object, new_state);
 }
 
 }
