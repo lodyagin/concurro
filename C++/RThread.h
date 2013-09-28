@@ -403,7 +403,12 @@ public:
   {
     std::function<void()> fun;
 
-    Par(const std::function<void()>& funct) : fun(funct) {}
+    Par(const std::function<void()>& funct,
+        const std::string& name = std::string()) 
+      : fun(funct) 
+    {
+      thread_name = name;
+    }
 
     RThreadBase* create_derivation
       (const ObjectCreationInfo& oi) const override
