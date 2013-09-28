@@ -32,6 +32,7 @@
 
 #include "RHolder.h"
 #include "RState.hpp"
+#include "AutoRepository.h"
 
 namespace curr {
 
@@ -41,31 +42,54 @@ template<class T, int w>
 DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, free);
 
 template<class T, int w>
-DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, reader_entering);
+DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
+                   reader_entering);
 
 template<class T, int w>
-DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, readers_entered);
+DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
+                   readers_entered);
 
 template<class T, int w>
-DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, reader_exiting);
+DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
+                   reader_exiting);
 
 template<class T, int w>
-DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, writer_entered);
+DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
+                   writer_entered);
 
-#if 0
-template<class T>
-RHolder<T>::RHolder(const RHolder<T>& h)
+
+// RHolder impl
+
+#define CURRINT_HOLDER_TEMPL_ template \
+< \
+  class Obj, \
+  template <class, int> class Guard, \
+  int wait_m \
+>
+#define CURRINT_HOLDER_T_ Obj,Guard,wait_m
+
+
+CURRINT_HOLDER_TEMPL_
+template<class Id>
+RHolder<CURRINT_HOLDER_T_>
+//
+::RHolder(const Par& par)
+  : RObjectWithStates<HolderAxis>("charged"),
+    guarded(AutoRepository<Obj,Id>::instance()
+      . create_object(par))
 {
-  obj = h.obj;
 }
 
-RHolder(RHolder&&);
-
-~RHolder();
-
-RHolder& operator=(const RHolder&);
-RHolder& operator=(RHolder&&);
-#endif
+CURRINT_HOLDER_TEMPL_
+template<class Id>
+RHolder<CURRINT_HOLDER_T_>
+//
+::RHolder(const Id& id)
+  : RObjectWithStates<HolderAxis>("charged"),
+    guarded(AutoRepository<Obj,Id>::instance()
+      . get_object_by_id(id))
+{
+}
 
 }
 

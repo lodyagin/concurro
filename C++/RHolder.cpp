@@ -58,7 +58,6 @@ DEFINE_AXIS(
     { "writer_entered", "free" }
   });
 
-#if 0
 DEFINE_AXIS(
   HolderAxis,
   {
@@ -81,5 +80,4 @@ DEFINE_AXIS(
 //    { "charged", "holey_array" },
 //    { "holey_array", "discharged" }
   });
-#endif
 }

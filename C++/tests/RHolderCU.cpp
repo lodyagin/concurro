@@ -2,13 +2,17 @@
 
 #include "RHolder.hpp"
 #include "RThread.hpp"
+#include "AutoRepository.h"
 #include "tests.h"
 
 void test_nreaders1writer();
+void test_rholder();
 
 CU_TestInfo RHolderTests[] = {
   {"test NReaders1WriterGuard", 
    test_nreaders1writer },
+  {"test RHolder",
+   test_rholder},
   CU_TEST_INFO_NULL
 };
 
@@ -70,5 +74,29 @@ void test_nreaders1writer()
     -> is_terminated().wait(800);
 
   CU_ASSERT_TRUE_FATAL(locked3);
+}
+
+class Obj : public StdIdMember
+{
+public:
+  struct Par 
+  {
+    PAR_DEFAULT_MEMBERS(Obj);
+
+    unsigned get_id(const ObjectCreationInfo& oi) const 
+      { THROW_PROGRAM_ERROR; }
+  };
+
+protected:
+  Obj(const ObjectCreationInfo& oi, const Par& p)
+    : StdIdMember(oi.objectId)
+    {}
+};
+
+void test_rholder()
+{
+  AutoRepository<Obj,unsigned>::init<std::vector>();
+
+  //RHolder<Obj> h(1);
 }
 

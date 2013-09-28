@@ -192,7 +192,6 @@ protected:
   T* obj;
 };
 
-#if 0
 enum class HolderType { 
   Singular, //<! a view of one object
   Plural    //<! a view of an array of objects
@@ -203,22 +202,102 @@ DECLARE_AXIS(HolderAxis, StateAxis);
 /**
  * It is a "view" of an object T in a repository.
  */
-template<
-  class T, 
-  template <class T> class Guard = NReaders1WriterGuard
+template
+<
+  class Obj,
+
+  template<class, int>
+  class Guard = NReaders1WriterGuard,
+
+  int wait_m = 1000
 >
 class RHolder : public RObjectWithStates<HolderAxis>
 {
 public:
+  //typedef typename Rep::Object Obj;
+  //typedef typename Rep::ObjectId Id;
+  typedef typename Obj::Par Par;
+
+  //! Create a new object in the repository Rep and create
+  //! the first holder to it.
+  //! An AutoRepository is selected based on the (Obj,Id)
+  //! pair
+  template<class Id>
+  RHolder(const Par& par);
+
+  //! Charge with the object with the specified id.
+  //! An AutoRepository is selected based on the (Obj,Id)
+  //! pair
+  //! @throw Rep::NoSuchId
+  template<class Id>
+  RHolder(const Id& id);
+
+#if 0
+  //! Double holder to the same object
   RHolder(const RHolder&);
+
+  //! Do not double holder to the object
   RHolder(RHolder&&);
+
+  //! Remove the holder. When the last object holder is
+  //! removed object will be frozen
   ~RHolder();
 
+  //! Double holder to the same object
   RHolder& operator=(const RHolder&);
+
+  //! Do not double holder to the object
   RHolder& operator=(RHolder&&);
+#endif
+
+  //! Make a read-only object call (see
+  //! NReaders1WriterGuard) 
+  const Obj* operator->() const
+  {
+    return guarded.operator->();
+  }
+
+  //! Make a read/write object call (see
+  //! NReaders1WriterGuard) 
+  Obj* operator->()
+  {
+    return guarded.operator->();
+  }
+
+  RHolder* operator&() = delete;
 
 protected:
-  Guard<T> guard;
+  // The guarded object
+  Guard<Obj, wait_m> guarded;
+};
+
+#if 0
+template
+<
+  class Obj, class Par, template<class...> class ObjMap, 
+  class ObjId, class Holder, class Guard
+>
+class ProtectedRepositoryInterface
+  : public AbstractRepositoryBase
+{
+public:
+  virtual RHolder create_object
+};
+
+template< 
+  class Obj, 
+  class Par, 
+  template<class...> class ObjMap, 
+  class ObjId,
+  class Holder,
+  class Guard
+>
+class ProtectedRepository  
+  : public Repository<Obj, Par, ObjMap, ObjId>
+{
+  ProtectedRepository
+    (const std::string& repository_name,
+     size_t initial_capacity);
 };
 #endif
 
