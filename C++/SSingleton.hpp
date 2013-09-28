@@ -143,6 +143,7 @@ SSingleton<T>::SSingleton()
   assert(instance0);
 }
 
+#if 0
 template<class T>
 SSingleton<T>::SSingleton(SSingleton&& s)
  : Parent(std::move(s))
@@ -154,6 +155,7 @@ SSingleton<T>::SSingleton(SSingleton&& s)
     (this->theClass, ExistentStates::exist_oneFun());
   assert(this->get_obj_count() == 1);
 }
+#endif
 
 template<class T>
 SSingleton<T>::~SSingleton()

@@ -142,7 +142,7 @@ public:
   SSingleton(const SSingleton&) = delete;
 
   //! The move constructor doesn't change existence.
-  SSingleton(SSingleton&& s);
+  SSingleton(SSingleton&& s) = delete;
 
   virtual ~SSingleton();
 

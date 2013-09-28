@@ -113,16 +113,16 @@ public:
   using TheClass = typename Parent::TheClass;
 
   Existent();
-  Existent(const Existent&);
+  Existent(const Existent&) = delete;
 
   //! It leaves the object in moving_when_one or
   //! moving_when several state. Must be completed in
   //! parent (-> {exist_one, exist_everal}).
-  Existent(Existent&&);
+  Existent(Existent&&) = delete;
 
   virtual ~Existent();
-  Existent& operator=(const Existent&);
-  Existent& operator=(Existent&&);
+  Existent& operator=(const Existent&) = delete;
+  Existent& operator=(Existent&&) = delete;
 
   //! Return a number of Existent objects
   static unsigned get_obj_count()

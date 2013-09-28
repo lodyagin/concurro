@@ -33,6 +33,8 @@
 #include "Existent.h"
 #include "RState.h"
 #include "ClassWithStates.hpp"
+#include <array>
+#include <vector>
 
 namespace curr {
 
@@ -62,6 +64,7 @@ Existent<T, StateHook>::Existent() : theClass(this)
   inc_existence();
 }
 
+#if 0
 template<class T, class StateHook>
 Existent<T, StateHook>::Existent(const Existent&) 
   : theClass(this)
@@ -85,6 +88,7 @@ Existent<T, StateHook>::Existent(Existent&& e)
 
   e.paired = this;
 }
+#endif
 
 template<class T, class StateHook>
 Existent<T, StateHook>::~Existent()
@@ -95,6 +99,7 @@ Existent<T, StateHook>::~Existent()
     dec_existence();
 }
 
+#if 0
 template<class T, class StateHook>
 Existent<T, StateHook>& Existent<T, StateHook>
 ::operator=(const Existent& e)
@@ -107,21 +112,38 @@ template<class T, class StateHook>
 Existent<T, StateHook>& Existent<T, StateHook>
 ::operator=(Existent&& e)
 {
-  theClass = e.theClass;
+  if (&e != this)
+  {
+    theClass = e.theClass;
 
-  while(!(ExistentStates::State::compare_and_move(
-            this->theClass,
-            ExistentStates::exist_oneFun(),
-            ExistentStates::moving_when_oneFun())
-          || 
-          ExistentStates::State::compare_and_move(
-            this->theClass,
-            ExistentStates::exist_severalFun(),
-            ExistentStates::moving_when_severalFun())))
-    ;
+    using State = std::remove_reference <
+      decltype(ExistentStates::exist_oneFun())
+    >::type;
 
-  e.paired = this;
+    const std::map<State, State> the_map
+    {
+      { ExistentStates::exist_oneFun(),
+        ExistentStates::moving_when_oneFun() },
+      { ExistentStates::exist_severalFun(),
+        ExistentStates::moving_when_severalFun() }
+    };
+
+    auto trans1 = compare_and_move
+      (this->theClass, the_map);
+
+    while (trans1 == the_map.end())
+      trans1 = compare_and_move(this->theClass, the_map);
+
+    e.paired = this;
+
+    move_to(this->theClass, trans1->first);
+  }
+  else {
+  }
+
+  return *this;
 }
+#endif
 
 template<class T, class StateHook>
 void Existent<T, StateHook>::inc_existence()
@@ -134,9 +156,10 @@ void Existent<T, StateHook>::inc_existence()
        ExistentStates::not_existFun(), 
        ExistentStates::preinc_exist_oneFun()))
      || 
-       (b = ExistentStates::State::compare_and_move(
+       (b = compare_and_move(
        this->theClass, 
-       { ExistentStates::exist_oneFun(), 
+       { 
+         ExistentStates::exist_oneFun(), 
          ExistentStates::exist_severalFun() 
        }, 
        ExistentStates::preinc_exist_severalFun()))

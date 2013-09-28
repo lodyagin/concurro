@@ -79,8 +79,24 @@ void test_existent()
     CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 2);
     ASSERT_STATE(e1, exist_several);
   }
+  CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 0);
+
+#if 0
+  {
+    E e1;
+    E e2;
+    CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 2);
+    ASSERT_STATE(e2, exist_several);
+    e2 = std::move(e1);
+    CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 1);
+    ASSERT_STATE(e2, exist_one);
+    e2 = std::move(e2);
+    CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 1);
+    ASSERT_STATE(e2, exist_one);
+  }
 
   CU_ASSERT_EQUAL_FATAL(E::get_obj_count(), 0);
+#endif
 }
 
 
