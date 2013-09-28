@@ -46,24 +46,52 @@ namespace curr {
  */
 template<class Object, class ObjectId>
 class AutoRepository 
-: 
-  public Repository<
-    Object, typename Object::Par, std::map, ObjectId>,
-
-  public SAutoSingleton<AutoRepository<Object, ObjectId>>
+  : public SAutoSingleton<AutoRepository<Object, ObjectId>>
 {
 public:
-  using Parent = Repository<
-    Object, typename Object::Par, std::map, ObjectId>;
+  typedef typename Object::Par Par;
+  typedef RepositoryInterface<Object, Par, ObjectId> RepI;
+  typedef SAutoSingleton<AutoRepository<Object, ObjectId>>
+    Singleton;
+
+  template<template <class...> class Cont>
+  using Rep = Repository<Object, Par, Cont, ObjectId>;
 
   AutoRepository()
-  : Parent(SFORMAT(
-             "AutoRepository<" 
-             << typeid(Object).name()
-             << "[" << typeid(ObjectId).name() << "]>"),
-           0 // not used for map-based Repository
-           )
+    : rep(new Rep<std::map>(SFORMAT(
+          "AutoRepository<" 
+          << typeid(Object).name()
+          << "[" << typeid(ObjectId).name() << "]>"),
+          0))
   {
+    assert(rep);
+  }
+
+  //! Init with the specified Cont type.
+  template <
+    template<class...> class Cont, 
+    size_t initial_capacity = 100
+  >
+  static void init()
+  {
+    new AutoRepository(new Rep<Cont>(SFORMAT(
+          "AutoRepository<" 
+          << typeid(Object).name()
+          << "[" << typeid(ObjectId).name() << "]>"),
+        initial_capacity));
+  }
+
+  static RepI& instance()
+  {
+    return *Singleton::instance().rep;
+  }
+
+protected:
+  RepI* rep;
+
+  AutoRepository(RepI* r) : rep(r)
+  {
+    assert(rep);
   }
 };
 
