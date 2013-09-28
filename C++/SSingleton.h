@@ -32,6 +32,7 @@
 
 #include "Existent.h"
 #include "SException.h"
+//#include "ConstructibleObject.h"
 #include <thread>
 
 namespace curr {
@@ -127,6 +128,7 @@ protected:
 template<class T>
 class SSingleton 
   : public Existent<T, SingletonStateHook<T>>
+//    public ConstructibleObject
 {
   friend SingletonStateHook<T>;
 public:
@@ -192,42 +194,6 @@ public:
   //! Not safe in multithreading environment (need to
   //! redesign with RHolder).
   static T & instance ();
-};
-
-template<>
-class SAutoSingleton<
-  RMixedAxis<ExistenceAxis, ExistenceAxis>> 
-{
-public:
-  typedef RMixedAxis<ExistenceAxis, ExistenceAxis> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-
-template<>
-class SAutoSingleton<
-  RMixedAxis<SingletonAxis, SingletonAxis>> 
-{
-public:
-  typedef RMixedAxis<SingletonAxis, SingletonAxis> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
 };
 
 template<>

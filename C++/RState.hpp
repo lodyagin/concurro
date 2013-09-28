@@ -461,13 +461,12 @@ void RMixedAxis<Axis, Axis2>
 template<class Axis>
 RState<Axis>::RState (const char* name)
 : UniversalState
-(RAxis<Axis>::instance().state_map()
- -> create_state(name))
+  (RAxis<Axis>::state_map() -> create_state(name))
 {}
 
 template<class Axis>
 RState<Axis>::RState(uint32_t us)
-: UniversalState(RAxis<Axis>::instance().state_map(), us)
+: UniversalState(RAxis<Axis>::state_map(), us)
 {}
 
 template<class Axis>
@@ -482,7 +481,7 @@ RState<Axis>
 template<class Axis>
 std::string RState<Axis>::name () const
 {
-  return RAxis<Axis>::instance().state_map()
+  return RAxis<Axis>::state_map()
     -> get_state_name(*this);
 }
 

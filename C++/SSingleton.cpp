@@ -42,28 +42,6 @@ DEFINE_AXIS(
 
 // SAutoSingleton
 
-RMixedAxis<ExistenceAxis, ExistenceAxis>&
-SAutoSingleton<RMixedAxis<ExistenceAxis, ExistenceAxis>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
-RMixedAxis<SingletonAxis, SingletonAxis>&
-SAutoSingleton<RMixedAxis<SingletonAxis, SingletonAxis>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
 StateMapRepository& 
 SAutoSingleton<StateMapRepository> 
 ::instance()

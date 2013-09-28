@@ -33,6 +33,7 @@
 #include "StateMap.h"
 #include <atomic>
 #include <iostream>
+#include <mutex> // for axis singleton
 
 namespace curr {
 
@@ -50,8 +51,7 @@ class UniversalState;
 //! inherited.
 struct StateAxis 
 {
-  //! To make this type polymorphic
-  virtual ~StateAxis() {} 
+  virtual ~StateAxis() {}
 
   virtual const std::atomic<uint32_t>& current_state
   (const AbstractObjectWithStates*) const;
@@ -88,7 +88,10 @@ struct axis : public parent \
   typedef parent Parent; \
   static axis self_; \
   static axis& self() { \
-    static axis* self = new axis; \
+    static std::once_flag of; \
+    static axis* self = nullptr; \
+    std::call_once(of, [](){ self = new axis; });\
+    assert(self); \
     return *self; \
   } \
   \

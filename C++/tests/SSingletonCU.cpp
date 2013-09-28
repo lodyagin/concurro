@@ -41,11 +41,11 @@ int SSingletonCUClean()
 
 void test_sautosingleton_raxis()
 {
-  typedef RMixedAxis<ExistenceAxis, ExistenceAxis> T;
+  typedef ExistenceAxis T;
 
   T* p1, *p2;
-  p1 = &T::instance();
-  p2 = &T::instance();
+  p1 = &T::self();
+  p2 = &T::self();
   CU_ASSERT_PTR_EQUAL_FATAL(p1, p2);
 }
 
@@ -196,11 +196,13 @@ void test_concurrent_creation()
   RThreadRepository<RT>& tr =
     RThreadRepository<RThread<std::thread>>::instance();
 
+#if 0
   // Delete threads
   tr.for_each([](StdThread& t)
   { 
     t.remove();;
   });
+#endif
   
   CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
 }

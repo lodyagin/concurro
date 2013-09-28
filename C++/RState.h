@@ -35,6 +35,7 @@
 #include "SSingleton.h"
 #include "StateAxis.h"
 #include <type_traits>
+#include <mutex>
 
 namespace curr {
 
@@ -100,6 +101,7 @@ class RMixedAxis;
 template<class Axis>
 using RAxis = RMixedAxis<Axis, Axis>;
 
+#if 1
 //! It serves stateMap for RMixedAxis
 //! (only one map per main Axis)
 template<class Axis>
@@ -134,6 +136,7 @@ public:
   StateMapId get_map_id() const
   { return 0; }
 };
+#endif
 
 /**
  * A main class to working with states.
@@ -143,13 +146,10 @@ public:
  * or the same as Axis.
  */
 template<class Axis, class Axis2>
-class RMixedAxis : public Axis, 
-  public SAutoSingleton<RAxis<Axis>>
+class RMixedAxis : public Axis
 {
 public:
   typedef Axis axis;
-
-  RMixedAxis();
 
   //! Check permission of moving obj to the `to' state.
   static void check_moving_to 
@@ -267,6 +267,11 @@ protected:
   RMixedAxis(const StateMapPar<Axis>& par);
 
 private:
+  RMixedAxis();
+  RMixedAxis(const RMixedAxis&) = delete;
+  //~RMixedAxis() = delete;
+  RMixedAxis& operator=(const RMixedAxis&) = delete;
+
   typedef Logger<RAxis<Axis>> log;
 };
 
