@@ -32,14 +32,16 @@
 
 #include "SCommon.h"
 #include "HasStringView.h"
+#include "Logging.h"
 #include <exception>
 #include <ostream>
+#include <log4cxx/spi/location/locationinfo.h>
 
 namespace curr {
 
-// base for the all SCommon exceptions
-
-class SException : public std::exception, public HasStringView
+//! A base for the all concurro exceptions
+class SException 
+  : public std::exception, public HasStringView
 {
 public:
 
@@ -64,6 +66,30 @@ protected:
   bool alreadyLoggedFlag;
 };
 
+//! A type used for passing for functions/methods that
+//! throw exception. Keep the location and logger of the
+//! caller. 
+struct ThrowSException 
+{
+  ThrowSException
+    (log4cxx::LoggerPtr l,
+     const log4cxx::spi::LocationInfo& loc = 
+      LOG4CXX_LOCATION)
+    : debug_location(loc), logger(l)
+  {}
+
+  template<class Exception>
+  void raise(Exception&& exc) const
+  {
+    LOGGER_WARN_LOC(logger, "Throw exception " << exc, 
+                  debug_location);
+    throw exc;
+  }
+
+  const log4cxx::spi::LocationInfo debug_location;
+  const log4cxx::LoggerPtr logger;
+};
+
 //! Exception: Program Error (means general logic error)
 class ProgramError : public SException
 {
@@ -78,18 +104,6 @@ public:
   NotImplemented() : SException("Not implemented") {}
 };
 
-//! Exception: event waiting time out 
-class EventWaitingTimeOut : public SException
-{
-public:
-  const int msecs;
-
-  EventWaitingTimeOut(int ms) : SException(
-    SFORMAT("Event waiting timed out after " << ms 
-            << "milliseconds")), 
-    msecs(ms) {}
-};
- 
 #define THROW_EXCEPTION(exception_class, par...) do { \
 	 exception_class exc_{par};								\
   LOG_DEBUG(curr::Logger<curr::LOG::Root>, \

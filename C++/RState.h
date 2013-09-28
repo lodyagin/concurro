@@ -34,6 +34,7 @@
 #include "ObjectWithStatesInterface.h"
 #include "SSingleton.h"
 #include "StateAxis.h"
+#include <type_traits>
 
 namespace curr {
 
@@ -190,7 +191,7 @@ public:
      const RState<Axis>& to);
 #endif
 	 
-  //! Atomic compare-and-change the state which uses a
+  //! Atomic compare-and-change state which uses a
   //! set of possible from-states.
   //! \return false if the object was not in `from' states,
   //! otherwise return true if the transition was done.
@@ -201,7 +202,20 @@ public:
     (ObjectWithStatesInterface<Axis2>& obj, 
      const std::set<RState<Axis>>& from_set,
      const RState<Axis>& to);
-	 
+
+  //! Atomic compare-and-change state which use rules from
+  //! the trs map and tries to find an appropriate map
+  //! element and change a state pair::first -> pair::second
+  //! (if the current state is pair::first). 
+  //! \return The constant interator to performed
+  //! transition from trs or trs.end() if no transition
+  //! was performed.
+  static auto compare_and_move
+    (ObjectWithStatesInterface<Axis2>& obj, 
+     const std::map<const RState<Axis>, const RState<Axis>>& trs
+     ) -> typename std::remove_reference
+            <decltype(trs)>::type::const_iterator;
+
   //! Atomic compare-and-change the state
   //! \return false if the object was in `not_from' state,
   //! otherwise return true if the transition was done.
@@ -227,9 +241,10 @@ public:
      const std::initializer_list<RState<Axis>>& set);
 
   //! Atomic check the obj state is in the set
+  template<template <class...> class Cont>
   static bool state_in
     (const ObjectWithStatesInterface<Axis2>& obj, 
-     const std::set<RState<Axis>>& set);
+     const Cont<RState<Axis>>& set);
 
   //! Raise InvalidState when a state is not expected.
   static void ensure_state
@@ -282,19 +297,6 @@ bool compare_and_move
 template<class T>
 bool compare_and_move
   (T& obj, 
-   std::initializer_list
-   <curr::RState<typename T::State::axis>> from_set,
-   const curr::RState<typename T::State::axis>& to)
-{
-  return curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
-    :: compare_and_move(obj, from_set, to);
-}
-
-//! RMixedAxis<Axis,Axis2>::compare_and_move adapter
-template<class T>
-bool compare_and_move
-  (T& obj, 
    const std::set
      <curr::RState<typename T::State::axis>>& from_set,
    const curr::RState<typename T::State::axis>& to)
@@ -323,36 +325,21 @@ void wait_and_move
 template<class T>
 void wait_and_move
   (T& obj, 
-   std::initializer_list
-     <RState<typename T::State::axis>> from_set,
-   const CompoundEvent& is_from_event,
-   const RState<typename T::State::axis>& to,
-   int wait_m = -1)
-{
-  do { 
-    if (!is_from_event.wait(wait_m))
-      throw EventWaitingTimeOut(wait_m);
-  } 
-  while (!compare_and_move(obj, from_set, to));
-}
-
-//! Wait is_from_event then perform 
-//! RMixedAxis<Axis,Axis2>::compare_and_move
-template<class T>
-void wait_and_move
-  (T& obj, 
    const std::set
      <RState<typename T::State::axis>>& from_set,
    const CompoundEvent& is_from_event,
    const RState<typename T::State::axis>& to,
-   int wait_m = -1)
-{
-  do { 
-    if (!is_from_event.wait(wait_m))
-      throw EventWaitingTimeOut(wait_m);
-  } 
-  while (!compare_and_move(obj, from_set, to));
-}
+   int wait_m = -1);
+
+template<class T>
+void wait_and_move
+  (T& obj, 
+   const std::map <
+     RState<typename T::State::axis>, 
+     RState<typename T::State::axis>
+   >& trs,
+   const CompoundEvent& is_from_event,
+   int wait_m = -1);
 
 #define DEFINE_AXIS_NS(axis, pars...)	\
   const std::atomic<uint32_t>& axis::current_state    \

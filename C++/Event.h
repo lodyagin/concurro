@@ -53,6 +53,27 @@ namespace curr {
  * @{
  */
 
+//! Exception: event waiting time out 
+class EventWaitingTimedOut : public SException
+{
+public:
+  const int msecs;
+
+  EventWaitingTimedOut(int ms) : SException(
+    SFORMAT("Event waiting timed out after " << ms 
+            << "milliseconds")), 
+    msecs(ms) {}
+};
+
+#define CURR_WAIT_L(logger, evt, time) \
+  do { (evt).wait((time), curr::ThrowSException \
+       (logger, LOG4CXX_LOCATION)); } while(false)
+
+//! Call a timed event wait which canthrow
+//! EventWaitingTimedOut with the macro usage location.
+#define CURR_WAIT(evt, time) \
+  CURR_WAIT_L(log::logger(), evt, time)
+
 class EventInterface : public ObjectWithLogging
 {
 public:
@@ -73,10 +94,19 @@ public:
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
   virtual bool wait(int time = -1) = 0;
+  
+  //! Wait for event or time in msecs. 
+  //! @throw EventWaitingTimedOut
+  virtual void wait(int time, const ThrowSException&) = 0;
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
   virtual bool wait(int time = -1) const = 0;
+
+  //! Wait for event or time in msecs. 
+  //! @throw EventWaitingTimedOut
+  virtual void wait(int time, const ThrowSException&) 
+    const = 0;
 
   virtual bool signalled() const = 0;
 };
@@ -94,9 +124,15 @@ public:
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
-  bool wait(int time = -1)
+  bool wait(int time = -1) override
   { 
     return wait_impl(time); 
+  }
+
+  void wait(int time, const ThrowSException& te) override
+  { 
+    if (!wait(time))
+      te.raise(EventWaitingTimedOut(time));
   }
 
   //! Wait for event or time in msecs. This is a const
@@ -110,10 +146,17 @@ public:
     return returnValue;
   }
 
+  void wait(int time, const ThrowSException& te) const 
+    override
+  { 
+    if (!wait(time))
+      te.raise(EventWaitingTimedOut(time));
+  }
+
   void set();
   void reset();
 
-  bool signalled() const
+  bool signalled() const override
   {
     return isSignaled;
   }
@@ -199,16 +242,28 @@ public:
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
-  bool wait(int time = -1)
+  bool wait(int time = -1) override
   { 
     return evt_ptr->wait(time); 
   }
 
+  void wait(int time, const ThrowSException& te) 
+    override
+  { 
+    evt_ptr->wait(time, te); 
+  }
+
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
-  bool wait(int time = -1) const
+  bool wait(int time = -1) const override
   {
     return evt_ptr->wait(time); 
+  }
+
+  void wait(int time, const ThrowSException& te) const 
+    override
+  {
+    evt_ptr->wait(time, te); 
   }
 
   bool wait_shadow(int time = -1)
@@ -312,14 +367,27 @@ public:
   const CompoundEvent& operator|= (const Event&); //UT+
   CompoundEvent& operator|= (const CompoundEvent&);
 
-  bool wait(int time = -1)
+  bool wait(int time = -1) override
   {
     return wait_impl(time);
+  }
+
+  void wait(int time, const ThrowSException& te) override
+  {
+    if (!wait(time))
+      te.raise(EventWaitingTimedOut(time));
   }
 
   bool wait(int time = -1) const
   {
     return wait_impl(time);
+  }
+
+  void wait(int time, const ThrowSException& te) const
+    override
+  {
+    if (!wait(time))
+      te.raise(EventWaitingTimedOut(time));
   }
 
   bool signalled() const override;

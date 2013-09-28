@@ -36,6 +36,7 @@
 #include "RObjectWithStates.hpp"
 #include "SSingleton.hpp"
 #include "StateMapRepository.h"
+#include "Event.h"
 #include <atomic>
 
 namespace curr {
@@ -240,6 +241,65 @@ bool RMixedAxis<Axis, Axis2>
 }
 
 template<class Axis, class Axis2>
+auto RMixedAxis<Axis, Axis2>
+//
+::compare_and_move
+  (ObjectWithStatesInterface<Axis2>& obj, 
+   const std::map<const RState<Axis>, const RState<Axis>>& trs
+   ) -> typename std::remove_reference
+          <decltype(trs)>::type::const_iterator
+{
+  static_assert(is_ancestor<Axis2, Axis>(), 
+                "This state mixing is invalid.");
+  TransitionId trans_id;
+  uint32_t from;
+  UniversalState to;
+  typename std::remove_reference
+    <decltype(trs)>::type::const_iterator ifrom;
+
+  auto& current = obj.current_state(Axis2::self());
+  do {
+    from = current.load();
+
+    // should we move?
+    ifrom = trs.find(from);
+    if (ifrom == trs.end())
+      return ifrom;
+
+    to = ifrom->second;
+    assert(from == ifrom->first);
+
+    // check the from_set correctness
+    if (!(trans_id= StateMapInstance<Axis>::instance().get_map()
+          -> get_transition_id(from, to)))
+      throw InvalidStateTransition(from, to);
+
+  } while(!current.compare_exchange_strong(from, to));
+
+  LOGGER_DEBUG(obj.logger(),
+            "thread " 
+            << RThread<std::thread>::current_pretty_id()
+            << ">\t object " << obj.object_name()
+            << ">\t axis " << typeid(Axis).name()
+            << "/" << typeid(Axis2).name()
+            << ">\tcompare_and_move:\t "
+            << UniversalState(from).name()
+            << std::hex << " (0x" << from
+            << ") -> " << to.name() << " (0x" 
+            << (uint32_t) to << ")");
+  if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
+      (&obj)) {
+    assert(trans_id > 0);
+    p->update_events(Axis2::self(), trans_id, to);
+  }
+
+  obj.state_changed
+    (Axis2::self(), Axis2::self(), &obj, to);
+
+  return ifrom;
+}
+
+template<class Axis, class Axis2>
 bool RMixedAxis<Axis, Axis2>
 //
 ::neg_compare_and_move
@@ -341,11 +401,12 @@ bool RMixedAxis<Axis, Axis2>
 }
 
 template<class Axis, class Axis2>
+template<template <class...> class Cont>
 bool RMixedAxis<Axis, Axis2>
 //
 ::state_in(
   const ObjectWithStatesInterface<Axis2>& obj, 
-  const std::set<RState<Axis>>& set )
+  const Cont<RState<Axis>>& set )
 {
   static_assert(is_ancestor<Axis2, Axis>(), 
                 "This state mixing is invalid.");
@@ -457,11 +518,27 @@ void wait_and_move
 {
   const auto from = is_from_event.to_state;
 
-  do { 
-    if (!is_from_event.wait(wait_m))
-      throw EventWaitingTimeOut(wait_m);
+  do {
+    CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
   } 
   while (!compare_and_move(obj, from, to));
+}
+
+//! Wait is_from_event then perform 
+//! RMixedAxis<Axis,Axis2>::compare_and_move
+template<class T>
+void wait_and_move
+  (T& obj, 
+   const std::set
+     <RState<typename T::State::axis>>& from_set,
+   const CompoundEvent& is_from_event,
+   const RState<typename T::State::axis>& to,
+   int wait_m = -1)
+{
+  do { 
+    CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
+  } 
+  while (!compare_and_move(obj, from_set, to));
 }
 
 }
