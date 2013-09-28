@@ -59,10 +59,10 @@ template<class Key, class Val>
 
 
 template<class Thread>
-RThreadRepository<Thread>::RThreadRepository()
+RThreadRepository<Thread>::RThreadRepository(int w)
   : Parent(typeid(RThreadRepository<Thread>).name(), 
            100 // the value is ignored for std::map
-    ) 
+    ), wait_m(w)
 {
   // Disable signals. See RSignalRepository
   sigset_t ss;
@@ -99,14 +99,9 @@ void RThreadRepository<Thread>
 //
 ::wait_subthreads ()
 {
-  std::for_each (
-    this->objects->begin (),
-    this->objects->end (),
-    ThreadWaiter<typename RepositoryMapType
-    <Thread, ThreadId, std::map>
-    ::Map::value_type
-    > ()
-    );
+
+  for (const auto& v : *this->objects)
+    CURR_WAIT(Value(v)->is_terminated(), wait_m);
 }
 
 template<class Thread>
@@ -144,7 +139,7 @@ void RThreadRepository<Thread>
   if (th) 
   {
     th->stop ();
-    th->is_terminal_state().wait();
+    CURR_WAIT(th->is_terminal_state(), wait_m);
     Parent::delete_object_by_id (id, freeMemory);
   }
 }

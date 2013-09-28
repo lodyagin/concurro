@@ -140,8 +140,8 @@ void RThreadBase::stop()
 
 bool RThreadBase::cancel()
 {
-  return RAxis<ThreadAxis>::compare_and_move(
-    *this, {readyState, cancelledState}, cancelledState);
+  return compare_and_move
+    (*this, {S(ready), S(cancelled)}, S(cancelled));
 }
 
 std::thread::id RThread<std::thread>::main_thread_id; 
@@ -293,7 +293,7 @@ void RThread<std::thread>::remove(bool freeMemory)
 {
   RThreadRepository<RThread<std::thread>>::instance()
     . delete_thread(this, freeMemory);
-  //<NB> invalidate itself, a destructor is already called
+
 }
 
 // LightThread

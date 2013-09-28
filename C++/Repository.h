@@ -296,6 +296,7 @@ protected:
     Value(Obj* t0) : t(t0) {}
     Value(const std::pair<ObjId,Obj*>& p) : t(p.second) {}
     operator Obj*() { return t; }
+    Obj* operator->() { return t; }
 
   protected:
     Obj* t;

@@ -8,7 +8,7 @@
 
 void test_sautosingleton_raxis();
 void test_ssingleton();
-void test_ssingleton_move();
+//void test_ssingleton_move();
 void test_sautosingleton_auto();
 void test_sautosingleton_manual();
 void test_concurrent_creation();
@@ -18,7 +18,7 @@ CU_TestInfo SSingletonTests[] = {
    "<RMixedAxis<ExistenceAxis, ExistenceAxis>>",
    test_sautosingleton_raxis},
   {"test SSingleton", test_ssingleton},
-  {"test SSingleton move", test_ssingleton_move},
+//  {"test SSingleton move", test_ssingleton_move},
   {"test SAutoSingleton automatic construction", 
    test_sautosingleton_auto},
   {"test SAutoSingleton manual construction", 
@@ -95,6 +95,7 @@ void test_ssingleton()
   catch (const NotExistingSingleton&) {}
 }
 
+#if 0
 void test_ssingleton_move()
 {
   struct S : public SSingleton<S>
@@ -113,6 +114,7 @@ void test_ssingleton_move()
   }
   CU_ASSERT_FALSE_FATAL(S::isConstructed());
 }
+#endif
 
 void test_sautosingleton_auto()
 {
@@ -170,7 +172,7 @@ void test_concurrent_creation()
 {
   std::atomic<bool> exception_in_thread(false);
 
-  for (int i = 0; i < 5000; i++)
+  for (int i = 0; i < 5; i++)
   {
     RThread<std::thread>::create<LightThread>
       ([&exception_in_thread]()
@@ -187,9 +189,20 @@ void test_concurrent_creation()
            exception_in_thread = true;
            throw;
          }
-       })->start();
+       }, toString(i))->start();
   }
   CU_ASSERT_FALSE_FATAL(exception_in_thread);
+
+  RThreadRepository<RT>& tr =
+    RThreadRepository<RThread<std::thread>>::instance();
+
+  // Delete threads
+  tr.for_each([](StdThread& t)
+  { 
+    t.remove();;
+  });
+  
+  CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
 }
 
 class P : public SAutoSingleton<P> {};

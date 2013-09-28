@@ -81,8 +81,16 @@ public:
   typedef typename Thread::Id ThreadId;
   typedef typename Parent::NoSuchId NoSuchId;
   typedef typename Parent::IdIsAlreadyUsed IdIsAlreadyUsed;
+  typedef typename Parent::Value Value;
 
-  RThreadRepository();
+  //! Init with the specified operation timeout in msecs
+  RThreadRepository(int w = 1000);
+  
+  //! Init with the specified operation timeout in msecs
+  static void init(int w)
+  {
+    new RThreadRepository(w);
+  }
 
   virtual void stop_subthreads ();
   virtual void wait_subthreads ();
@@ -117,6 +125,12 @@ public:
       (SException,
        "replace_object is not implemented for threads.");
   }
+
+protected:
+  int wait_m;
+
+private:
+  typedef Logger<RThreadRepository<Thread>> log;
 };
 
 template<class Obj>
@@ -141,6 +155,7 @@ template<class Key, class Val>
   }
 };
 
+#if 0
 template<class Val>
 struct ThreadWaiter
   : std::unary_function<Val, void>
@@ -158,9 +173,10 @@ template<class Key, class Val>
   void operator () (std::pair<Key, Val>& p)
   {
     if (p.second) 
-      p.second->is_terminated().wait();
+      CURR_WAIT(p.second->is_terminated(), wait_w);
   }
 };
+#endif
 
 //! @}
 
