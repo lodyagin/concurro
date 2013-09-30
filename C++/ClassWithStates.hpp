@@ -55,7 +55,7 @@ ClassWithStates<T, Axis, initial_state, StateHook>
 ::TheClass::current_state(const StateAxis& ax)
 {
   static std::atomic<uint32_t> currentState( 
-    RAxis<Axis>::instance().state_map()
+    RAxis<Axis>::state_map()
     -> create_state(initial_state));
   return currentState;
 }

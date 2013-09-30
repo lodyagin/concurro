@@ -255,60 +255,6 @@ private:
   SAutoSingleton() {}
 };
 
-template<class Axis>
-class StateMapInstance;
-
-template<>
-class SAutoSingleton<StateMapInstance<StateAxis>>
-{
-public:
-  typedef StateMapInstance<StateAxis> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-
-template<>
-class SAutoSingleton<StateMapInstance<ExistenceAxis>>
-{
-public:
-  typedef StateMapInstance<ExistenceAxis> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-
-template<>
-class SAutoSingleton<StateMapInstance<SingletonAxis>>
-{
-public:
-  typedef StateMapInstance<SingletonAxis> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-
 #endif
 
 //! @}

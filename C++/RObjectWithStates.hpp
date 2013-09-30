@@ -31,7 +31,7 @@
 #define CONCURRO_ROBJECTWITHSTATES_HPP_
 
 #include "RObjectWithStates.h"
-#include "RState.h"
+#include "RState.hpp"
 #include <algorithm>
 
 namespace curr {
@@ -191,10 +191,10 @@ RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
     RObjectWithEvents<DerivedAxis>(initial_state, mcw),
     delegate(a_delegate),
     split_state_id(StateMapInstance<SplitAxis>
-                   ::instance().get_map() -> get_n_states()),
+                   ::get_map() -> get_n_states()),
     split_transition_id(
       StateMapInstance<SplitAxis>
-      ::instance().get_map() -> get_max_transition_id()),
+      ::get_map() -> get_max_transition_id()),
     inited(false)
 {
 }
@@ -211,7 +211,7 @@ CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
     // Create event in DerivedAxis if it is a part of
     // DerivedAxis transition.
     if (ue.is_arrival_event()
-        && StateMapInstance<DerivedAxis>::instance().get_map()
+        && StateMapInstance<DerivedAxis>::get_map()
         -> is_local_transition_arrival
         (ue.as_state_of_arrival())) 
     {

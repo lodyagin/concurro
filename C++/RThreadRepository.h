@@ -32,6 +32,7 @@
 
 #include "Repository.h"
 #include "RThread.h"
+#include "SSingleton.h"
 #include <list>
 #include <algorithm>
 #include <vector>

@@ -64,37 +64,4 @@ SAutoSingleton<RThreadRepository<RThread<std::thread>>>
   return *instance;
 }
 
-StateMapInstance<StateAxis>&
-SAutoSingleton<StateMapInstance<StateAxis>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
-StateMapInstance<ExistenceAxis>&
-SAutoSingleton<StateMapInstance<ExistenceAxis>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
-StateMapInstance<SingletonAxis>&
-SAutoSingleton<StateMapInstance<SingletonAxis>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
 }

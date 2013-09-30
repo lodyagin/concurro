@@ -43,9 +43,9 @@ RMixedEvent<Axis, Axis2>
               const char* from, 
               const char* to)
   : RMixedEvent(obj_ptr, 
-                StateMapInstance<Axis>::instance().get_map()
+                StateMapInstance<Axis>::get_map()
                 -> create_state(from),
-                StateMapInstance<Axis>::instance().get_map()
+                StateMapInstance<Axis>::get_map()
                 -> create_state(to))
 {
 }
@@ -58,7 +58,7 @@ RMixedEvent<Axis, Axis2>
               const RState<Axis>& to)
   : UniversalEvent
        (
-     StateMapInstance<Axis>::instance().get_map()
+     StateMapInstance<Axis>::get_map()
       -> get_transition_id(from, to)
       ),
    // G++-4.7.3 bug when use copy constructor
@@ -82,7 +82,7 @@ RMixedEvent<Axis, Axis2>
 ::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
               const char* to)
   : RMixedEvent(obj_ptr, 
-                StateMapInstance<Axis>::instance().get_map()
+                StateMapInstance<Axis>::get_map()
                 -> create_state(to))
 {
 }

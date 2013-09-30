@@ -32,7 +32,6 @@
 
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
-#include "SSingleton.h"
 #include "StateAxis.h"
 #include <type_traits>
 #include <mutex>
@@ -101,42 +100,51 @@ class RMixedAxis;
 template<class Axis>
 using RAxis = RMixedAxis<Axis, Axis>;
 
-#if 1
 //! It serves stateMap for RMixedAxis
 //! (only one map per main Axis)
 template<class Axis>
 class StateMapInstance 
-: public SAutoSingleton<StateMapInstance<Axis>>
 {
 public:
-  //! initialize the stateMap member if it is nullptr
-  StateMapInstance() { id = init(); }
+  static StateMap* get_map()
+  { 
+    init();
+    return stateMap; 
+  }
 
-  StateMap* get_map() const
-  { return stateMap; }
-
-  StateMapId get_map_id() const
-  { return id; }
+  static StateMapId get_map_id()
+  { 
+    init();
+    return id; 
+  }
 
 protected:
-  StateMap* stateMap;
-  StateMapId id;
+  // <NB> no explicit default values
+  // (to prevent overwrite by static init code)
+  static StateMap* stateMap;
+  static std::atomic<StateMapId> id;
 
 private:
-  StateMapId init();
+  //! initialize the stateMap member if it is nullptr
+  StateMapInstance() { }
+  StateMapInstance(const StateMapInstance&) = delete;
+  ~StateMapInstance() = delete;
+  StateMapInstance& operator=(const StateMapInstance&) = 
+    delete;
+
+  static void init();
+  static void init_impl();
 };
 
 //! Dummy StateAxis specialization of StateMapInstance
 //! (to allow recursive init).
 template<>
 class StateMapInstance<StateAxis> 
-  : public SAutoSingleton<StateMapInstance<StateAxis>>
 {
 public:
-  StateMapId get_map_id() const
+  static StateMapId get_map_id()
   { return 0; }
 };
-#endif
 
 /**
  * A main class to working with states.
@@ -256,12 +264,7 @@ public:
     (const ObjectWithStatesInterface<Axis2>& obj, 
      const std::initializer_list<RState<Axis>>& set);
 
-  static const StateMap* state_map() 
-  { 
-    static_assert(is_ancestor<Axis2, Axis>(), 
-                  "This state mixing is invalid.");
-    return StateMapInstance<Axis>::instance().get_map(); 
-  }
+  static const StateMap* state_map();
 
 protected:
   RMixedAxis(const StateMapPar<Axis>& par);
@@ -390,7 +393,7 @@ void wait_and_move
   {	\
     return curr::StateMapPar<axis>(pars,                \
       curr::StateMapInstance<typename axis::Parent> \
-        ::instance().get_map_id());  \
+        ::get_map_id());  \
   } \
   curr::UniversalState axis::bound(uint32_t st) const \
   { \
@@ -407,7 +410,7 @@ void wait_and_move
   typedef curr::RAxis<axis> state_class;  \
   friend curr::RAxis<axis>;
 
-//! @deprecated RAxis is SAutoSingleton now, this macro is
+//! @deprecated RAxis is a ingleton now, this macro is
 //! not necessary
 #define DEFINE_STATES(axis)				
 

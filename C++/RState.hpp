@@ -44,9 +44,20 @@ namespace curr {
 //#define LOG_IN_OBJECT 1
 
 template<class Axis>
-StateMapId StateMapInstance<Axis>::init()
+void StateMapInstance<Axis>::init()
 {
-  StateMapInstance<typename Axis::Parent>::instance();
+  if (!id) {
+    static std::once_flag of;
+    std::call_once(of, [](){ init_impl(); });
+    assert(stateMap);
+  }
+  assert(id);
+}
+
+template<class Axis>
+void StateMapInstance<Axis>::init_impl()
+{
+  StateMapInstance<typename Axis::Parent>::get_map_id();
   // ensure parent map ids are always less than childs
   // (it is used in StateMap::is_compatible)
 
@@ -60,7 +71,7 @@ StateMapId StateMapInstance<Axis>::init()
       . create_object(Axis::get_state_map_par());
   }
   assert(stateMap);
-  return stateMap->numeric_id;
+  id = stateMap->numeric_id;
 }
 
 template<class Axis, class Axis2>
@@ -70,7 +81,7 @@ RMixedAxis<Axis, Axis2>
 {
   static_assert(is_ancestor<Axis2, Axis>(), 
                 "This state mixing is invalid.");
-  StateMapInstance<Axis>::instance();
+  StateMapInstance<Axis>::get_map_id();
 }
 
 template<class Axis, class Axis2>
@@ -85,7 +96,7 @@ void RMixedAxis<Axis, Axis2>
   const uint32_t from = 
     const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
     . current_state(Axis2::self()).load();
-  StateMapInstance<Axis>::instance().get_map()
+  StateMapInstance<Axis>::get_map()
     -> check_transition (STATE_IDX(from), STATE_IDX(to));
 }
 
@@ -111,7 +122,7 @@ void RMixedAxis<Axis, Axis2>
   do {
     from = current.load();
     if (!(trans_id=
-          StateMapInstance<Axis>::instance().get_map()
+          StateMapInstance<Axis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
@@ -158,7 +169,7 @@ bool RMixedAxis<Axis, Axis2>
   if (STATE_IDX(expected) != STATE_IDX(from))
     return false;
 
-  if (!(trans_id= StateMapInstance<Axis>::instance().get_map()
+  if (!(trans_id= StateMapInstance<Axis>::get_map()
         -> get_transition_id(from, to)))
     throw InvalidStateTransition(from, to);
 
@@ -211,7 +222,7 @@ bool RMixedAxis<Axis, Axis2>
       return false;
 
     // check the from_set correctness
-    if (!(trans_id= StateMapInstance<Axis>::instance().get_map()
+    if (!(trans_id= StateMapInstance<Axis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
 
@@ -270,7 +281,7 @@ auto RMixedAxis<Axis, Axis2>
     assert(from == ifrom->first);
 
     // check the from_set correctness
-    if (!(trans_id= StateMapInstance<Axis>::instance().get_map()
+    if (!(trans_id= StateMapInstance<Axis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
 
@@ -322,7 +333,7 @@ bool RMixedAxis<Axis, Axis2>
     if (STATE_IDX(from) == STATE_IDX(not_from))
       return false;
 
-    if (!(trans_id= StateMapInstance<Axis>::instance().get_map()
+    if (!(trans_id= StateMapInstance<Axis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
 
@@ -458,6 +469,16 @@ void RMixedAxis<Axis, Axis2>
   }
 }
 
+template<class Axis, class Axis2>
+const StateMap* RMixedAxis<Axis, Axis2>
+//
+::state_map() 
+{ 
+  static_assert(is_ancestor<Axis2, Axis>(), 
+                "This state mixing is invalid.");
+  return StateMapInstance<Axis>::get_map(); 
+}
+
 template<class Axis>
 RState<Axis>::RState (const char* name)
 : UniversalState
@@ -495,7 +516,7 @@ RState<Axis>
                 "This state mixing is invalid.");
   // change a state map index
   const StateMap* stateMap = 
-    StateMapInstance<DerivedAxis>::instance().get_map();
+    StateMapInstance<DerivedAxis>::get_map();
   assert(stateMap);
   /*if (!stateMap) 
     throw UnitializedAxis<DerivedAxis>();*/
@@ -505,6 +526,13 @@ RState<Axis>
     | (stateMap->numeric_id << STATE_MAP_SHIFT));
 		
 }
+
+// <NB> no explicit default values
+// (to prevent overwrite by static init code)
+template<class Axis>
+StateMap* StateMapInstance<Axis>::stateMap;
+template<class Axis>
+std::atomic<StateMapId>StateMapInstance<Axis>:: id;
 
 //! Wait is_from_event then perform 
 //! RMixedAxis<Axis,Axis2>::compare_and_move 
