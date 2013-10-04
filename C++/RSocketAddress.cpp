@@ -223,7 +223,7 @@ void RSocketAddress::outString
           (const struct sockaddr_in*) sa;
 
         out << "sockaddr_in ("
-          << "sin_port = " << ::htons (sain->sin_port)
+          << "sin_port = " << htons (sain->sin_port)
             << ", sin_addr = ";
         outString (out, &sain->sin_addr);
         out << ')';
@@ -235,7 +235,7 @@ void RSocketAddress::outString
           (const struct sockaddr_in6*) sa;
 
         out << "sockaddr_in6 ("
-          << "sin6_port = " << ::htons (sain->sin6_port)
+          << "sin6_port = " << htons (sain->sin6_port)
             << ", sin_addr = ";
         outString (out, &sain->sin6_addr);
         out << ')';
