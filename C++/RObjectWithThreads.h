@@ -31,6 +31,7 @@
 #define CONCURRO_ROBJECTWITHTHREADS_H_
 
 #include "RThread.h"
+#include "ConstructibleObject.h"
 #include <list>
 #include <queue>
 
@@ -40,26 +41,6 @@ namespace curr {
  * @addtogroup threads
  * @{
  */
-
-DECLARE_AXIS(ConstructibleAxis, StateAxis);
-
-//! A technical object. Must be moved to the
-//! "complete_construction" state in the last derivative,
-//! for example, when threads are ready to start (see
-//! RObjectWithThreads). 
-class RConstructibleObject
-  : public RObjectWithEvents<ConstructibleAxis>
-{
-  DECLARE_EVENT(ConstructibleAxis, complete_construction);
-
-public:
-  DECLARE_STATES(ConstructibleAxis, ConstructibleState);
-  DECLARE_STATE_CONST(ConstructibleState, in_construction);
-  DECLARE_STATE_CONST(ConstructibleState, 
-                      complete_construction);
-
-  RConstructibleObject();
-};
 
 template<class Object>
 struct ThreadOfObjectPar 

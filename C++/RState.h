@@ -278,6 +278,17 @@ private:
   typedef Logger<RAxis<Axis>> log;
 };
 
+//! RMixedAxis<Axis,Axis2>::state_is adapter
+template<class T>
+bool state_is
+  (T& obj, 
+   const curr::RState<typename T::State::axis>& to)
+{
+  return curr::RMixedAxis<typename T::State::axis,
+                          typename T::axis>
+    :: state_is(obj, to);
+}
+
 //! RMixedAxis<Axis,Axis2>::move_to adapter
 template<class T>
 void move_to

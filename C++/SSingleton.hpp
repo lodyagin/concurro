@@ -63,30 +63,22 @@ public:
 // SingletonStateHook
 
 template<class T>
-typename SingletonStateHook<T>::Instance* 
-SingletonStateHook<T>::instance; // <NB> no explicit init
-
-template<class T>
-SingletonStateHook<T>
-::SingletonStateHook(Instance* inst)
-: last_instance(inst)
-{
-  SCHECK(last_instance);
-}
-
-template<class T>
 void SingletonStateHook<T>::operator() 
   (AbstractObjectWithStates* object,
    const StateAxis&,
    const UniversalState& new_state)
 {
+  // Unable to cast to Existent because it is not
+  // constructed yet
   auto* obj_ptr = dynamic_cast
     <ObjectWithStatesInterface<ExistenceAxis>*>(object);
+
   SCHECK(obj_ptr);
   auto& obj = *obj_ptr;
   const RState<ExistenceAxis> newst(new_state);
 
-  if (newst == ExistentStates::preinc_exist_severalFun())
+  if (newst == SSingleton<T>::TheClass
+        ::preinc_exist_severalFun())
       // it is obligatory to check reason of enter to
       // disable intercept preinc_exist_several set by
       // others.
@@ -95,32 +87,15 @@ void SingletonStateHook<T>::operator()
       RMixedAxis<SingletonAxis, ExistenceAxis>
       ::compare_and_move(
         obj,
-        ExistentStates::preinc_exist_severalFun(),
+        SSingleton<T>::TheClass::preinc_exist_severalFun(),
         // <NB> prior obj_count++
-        ExistentStates::exist_oneFun()
-        // <NB> constructor will be failed
+        SSingleton<T>::TheClass::exist_oneFun()
+        // <NB> the singleton constructor will be failed
         ))
       THROW_EXCEPTION(MustBeSingleton);
     else
       THROW_PROGRAM_ERROR; // check the state design if
                            // you get it
-  }
-
-  if (RMixedAxis<SingletonAxis, ExistenceAxis>
-      ::state_is(
-        obj, ExistentStates::preinc_exist_oneFun())
-    ) 
-  {
-    SCHECK(!instance);
-    instance = last_instance;
-  }
-  else if (RMixedAxis<SingletonAxis, ExistenceAxis>
-           ::state_is(
-             obj, ExistentStates::predec_exist_oneFun())
-    ) 
-  {
-    SCHECK(instance);
-    instance = nullptr;
   }
 }
 
@@ -129,18 +104,12 @@ void SingletonStateHook<T>::operator()
 //FIXME concurrency problems still here
 
 template<class T>
-typename SingletonStateHook<T>::Instance* 
-SSingleton<T>::instance0; // <NB> no explicit init
-
-template<class T>
 T* SSingleton<T>::_instance; // <NB> no explicit init
 
 template<class T>
 SSingleton<T>::SSingleton()
 {
   assert(this->get_obj_count() == 1);
-  set_instance(SingletonStateHook<T>::instance);
-  assert(instance0);
 }
 
 #if 0
@@ -152,7 +121,7 @@ SSingleton<T>::SSingleton(SSingleton&& s)
   set_instance(this);
   _instance = nullptr;
   RMixedAxis<SingletonAxis, ExistenceAxis>::move_to
-    (this->theClass, ExistentStates::exist_oneFun());
+    (this->theClass, exist_oneFun());
   assert(this->get_obj_count() == 1);
 }
 #endif
@@ -166,19 +135,15 @@ SSingleton<T>::~SSingleton()
     // paired pointed to a new moved-to instance)
 
     SCHECK(this->get_obj_count() == 1);
-    assert(instance0);
-    instance0 = _instance = nullptr;
+    _instance = nullptr;
   }
 }
 
 template<class T>
 inline T & SSingleton<T>::instance()
 {
-  if (!instance0)
+  if (!_instance)
     THROW_EXCEPTION(NotExistingSingleton);
-  else if (!_instance)
-    _instance = dynamic_cast<T*>(instance0);
-  SCHECK(_instance);
  
   //FIXME need redesign (singleton existence during the
   //method call).
@@ -189,15 +154,16 @@ inline T & SSingleton<T>::instance()
 template<class T>
 bool SSingleton<T>::isConstructed()
 {
-  return instance0;
+  return !state_is(*this, S(in_construction));
 }
 
 // SAutoSingleton
 
-template<class T>
-T& SAutoSingleton<T>::instance()
+template<class T, int wait_m>
+T& SAutoSingleton<T, wait_m>::instance()
 {
-  if (!SSingleton<T>::isConstructed())
+  if (!state_is(SSingleton<T>::the_class(), 
+                SSingleton<T>::TheClass::exist_oneFun()))
   {
     try 
     { 
@@ -206,7 +172,11 @@ T& SAutoSingleton<T>::instance()
     catch (const MustBeSingleton&) {}
   }
 
-  // FIXME need to wait a complete construction
+  // If another thread starts creating T we must wait the
+  // completion of the creation
+  CURR_WAIT(SSingleton<T>::instance()
+            . E(complete_construction), wait_m);
+
   return SSingleton<T>::instance ();
 }
 

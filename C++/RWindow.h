@@ -286,8 +286,9 @@ operator<<(std::ostream&,
  * 
  */
 template<class ConnectionId>
-using RConnectedWindowRepository = 
-  AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>;
+class RConnectedWindowRepository : public
+  AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>
+{};
 
 //! @}
 

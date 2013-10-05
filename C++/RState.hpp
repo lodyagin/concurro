@@ -31,10 +31,9 @@
 #define CONCURRO_RSTATE_HPP_
 
 #include "RState.h"
-#include "RThread.h"
+#include "RThread.hpp"
 #include "Repository.hpp"
 #include "RObjectWithStates.hpp"
-#include "SSingleton.hpp"
 #include "StateMapRepository.h"
 #include "Event.h"
 #include <atomic>

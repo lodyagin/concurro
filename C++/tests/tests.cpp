@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+extern CU_TestInfo ClassWithStatesTests[];
 extern CU_TestInfo ExistentTests[];
 extern CU_TestInfo RepositoryTests[];
 extern CU_TestInfo EventTests[];
@@ -20,6 +21,8 @@ extern CU_TestInfo RConnectionTests[];
 extern CU_TestInfo SCommonTests[];
 extern CU_TestInfo SSingletonTests[];
 
+int ClassWithStatesCUInit(void);
+int ClassWithStatesCUClean(void);
 int ExistentCUInit(void);
 int ExistentCUClean(void);
 int RepositoryCUInit(void);
@@ -52,6 +55,15 @@ int RHolderCUInit(void);
 int RHolderCUClean(void);
 
 CU_SuiteInfo suites[] = {	
+  { "Event", EventCUInit, EventCUClean, 0, 0,
+	  EventTests },
+  { "RState", RStateCUInit, RStateCUClean, 0, 0,
+	  RStateTests },
+  { "REvent", REventCUInit, REventCUClean, 0, 0,
+	  REventTests },
+  { "ClassWithStates", ClassWithStatesCUInit, 
+    ClassWithStatesCUClean, 0, 0, 
+          ClassWithStatesTests},
   { "Existent", ExistentCUInit, ExistentCUClean, 0, 0,
 	  ExistentTests },
   { "Repository", RepositoryCUInit, RepositoryCUClean, 0, 0,
@@ -60,12 +72,6 @@ CU_SuiteInfo suites[] = {
       SCommonTests },
   { "SSingleton", SSingletonCUInit, SSingletonCUClean, 0, 0,
 	  SSingletonTests },
-  { "Event", EventCUInit, EventCUClean, 0, 0,
-	  EventTests },
-  { "RState", RStateCUInit, RStateCUClean, 0, 0,
-	  RStateTests },
-  { "REvent", REventCUInit, REventCUClean, 0, 0,
-	  REventTests },
   { "RHolder", RHolderCUInit, RHolderCUClean, 0, 0,
 	  RHolderTests },
   { "RThread", RThreadCUInit, RThreadCUClean, 0, 0,

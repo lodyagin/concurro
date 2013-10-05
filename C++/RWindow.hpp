@@ -33,6 +33,7 @@
 #include "RWindow.h"
 #include "RState.hpp"
 #include "REvent.hpp"
+#include "AutoRepository.hpp"
 
 namespace curr {
 

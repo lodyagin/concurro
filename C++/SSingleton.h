@@ -32,7 +32,7 @@
 
 #include "Existent.h"
 #include "SException.h"
-//#include "ConstructibleObject.h"
+#include "ConstructibleObject.h"
 #include <thread>
 
 namespace curr {
@@ -71,22 +71,12 @@ class SingletonStateHook
 {
   friend SSingleton<T>;
 public:
-  using Instance = ClassWithStates
-    <T, ExistenceAxis, existent_class_initial_state, 
-    SingletonStateHook<T>>;
-
-  SingletonStateHook(Instance*);
-
   //! Disable change to ExistenceAxis exist_several state
   //! @exception MustBeSingleton
   void operator() 
     (AbstractObjectWithStates* object,
      const StateAxis& ax,
      const UniversalState& new_state);
-
-protected:
-  Instance* last_instance;
-  static Instance* instance;
 };
 
 /**
@@ -127,8 +117,8 @@ protected:
  */
 template<class T>
 class SSingleton 
-  : public Existent<T, SingletonStateHook<T>>
-//    public ConstructibleObject
+  : public Existent<T, SingletonStateHook<T>>,
+    public ConstructibleObject
 {
   friend SingletonStateHook<T>;
 public:
@@ -155,6 +145,13 @@ public:
   //! rvalue is the same object.
   SSingleton& operator=(SSingleton&& s) = delete;
 
+  //! Return an empty event (no object-observable
+  //! terminal state).
+  CompoundEvent is_terminal_state() const override
+  {
+    return CompoundEvent();
+  }
+
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to
   //! redesign with RHolder).
@@ -163,30 +160,21 @@ public:
   //! class is crated with SSingleton() raise exception.
   static T & instance();
 
-  static bool isConstructed();
+  //! It is the same as !state_is(*this, in_construction)
+  bool isConstructed();
 
 private:
-  //! The singleton instance set by a hook (it differs
-  //! with type from _instance)
-  static typename SingletonStateHook<T>::Instance* 
-    instance0;
-
   //! The actual singleton instance. It is updated from
   //! instance0 in instance() call.
   static T* _instance;
-
-  void set_instance
-    (typename SingletonStateHook<T>::Instance* inst)
-  { 
-     instance0 = inst; 
-  }
 };
 
 /**
  * Extends SSingleton to allow auto-construct it by the
  * RAutoSingleton::instance() call.
+ * \tparam wait_m The default construction wait timeout.
  */
-template<class T>
+template<class T, int wait_m = 1000>
 class SAutoSingleton : public SSingleton<T>
 {
 public:
@@ -194,6 +182,9 @@ public:
   //! Not safe in multithreading environment (need to
   //! redesign with RHolder).
   static T & instance ();
+
+private:
+  typedef Logger<SAutoSingleton<T, wait_m>> log;
 };
 
 template<>

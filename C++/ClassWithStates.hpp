@@ -36,22 +36,22 @@ namespace curr {
 
 // TODO specialization for EmptyStateHook (avoid dynamic
 // cast and other parameters).
-template<class T, class Axis, const char* initial_state,
+template<class Axis, const char* initial_state,
          class StateHook>
-void ClassWithStates<T, Axis, initial_state, StateHook>
+void ClassWithStates<Axis, initial_state, StateHook>
 ::TheClass::state_changed
   (StateAxis&, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
    const UniversalState& new_state)
 {
-  StateHook(this->instance)(this, state_ax, new_state);
+  StateHook()(this, state_ax, new_state);
 }
 
-template<class T, class Axis, const char* initial_state,
+template<class Axis, const char* initial_state,
          class StateHook>
 std::atomic<uint32_t>& 
-ClassWithStates<T, Axis, initial_state, StateHook>
+ClassWithStates<Axis, initial_state, StateHook>
 ::TheClass::current_state(const StateAxis& ax)
 {
   static std::atomic<uint32_t> currentState( 
@@ -60,17 +60,78 @@ ClassWithStates<T, Axis, initial_state, StateHook>
   return currentState;
 }
 
-template<class T, class Axis, const char* initial_state,
+template<class Axis, const char* initial_state,
          class StateHook>
 const std::atomic<uint32_t>& 
-ClassWithStates<T, Axis, initial_state, StateHook>
+ClassWithStates<Axis, initial_state, StateHook>
 ::TheClass::current_state(const StateAxis& ax) const
 {
   return const_cast<
-    ClassWithStates<T, Axis, initial_state, StateHook>
+    ClassWithStates<Axis, initial_state, StateHook>
     ::TheClass*>
       (this) -> current_state(ax);
 }
+
+template<class Axis, const char* initial_state,
+         class StateHook>
+CompoundEvent 
+ClassWithEvents<Axis, initial_state, StateHook>
+//
+::TheClass::create_event(const UniversalEvent& ue) const
+{
+  const UniversalEvent current_event
+    (this->current_state(Axis::self()), true);
+  const bool is_initial_state = 
+    ue.local_id() == current_event.local_id();
+		  
+  const auto it = get_events().find(ue.local_id());
+  if (it == get_events().end()) {
+    return CompoundEvent(
+      get_events().insert
+      (std::make_pair
+       (ue.local_id(), 
+        Event(SFORMAT(typeid(*this).name() << ":" 
+                      << ue.name()), 
+              true, is_initial_state))).first->second);
+  }
+  else 
+    return CompoundEvent(it->second);
+}
+
+template<class Axis, const char* initial_state,
+         class StateHook>
+void ClassWithEvents<Axis, initial_state, StateHook>
+::TheClass::update_events
+  (StateAxis& ax, 
+   TransitionId trans_id, 
+   uint32_t to)
+{
+  assert(is_same_axis<Axis>(ax));
+
+  LOG_TRACE(Logger<LOG::Root>, 
+            "update_events for the axis "
+            << typeid(ax).name()
+            << ", to = " << UniversalState(to).name()
+            << std::hex << " (0x" << to << ")");
+
+  // reset all events due to a new transition
+  for (auto& p : get_events()) p.second.reset();
+
+  { // event on a transition
+    const UniversalEvent ev(trans_id);
+    const auto it = get_events().find(ev.local_id());
+    if (it != get_events().end())
+      it->second.set();
+  }
+
+  { // event on a final destination
+    const UniversalEvent ev(to, true);
+    const auto it = get_events().find(ev.local_id());
+    if (it != get_events().end())
+      it->second.set();
+  }
+}
+
 
 }
 #endif

@@ -31,8 +31,9 @@
 #define CONCURRO_EXISTENT_H_
 
 #include "ClassWithStates.h"
-#include "StateAxis.h"
+#include "RState.h"
 #include "Logging.h"
+#include "REvent.h"
 #include <functional>
 
 namespace curr {
@@ -46,7 +47,7 @@ extern char existent_class_initial_state[];
 
 template<class T>
 using ExistentEmptyStateHook = EmptyStateHook
-  <T, ExistenceAxis, existent_class_initial_state>;
+  <ExistenceAxis, existent_class_initial_state>;
 
 /**
  * Every class has two main states - exist and not_exist
@@ -98,19 +99,62 @@ template<
   class StateHook = ExistentEmptyStateHook<T>
 >
 class Existent 
-: public ClassWithStates
-  < T,
-    ExistenceAxis, 
+: public ClassWithEvents
+  < ExistenceAxis, 
     existent_class_initial_state,
     StateHook
   >
 {
 public:
-  using Parent = ClassWithStates
-    <T, ExistenceAxis, existent_class_initial_state,
+  using Parent = ClassWithEvents
+    <ExistenceAxis, existent_class_initial_state,
      StateHook>;
 
-  using TheClass = typename Parent::TheClass;
+  class TheClass : public Parent::TheClass
+  {
+  public:
+    //! @cond
+    DECLARE_STATES(ExistenceAxis, State);
+    DECLARE_STATE_FUN(State, not_exist);
+    DECLARE_STATE_FUN(State, predec_exist_one);
+    DECLARE_STATE_FUN(State, preinc_exist_one);
+    DECLARE_STATE_FUN(State, exist_one);
+    DECLARE_STATE_FUN(State, exist_several);
+    DECLARE_STATE_FUN(State, predec_exist_several);
+    DECLARE_STATE_FUN(State, preinc_exist_several);
+    DECLARE_STATE_FUN(State, moving_when_one);
+    DECLARE_STATE_FUN(State, moving_when_several);
+    //! @endcond
+
+//    event_fun<ExistenceAxis> is_not_exist;
+
+    CompoundEvent is_terminal_state() const override
+    {
+//      return is_not_exist();
+      return CompoundEvent();
+    }
+
+    static TheClass* instance() 
+    { 
+      static std::once_flag of;
+      static TheClass* i = nullptr;
+
+      // pass i as a parementer due to a GCC bug
+      std::call_once(of, [](TheClass** i)
+      { 
+        *i = new TheClass(); 
+      }, &i);
+      assert(i);
+      return i; 
+    }
+
+  private:
+    TheClass() {}
+    TheClass(const TheClass&) = delete;
+    ~TheClass() {}
+    TheClass& operator=(const TheClass&) = delete;
+  };
+
 
   Existent();
   Existent(const Existent&) = delete;
@@ -128,15 +172,13 @@ public:
   static unsigned get_obj_count()
   { return obj_count; }
 
-  const TheClass& class_state() const
-  { return theClass; }
+  //! The class state.
+  static TheClass& the_class()
+  {
+    return *TheClass::instance();
+  }
 
 protected:
-  //! The class state. <NB> it is not static to omit
-  //! problems with static initialization order (all
-  //! internal methods use static variables in itself).
-  TheClass theClass;
-
   static std::atomic<int> obj_count;
 
   void inc_existence();

@@ -117,6 +117,57 @@ RCompoundEvent::RCompoundEvent
 }
 #endif
 
+//! An arrival event for usage in static members
+template<class Axis, class Axis2>
+struct a_event_fun
+{
+  a_event_fun(ObjectWithEventsInterface<Axis2>* obj, 
+              const RState<Axis>& to_state)
+    : obj_ptr(obj), to(to_state) {}
+
+  a_event_fun(ObjectWithEventsInterface<Axis2>* obj, 
+              const std::string& to_name) 
+    : obj_ptr(obj), to(to_name) {}
+
+  RMixedEvent<Axis, Axis2>& operator()() const
+  {
+    // <NB> the first obj_ptr is remembered, so it must be
+    // static or singleton
+    static RMixedEvent<Axis, Axis2> ev(obj_ptr, to);
+    return ev;
+  }
+
+  ObjectWithEventsInterface<Axis2> * const obj_ptr;
+  const RState<Axis> to;
+};
+
+template<class Axis, class Axis2>
+struct a_trans_event_fun
+{
+  a_trans_event_fun(ObjectWithEventsInterface<Axis2>* obj, 
+                    const RState<Axis>& from_state,
+                    const RState<Axis>& to_state)
+    : obj_ptr(obj), from(from_state), to(to_state) {}
+
+  a_trans_event_fun(ObjectWithEventsInterface<Axis2>* obj, 
+                    const std::string& from_name,
+                    const std::string& to_name)
+    : obj_ptr(obj), from(from_name), to(to_name) {}
+
+  RMixedEvent<Axis, Axis2>& operator()() const
+  {
+    // <NB> the first obj_ptr is remembered, so it must be
+    // static or singleton
+    static RMixedEvent<Axis, Axis2> ev
+      (obj_ptr, from, to);
+    return ev;
+  }
+
+  ObjectWithEventsInterface<Axis2> * const obj_ptr;
+  const RState<Axis> from;
+  const RState<Axis> to;
+};
+
 }
 
 #endif

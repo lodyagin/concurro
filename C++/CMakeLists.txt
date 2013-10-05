@@ -17,6 +17,7 @@ add_subdirectory(tests)
 #project (concurrent)
 set (concurrent_SOURCES 
   ClientSocket.cpp
+  ConstructibleObject.cpp
   Event.cpp
   Existent.cpp
   HasStringView.cpp
@@ -28,7 +29,6 @@ set (concurrent_SOURCES
   RHolder.cpp
   RMutex.cpp
   RObjectWithStates.cpp
-  RObjectWithThreads.cpp
   RSocket.cpp
   RSocketAddress.cpp
   RSocketConnection.cpp

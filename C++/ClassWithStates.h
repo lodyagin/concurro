@@ -37,8 +37,28 @@ namespace curr {
 //! @addtogroup states
 //! @{
 
-template<class T, class Axis, const char* initial,
-        class StateHook
+template<class Axis, const char* initial,
+         class StateHook
+>
+class ClassWithStates;
+
+template<class Axis, const char* initial>
+class EmptyStateHook
+{
+public:
+  /*EmptyStateHook
+    (ClassWithStates<Axis, initial, EmptyStateHook>*) 
+    {}*/
+
+  void operator() 
+    (AbstractObjectWithStates* object,
+     const StateAxis& ax,
+     const UniversalState& new_state)
+  {}
+};
+
+template<class Axis, const char* initial,
+  class StateHook = EmptyStateHook<Axis, initial>
 >
 class ClassWithStates
 {
@@ -57,9 +77,6 @@ protected:
   class TheClass: public ObjectWithStatesInterface<Axis>
   {
   public:
-    TheClass(ClassWithStates* inst)
-      : instance(inst) { assert(instance); }
-    
     void state_changed
       (StateAxis& ax, 
        const StateAxis& state_ax,     
@@ -71,19 +88,6 @@ protected:
 
     const std::atomic<uint32_t>& 
       current_state(const StateAxis& ax) const override;
-
-#if 0
-    //! Return an empty event (no object-observable terminal
-    //! state).
-    curr::CompoundEvent is_terminal_state() const override
-    {
-      return curr::CompoundEvent();
-    }
-#endif
-
-  protected:
-    //! Instance of ClassWithStates
-    ClassWithStates* instance;
   };
 
   //! Paired obj ptr, for example, in the middle of a move
@@ -93,19 +97,46 @@ protected:
   ClassWithStates* paired = nullptr;
 };
 
-template<class T, class Axis, const char* initial>
-class EmptyStateHook
+template <
+  class Axis, const char* initial, 
+  class StateHook = EmptyStateHook<Axis, initial>
+>
+class ClassWithEvents 
+  : public ClassWithStates<Axis, initial, StateHook>
 {
 public:
-  EmptyStateHook
-    (ClassWithStates<T, Axis, initial, EmptyStateHook>*) 
-  {}
+  typedef ClassWithStates<Axis, initial, StateHook>
+    Parent;
 
-  void operator() 
-    (AbstractObjectWithStates* object,
-     const StateAxis& ax,
-     const UniversalState& new_state)
-  {}
+protected:
+  class TheClass 
+    : public Parent::TheClass,
+      public ObjectWithEventsInterface<Axis>
+  {
+  public:
+    /*TheClass(ClassWithEvents* inst)
+      : Parent::TheClass(inst) {}*/
+    
+    CompoundEvent create_event
+     (const UniversalEvent&) const override;
+
+    void update_events
+      (StateAxis& ax, 
+      TransitionId trans_id, 
+      uint32_t to) override;
+
+  protected:
+    //! It maps a local event id to an Event object
+    typedef std::map<uint32_t, Event> EventMap;
+
+    //! Get static events collection. <NB> const - the
+    //! collection is mutable.
+    EventMap& get_events() const
+    {
+      static EventMap events;
+      return events;
+    }
+  };
 };
 
 //! @}

@@ -9,6 +9,7 @@ find_package(Boost 1.49 COMPONENTS system thread REQUIRED)
 message(${Boost_THREAD_LIBRARY})
 
 set(TestsSrc
+  ClassWithStatesCU.cpp
   EventCU.cpp
   ExistentCU.cpp
   RBufferCU.cpp

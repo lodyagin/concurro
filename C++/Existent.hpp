@@ -31,35 +31,18 @@
 #define CONCURRO_EXISTENT_HPP_
 
 #include "Existent.h"
-#include "RState.h"
 #include "ClassWithStates.hpp"
-#include <array>
+#include "REvent.hpp"
+#include "RState.hpp"
 #include <vector>
 
 namespace curr {
-
-class ExistentStates
-{
-public:
-  //! @cond
-  DECLARE_STATES(ExistenceAxis, State);
-  DECLARE_STATE_FUN(State, not_exist);
-  DECLARE_STATE_FUN(State, predec_exist_one);
-  DECLARE_STATE_FUN(State, preinc_exist_one);
-  DECLARE_STATE_FUN(State, exist_one);
-  DECLARE_STATE_FUN(State, exist_several);
-  DECLARE_STATE_FUN(State, predec_exist_several);
-  DECLARE_STATE_FUN(State, preinc_exist_several);
-  DECLARE_STATE_FUN(State, moving_when_one);
-  DECLARE_STATE_FUN(State, moving_when_several);
-  //! @endcond
-};
 
 template<class T, class StateHook>
 std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent() : theClass(this)
+Existent<T, StateHook>::Existent()
 {
   inc_existence();
 }
@@ -151,18 +134,18 @@ void Existent<T, StateHook>::inc_existence()
   bool b = false, a;
 
   while (
-    ! ((a = ExistentStates::State::compare_and_move(
-       this->theClass, 
-       ExistentStates::not_existFun(), 
-       ExistentStates::preinc_exist_oneFun()))
+    ! ((a = compare_and_move(
+       this->the_class(), 
+       TheClass::not_existFun(), 
+       TheClass::preinc_exist_oneFun()))
      || 
        (b = compare_and_move(
-       this->theClass, 
+       this->the_class(), 
        { 
-         ExistentStates::exist_oneFun(), 
-         ExistentStates::exist_severalFun() 
+         TheClass::exist_oneFun(), 
+         TheClass::exist_severalFun() 
        }, 
-       ExistentStates::preinc_exist_severalFun()))
+       TheClass::preinc_exist_severalFun()))
       )
    );
 
@@ -174,11 +157,11 @@ void Existent<T, StateHook>::inc_existence()
   assert ((obj_count > 1) == b);
 
   if (a) 
-    ExistentStates::State::move_to(
-      this->theClass, ExistentStates::exist_oneFun());
+    move_to(
+      this->the_class(), TheClass::exist_oneFun());
   else if (b) 
-    ExistentStates::State::move_to(
-      this->theClass, ExistentStates::exist_severalFun());
+    move_to(
+      this->the_class(), TheClass::exist_severalFun());
 }
 
 template<class T, class StateHook>
@@ -187,14 +170,14 @@ void Existent<T, StateHook>::dec_existence()
   bool b = false, a;
 
   while (
-   ! ((a = ExistentStates::State::compare_and_move(
-     this->theClass, 
-     ExistentStates::exist_severalFun(), 
-     ExistentStates::predec_exist_severalFun()))
-   || (b = ExistentStates::State::compare_and_move(
-       this->theClass, 
-       ExistentStates::exist_oneFun(), 
-       ExistentStates::predec_exist_oneFun()))
+    ! ((a = compare_and_move(
+          this->the_class(), 
+     TheClass::exist_severalFun(), 
+     TheClass::predec_exist_severalFun()))
+   || (b = compare_and_move(
+       this->the_class(), 
+       TheClass::exist_oneFun(), 
+       TheClass::predec_exist_oneFun()))
      )
    );
 
@@ -203,14 +186,14 @@ void Existent<T, StateHook>::dec_existence()
   assert (obj_count >= 0);
 
   if (obj_count == 1)
-    ExistentStates::State::move_to(
-      this->theClass, ExistentStates::exist_oneFun());
+    move_to(
+      this->the_class(), TheClass::exist_oneFun());
   else if (a)
-    ExistentStates::State::move_to(
-      this->theClass, ExistentStates::exist_severalFun());
+    move_to(
+      this->the_class(), TheClass::exist_severalFun());
   else if (b)
-    ExistentStates::State::move_to(
-      this->theClass, ExistentStates::not_existFun());
+    move_to(
+      this->the_class(), TheClass::not_existFun());
 }
 
 }

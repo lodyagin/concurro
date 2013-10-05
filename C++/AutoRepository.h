@@ -81,10 +81,7 @@ public:
         initial_capacity));
   }
 
-  static RepI& instance()
-  {
-    return *Singleton::instance().rep;
-  }
+  static RepI& instance();
 
 protected:
   RepI* rep;

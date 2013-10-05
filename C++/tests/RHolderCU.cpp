@@ -2,7 +2,7 @@
 
 #include "RHolder.hpp"
 #include "RThread.hpp"
-#include "AutoRepository.h"
+#include "AutoRepository.hpp"
 #include "tests.h"
 
 void test_nreaders1writer();

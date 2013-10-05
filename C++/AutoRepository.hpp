@@ -27,35 +27,23 @@
  * @author Sergei Lodyagin
  */
 
-#include "ConstructibleObject.h"
-#include "RState.hpp"
-#include "REvent.hpp"
+#ifndef CONCURRO_AUTOREPOSITORY_HPP_
+#define CONCURRO_AUTOREPOSITORY_HPP_
+
+#include "AutoRepository.h"
+#include "SSingleton.hpp"
 
 namespace curr {
 
-DEFINE_AXIS(
-  ConstructibleAxis,
-  { "in_construction", "complete_construction" },
-  { { "in_construction", "complete_construction" }
-  });
-
-DEFINE_STATES(ConstructibleAxis);
-DEFINE_STATE_CONST(ConstructibleObject, 
-                   ConstructibleState, 
-                   complete_construction);
-DEFINE_STATE_CONST(ConstructibleObject, 
-                   ConstructibleState, 
-                   in_construction);
-
-ConstructibleObject::ConstructibleObject()
-  : RObjectWithEvents<ConstructibleAxis>
-    (in_constructionState),
-    CONSTRUCT_EVENT(complete_construction)
+template<class Object, class ObjectId>
+typename AutoRepository<Object, ObjectId>::RepI&
+AutoRepository<Object, ObjectId>
+//
+::instance()
 {
+  return *Singleton::instance().rep;
 }
 
-}
+};
 
-
-
-
+#endif

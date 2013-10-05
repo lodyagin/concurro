@@ -98,6 +98,19 @@ private:
 #define CONSTRUCT_EVENT(event)		\
   is_ ## event ## _event(this, #event)
 
+//! An arrival event for usage in static members
+template<class Axis, class Axis2>
+struct a_event_fun;
+
+template<class Axis>
+using event_fun = a_event_fun<Axis, Axis>;
+
+template<class Axis, class Axis2>
+struct a_trans_event_fun;
+
+template<class Axis>
+using trans_event_fun = a_trans_event_fun<Axis, Axis>;
+
 #define E(event) is_ ## event ## _event
 
 }
