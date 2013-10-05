@@ -49,10 +49,13 @@ void test_sautosingleton_raxis()
   CU_ASSERT_PTR_EQUAL_FATAL(p1, p2);
 }
 
+#undef S
+
 void test_ssingleton()
 {
   struct S : public SSingleton<S>
   {
+    S() { complete_construction(); }
     int fun() const { return 133; }
   };
 
@@ -115,6 +118,7 @@ void test_sautosingleton_auto()
 {
   struct S : public SAutoSingleton<S>
   {
+    S() { complete_construction(); }
     int fun() const { return 133; }
   };
 
@@ -126,6 +130,7 @@ void test_sautosingleton_manual()
 {
   struct S : public SAutoSingleton<S>
   {
+    S() { complete_construction(); }
     int fun() const { return 134; }
   };
 
@@ -165,7 +170,7 @@ void test_concurrent_creation()
        {
          struct T : public SAutoSingleton<T>
          { 
-           T() { usleep(20000); }
+           T() { usleep(20000); complete_construction(); }
          } ;
          
          try {
@@ -188,11 +193,15 @@ void test_concurrent_creation()
   { 
     t.remove();;
   });
-#endif
   
   CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+#endif
 }
 
-class P : public SAutoSingleton<P> {};
+class P : public SAutoSingleton<P> 
+{
+public:
+  P() { complete_construction(); }
+};
 
 P p;

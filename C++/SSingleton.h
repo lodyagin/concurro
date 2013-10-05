@@ -33,6 +33,8 @@
 #include "Existent.h"
 #include "SException.h"
 #include "ConstructibleObject.h"
+#include "Event.h"
+#include "Logging.h"
 #include <thread>
 
 namespace curr {
@@ -60,16 +62,16 @@ class NotExistingSingleton;
  */ 
 class MustBeSingleton;
 
-template<class T>
+template<class T, int wait_m>
 class SSingleton;
 
 /**
  * A hook for check whether object is still singleton.
  */
-template<class T>
+template<class T, int wait_m>
 class SingletonStateHook
 {
-  friend SSingleton<T>;
+  friend SSingleton<T, wait_m>;
 public:
   //! Disable change to ExistenceAxis exist_several state
   //! @exception MustBeSingleton
@@ -115,18 +117,21 @@ public:
  * @enddot
  *
  */
-template<class T>
+template<class T, int wait_m = 1000>
 class SSingleton 
-  : public Existent<T, SingletonStateHook<T>>,
+  : public Existent<T, SingletonStateHook<T, wait_m>>,
     public ConstructibleObject
 {
-  friend SingletonStateHook<T>;
+  friend SingletonStateHook<T, wait_m>;
 public:
-  typedef Existent<T, SingletonStateHook<T>> Parent;
+  typedef Existent<T, SingletonStateHook<T, wait_m>> 
+    Parent;
+  typedef ConstructibleObject ObjParent;
+  typedef SSingleton<T, wait_m> This;
 
   //! One and only one class instance must be created with
   //! this function.
-  //! @exception MustBeSingleton a copy of SSingleton<T>
+  //! @exception MustBeSingleton a copy of SSingleton<T, wait_m>
   //! already exists.
   SSingleton();
 
@@ -145,12 +150,12 @@ public:
   //! rvalue is the same object.
   SSingleton& operator=(SSingleton&& s) = delete;
 
-  //! Return an empty event (no object-observable
-  //! terminal state).
   CompoundEvent is_terminal_state() const override
   {
-    return CompoundEvent();
+    return E(complete_construction);
   }
+
+  void complete_construction() override;
 
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to
@@ -163,7 +168,21 @@ public:
   //! It is the same as !state_is(*this, in_construction)
   bool isConstructed();
 
+protected:
+  //! It is a statically accessible analog of
+  //! the complete_construction event.
+  static Event is_complete()
+  {
+    static Event is_complete_event
+      (SFORMAT(typeid(SSingleton<T, wait_m>).name()
+               << ":is_complete()::is_complete_event"), 
+       true, false);
+    return is_complete_event;
+  }
+
 private:
+  typedef Logger<SSingleton<T, wait_m>> log;
+
   //! The actual singleton instance. It is updated from
   //! instance0 in instance() call.
   static T* _instance;
@@ -175,7 +194,7 @@ private:
  * \tparam wait_m The default construction wait timeout.
  */
 template<class T, int wait_m = 1000>
-class SAutoSingleton : public SSingleton<T>
+class SAutoSingleton : public SSingleton<T, wait_m>
 {
 public:
   //! Return the reference to the class instance. 
@@ -186,67 +205,6 @@ public:
 private:
   typedef Logger<SAutoSingleton<T, wait_m>> log;
 };
-
-template<>
-class SAutoSingleton<StateMapRepository> 
-{
-public:
-  typedef StateMapRepository T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-
-template<class Thread>
-class RThreadRepository;
-
-#if 0
-template<class Thread>
-class SAutoSingleton<RThreadRepository<Thread>> 
-{
-public:
-  typedef RThreadRepository<Thread> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-#else
-template<class SystemThread>
-class RThread;
-
-template<>
-class SAutoSingleton<
-  RThreadRepository<RThread<std::thread>>> 
-{
-public:
-  typedef RThreadRepository<RThread<std::thread>> T;
-  friend T;
-
-  SAutoSingleton(const SAutoSingleton&) = delete;
-  virtual ~SAutoSingleton() {}
-  SAutoSingleton& operator=(const SAutoSingleton&) =delete;
-
-  static T& instance();
-
-private:
-  SAutoSingleton() {}
-};
-
-#endif
 
 //! @}
 

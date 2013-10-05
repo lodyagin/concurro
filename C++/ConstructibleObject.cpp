@@ -54,6 +54,11 @@ ConstructibleObject::ConstructibleObject()
 {
 }
 
+void ConstructibleObject::complete_construction()
+{
+  move_to(*this, S(complete_construction));
+}
+
 }
 
 

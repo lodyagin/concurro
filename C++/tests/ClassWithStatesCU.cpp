@@ -64,7 +64,7 @@ public:
 
   class TheClass 
     : public Parent::TheClass, 
-      public SSingleton<TheClass>
+      public SAutoSingleton<TheClass>
   {
     typedef ClassWithStatesCUAxis A;
   public:
@@ -85,15 +85,19 @@ public:
 
     MULTIPLE_INHERITANCE_DEFAULT_MEMBERS;
 
-  protected:
 #if 1 
     // SSingleton version
     TheClass()
       : is_charged(this, chargedFun()),
         is_discharged(this, dischargedFun()),
         charging(this, dischargedFun(), chargedFun()),
-        discharging(this, chargedFun(), dischargedFun()) {}
+        discharging(this, chargedFun(), dischargedFun()) 
+    {
+      complete_construction();
+    }
+  protected:
 #else
+  protected:
     TheClass& self() 
     {
       static std::once_flag of;

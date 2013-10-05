@@ -185,7 +185,6 @@ class ObjectWithEventsInterface
 public:
   virtual ~ObjectWithEventsInterface() {}
 
-protected:
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
   virtual CompoundEvent create_event

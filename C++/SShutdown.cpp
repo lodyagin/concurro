@@ -39,6 +39,7 @@ SShutdown::SShutdown() :
   evt(CreateEvent(0, true, false, 0))
 {             // SA manual  init name
   sWinCheck(evt != 0, L"creating event");
+  complete_construction();
 }
 
 SShutdown::~SShutdown()

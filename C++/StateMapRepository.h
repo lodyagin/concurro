@@ -47,8 +47,7 @@ class StateMapRepository
   StateMapParBase, 
   std::unordered_map,
   StateMapId
-  >,
-  public SAutoSingleton<StateMapRepository>
+  >
 {
   friend class StateMap;
   friend class StateMapParBase;
@@ -58,10 +57,6 @@ public:
     StateMapParBase, 
     std::unordered_map,
     StateMapId > Parent;
-
-  StateMapRepository() 
-  : Parent("StateMapRepository", 50), 
-    max_trans_id(0), last_map_id(0) {}
 
   //! For id == 0 return empty map.
   StateMap* get_object_by_id(StateMapId id) const override;
@@ -80,6 +75,16 @@ public:
 
   std::string get_state_name(uint32_t state) const;
 
+  static StateMapRepository& instance()
+  {
+    typedef StateMapRepository T;
+    static std::once_flag of;
+    static T* instance = nullptr;
+    std::call_once(of, [](){ instance = new T(); });
+    assert(instance);
+    return *instance;
+  }
+
 protected:
   //! It is incremented in a StateMap constructor.
   std::atomic<TransitionId> max_trans_id;
@@ -88,6 +93,17 @@ protected:
   std::map<std::string, StateMapId> axis2map_id;
 
   static StateMap* empty_map;
+
+private:
+  StateMapRepository() 
+    : Parent("StateMapRepository", 50), 
+      max_trans_id(0), last_map_id(0) 
+  {}
+
+  StateMapRepository(const StateMapRepository&) = delete;
+  ~StateMapRepository() {};
+  StateMapRepository& operator=
+    (const StateMapRepository&) = delete;
 };
 
 //! @}

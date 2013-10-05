@@ -34,6 +34,7 @@
 #include "REvent.hpp"
 #include "RState.hpp"
 #include "RWindow.hpp"
+#include "RThreadRepository.hpp"
 
 namespace curr {
 

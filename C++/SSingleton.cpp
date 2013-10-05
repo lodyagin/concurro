@@ -40,28 +40,4 @@ DEFINE_AXIS(
   { {"preinc_exist_several", "exist_one"} // failback
   });
 
-// SAutoSingleton
-
-StateMapRepository& 
-SAutoSingleton<StateMapRepository> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
-RThreadRepository<RThread<std::thread>>& 
-SAutoSingleton<RThreadRepository<RThread<std::thread>>> 
-::instance()
-{
-  static std::once_flag of;
-  static T* instance = nullptr;
-  std::call_once(of, [](){ instance = new T(); });
-  assert(instance);
-  return *instance;
-}
-
 }

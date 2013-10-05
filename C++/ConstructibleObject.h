@@ -62,6 +62,11 @@ public:
                       complete_construction);
 
   ConstructibleObject();
+
+  //! Report complete construction from a
+  //! descendant. Change the state to
+  //! complete_construction.
+  virtual void complete_construction();
 };
 
 //! @}

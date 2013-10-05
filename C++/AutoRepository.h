@@ -65,6 +65,7 @@ public:
           0))
   {
     assert(rep);
+    this->complete_construction();
   }
 
   //! Init with the specified Cont type.

@@ -68,8 +68,7 @@ class RThreadRepository
       std::map, 
       typename Thread::Id
   >,
-  public RThreadFactory,
-  public SAutoSingleton<RThreadRepository<Thread>>
+  public RThreadFactory
 {
 public:
   typedef Repository<
@@ -84,9 +83,6 @@ public:
   typedef typename Parent::IdIsAlreadyUsed IdIsAlreadyUsed;
   typedef typename Parent::Value Value;
 
-  //! Init with the specified operation timeout in msecs
-  RThreadRepository(int w = 1000);
-  
   //! Init with the specified operation timeout in msecs
   static void init(int w)
   {
@@ -127,11 +123,28 @@ public:
        "replace_object is not implemented for threads.");
   }
 
+  static RThreadRepository& instance()
+  {
+    typedef RThreadRepository T;
+    static std::once_flag of;
+    static T* instance = nullptr;
+    std::call_once(of, [](){ instance = new T(); });
+    assert(instance);
+    return *instance;
+  }
+
 protected:
   int wait_m;
 
 private:
   typedef Logger<RThreadRepository<Thread>> log;
+
+  //! Init with the specified operation timeout in msecs
+  RThreadRepository(int w = 1000);
+  RThreadRepository(const RThreadRepository&) = delete;
+  ~RThreadRepository() {}
+  RThreadRepository& operator=
+    (const RThreadRepository&) = delete;
 };
 
 template<class Obj>

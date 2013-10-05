@@ -81,6 +81,7 @@ class RSignalRepository
   public SAutoSingleton<RSignalRepository>
 {
 public:
+  RSignalRepository() { complete_construction(); }
   void tune_signal(int signum, RSignalAction action);
 };
 

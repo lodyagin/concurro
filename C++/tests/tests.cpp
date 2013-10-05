@@ -61,9 +61,11 @@ CU_SuiteInfo suites[] = {
 	  RStateTests },
   { "REvent", REventCUInit, REventCUClean, 0, 0,
 	  REventTests },
+#if 0
   { "ClassWithStates", ClassWithStatesCUInit, 
     ClassWithStatesCUClean, 0, 0, 
           ClassWithStatesTests},
+#endif
   { "Existent", ExistentCUInit, ExistentCUClean, 0, 0,
 	  ExistentTests },
   { "Repository", RepositoryCUInit, RepositoryCUClean, 0, 0,
