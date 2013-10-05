@@ -4,14 +4,14 @@
 #include "tests.h"
 #include <string>
 
-static void test_arrival_event();
-static void test_transitional_event();
+void test_arrival_class_event();
+void test_transitional_class_event();
 
 CU_TestInfo ClassWithStatesTests[] = {
   {"an arrival event test",
-   test_arrival_event},
+   test_arrival_class_event},
   {"a transitional event test",
-   test_transitional_event},
+   test_transitional_class_event},
   CU_TEST_INFO_NULL
 };
 
@@ -139,7 +139,7 @@ public:
     CU_ASSERT_EQUAL_FATAL(st, state);           \
   } while(0)
 
-static void test_arrival_event()
+void test_arrival_class_event()
 {
   Test obj;
   bool wt;
@@ -173,7 +173,7 @@ static void test_arrival_event()
                  Test::TheClass::dischargedFun());
 }
 
-static void test_transitional_event()
+void test_transitional_class_event()
 {
   Test obj;
   bool wt;

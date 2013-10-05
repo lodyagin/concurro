@@ -6,8 +6,8 @@
 #include <string>
 #include <thread>
 
-static void test_arrival_event();
-static void test_transitional_event();
+void test_arrival_event();
+void test_transitional_event();
 void test_inheritance();
 void test_splitting();
 
@@ -123,7 +123,7 @@ DEFINE_STATE_CONST(Test, State, discharged);
     CU_ASSERT_EQUAL_FATAL(st, state);           \
   } while(0)
 
-static void test_arrival_event()
+void test_arrival_event()
 {
   Test obj;
   bool wt;
@@ -145,7 +145,7 @@ static void test_arrival_event()
   TEST_OBJ_STATE(obj, CDAxis, Test::dischargedState);
 }
 
-static void test_transitional_event()
+void test_transitional_event()
 {
   Test obj;
   bool wt;
