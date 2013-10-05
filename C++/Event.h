@@ -69,8 +69,9 @@ public:
   do { (evt).wait((time), curr::ThrowSException \
        (logger, LOG4CXX_LOCATION)); } while(false)
 
-//! Call a timed event wait which canthrow
-//! EventWaitingTimedOut with the macro usage location.
+//! Call a timed event waiting which can throw
+//! EventWaitingTimedOut with the location equal to the
+//! macro substitution line.
 #define CURR_WAIT(evt, time) \
   CURR_WAIT_L(log::logger(), evt, time)
 

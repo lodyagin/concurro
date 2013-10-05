@@ -37,19 +37,17 @@ namespace curr {
 //! @addtogroup states
 //! @{
 
-template<class Axis, const char* initial,
-         class StateHook
+template <
+  class ClassAxis, 
+  const char* initial,
+  class StateHook
 >
 class ClassWithStates;
 
-template<class Axis, const char* initial>
+template<class ClassAxis, const char* initial>
 class EmptyStateHook
 {
 public:
-  /*EmptyStateHook
-    (ClassWithStates<Axis, initial, EmptyStateHook>*) 
-    {}*/
-
   void operator() 
     (AbstractObjectWithStates* object,
      const StateAxis& ax,
@@ -57,8 +55,10 @@ public:
   {}
 };
 
-template<class Axis, const char* initial,
-  class StateHook = EmptyStateHook<Axis, initial>
+template <
+  class ClassAxis, 
+  const char* initial,
+  class StateHook = EmptyStateHook<ClassAxis, initial>
 >
 class ClassWithStates
 {
@@ -74,7 +74,8 @@ protected:
    * (class states are like state of repository or another
    * structure compound from separate members - classes.
    */
-  class TheClass: public ObjectWithStatesInterface<Axis>
+  class TheClass
+    : public ObjectWithStatesInterface<ClassAxis>
   {
   public:
     void state_changed
@@ -98,25 +99,23 @@ protected:
 };
 
 template <
-  class Axis, const char* initial, 
-  class StateHook = EmptyStateHook<Axis, initial>
+  class ClassAxis, 
+  const char* initial, 
+  class StateHook = EmptyStateHook<ClassAxis, initial>
 >
 class ClassWithEvents 
-  : public ClassWithStates<Axis, initial, StateHook>
+  : public ClassWithStates<ClassAxis, initial, StateHook>
 {
 public:
-  typedef ClassWithStates<Axis, initial, StateHook>
+  typedef ClassWithStates<ClassAxis, initial, StateHook>
     Parent;
 
 protected:
   class TheClass 
     : public Parent::TheClass,
-      public ObjectWithEventsInterface<Axis>
+      public ObjectWithEventsInterface<ClassAxis>
   {
   public:
-    /*TheClass(ClassWithEvents* inst)
-      : Parent::TheClass(inst) {}*/
-    
     CompoundEvent create_event
      (const UniversalEvent&) const override;
 
