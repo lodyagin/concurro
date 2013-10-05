@@ -57,7 +57,7 @@ typedef ClassWithEvents
   <ClassWithStatesCUAxis, test_class_initial_state> 
     TestParent;
 
-class Test : public TestParent
+class ClassTest : public TestParent
 {
 public:
   typedef TestParent Parent;
@@ -135,74 +135,74 @@ public:
 
 #define TEST_OBJ_STATE(obj, axis, state)        \
   {                                             \
-    RState<axis> st(Test::the_class());         \
+    RState<axis> st(ClassTest::the_class());         \
     CU_ASSERT_EQUAL_FATAL(st, state);           \
   } while(0)
 
 static void test_arrival_event()
 {
-  Test obj;
+  ClassTest obj;
   bool wt;
 
   SharedThread([&obj] ()
   {
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), Test::TheClass::chargedFun());
+      (obj.the_class(), ClassTest::TheClass::chargedFun());
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), Test::TheClass::dischargedFun());
+      (obj.the_class(), ClassTest::TheClass::dischargedFun());
   });
 
   wt = obj.the_class().is_charged().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
-                 Test::TheClass::dischargedFun());
+                 ClassTest::TheClass::dischargedFun());
   wt = obj.the_class().is_discharged().wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
-                 Test::TheClass::chargedFun());
+                 ClassTest::TheClass::chargedFun());
 
   wt = obj.the_class().is_discharged().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
-                 Test::TheClass::chargedFun());
+                 ClassTest::TheClass::chargedFun());
   wt = obj.the_class().is_discharged().wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
-                 Test::TheClass::dischargedFun());
+                 ClassTest::TheClass::dischargedFun());
 }
 
 static void test_transitional_event()
 {
-  Test obj;
+  ClassTest obj;
   bool wt;
 
   SharedThread([&obj] ()
   {
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), Test::TheClass::chargedFun());
+      (obj.the_class(), ClassTest::TheClass::chargedFun());
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), Test::TheClass::dischargedFun());
+      (obj.the_class(), ClassTest::TheClass::dischargedFun());
   });
 
   wt = obj.the_class().charging().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
-                 Test::TheClass::dischargedFun());
+                 ClassTest::TheClass::dischargedFun());
   wt = obj.the_class().charging().wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
-                 Test::TheClass::chargedFun());
+                 ClassTest::TheClass::chargedFun());
 
   wt = obj.the_class().discharging().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
-                 Test::TheClass::chargedFun());
+                 ClassTest::TheClass::chargedFun());
   wt = obj.the_class().discharging().wait(1);
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
-                 Test::TheClass::dischargedFun());
+                 ClassTest::TheClass::dischargedFun());
 }
