@@ -81,7 +81,7 @@ struct ThrowSException
   template<class Exception>
   void raise(Exception&& exc) const
   {
-    LOGGER_WARN_LOC(logger, "Throw exception " << exc, 
+    LOGGER_INFO_LOC(logger, "Throw exception " << exc, 
                   debug_location);
     throw exc;
   }
