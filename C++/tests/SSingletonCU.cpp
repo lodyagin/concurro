@@ -53,7 +53,7 @@ void test_sautosingleton_raxis()
 
 void test_ssingleton()
 {
-  struct S : public SSingleton<S>
+  struct S : public SSingleton<S, 100>
   {
     S() { complete_construction(); }
     int fun() const { return 133; }
