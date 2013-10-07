@@ -1,15 +1,56 @@
 #include "REvent.h"
 #include "CUnit.h"
 #include "RThread.h"
-#include "state_objects.h"
 #include "tests.h"
 #include <string>
 #include <thread>
+
+namespace curr {
+namespace tests {
+namespace REventCU {
+
+#include "state_objects.h"
+
+DEFINE_AXIS_NS(
+  TestAxis,
+  {"s1", "s2", "s3", "s4", "s5"},
+  { {"s1", "s2"},
+    {"s2", "s3"},
+    {"s2", "s4"},
+    {"s3", "s5"},
+    {"s4", "s5"}}
+  );
+
+DEFINE_AXIS_NS(
+  DerivedAxis,
+  {"q1"},
+  { {"s4", "s1"}, {"s5", "q1"}, {"q1", "s3"},
+                                {"s3", "s2"}}
+  );
+
+DEFINE_STATES(TestAxis);
+
+DEFINE_STATE_CONST(TestObject, State, s1);
+DEFINE_STATE_CONST(TestObject, State, s2);
+DEFINE_STATE_CONST(TestObject, State, s3);
+DEFINE_STATE_CONST(TestObject, State, s4);
+DEFINE_STATE_CONST(TestObject, State, s5);
+
+DEFINE_STATES(DerivedAxis);
+
+DEFINE_STATE_CONST(DerivedObject, State, q1);
+DEFINE_STATE_CONST(SplittedStateObject, State, s1);
+DEFINE_STATE_CONST(SplittedStateObject, State, q1);
+
 
 static void test_arrival_event();
 static void test_transitional_event();
 void test_inheritance();
 void test_splitting();
+
+}}}
+
+using namespace curr::tests::REventCU;
 
 CU_TestInfo REventTests[] = {
   {"an arrival event test",
@@ -33,13 +74,17 @@ int REventCUClean()
   return 0;
 }
 
+namespace curr {
+namespace tests {
+namespace REventCU {
+
 typedef RThread<std::thread> RT;
 
 static const unsigned int ms100 = 100;
 
 DECLARE_AXIS(CDAxis, StateAxis);
 
-DEFINE_AXIS(
+DEFINE_AXIS_NS(
   CDAxis,
   {"charged", "discharged"},
   {{"charged", "discharged"}, {"discharged", "charged"}}
@@ -294,5 +339,7 @@ void test_splitting()
   CU_ASSERT_TRUE_FATAL(derived.is_s2().wait(TAU));
 }
 
-
+}
+}
+}
 

@@ -1,8 +1,6 @@
 #ifndef SOUPTCP_TESTS_STATE_OBJECTS_H_
 #define SOUPTCP_TESTS_STATE_OBJECTS_H_
 
-#include "CUnit.h"
-
 using namespace curr;
 
 DECLARE_AXIS(TestAxis, StateAxis);
