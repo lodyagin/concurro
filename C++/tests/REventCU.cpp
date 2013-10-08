@@ -121,7 +121,7 @@ public:
       return CompoundEvent();
     }
 
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,

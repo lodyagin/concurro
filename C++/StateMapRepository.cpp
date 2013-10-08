@@ -20,32 +20,26 @@
   Public License along with this program.  If not, see
   <http://www.gnu.org/licenses/>.
 */
-
 /**
  * @file
  *
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_AUTOREPOSITORY_HPP_
-#define CONCURRO_AUTOREPOSITORY_HPP_
-
-#include "AutoRepository.h"
-#include "SSingleton.hpp"
+#include "StateMapRepository.h"
 
 namespace curr {
 
-#if 0
-template<class Object, class ObjectId>
-typename AutoRepository<Object, ObjectId>::RepI&
-AutoRepository<Object, ObjectId>
-//
-::instance()
+StateMapRepository& StateMapRepository::instance()
 {
-  return *Singleton::instance().rep;
+  typedef StateMapRepository T;
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
 }
-#endif
 
-};
+}
 
-#endif
+

@@ -123,15 +123,7 @@ public:
        "replace_object is not implemented for threads.");
   }
 
-  static RThreadRepository& instance()
-  {
-    typedef RThreadRepository T;
-    static std::once_flag of;
-    static T* instance = nullptr;
-    std::call_once(of, [](){ instance = new T(); });
-    assert(instance);
-    return *instance;
-  }
+  static RThreadRepository& instance();
 
 protected:
   int wait_m;

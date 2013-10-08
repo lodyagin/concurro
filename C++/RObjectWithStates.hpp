@@ -40,7 +40,7 @@ template<class Axis>
 RObjectWithStates<Axis>
 //
 ::RObjectWithStates(const RObjectWithStates& obj)
-: RObjectWithStatesBase(obj),
+: StateListener(obj),
   currentState(obj.currentState.load())
 {}
 
@@ -48,7 +48,11 @@ template<class Axis>
 RObjectWithStates<Axis>
 //
 ::RObjectWithStates(RObjectWithStates&& obj)
-: RObjectWithStatesBase(std::move(obj)),
+#if 0
+  : StateListener(std::move(obj)),
+#else
+  : ObjectWithStatesInterface<Axis>(std::move(obj)),
+#endif
   currentState(obj.currentState.load())
 {}
 
@@ -57,8 +61,8 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
 //
 ::operator=(const RObjectWithStates& obj)
 {
-  RObjectWithStatesBase::operator=
-    (static_cast<const RObjectWithStatesBase&>(obj));
+  StateListener::operator=
+    (static_cast<const StateListener&>(obj));
   currentState = obj.currentState.load();
   return *this;
 }
@@ -68,8 +72,8 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
 //
 ::operator=(RObjectWithStates&& obj)
 {
-  RObjectWithStatesBase::operator=
-    (static_cast<RObjectWithStatesBase&&>
+  StateListener::operator=
+    (static_cast<StateListener&&>
      (std::move(obj)));
   currentState = obj.currentState.load();
   return *this;
@@ -78,16 +82,15 @@ RObjectWithStates<Axis>& RObjectWithStates<Axis>
 template<class Axis>
 void RObjectWithStates<Axis>
 //
-::state_changed
+::state_changed_impl
   (StateAxis& ax, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
    const UniversalState& new_state)
 {
-  if (is_same_axis<Axis>(ax))
+  if(is_same_axis<Axis>(ax))
   {
-    RObjectWithStatesBase::state_changed
-      (ax, state_ax, object, new_state);
+    //TODO move somewhere (StateTransmitter?)
     if (mcw)
       mcw->call(this, object, state_ax, new_state);
   }
@@ -149,6 +152,24 @@ CompoundEvent RObjectWithEvents<Axis>
   else 
     return CompoundEvent(it->second);
 #endif
+}
+
+template<class Axis>
+void StateTransmitter<Axis>
+::state_changed_impl
+  (StateAxis& ax, 
+   const StateAxis& state_ax,     
+   AbstractObjectWithStates* object,
+   const UniversalState& new_state)
+{
+  // A guard
+  is_frozen = true;
+  if (is_changing) 
+	 THROW_PROGRAM_ERROR;
+
+  for (auto sub : subscribers) 
+    (sub.first)->state_changed
+      (*sub.second, state_ax, object, new_state);
 }
 
 template<class Axis>

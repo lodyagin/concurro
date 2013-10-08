@@ -61,7 +61,7 @@ RObjectWithThreads<Object>
 
 template<class Object>
 void RObjectWithThreads<Object>
-::state_changed
+::state_changed_impl
   (StateAxis& ax, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
@@ -85,7 +85,7 @@ void RObjectWithThreads<Object>
       th->start();
     }
   }
-  RConstructibleObject::state_changed
+  ConstructibleObject::state_changed
     (ax, state_ax, object, new_state);
 }
 

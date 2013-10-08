@@ -119,7 +119,7 @@ RSingleSocketConnection::~RSingleSocketConnection()
   socket_rep->delete_object(socket, true);
 }
 
-void RSingleSocketConnection::state_changed
+void RSingleSocketConnection::state_changed_impl
   (StateAxis&, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,

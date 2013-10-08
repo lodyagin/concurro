@@ -31,25 +31,36 @@
 
 namespace curr {
 
-RObjectWithStatesBase::RObjectWithStatesBase()
+void StateListener
+::state_changed
+  (StateAxis& ax, 
+   const StateAxis& state_ax,     
+   AbstractObjectWithStates* object,
+   const UniversalState& new_state)
+{
+  ax.state_changed
+    (this, object, state_ax, new_state);
+}
+
+StateTransmitterBase::StateTransmitterBase()
   : is_frozen(false), is_changing(false)
 {}
 
-RObjectWithStatesBase
-::RObjectWithStatesBase(RObjectWithStatesBase&& o)
+StateTransmitterBase
+::StateTransmitterBase(StateTransmitterBase&& o)
 {
   //<NB> no parent
   *this = std::move(o);
 }
 
-RObjectWithStatesBase::~RObjectWithStatesBase()
+StateTransmitterBase::~StateTransmitterBase()
 {
   for (auto ce : subscribers_terminals)
 	 ce.wait();
 }
 
-RObjectWithStatesBase& RObjectWithStatesBase
-::operator=(RObjectWithStatesBase&& o)
+StateTransmitterBase& StateTransmitterBase
+::operator=(StateTransmitterBase&& o)
 {
   SCHECK(o.is_frozen);
   is_frozen = true;
@@ -60,11 +71,11 @@ RObjectWithStatesBase& RObjectWithStatesBase
   return *this;
 }
 
-void RObjectWithStatesBase
+void StateTransmitterBase
 ::register_subscriber
-  (AbstractObjectWithEvents* sub,
+  (StateListener* sub,
    StateAxis* ax
-  )
+   )
 {
   // A guard
   is_changing = true;
@@ -76,28 +87,12 @@ void RObjectWithStatesBase
   assert(sub);
   subscribers.insert(std::make_pair(sub, ax));
   subscribers_terminals.insert
-	 (std::move(sub->is_terminal_state()));
+    (std::move
+     (dynamic_cast<AbstractObjectWithEvents*>(sub)
+      ->is_terminal_state()));
   assert(subscribers_terminals.size() <= 
 			subscribers.size());
   is_changing = false;
-}
-
-void RObjectWithStatesBase
-::state_changed
-  (StateAxis& ax, 
-   const StateAxis& state_ax,     
-   AbstractObjectWithStates* object,
-   const UniversalState& new_state)
-{
-  // A guard
-  is_frozen = true;
-  if (is_changing) 
-	 THROW_PROGRAM_ERROR;
-
-  for (auto sub : subscribers) 
-    dynamic_cast<AbstractObjectWithStates*>
-      (sub.first)->state_changed
-        (*sub.second, state_ax, object, new_state);
 }
 
 }

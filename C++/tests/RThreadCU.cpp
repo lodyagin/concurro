@@ -120,13 +120,14 @@ public:
     return SFORMAT("T1:" << universal_object_id);
   }
 
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override
   {
-    ax.state_changed(this, object, state_ax, new_state);
+    RT::state_changed_impl
+      (ax, state_ax, object, new_state);
   }
 
   std::atomic<uint32_t>& 

@@ -75,15 +75,15 @@ public:
 
   std::string get_state_name(uint32_t state) const;
 
-  static StateMapRepository& instance()
-  {
+  static StateMapRepository& instance();
+/*  {
     typedef StateMapRepository T;
     static std::once_flag of;
     static T* instance = nullptr;
     std::call_once(of, [](){ instance = new T(); });
     assert(instance);
     return *instance;
-  }
+    }*/
 
 protected:
   //! It is incremented in a StateMap constructor.

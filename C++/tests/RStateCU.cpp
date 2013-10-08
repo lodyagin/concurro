@@ -368,13 +368,13 @@ public:
 
   C1() : RObjectWithEvents<A1>(aState) {}
 
-  void state_changed
+  void state_changed_impl
   (StateAxis& ax, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
    const UniversalState& new_state) override
     {
-      RObjectWithEvents<A1>::state_changed
+      RObjectWithEvents<A1>::state_changed_impl
         (ax, state_ax, object, new_state);
       c1_cnt++;
     }
@@ -406,15 +406,15 @@ public:
       RObjectWithEvents<A2>(a2) 
   {}
 
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override
   {
-    RObjectWithEvents<A1>::state_changed
+    RObjectWithEvents<A1>::state_changed_impl
       (ax, state_ax, object, new_state);
-    RObjectWithEvents<A2>::state_changed
+    RObjectWithEvents<A2>::state_changed_impl
       (ax, state_ax, object, new_state);
     c2_cnt++;
     if (is_same_axis<A1>(ax))
@@ -474,7 +474,7 @@ public:
     RStateSplitter::init();
   }
 
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
@@ -482,7 +482,7 @@ public:
   {
 #if 0
       // it is pure virtual
-      RStateSplitter<A3, A1>::state_changed
+      RStateSplitter<A3, A1>::state_changed_impl
         (ax, state_ax, object, new_state);
 #endif
       if (is_same_axis<A3>(ax))
@@ -523,7 +523,7 @@ public:
     RStateSplitter::init();
   }
 
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
@@ -598,7 +598,7 @@ public:
     RStateSplitter::init();
   }
 
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
@@ -658,7 +658,7 @@ DEFINE_STATE_CONST(D2, S, d);
 class DD : public D1, public D2
 {
 public:
-  void state_changed
+  void state_changed_impl
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,

@@ -88,7 +88,8 @@ public:
 #if 1 
     // SSingleton version
     TheClass()
-      : is_charged(this, chargedFun()),
+      : TestParent::TheClass(dischargedFun()),
+        is_charged(this, chargedFun()),
         is_discharged(this, dischargedFun()),
         charging(this, dischargedFun(), chargedFun()),
         discharging(this, chargedFun(), dischargedFun()) 

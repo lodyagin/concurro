@@ -144,5 +144,16 @@ void RThreadRepository<Thread>
   }
 }
 
+template<class Thread>
+RThreadRepository<Thread>& RThreadRepository<Thread>::instance()
+{
+  typedef RThreadRepository T;
+  static std::once_flag of;
+  static T* instance = nullptr;
+  std::call_once(of, [](){ instance = new T(); });
+  assert(instance);
+  return *instance;
+}
+
 }
 #endif

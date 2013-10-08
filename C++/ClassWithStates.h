@@ -30,7 +30,7 @@
 #ifndef CONCURRO_CLASSWITHSTATES_H_
 #define CONCURRO_CLASSWITHSTATES_H_
 
-#include "ObjectWithStatesInterface.h"
+#include "RObjectWithStates.h"
 
 namespace curr {
 
@@ -75,10 +75,14 @@ protected:
    * structure compound from separate members - classes.
    */
   class TheClass
-    : public ObjectWithStatesInterface<ClassAxis>
+    : public RObjectWithStates<ClassAxis>
   {
   public:
-    void state_changed
+    TheClass(const RState<ClassAxis>& initial_state)
+      : RObjectWithStates<ClassAxis>(initial_state)
+    {}
+
+    void state_changed_impl
       (StateAxis& ax, 
        const StateAxis& state_ax,     
        AbstractObjectWithStates* object,
@@ -116,6 +120,10 @@ protected:
       public ObjectWithEventsInterface<ClassAxis>
   {
   public:
+    TheClass(const RState<ClassAxis>& initial_state)
+      : Parent::TheClass(initial_state)
+    {}
+
     CompoundEvent create_event
      (const UniversalEvent&) const override;
 

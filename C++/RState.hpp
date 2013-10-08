@@ -148,7 +148,7 @@ void RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed
+  dynamic_cast<StateListener&>(obj).state_changed
     (Axis2::self(), Axis2::self(), &obj, to);
 }
 
@@ -193,7 +193,7 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed
+  dynamic_cast<StateListener&>(obj).state_changed
     (Axis2::self(), Axis2::self(), &obj, to);
 
   return true;
@@ -244,7 +244,7 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed
+  dynamic_cast<StateListener&>(obj).state_changed
     (Axis2::self(), Axis2::self(), &obj, to);
 
   return true;
@@ -303,7 +303,7 @@ auto RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed
+  dynamic_cast<StateListener&>(obj).state_changed
     (Axis2::self(), Axis2::self(), &obj, to);
 
   return ifrom;
@@ -356,7 +356,7 @@ bool RMixedAxis<Axis, Axis2>
     p->update_events(Axis2::self(), trans_id, to);
   }
 
-  obj.state_changed
+  dynamic_cast<StateListener&>(obj).state_changed
     (Axis2::self(), Axis2::self(), &obj, to);
 
   return true;

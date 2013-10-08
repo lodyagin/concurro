@@ -149,7 +149,7 @@ public:
     }
 
   private:
-    TheClass() {}
+    TheClass() : Parent::TheClass(not_existFun()) {}
     TheClass(const TheClass&) = delete;
     ~TheClass() {}
     TheClass& operator=(const TheClass&) = delete;

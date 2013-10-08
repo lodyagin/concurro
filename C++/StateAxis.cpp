@@ -56,7 +56,7 @@ void StateAxis::update_events
 }
 
 void StateAxis::state_changed
-  (AbstractObjectWithStates* subscriber,
+  (StateListener* subscriber,
    AbstractObjectWithStates* publisher,
    const StateAxis& state_ax,
    const UniversalState& new_state)

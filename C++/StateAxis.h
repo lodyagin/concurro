@@ -47,6 +47,8 @@ class AbstractObjectWithEvents;
 class StateMap;
 class UniversalState;
 
+class StateListener;
+
 //! A state space axis abstract base. Real axises will be
 //! inherited.
 struct StateAxis 
@@ -65,7 +67,7 @@ struct StateAxis
    uint32_t to);
 
   virtual void state_changed
-  (AbstractObjectWithStates* subscriber,
+  (StateListener* subscriber,
    AbstractObjectWithStates* publisher,
    const StateAxis& state_ax,
    const UniversalState& new_state);
@@ -119,7 +121,7 @@ struct axis : public parent \
      uint32_t to) override;                     \
   \
   void state_changed \
-    (curr::AbstractObjectWithStates* subscriber,   \
+    (curr::StateListener* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \
      const curr::StateAxis& state_ax, \
      const curr::UniversalState& new_state) override;    \
