@@ -40,8 +40,8 @@ template<class Thread, class... Args>
 Thread* RThread<std::thread>::create(Args&&... args)
 {
   return dynamic_cast<Thread*>
-	 (RThreadRepository<RThread<std::thread>>::instance()
-	  . create_thread(typename Thread::Par(args...)));
+   (RThreadRepository<RThread<std::thread>>::instance()
+    . create_thread(typename Thread::Par(args...)));
 }
 
 }
