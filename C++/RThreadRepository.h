@@ -61,7 +61,7 @@ public:
 };
 
 template<class Thread>
-class RThreadRepository final
+class RThreadRepository
   : public virtual RThreadFactory,
     public Repository<
       Thread,

@@ -44,7 +44,7 @@ namespace curr {
 #define SSHUTDOWN  SShutdown::instance()
 
 
-class SShutdown final : public SSingleton<SShutdown>
+class SShutdown : public SSingleton<SShutdown>
 {
 public:
 

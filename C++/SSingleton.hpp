@@ -143,10 +143,11 @@ SSingleton<T, wait_m>::~SSingleton()
 template<class T, int wait_m>
 void SSingleton<T, wait_m>::complete_construction()
 {
-  _instance = dynamic_cast<T*>(this);
-  SCHECK(_instance);
-  ObjParent::complete_construction();
-  is_complete().set();
+  if ((_instance = dynamic_cast<T*>(this))) 
+  { // wait the call from T::T
+    ObjParent::complete_construction();
+    is_complete().set();
+  }
 }
 
 template<class T, int wait_m>

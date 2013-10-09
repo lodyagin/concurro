@@ -49,7 +49,7 @@ namespace curr {
  * @ingroup repositories
  */
 template<class Object, class ObjectId>
-class AutoRepository final
+class AutoRepository
   : public SAutoSingleton
       <AutoRepository<Object, ObjectId>>,
     public virtual RepositoryInterface

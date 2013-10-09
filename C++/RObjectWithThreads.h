@@ -62,6 +62,7 @@ template<class Object>
 class RObjectWithThreads : public ConstructibleObject
 {
 public:
+  using Parent = ConstructibleObject;
   using ThreadPar = ThreadOfObjectPar<Object>;
 
   //! Create the object and remember thread initialization
@@ -79,6 +80,12 @@ public:
   //! A deleted assignment.
   RObjectWithThreads& operator=
     (const RObjectWithThreads&) = delete;
+
+  void complete_construction() override
+  {
+    if (dynamic_cast<Object*>(this))
+      Parent::complete_construction();
+  }
 
 protected:
   void state_changed
