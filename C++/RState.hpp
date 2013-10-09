@@ -40,8 +40,6 @@
 
 namespace curr {
 
-//#define LOG_IN_OBJECT 1
-
 template<class Axis>
 void StateMapInstance<Axis>::init()
 {
@@ -110,11 +108,6 @@ void RMixedAxis<Axis, Axis2>
   uint32_t from;
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
-#if LOG_IN_OBJECT
-  auto logger = obj.logger();
-#else
-  auto logger = Logger<LOG::States>::logger();
-#endif
   // <NB> get the logger before possible destruction of
   // obj (i.e. as a result of move to a terminal state)
 
@@ -125,18 +118,22 @@ void RMixedAxis<Axis, Axis2>
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
-
-  LOGGER_DEBUG(logger, 
-               "thread " 
-               << RThread<std::thread>::current_pretty_id()
-               << ">\t object " << obj.object_name()
-               << ">\t axis " << typeid(Axis).name()
-               << "/" << typeid(Axis2).name()
-               << ">\tmove_to:\t "
-               << UniversalState(from).name()
-               << std::hex << " (0x" << from
-               << ") -> " << to.name() << " (0x" 
-               << (uint32_t) to << ")");
+  
+  if (!std::is_same<Axis, ConstructibleAxis>::value) 
+    // prevent a deadlock
+  {
+    LOGGER_DEBUG(obj.logger(), 
+                 "thread " 
+                 << RThread<std::thread>::current_pretty_id()
+                 << ">\t object " << obj.object_name()
+                 << ">\t axis " << typeid(Axis).name()
+                 << "/" << typeid(Axis2).name()
+                 << ">\tmove_to:\t "
+                 << UniversalState(from).name()
+                 << std::hex << " (0x" << from
+                 << ") -> " << to.name() << " (0x" 
+                 << (uint32_t) to << ")");
+  }
 
   if (auto p = 
       dynamic_cast<ObjectWithEventsInterface<Axis2>*>

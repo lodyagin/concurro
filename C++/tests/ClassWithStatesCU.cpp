@@ -119,7 +119,15 @@ public:
 #endif
   };
 
-  static TheClass& the_class()
+  typename ClassWithStates <
+    ClassWithStatesCUAxis, 
+    test_class_initial_state>
+  ::TheClass& the_class() const override
+  {
+    return s_the_class();
+  }
+
+  static TheClass& s_the_class()
   {
     return TheClass::instance();
   }
@@ -139,7 +147,7 @@ public:
 
 #define TEST_OBJ_STATE(obj, axis, state)        \
   {                                             \
-    RState<axis> st(ClassTest::the_class());         \
+    RState<axis> st(ClassTest::s_the_class());         \
     CU_ASSERT_EQUAL_FATAL(st, state);           \
   } while(0)
 
@@ -152,28 +160,28 @@ static void test_arrival_event()
   {
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), ClassTest::TheClass::chargedFun());
+      (obj.s_the_class(), ClassTest::TheClass::chargedFun());
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), ClassTest::TheClass::dischargedFun());
+      (obj.s_the_class(), ClassTest::TheClass::dischargedFun());
   });
 
-  wt = obj.the_class().is_charged().wait(1);
+  wt = obj.s_the_class().is_charged().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
-  TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
+  TEST_OBJ_STATE(obj.s_the_class(), ClassWithStatesCUAxis, 
                  ClassTest::TheClass::dischargedFun());
-  wt = obj.the_class().is_discharged().wait();
+  wt = obj.s_the_class().is_discharged().wait();
   CU_ASSERT_TRUE_FATAL(wt);
-  TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
+  TEST_OBJ_STATE(obj.s_the_class(), ClassWithStatesCUAxis, 
                  ClassTest::TheClass::chargedFun());
 
-  wt = obj.the_class().is_discharged().wait(1);
+  wt = obj.s_the_class().is_discharged().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
-  TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
+  TEST_OBJ_STATE(obj.s_the_class(), ClassWithStatesCUAxis, 
                  ClassTest::TheClass::chargedFun());
-  wt = obj.the_class().is_discharged().wait();
+  wt = obj.s_the_class().is_discharged().wait();
   CU_ASSERT_TRUE_FATAL(wt);
-  TEST_OBJ_STATE(obj.the_class(), ClassWithStatesCUAxis, 
+  TEST_OBJ_STATE(obj.s_the_class(), ClassWithStatesCUAxis, 
                  ClassTest::TheClass::dischargedFun());
 }
 
@@ -186,26 +194,26 @@ static void test_transitional_event()
   {
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), ClassTest::TheClass::chargedFun());
+      (obj.s_the_class(), ClassTest::TheClass::chargedFun());
     USLEEP(100);
     RAxis<ClassWithStatesCUAxis>::move_to
-      (obj.the_class(), ClassTest::TheClass::dischargedFun());
+      (obj.s_the_class(), ClassTest::TheClass::dischargedFun());
   });
 
-  wt = obj.the_class().charging().wait(1);
+  wt = obj.s_the_class().charging().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
                  ClassTest::TheClass::dischargedFun());
-  wt = obj.the_class().charging().wait();
+  wt = obj.s_the_class().charging().wait();
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
                  ClassTest::TheClass::chargedFun());
 
-  wt = obj.the_class().discharging().wait(1);
+  wt = obj.s_the_class().discharging().wait(1);
   CU_ASSERT_FALSE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
                  ClassTest::TheClass::chargedFun());
-  wt = obj.the_class().discharging().wait(1);
+  wt = obj.s_the_class().discharging().wait(1);
   CU_ASSERT_TRUE_FATAL(wt);
   TEST_OBJ_STATE(obj, ClassWithStatesCUAxis, 
                  ClassTest::TheClass::dischargedFun());

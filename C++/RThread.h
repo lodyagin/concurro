@@ -190,7 +190,7 @@ public:
 protected:
   struct LogParams {
     static bool current;
-  } log_params;
+  } log_params_;
 
   bool destructor_delegate_is_called;
 

@@ -59,7 +59,7 @@ public:
  * An object which owns one or several threads.
  */
 template<class Object>
-class RObjectWithThreads : public RConstructibleObject
+class RObjectWithThreads : public ConstructibleObject
 {
 public:
   using ThreadPar = ThreadOfObjectPar<Object>;

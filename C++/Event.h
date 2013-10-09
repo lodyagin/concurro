@@ -78,7 +78,7 @@ public:
 class EventInterface : public ObjectWithLogging
 {
 public:
-  struct LogParams {
+  mutable struct LogParams {
     bool set, reset;
     ObjectWithLogging* log_obj;
 
@@ -87,9 +87,11 @@ public:
     {
       assert(log_obj);
     }
-  } log_params;
+  } log_params_;
+
+  LogParams& log_params() const { return log_params_; }
   
-  EventInterface() : log_params(this) {}
+  EventInterface() : log_params_(this) {}
   virtual ~EventInterface() {}
 
   //! Wait for event or time in msecs. 
@@ -309,7 +311,7 @@ public:
 
   EvtBase::LogParams& log_params() const
   {
-    return evt_ptr->log_params;
+    return evt_ptr->log_params();
   }
 
 protected:

@@ -74,8 +74,6 @@ public:
 
 static void test_connection(bool do_abort)
 {
-  typedef Logger<LOG::Root> log;
-
   RConnectionRepository con_rep
     ("RConnectionCU::test_connection::sr", 10, 
      &RThreadRepository<RThread<std::thread>>::instance()

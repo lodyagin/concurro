@@ -179,8 +179,8 @@ bool SSingleton<T, wait_m>::isConstructed()
 template<class T, int wait_m>
 T& SAutoSingleton<T, wait_m>::instance()
 {
-  if (!state_is(SSingleton<T, wait_m>::the_class(), 
-                SSingleton<T, wait_m>::TheClass::exist_oneFun()))
+  if (!state_is(SSingleton<T, wait_m>::s_the_class(), 
+       SSingleton<T, wait_m>::TheClass::exist_oneFun()))
   {
     try 
     { 

@@ -35,7 +35,6 @@
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/spi/location/locationinfo.h>
-//#include "SSingleton.h"
 #include <string>
 #include <typeinfo>
 
@@ -191,8 +190,8 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {										\
-	 if (LOG4CXX_UNLIKELY((log)->isDebugEnabled())) {							\
+#define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {                    \
+    if (LOG4CXX_UNLIKELY((log) && (log)->isDebugEnabled())) {                    \
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
 		(log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); }} while (0)
@@ -202,7 +201,7 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
 #define LOGGER_TRACE_LOC(log, stream_expr, loc) do {										\
-	 if (LOG4CXX_UNLIKELY((log)->isTraceEnabled())) {						\
+	 if (LOG4CXX_UNLIKELY((log) && (log)->isTraceEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
 		(log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), loc); }} while (0)
@@ -212,7 +211,7 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
 #define LOGGER_INFO_LOC(log, stream_expr, loc) do {											\
-	 if (LOG4CXX_UNLIKELY((log)->isInfoEnabled())) {						\
+	 if (LOG4CXX_UNLIKELY((log) && (log)->isInfoEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
 		(log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), loc); }} while (0)
@@ -222,7 +221,7 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
 #define LOGGER_WARN_LOC(log, stream_expr, loc) do {											\
-	 if (LOG4CXX_UNLIKELY((log)->isWarnEnabled())) {						\
+	 if (LOG4CXX_UNLIKELY((log) && (log)->isWarnEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
 		(log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), loc); }} while (0)
@@ -232,7 +231,7 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
 #define LOGGER_ERROR_LOC(log, stream_expr, loc) do {										\
-	 if (LOG4CXX_UNLIKELY((log)->isErrorEnabled())) {						\
+	 if (LOG4CXX_UNLIKELY((log) && (log)->isErrorEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
 		(log)->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), loc); }} while (0)
@@ -242,7 +241,7 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
 #define LOGGER_FATAL_LOC(log, stream_expr, loc) do {										\
-	 if (LOG4CXX_UNLIKELY((log)->isFatalEnabled())) {						\
+	 if (LOG4CXX_UNLIKELY((log) && (log)->isFatalEnabled())) {						\
 		::log4cxx::helpers::MessageBuffer oss_;									\
 		{ oss_ << stream_expr ; }																	\
 		(log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), loc); }} while (0)
@@ -252,7 +251,7 @@ inline LogBase* Logger<LOG::Connections>::init_base
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_PLACE_LOC(log, place, stream_expr, loc) do {			\
-  if (LOG4CXX_UNLIKELY(log_params.place \
+  if (LOG4CXX_UNLIKELY((log) && this->log_params().place \
 	                    && (log)->isDebugEnabled())) { 	\
 		::log4cxx::helpers::MessageBuffer oss_;		 	\
 		{ oss_ << stream_expr ; }							  	\

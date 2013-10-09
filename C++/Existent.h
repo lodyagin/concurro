@@ -134,6 +134,12 @@ public:
       return CompoundEvent();
     }
 
+    log4cxx::LoggerPtr logger() const override
+    {
+      return nullptr; // disable logging to prevent
+                      // a deadlock
+    }
+
     static TheClass* instance() 
     { 
       static std::once_flag of;
@@ -172,10 +178,18 @@ public:
   static unsigned get_obj_count()
   { return obj_count; }
 
-  //! The class state.
-  static TheClass& the_class()
+  static TheClass& s_the_class()
   {
     return *TheClass::instance();
+  }
+
+  typename ClassWithStates <
+    ExistenceAxis, 
+    existent_class_initial_state,
+    StateHook>
+  ::TheClass& the_class() const override
+  {
+    return s_the_class();
   }
 
 protected:

@@ -85,7 +85,7 @@ void RObjectWithThreads<Object>
       th->start();
     }
   }
-  RConstructibleObject::state_changed
+  ConstructibleObject::state_changed
     (ax, state_ax, object, new_state);
 }
 

@@ -99,11 +99,7 @@ class StateMap;
 template<class Axis, class DerivedAxis>
   constexpr bool is_ancestor()
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress"
-  return dynamic_cast<const Axis*>(&DerivedAxis::self_) 
-    != nullptr;
-#pragma GCC diagnostic pop
+  return std::is_base_of<Axis, DerivedAxis>::value;
 }
 
 #define STATE_MAP_MASK 0x7fff0000

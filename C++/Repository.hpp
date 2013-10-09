@@ -229,10 +229,9 @@ template <
   class Obj, class Par, template<class...> class ObjMap, 
   class ObjId
 >
-template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::for_each (Op f)
+::for_each(std::function<void(Obj&)> f)
 {
   RLOCK(objectsM);
 
@@ -246,10 +245,9 @@ template <
   class Obj, class Par, template<class...> class ObjMap, 
   class ObjId
 >
-template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::for_each (Op f) const
+::for_each(std::function<void(const Obj&)> f) const
 {
   RLOCK(objectsM);
 

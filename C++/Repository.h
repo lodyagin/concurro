@@ -44,6 +44,7 @@
 #include <unordered_map>
 #include <assert.h>
 #include <atomic>
+#include <functional>
 
 namespace curr {
 
@@ -62,6 +63,15 @@ public:
     : curr::SException(
       "Invalid parameters were defined for creation "
       "of a repository object") {}
+};
+
+//! Tune a logging
+struct RepositoryLogParams
+{
+  RepositoryLogParams()
+  : get_object_by_id(true) {}
+
+  bool get_object_by_id;
 };
 
 /**
@@ -91,6 +101,14 @@ public:
 
   //! Return parameterized type infos
   virtual Traits get_traits() const = 0;
+
+  RepositoryLogParams& log_params() const
+  {
+    return log_params_;
+  }
+
+protected:
+  mutable RepositoryLogParams log_params_;
 };
 
 /** It defines an interface for RepositoryBase but
@@ -175,6 +193,13 @@ public:
   //! \exception NoSuchId
   virtual Obj* replace_object 
     (ObjId id, const Par& param, bool freeMemory) = 0;
+
+  //! It calls f(Obj&) for each object in the repository
+  virtual void for_each
+    (std::function<void(Obj&)> f) = 0;
+
+  virtual void for_each
+    (std::function<void(const Obj&)> f) const = 0;
 };
 
 //! It is used for object creation as an argument to
@@ -211,15 +236,6 @@ template<class Obj, class ObjId>
 {
 public:
   typedef std::map<ObjId, Obj*> Map;
-};
-
-//! Tune a logging
-struct RepositoryLogParams
-{
-RepositoryLogParams()
-: get_object_by_id(true) {}
-
-  bool get_object_by_id;
 };
 
 /**
@@ -266,14 +282,11 @@ public:
   Out get_object_ids_by_state
     (Out res, const State& state) const;
 
-  //! It calls f(Obj&) for each object in the repository
-  template<class Op>
-  void for_each (Op f);
+  void for_each
+    (std::function<void(Obj&)> f) override;
 
-  //! It calls f(const Obj&) for each object in the
-  //! repository
-  template<class Op>
-  void for_each (Op f) const;
+  void for_each
+    (std::function<void(const Obj&)> f) const override;
 
   class Destroy 
     : public std::unary_function<int, void>
@@ -301,8 +314,6 @@ protected:
   protected:
     Obj* t;
   };
-
-  RepositoryLogParams log_params;
 
   RMutex objectsM;
   typename RepositoryMapType<Obj, ObjId, ObjMap>

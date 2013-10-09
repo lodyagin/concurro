@@ -71,9 +71,6 @@ DEFINE_STATE_CONST(RWindow, State, welded);
 DEFINE_STATES(ConnectedWindowAxis);
 
 
-template class RConnectedWindowRepository<SOCKET>;
-
-
 RWindow::RWindow()
 : RObjectWithEvents<WindowAxis>(readyState),
   CONSTRUCT_EVENT(filled),
