@@ -90,8 +90,7 @@ RSingleSocketConnection::RSingleSocketConnection
     socket(dynamic_cast<InSocket*>(par.socket)),
     cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
     thread(dynamic_cast<SocketThread*>
-           (RThreadRepository<RThread<std::thread>>
-            ::instance().create_thread
+           (StdThreadRepository::instance().create_thread
             (*par.get_thread_par(this)))),
     in_win(RConnectedWindowRepository<SOCKET>::instance()
            .create_object(*par.get_window_par(cli_sock))),

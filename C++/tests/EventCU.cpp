@@ -237,6 +237,7 @@ void test_wait_for_any()
 }
 
 #undef S
+typedef RThread<std::thread> RT;
 
 void test_event_2threads()
 {

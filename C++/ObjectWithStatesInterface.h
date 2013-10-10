@@ -222,7 +222,7 @@ current_state(const curr::StateAxis& ax) const override \
 #define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS  \
 MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS    \
 \
-CompoundEvent create_event \
+curr::CompoundEvent create_event                \
 (const curr::UniversalEvent& ue) const override \
 { \
   return create_event(ue); \

@@ -36,9 +36,9 @@
 
 namespace curr {
 
-template<class Thread>
-RThreadRepository<Thread>::RThreadRepository(int w)
-  : Parent(typeid(RThreadRepository<Thread>).name(), 
+template<class Thread, class T>
+RThreadRepository<Thread, T>::RThreadRepository(int w)
+  : Parent(typeid(RThreadRepository<Thread, T>).name(), 
            100 // the value is ignored for std::map
     ), wait_m(w)
 {
@@ -54,8 +54,8 @@ RThreadRepository<Thread>::RThreadRepository(int w)
 }
 
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::stop_subthreads ()
 {
@@ -66,8 +66,8 @@ void RThreadRepository<Thread>
   });
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::wait_subthreads ()
 {
@@ -77,8 +77,8 @@ void RThreadRepository<Thread>
   });
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::cancel_subthreads ()
 {
@@ -88,8 +88,8 @@ void RThreadRepository<Thread>
   });
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::delete_object(Thread* thread, bool freeMemory)
 {
@@ -99,8 +99,8 @@ void RThreadRepository<Thread>
   delete_object_by_id(id, freeMemory);
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::delete_object_by_id (ThreadId id, bool freeMemory)
 {

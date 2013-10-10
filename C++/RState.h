@@ -460,6 +460,9 @@ void wait_and_move
 
 #define S(state) (state ## State)
 
+#define CURR_STATE_DEF(axis, state) \
+  const curr::RState<axis> S(state)(# state);
+
 //! @}
 
 }

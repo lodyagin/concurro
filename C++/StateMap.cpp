@@ -421,7 +421,7 @@ void StateMap::outString (std::ostream& out) const
 StateMap* StateMapRepository::empty_map = nullptr;
 
 StateMap* StateMapRepository
-::get_object_by_id(StateMapId id) const
+::get_object_by_id(const StateMapId& id) const
 {
   if (id != 0)
     return Parent::get_object_by_id(id);

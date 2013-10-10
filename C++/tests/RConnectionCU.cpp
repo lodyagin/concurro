@@ -76,7 +76,7 @@ static void test_connection(bool do_abort)
 {
   RConnectionRepository con_rep
     ("RConnectionCU::test_connection::sr", 10, 
-     &RThreadRepository<RThread<std::thread>>::instance()
+     &StdThreadRepository::instance()
       );
 
   RWindow wc;

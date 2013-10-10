@@ -68,8 +68,7 @@ RSocket<Bases...>
   // TODO make an array holder instead of this
   // durty temporary solution
   {
-    auto rep = dynamic_cast
-      <RThreadRepository<RThread<std::thread>>*>
+    auto rep = dynamic_cast<StdThreadRepository*>
       (this->repository->thread_factory);
     rep->cancel_subthreads();
   }

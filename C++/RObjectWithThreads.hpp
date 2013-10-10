@@ -76,7 +76,7 @@ void RObjectWithThreads<Object>
       par->object = dynamic_cast<Object*>(this);
       SCHECK(par->object);
       threads.push_back(
-        RThreadRepository<RThread<std::thread>>
+        StdThreadRepository
         ::instance().create_thread(*par));
       threads_pars.pop();
     }
@@ -99,7 +99,7 @@ void RObjectWithThreads<Object>
   for (auto& teh : threads_terminals)
     teh.wait();
   for (RThreadBase* th : threads)
-    RThreadRepository<RThread<std::thread>>
+    StdThreadRepository
       ::instance().delete_thread(th);
 
   destructor_delegate_is_called = true;

@@ -49,7 +49,7 @@ namespace curr {
  * @ingroup repositories
  */
 template<class Object, class ObjectId>
-class AutoRepository
+class AutoRepository final
   : public SAutoSingleton
       <AutoRepository<Object, ObjectId>>,
     public virtual RepositoryInterface
@@ -91,18 +91,18 @@ public:
   }
 
   void delete_object_by_id
-    (ObjectId id, bool freeMemory) override
+    (const ObjectId& id, bool freeMemory) override
   {
     rep->delete_object_by_id(id, freeMemory);
   }
 
-  Object* get_object_by_id (ObjectId id) const override
+  Object* get_object_by_id (const ObjectId& id) const override
   {
     return rep->get_object_by_id(id);
   }
 
   Object* replace_object 
-    (ObjectId id, const Par& param, bool freeMemory) 
+    (const ObjectId& id, const Par& param, bool freeMemory) 
     override
   {
     return rep->replace_object(id, param, freeMemory);

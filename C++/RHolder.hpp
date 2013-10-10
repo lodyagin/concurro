@@ -62,11 +62,12 @@ DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State,
 
 #define CURRINT_HOLDER_TEMPL_ template \
 < \
+  class T, \
   class Obj, \
   template <class, int> class Guard, \
   int wait_m \
 >
-#define CURRINT_HOLDER_T_ Obj,Guard,wait_m
+#define CURRINT_HOLDER_T_ T,Obj,Guard,wait_m
 
 
 CURRINT_HOLDER_TEMPL_
@@ -76,7 +77,7 @@ RHolder<CURRINT_HOLDER_T_>
 ::RHolder(const Par& par)
   : RObjectWithStates<HolderAxis>("charged"),
     guarded(AutoRepository<Obj,Id>::instance()
-      . create_object(par))
+      . template create<T>(par))
 {
 }
 
@@ -87,7 +88,7 @@ RHolder<CURRINT_HOLDER_T_>
 ::RHolder(const Id& id)
   : RObjectWithStates<HolderAxis>("charged"),
     guarded(AutoRepository<Obj,Id>::instance()
-      . get_object_by_id(id))
+      . template get_by_id<T>(id))
 {
 }
 

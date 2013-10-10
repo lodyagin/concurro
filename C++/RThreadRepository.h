@@ -60,7 +60,7 @@ public:
     (RThreadBase* thread, bool freeMemory = true) = 0;
 };
 
-template<class Thread>
+template<class Thread, class T>
 class RThreadRepository
   : public virtual RThreadFactory,
     public Repository<
@@ -69,7 +69,7 @@ class RThreadRepository
       std::map, 
       typename Thread::Id
     >,
-    public SAutoSingleton<RThreadRepository<Thread>>
+    public SAutoSingleton<T>
 {
 public:
   typedef Repository <
@@ -133,7 +133,18 @@ protected:
   int wait_m;
 
 private:
-  typedef Logger<RThreadRepository<Thread>> log;
+  typedef Logger<RThreadRepository<Thread, T>> log;
+};
+
+class StdThreadRepository final
+  : public RThreadRepository
+      <RThread<std::thread>, StdThreadRepository> 
+{
+public:
+  StdThreadRepository()
+  {
+    complete_construction();
+  }
 };
 
 //! @}

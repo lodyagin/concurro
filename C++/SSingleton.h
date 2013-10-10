@@ -119,8 +119,9 @@ public:
  */
 template<class T, int wait_m = 1000>
 class SSingleton 
-  : public Existent<T, SingletonStateHook<T, wait_m>>,
-    public ConstructibleObject
+  : public virtual Existent
+      <T, SingletonStateHook<T, wait_m>>,
+    public virtual ConstructibleObject
 {
   friend SingletonStateHook<T, wait_m>;
 public:

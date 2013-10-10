@@ -73,7 +73,7 @@ public:
   
 };
 
-class RSignalRepository
+class RSignalRepository final
   : public Repository<
       RSignalBase, RSignalBase::Par, 
       std::unordered_map, int

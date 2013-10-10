@@ -80,7 +80,7 @@ void test_client_socket_connection_refused()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_refused::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance(),
+     &StdThreadRepository::instance(),
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -105,7 +105,7 @@ void test_client_socket_connection_timed_out()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_timed_out::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance(),
+     &StdThreadRepository::instance(),
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -129,7 +129,7 @@ void test_client_socket_destination_unreachable()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_destination_unreachable::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance(),
+     &StdThreadRepository::instance(),
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -152,7 +152,7 @@ void test_client_socket_connected()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connected::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance(),
+     &StdThreadRepository::instance(),
      1000 //TODO it has not a sence in this case
      );
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
@@ -182,7 +182,7 @@ void test_in_socket_new_msg()
   RSocketRepository sr
     ("RSocketCU::test_in_socket_new_msg::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance(),
+     &StdThreadRepository::instance(),
      1000
       );
   sr.set_connect_timeout_u(3500000);
@@ -238,7 +238,7 @@ void test_out_socket_login()
   RSocketRepository sr
     ("RSocketCU::test_out_socket_login::sr",
      10, 
-     &RThreadRepository<RThread<std::thread>>::instance(),
+     &StdThreadRepository::instance(),
      1000
       );
   sr.set_connect_timeout_u(3500000);

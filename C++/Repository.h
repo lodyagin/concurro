@@ -127,7 +127,7 @@ public:
   class NoSuchId : public SException
   {
   public:
-    NoSuchId (ObjId the_id) 
+    NoSuchId (const ObjId& the_id) 
       : SException (SFORMAT("No object with id [" 
                             << the_id 
                             << "] exists")),
@@ -170,7 +170,7 @@ public:
   //! \exception InvalidObjectParameters something is
   //! wrong with param. 
   virtual Obj* create_object (const Par& param) = 0;
-  
+
   //! Delete obj from the repository. freeMemory means
   //! to call the object desctructor after it.
   virtual void delete_object
@@ -182,9 +182,9 @@ public:
   //!  registration in the repository.
   //! \exception NoSuchId
   virtual void delete_object_by_id 
-    (ObjId id, bool freeMemory) = 0;
+    (const ObjId& id, bool freeMemory) = 0;
 
-  virtual Obj* get_object_by_id (ObjId id) const = 0;
+  virtual Obj* get_object_by_id (const ObjId& id) const = 0;
 
   //! Replace the old object by new one (and create the
   //! new). The old object is deleted.
@@ -192,7 +192,7 @@ public:
   //!   wrong with param.
   //! \exception NoSuchId
   virtual Obj* replace_object 
-    (ObjId id, const Par& param, bool freeMemory) = 0;
+    (const ObjId& id, const Par& param, bool freeMemory) = 0;
 
   //! It calls f(Obj&) for each object in the repository
   virtual void for_each
@@ -200,6 +200,22 @@ public:
 
   virtual void for_each
     (std::function<void(const Obj&)> f) const = 0;
+
+  //! The version of create_object() with internal dynamic
+  //! cast to the type T*.
+  template<class T>
+  T* create(const Par& param)
+  {
+    return dynamic_cast<T*>(create_object(param));
+  }
+
+  //! The version of get_object_by_id() with internal
+  //! dynamic cast to the type T*.
+  template<class T>
+  T* get_by_id(const ObjId& id)
+  {
+    return dynamic_cast<T*>(get_object_by_id(id));
+  }
 };
 
 //! It is used for object creation as an argument to
@@ -266,11 +282,11 @@ public:
 
   Obj* create_object (const Par& param);
   void delete_object(Obj* obj, bool freeMemory);
-  void delete_object_by_id(ObjId id, bool freeMemory);
-  Obj* get_object_by_id (ObjId id) const;
+  void delete_object_by_id(const ObjId& id, bool freeMemory);
+  Obj* get_object_by_id (const ObjId& id) const;
 
   Obj* replace_object 
-    (ObjId id, const Par& param, bool freeMemory);
+    (const ObjId& id, const Par& param, bool freeMemory);
 
   //! return ids of objects selected by a predicate
   template<class Out, class Pred>
@@ -325,11 +341,11 @@ protected:
     (ObjectCreationInfo& oi, const Par&) = 0;
 
   //! Insert new object into objects
-  virtual void insert_object (ObjId, Obj*) = 0;
+  virtual void insert_object (const ObjId&, Obj*) = 0;
   //! Free an object cell. <NB> it is empty in
   //! RepositoryBase to allow (dummy) calls from
   //! destructor.
-  virtual void delete_object_id (ObjId) {}
+  virtual void delete_object_id (const ObjId&) {}
 
 private:
   typedef Logger<RepositoryBase> log;
@@ -407,7 +423,7 @@ protected:
     return this->objects->size () - 1;
   }
 
-  void insert_object (ObjId id, Obj* obj)
+  void insert_object (const ObjId& id, Obj* obj)
   {
     {
       RLOCK(this->objectsM);
@@ -416,7 +432,7 @@ protected:
     obj_count++;
   }
 
-  void delete_object_id (ObjId id)
+  void delete_object_id (const ObjId& id)
   {
     {
       RLOCK(this->objectsM);
@@ -540,14 +556,14 @@ protected:
     return id;
   }
 
-  void insert_object (ObjId id, Obj* obj)
+  void insert_object (const ObjId& id, Obj* obj)
   {
     RLOCK(this->objectsM);
     // will be add new element if id doesn't exists
     (*this->objects)[id] = obj;
   }
 
-  void delete_object_id(ObjId id)
+  void delete_object_id(const ObjId& id)
   {
     assert(this->objects);
     RLOCK(this->objectsM);
@@ -604,14 +620,14 @@ protected:
     return id;
   }
 
-  void insert_object (ObjId id, Obj* obj)
+  void insert_object (const ObjId& id, Obj* obj)
   {
     RLOCK(this->objectsM);
     // will be add new element if id doesn't exists
     (*this->objects)[id] = obj;
   }
 
-  void delete_object_id(ObjId id)
+  void delete_object_id(const ObjId& id)
   {
     assert(this->objects);
     RLOCK(this->objectsM);

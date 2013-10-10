@@ -59,7 +59,8 @@ public:
  * An object which owns one or several threads.
  */
 template<class Object>
-class RObjectWithThreads : public ConstructibleObject
+class RObjectWithThreads 
+  : public virtual ConstructibleObject
 {
 public:
   using Parent = ConstructibleObject;

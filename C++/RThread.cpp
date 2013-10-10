@@ -161,11 +161,11 @@ RThread<std::thread>* RThread<std::thread>
   try
   {
     return dynamic_cast<RThread<std::thread>*>
-      (RThreadRepository<RThread<std::thread>>
+      (StdThreadRepository
        ::instance()
        . get_object_by_id (native_handle));
   }
-  catch (const RThreadRepository<RThread<std::thread>>
+  catch (const StdThreadRepository
          ::NoSuchId&)
   {
     LOG_DEBUG_STATIC_PLACE(log, current, 
@@ -291,7 +291,7 @@ void RThreadBase::_run()
 
 void RThread<std::thread>::remove(bool freeMemory)
 {
-  RThreadRepository<RThread<std::thread>>::instance()
+  StdThreadRepository::instance()
     . delete_thread(this, freeMemory);
 
 }
