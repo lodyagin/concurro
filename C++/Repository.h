@@ -742,6 +742,18 @@ public:
   }
 };
 
+template<class ObjectId>
+class StdIdMemberT : public StdIdMember
+{
+public:
+  const ObjectId id;
+
+  StdIdMemberT(const ObjectCreationInfo& oi)
+    : StdIdMember(oi.objectId),
+      id(fromString<ObjectId>(oi.objectId))
+  {}
+};
+
 //! The simplest form of a derivation
 #define PAR_CREATE_DERIVATION(type, parent, object)     \
   struct Par : public parent::Par                       \
@@ -761,6 +773,8 @@ public:
   { THROW_NOT_IMPLEMENTED; }
 
 #define PAR_DEFAULT_VIRTUAL_MEMBERS(object)     \
+  virtual ~Par() {}                             \
+                                                \
   virtual object* create_derivation             \
   (const curr::ObjectCreationInfo& oi) const    \
   { return new object(oi, *this); }             \
@@ -770,6 +784,8 @@ public:
   { THROW_NOT_IMPLEMENTED; }
 
 #define PAR_DEFAULT_ABSTRACT(object)            \
+  virtual ~Par() {}                             \
+                                                \
   virtual object* create_derivation             \
   (const curr::ObjectCreationInfo& oi) const=0; \
                                                 \
@@ -777,15 +793,15 @@ public:
   (const object*) const                         \
   { THROW_NOT_IMPLEMENTED; }
 
-#define PAR_DEFAULT_OVERRIDE(object)                   \
-  virtual object* create_derivation                    \
+#define PAR_DEFAULT_OVERRIDE(ret, object)              \
+  virtual ret* create_derivation                       \
   (const curr::ObjectCreationInfo& oi) const override  \
   { return new object(oi, *this); }
 
 #define REPO_OBJ_CONSTRUCTOR(object)         \
 protected:                                   \
   object(const curr::ObjectCreationInfo& oi, \
-         const object::Par& par);
+         const typename object::Par& par);
 
 //! @}
 

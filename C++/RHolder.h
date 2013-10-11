@@ -114,7 +114,7 @@ public:
   };
 
   NReaders1WriterGuard(T* object) 
-    : RObjectWithEvents<NReaders1WriterAxis>("free"),
+    : RObjectWithEvents<NReaders1WriterAxis>(S(free)),
       CONSTRUCT_EVENT(free),
       CONSTRUCT_EVENT(readers_entered),
       readers_cnt(0),
@@ -256,14 +256,14 @@ public:
 
   //! Make a read-only object call (see
   //! NReaders1WriterGuard) 
-  const T* operator->() const
+  const typename Guard<T,wait_m>::ReadPtr operator->() const
   {
     return guarded.operator->();
   }
 
   //! Make a read/write object call (see
   //! NReaders1WriterGuard) 
-  T* operator->()
+  typename Guard<T, wait_m>::WritePtr operator->()
   {
     return guarded.operator->();
   }
