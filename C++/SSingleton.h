@@ -132,8 +132,8 @@ public:
 
   //! One and only one class instance must be created with
   //! this function.
-  //! @exception MustBeSingleton a copy of SSingleton<T, wait_m>
-  //! already exists.
+  //! @exception MustBeSingleton a copy of SSingleton<T,
+  //! wait_m> already exists.
   SSingleton();
 
   //! A deleted copy constructor
@@ -202,6 +202,10 @@ public:
   //! Not safe in multithreading environment (need to
   //! redesign with RHolder).
   static T & instance ();
+
+protected:
+  //! Create the object if doesn't exist
+  static void construct_once();
 
 private:
   typedef Logger<SAutoSingleton<T, wait_m>> log;

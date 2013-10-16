@@ -510,10 +510,10 @@ protected:
  * std::unordered_map.
  */
 template<class Obj, class Par, class ObjId>
-  class Repository<Obj, Par, std::unordered_map, ObjId>
-: public RepositoryBase
-  <Obj, Par, std::unordered_map, ObjId>,
-  public SNotCopyable
+class Repository<Obj, Par, std::unordered_map, ObjId>
+  : public RepositoryBase
+      <Obj, Par, std::unordered_map, ObjId>,
+    public SNotCopyable
 {
 public:
   typedef RepositoryBase<Obj, Par, std::unordered_map,
@@ -525,9 +525,9 @@ public:
 
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
-Repository(const std::string& repository_name, 
+  Repository(const std::string& repository_name, 
            size_t initial_value)
-  : Parent (repository_name)
+    : Parent (repository_name)
   {
     this->objects = new ObjMap (initial_value);
   }
@@ -752,6 +752,8 @@ public:
     : StdIdMember(oi.objectId),
       id(fromString<ObjectId>(oi.objectId))
   {}
+
+  ObjectId get_id() const { return id; }
 };
 
 //! The simplest form of a derivation
@@ -802,6 +804,13 @@ public:
 protected:                                   \
   object(const curr::ObjectCreationInfo& oi, \
          const typename object::Par& par);
+
+#define REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(object, \
+  parent, base)                                    \
+protected:                                   \
+  object(const curr::ObjectCreationInfo& oi, \
+         const typename base::Par& par)      \
+    : parent(oi, par) {}
 
 //! @}
 

@@ -180,6 +180,13 @@ bool SSingleton<T, wait_m>::isConstructed()
 template<class T, int wait_m>
 T& SAutoSingleton<T, wait_m>::instance()
 {
+  construct_once();
+  return SSingleton<T, wait_m>::instance ();
+}
+
+template<class T, int wait_m>
+void SAutoSingleton<T, wait_m>::construct_once()
+{
   if (!state_is(SSingleton<T, wait_m>::s_the_class(), 
        SSingleton<T, wait_m>::TheClass::exist_oneFun()))
   {
@@ -189,8 +196,6 @@ T& SAutoSingleton<T, wait_m>::instance()
     } 
     catch (const MustBeSingleton&) {}
   }
-
-  return SSingleton<T, wait_m>::instance ();
 }
 
 }
