@@ -34,6 +34,7 @@
 #include "ConstructibleObject.h"
 #include <list>
 #include <queue>
+#include <functional>
 
 namespace curr {
 
@@ -106,6 +107,63 @@ protected:
   std::queue< std::unique_ptr<ThreadPar> > threads_pars;
   std::list<RThreadBase*> threads;
   std::list<CompoundEvent> threads_terminals;
+};
+
+template<class Object>
+class ObjectThread : public StdThread
+{
+public:
+  struct Par : public ThreadOfObjectPar<Object>
+  {
+    Par(const std::string& pretty_name)
+      : ThreadOfObjectPar<Object>(pretty_name)
+    {}
+    
+    PAR_DEFAULT_OVERRIDE(RThreadBase, 
+                         ObjectThread<Object>);
+  };
+
+  ~ObjectThread() { destroy(); }
+
+  REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
+    ObjectThread<Object>, StdThread, RThreadBase);
+};
+
+template<class Object>
+class ObjectFunThread : public ObjectThread<Object>
+{
+public:
+  template<class Fun>
+  struct Par : public ObjectThread<Object>
+  {
+    std::function<void(Object&)> fun;
+
+    Par(const std::string& name, Fun f) 
+      : ObjectThread<Object>::Par(name),
+        fun(f) 
+    {}
+
+    PAR_DEFAULT_OVERRIDE(
+      RThreadBase, ObjectFunThread<Object>);
+  };
+
+protected:
+  std::function<void(Object&)> fun;
+
+  ObjectFunThread
+    (const ObjectCreationInfo& oi, 
+     const ObjectThread<Object>& par
+     )
+    : ObjectThread<Object>(oi, par),
+      fun(par.fun)
+  {}
+
+  void run() override
+  {
+    move_to(*this, RThreadBase::workingState);
+    assert(this->object);
+    fun(*this->object);
+  }
 };
 
 //! @}
