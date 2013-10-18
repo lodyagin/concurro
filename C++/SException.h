@@ -66,9 +66,8 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-//! A type used for passing for functions/methods that
-//! throw exception. Keep the location and logger of the
-//! caller. 
+//! A type passed for functions/methods.
+//! It keeps the location and the logger of the caller. 
 struct ThrowSException 
 {
   ThrowSException
@@ -90,6 +89,17 @@ struct ThrowSException
   const log4cxx::LoggerPtr logger;
 };
 
+//! Throw the exception and log the occurence place.
+template<class Log = curr::Logger<curr::LOG::Root>>
+void log_and_throw [[ noreturn ]]
+  (const SException& excp,
+   log4cxx::LoggerPtr l = Log::logger(),
+   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION)
+{
+  LOGGER_DEBUG_LOC(l, "Throw exception " << excp, loc);
+  throw excp;
+}
+
 //! Exception: Program Error (means general logic error)
 class ProgramError : public SException
 {
@@ -104,13 +114,13 @@ public:
   NotImplemented() : SException("Not implemented") {}
 };
 
-#define THROW_EXCEPTION(exception_class, par...) do { \
-	 exception_class exc_{par};								\
-  LOG_DEBUG(curr::Logger<curr::LOG::Root>, \
-    "Throw exception " << exc_); \
-  throw exc_; \
-  } while (0)
+//! @deprecated Use log_and_throw() instead
+#define THROW_EXCEPTION(exception_class, par...) \
+do { \
+  log_and_throw(exception_class{par}); \
+} while (0)
 
+//! @deprecated Use log_and_throw() instead
 #define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
 	 exception_class exc_{par};			 \
   LOG_DEBUG_PLACE(curr::Logger<curr::LOG::Root>, place,   \
