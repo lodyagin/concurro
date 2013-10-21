@@ -119,25 +119,27 @@ public:
       : ThreadOfObjectPar<Object>(pretty_name)
     {}
     
-    PAR_DEFAULT_OVERRIDE(RThreadBase, 
-                         ObjectThread<Object>);
+    //PAR_DEFAULT_OVERRIDE(RThreadBase, 
+    //                     ObjectThread<Object>);
   };
 
   ~ObjectThread() { destroy(); }
 
   REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
     ObjectThread<Object>, StdThread, RThreadBase);
+
+  Object* object;
 };
 
 template<class Object>
 class ObjectFunThread : public ObjectThread<Object>
 {
 public:
-  template<class Fun>
-  struct Par : public ObjectThread<Object>
+  struct Par : public ObjectThread<Object>::Par
   {
     std::function<void(Object&)> fun;
 
+    template<class Fun>
     Par(const std::string& name, Fun f) 
       : ObjectThread<Object>::Par(name),
         fun(f) 
@@ -152,10 +154,10 @@ protected:
 
   ObjectFunThread
     (const ObjectCreationInfo& oi, 
-     const ObjectThread<Object>& par
+     const typename ObjectThread<Object>::Par& par
      )
     : ObjectThread<Object>(oi, par),
-      fun(par.fun)
+      fun(dynamic_cast<const Par&>(par).fun)
   {}
 
   void run() override
