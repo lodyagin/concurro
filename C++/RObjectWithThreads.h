@@ -126,7 +126,7 @@ public:
   ~ObjectThread() { destroy(); }
 
   REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
-    ObjectThread<Object>, StdThread, RThreadBase);
+    ObjectThread<Object>, StdThread, StdThread);
 
   Object* object;
 };
@@ -146,7 +146,7 @@ public:
     {}
 
     PAR_DEFAULT_OVERRIDE(
-      RThreadBase, ObjectFunThread<Object>);
+      StdThread, ObjectFunThread<Object>);
   };
 
 protected:

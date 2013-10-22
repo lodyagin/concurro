@@ -374,6 +374,8 @@ public:
 
 protected:
   //! It is for creation from ThreadRepository
+  //! NB use RThread::Par to ensure not mix different
+  //! threads models in one repository.
   RThread(const ObjectCreationInfo& oi, const Par& par)
     : RThreadBase(oi, par),
     th(const_cast<Par&>(par).move_thread()) {}
