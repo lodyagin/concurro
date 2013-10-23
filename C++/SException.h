@@ -100,6 +100,22 @@ void log_and_throw [[ noreturn ]]
   throw excp;
 }
 
+//! Throw the stored exception and log the occurence place.
+template<class Log = curr::Logger<curr::LOG::Root>>
+void log_and_throw [[ noreturn ]]
+  (std::exception_ptr excp,
+   log4cxx::LoggerPtr l = Log::logger(),
+   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION)
+{
+  try {
+    std::rethrow_exception(excp);
+  }
+  catch (const SException& e2) {
+    LOGGER_DEBUG_LOC(l, "Throw exception " << e2, loc);
+    throw excp;
+  }
+}
+
 //! Exception: Program Error (means general logic error)
 class ProgramError : public SException
 {
@@ -161,15 +177,27 @@ public: \
 };
 #endif
 
-//! Exception: invalid cast (fromString())
-class FromStringCastException
-  : public boost::bad_lexical_cast,
-    public SException 
+class BadCastBase : public SException
 {
 public:
-  FromStringCastException(boost::bad_lexical_cast e) :
-    boost::bad_lexical_cast(e.source_type(), e.target_type()),
-    SException("FromStringCastException, bad cast"){}
+  BadCastBase(const std::string& s) : SException(s) {}
+};
+
+//! Exception: bad cast
+template<class Target, class Source>
+class BadCast : public BadCastBase
+{
+public:
+  BadCast(const Source& src)
+    : BadCastBase
+      (SFORMAT("Bad cast of a value of type " 
+         << typeid(Source).name()
+         << "to " << typeid(Target).name())),
+      source(src)
+  {}
+
+  //! A source value
+  const Source source;
 };
 
 }

@@ -210,20 +210,36 @@ std::string toString(const T& object) {
   return boost::lexical_cast<std::string>(object);
 }
 
-class FromStringCastException;
-
+template<class Target, class Source>
+class BadCast;
 
 // FIXME raise exception when the string is not a number
 template<class T, class String>
-T fromString(String&& s) {
-  try {
-  return boost::lexical_cast<T>(s);
-  } catch (boost::bad_lexical_cast e) {
-    throw FromStringCastException(e);
+T fromString(String&& s) 
+{
+  try 
+  {
+    return boost::lexical_cast<T>(std::forward<String>(s));
+  } 
+  catch (const boost::bad_lexical_cast&) 
+  {
+    throw BadCast<T, String>(s);
   }
 }
 
-
+// FIXME raise exception when the string is not a number
+template<class T, class CharT>
+T fromString(const std::basic_string<CharT>& s) 
+{
+  try 
+  {
+    return boost::lexical_cast<T>(s);
+  } 
+  catch (const boost::bad_lexical_cast&) 
+  {
+    throw BadCast<T, std::basic_string<CharT>>(s);
+  }
+}
 
 #define SMAKE_THROW_FN_DECL(name, XClass)  \
 void name( const wchar_t * fmt, ... ); void name(const std::wstring& msg);

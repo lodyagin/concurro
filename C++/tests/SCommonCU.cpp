@@ -52,7 +52,9 @@ void test_cast_exception(){
   goal = false;
   try {
     fromString<char>("yh");
-  } catch (FromStringCastException) {
+  } catch (const BadCast<char,std::string>& bc) 
+  {
+    CU_ASSERT_EQUAL_FATAL(bc.source, std::string("yh"));
     goal = true;
   }
   CU_ASSERT_TRUE_FATAL(goal);
