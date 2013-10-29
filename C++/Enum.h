@@ -27,6 +27,10 @@
  * @author Sergei Lodyagin
  */
 
+#include <ios>
+#include <cstddef>
+#include <stdexcept>
+
 #ifndef CONCURRO_ENUM_H_
 #define CONCURRO_ENUM_H_
 
@@ -136,23 +140,35 @@ BuildEnum(V0 v0, V... v)
   return EnumMeta<int, V0, 1 + sizeof...(V)> { v0, v... };
 }
 
-template<class T, class Int = int>
-class Enum
+class EnumBase
 {
 public:
-#if 0
-  template<std::size_t N, class... Vals>
-  constexpr Enum(const char (&name)[N], Vals... vals)
-    : value(T::meta().value(name))
+  static const int xalloc;
+};
+
+/**
+  * An alternative to enum. LiteralType
+  */
+template <
+  class T, 
+  class Int = int,
+  class String = const char*
+>
+class Enum : public EnumBase
+{
+public:
+  constexpr Enum() : value(0)
   {
   }
-#else
-  template<class String>
-  constexpr Enum(String name)
-    : value(T::meta.value(name))
+
+  constexpr Enum(String name) : value(T::meta.value(name))
   {
   }
-#endif
+
+  constexpr String name()
+  {
+    return T::meta.name(value);
+  }
 
   constexpr bool operator == (Enum b)
   {
@@ -186,6 +202,44 @@ public:
 
   Int value;
 };
+
+//! Switch printing enums as strings or integers. The
+//! integer mode is default
+std::ios_base& enumalpha(std::ios_base& ios);
+
+template <
+  class CharT,
+  class Traits = std::char_traits<CharT>,
+  class T, class Int
+>
+std::basic_ostream<CharT, Traits>&
+operator << 
+  ( std::basic_ostream<CharT, Traits>& out,
+    const Enum<T, Int>& e )
+{
+  return (out.iword(EnumBase::xalloc)) 
+    ? out << e.name() 
+    : out << e.value;
+}
+
+template <
+  class CharT,
+  class Traits = std::char_traits<CharT>,
+  class T, class Int
+>
+std::basic_istream<CharT, Traits>&
+operator >> 
+  ( std::basic_istream<CharT, Traits>& in, 
+    Enum<T, Int>& e )
+{
+  if (in.iword(EnumBase::xalloc)) {
+    std::string name;
+    in >> name;
+    e = Enum<T, Int>(name.c_str());
+  }
+  else in >> e.value;
+  return in;
+}
 
 #else
 template<class... V, class Int = int>

@@ -289,6 +289,44 @@ template<class ConnectionId>
 using RConnectedWindowRepository =
   AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>;
 
+
+/**
+  * An RWindow as a streambuf.
+  */
+template <
+  class CharT,
+  class Traits = std::char_traits<CharT>
+>
+class RWindowStreambuf 
+  : public std::basic_streambuf<CharT, Traits>,
+    protected RWindow
+{
+public:
+  RWindowStreambuf(RWindow&& w) 
+  {
+    RWindow::move(std::move(w));
+    assert(state_is(*this, S(filled)));
+
+    char* gbeg = const_cast<char*>(cdata());
+    setg(gbeg, gbeg, gbeg + filled_size());
+  }
+
+protected:
+  std::streamsize showmanyc() override
+  {
+    return egptr() - gptr();
+  }
+
+  int_type underflow() override
+  {
+    return (showmanyc()) 
+      ? Traits::to_int_type(*gptr()) 
+      : Traits::eof();
+  }
+private:
+  typedef Logger<RWindowStreambuf> log;
+};
+
 //! @}
 
 }

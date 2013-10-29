@@ -18,6 +18,7 @@ add_subdirectory(tests)
 set (concurrent_SOURCES 
   ClientSocket.cpp
   ConstructibleObject.cpp
+  Enum.cpp
   Event.cpp
   Existent.cpp
   HasStringView.cpp
