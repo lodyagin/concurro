@@ -307,8 +307,10 @@ public:
     RWindow::move(std::move(w));
     assert(state_is(*this, S(filled)));
 
-    char* gbeg = const_cast<char*>(cdata());
-    setg(gbeg, gbeg, gbeg + filled_size());
+    char* gbeg = const_cast<CharT*>
+      (reinterpret_cast<const CharT*>(cdata()));
+
+    setg(gbeg, gbeg, gbeg + filled_size() / sizeof(CharT));
   }
 
 protected:
@@ -323,6 +325,51 @@ protected:
       ? Traits::to_int_type(*gptr()) 
       : Traits::eof();
   }
+
+  pos_type seekoff
+    ( 
+      off_type off, 
+      ios_base::seekdir dir,
+      ios_base::openmode which = ios_base::in
+     ) override
+  {
+    using namespace std;
+    const pos_type end_pos = egptr() - eback();
+    safe<off_type> abs_pos;
+
+    switch(dir) {
+      case ios_base::beg: 
+        abs_pos = off;
+        break;
+      case ios_base::end:
+        abs_pos = end_pos + off;
+        break;
+      case ios_base::cur:
+        abs_pos = gptr() - eback() + off;
+        break;
+    }
+
+    if (!(bool) abs_pos || abs_pos < 0) 
+      // the rest will be checked in seekpos
+      return pos_type(off_type(-1));
+    
+    return seekpos((off_type) abs_pos);
+  }
+
+  pos_type seekpos
+    ( 
+      pos_type pos, 
+      ios_base::openmode which = ios_base::in
+     ) override
+  {
+    const pos_type end_pos = egptr() - eback();
+
+    if (pos > end_pos || which & ios_base::out)
+      return pos_type(off_type(-1));
+
+    setg(eback(), eback() + pos, egptr());
+  }
+              
 private:
   typedef Logger<RWindowStreambuf> log;
 };

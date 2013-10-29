@@ -43,62 +43,6 @@ constexpr bool string_equal
     && (*a == 0 || string_equal(a+1, b+1));
 }
 
-#if 0
-template<class Int, class Val0, class... Vals>
-class EnumMeta : public EnumMeta<Int, Vals...>
-{
-public:
-  typedef EnumMeta<Int, Vals...> parent;
-
-  constexpr EnumMeta(Int k, Val0 val0, Vals... vals)
-    : parent(k+1, vals...),
-      value_(k),
-      name_(val0)
-  {}
-
-  constexpr Val0 name(Int k)
-  {
-    return (k == value_) ? name_ : parent::name(k);
-  }
-  
-  constexpr Int value(Val0 n)
-  {
-    return string_equal(n, name_) 
-      ? value_ : parent::value(n);
-  }
-
-  const Int value_;
-  const Val0 name_;
-};
-
-template<class Int, class Val0>
-class EnumMeta<Int, Val0>
-{
-public:
-  constexpr EnumMeta(Int k, Val0 val) 
-    : value_(k), 
-      name_(val)
-  {}
-
-  constexpr Val0 name(Int k)
-  {
-    return (k == value_) 
-      ? name_ 
-      : (throw std::domain_error("Bad enum value"));
-  }
-  
-  constexpr Int value(Val0 n)
-  {
-    return string_equal(n, name_) 
-      ? value_ 
-      : (throw std::domain_error("Bad enum constant"));
-  }
-
-  const Int value_;
-  const Val0 name_;
-};
-#else
-
 template<class Int, class String, std::size_t N>
 class EnumMeta
 {
@@ -128,10 +72,6 @@ protected:
   }
 };
 
-#endif
-
-#if 1
-
 template<class V0, class... V/*, class Int = int*/>
 constexpr EnumMeta<int, V0, 1 + sizeof...(V)> 
 //
@@ -148,6 +88,8 @@ public:
 
 /**
   * An alternative to enum. LiteralType
+  * TODO const char (&) [N] and check array-to-pointer
+  * rules in the standard
   */
 template <
   class T, 
@@ -240,62 +182,6 @@ operator >>
   else in >> e.value;
   return in;
 }
-
-#else
-template<class... V, class Int = int>
-static constexpr EnumMeta<Int, V...> BuildEnum(V... vs)
-{
-  return EnumMeta<Int, V...>(0, vs...);
-}
-
-template<class T, class Int = int>
-class Enum
-{
-public:
-  template<std::size_t N, class... Vals>
-  constexpr Enum(const char (&name)[N], Vals... vals)
-   : value(T::meta().value(name))
-  {
-/*    static_assert
-      (T::meta.value(name) != -1,
-       "Enum: bad value");
-*/
-  }
-
-  constexpr bool operator == (Enum b)
-  {
-    return value == b.value;
-  }
-
-  constexpr bool operator != (Enum b)
-  {
-    return value == b.value;
-  }
-
-  constexpr bool operator < (Enum b)
-  {
-    return value < b.value;
-  }
-
-  constexpr bool operator > (Enum b)
-  {
-    return value > b.value;
-  }
-
-  constexpr bool operator >= (Enum b)
-  {
-    return value >= b.value;
-  }
-
-  constexpr bool operator <= (Enum b)
-  {
-    return value <= b.value;
-  }
-
-  Int value;
-};
-#endif
-
 
 }
 
