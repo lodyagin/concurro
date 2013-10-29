@@ -32,41 +32,14 @@
 
 namespace curr {
 
-#if 0
-template<std::size_t N, std::size_t M>
-constexpr bool string_equal
-  (const char (&a)[N], const char (&b)[M])
-{
-  return N == M 
-    && a[0] == b[0]
-    && (N == 1 || string_equal(a+1, b+1));
-}
-#else
 constexpr bool string_equal
   (const char* a, const char* b)
 {
   return a[0] == b[0]
     && (*a == 0 || string_equal(a+1, b+1));
 }
-#endif
 
-/*
-template<class Int, class Val0>
-class EnumMetaEnd 
-{
-public:
-  constexpr Val0 name(Int)
-  {
-    static_assert(false, "Bad enum value");
-  }
-
-  constexpr Int value(Val0)
-  {
-    static_assert(false, "Bad enum constant name");
-  }
-};
-*/ 
-
+#if 0
 template<class Int, class Val0, class... Vals>
 class EnumMeta : public EnumMeta<Int, Vals...>
 {
@@ -120,18 +93,101 @@ public:
   const Int value_;
   const Val0 name_;
 };
+#else
 
-#if 0
-template<class T>
-class EnumMeta : public SAutoSingleton<EnumMeta<T>>
+template<class Int, class String, std::size_t N>
+class EnumMeta
 {
 public:
-  constexpr EnumMeta() : meta(T::create_meta()) {}
+  constexpr String name(Int k)
+  {
+    return (k >= 0 && k < N) 
+      ? names[k] 
+      : (throw std::domain_error("Bad enum value"));
+  }
 
-  constexpr T::meta_type meta;
+  constexpr Int value(String name)
+  {
+    return search_value(names, 0, name);
+  }
+
+  String names[N];
+
+protected:
+  constexpr Int search_value
+    (String const* arr, std::size_t k, String name)
+  {
+    return (k < N) ?
+      (string_equal(*arr, name) ? 
+        k : search_value(arr + 1, k + 1, name))
+      : (throw std::domain_error("Bad enum constant"));
+  }
 };
+
 #endif
 
+#if 1
+
+template<class V0, class... V/*, class Int = int*/>
+constexpr EnumMeta<int, V0, 1 + sizeof...(V)> 
+//
+BuildEnum(V0 v0, V... v)
+{
+  return EnumMeta<int, V0, 1 + sizeof...(V)> { v0, v... };
+}
+
+template<class T, class Int = int>
+class Enum
+{
+public:
+#if 0
+  template<std::size_t N, class... Vals>
+  constexpr Enum(const char (&name)[N], Vals... vals)
+    : value(T::meta().value(name))
+  {
+  }
+#else
+  template<class String>
+  constexpr Enum(String name)
+    : value(T::meta.value(name))
+  {
+  }
+#endif
+
+  constexpr bool operator == (Enum b)
+  {
+    return value == b.value;
+  }
+
+  constexpr bool operator != (Enum b)
+  {
+    return value == b.value;
+  }
+
+  constexpr bool operator < (Enum b)
+  {
+    return value < b.value;
+  }
+
+  constexpr bool operator > (Enum b)
+  {
+    return value > b.value;
+  }
+
+  constexpr bool operator >= (Enum b)
+  {
+    return value >= b.value;
+  }
+
+  constexpr bool operator <= (Enum b)
+  {
+    return value <= b.value;
+  }
+
+  Int value;
+};
+
+#else
 template<class... V, class Int = int>
 static constexpr EnumMeta<Int, V...> BuildEnum(V... vs)
 {
@@ -184,6 +240,7 @@ public:
 
   Int value;
 };
+#endif
 
 
 }
