@@ -102,10 +102,11 @@ public:
 
   virtual ~RSocketConnection() {}
 
-//  virtual RSocketConnection&
-//    operator<< (const std::string&) = 0;
+  virtual RSocketConnection&
+    operator<< (const std::string&) = 0;
 
-  virtual put_packet(RSingleBuffer&&) = 0;
+  virtual RSocketConnection& 
+    operator<< (RSingleBuffer&&) = 0;
 
   //! Non-blocking close
   virtual void ask_close() = 0;
@@ -216,8 +217,7 @@ DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
-    <ClientConnectionAxis, ClientSocketAxis>,
-  public 
+  <ClientConnectionAxis, ClientSocketAxis>
 {
   DECLARE_EVENT(ClientConnectionAxis, aborting);
   DECLARE_EVENT(ClientConnectionAxis, aborted);
@@ -294,7 +294,10 @@ public:
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override;
 
-  void put_packet(RSingleBuffer&&) override;
+  RSocketConnection& operator<< 
+    (const std::string&) override;
+  RSocketConnection& operator<< 
+    (RSingleBuffer&&) override;
 
   // TODO move to separate (client side) class
   void ask_connect();
@@ -363,8 +366,6 @@ public:
   : Parent(id, reserved), thread_factory(tf)
   {}
 };
-
-}
 
 //! @}
 

@@ -30,15 +30,18 @@
 #ifndef CONCURRO_RWINDOW_H_
 #define CONCURRO_RWINDOW_H_
 
+#include <iostream>
 #include "InSocket.h"
 #include "RBuffer.h"
 #include "RState.h"
 #include "RThread.h"
 #include "RObjectWithStates.h"
 #include "AutoRepository.h"
-#include <iostream>
+#include "types/safe.h"
 
 namespace curr {
+
+using namespace types;
 
 /**
  * @defgroup connections
@@ -297,12 +300,16 @@ template <
   class CharT,
   class Traits = std::char_traits<CharT>
 >
-class RWindowStreambuf 
+class WindowStreambuf 
   : public std::basic_streambuf<CharT, Traits>,
     protected RWindow
 {
 public:
-  RWindowStreambuf(RWindow&& w) 
+  typedef typename Traits::int_type int_type;
+  typedef typename Traits::pos_type pos_type;
+  typedef typename Traits::off_type off_type;
+
+  WindowStreambuf(RWindow&& w) 
   {
     RWindow::move(std::move(w));
     assert(state_is(*this, S(filled)));
@@ -316,25 +323,25 @@ public:
 protected:
   std::streamsize showmanyc() override
   {
-    return egptr() - gptr();
+    return this->egptr() - this->gptr();
   }
 
   int_type underflow() override
   {
     return (showmanyc()) 
-      ? Traits::to_int_type(*gptr()) 
+      ? Traits::to_int_type(*this->gptr()) 
       : Traits::eof();
   }
 
   pos_type seekoff
     ( 
       off_type off, 
-      ios_base::seekdir dir,
-      ios_base::openmode which = ios_base::in
+      std::ios_base::seekdir dir,
+      std::ios_base::openmode which = std::ios_base::in
      ) override
   {
     using namespace std;
-    const pos_type end_pos = egptr() - eback();
+    const pos_type end_pos = this->egptr() - this->eback();
     safe<off_type> abs_pos;
 
     switch(dir) {
@@ -345,7 +352,7 @@ protected:
         abs_pos = end_pos + off;
         break;
       case ios_base::cur:
-        abs_pos = gptr() - eback() + off;
+        abs_pos = this->gptr() - this->eback() + off;
         break;
     }
 
@@ -359,19 +366,19 @@ protected:
   pos_type seekpos
     ( 
       pos_type pos, 
-      ios_base::openmode which = ios_base::in
+      std::ios_base::openmode which = std::ios_base::in
      ) override
   {
-    const pos_type end_pos = egptr() - eback();
+    const pos_type end_pos = this->egptr() - this->eback();
 
-    if (pos > end_pos || which & ios_base::out)
+    if (pos > end_pos || which & std::ios_base::out)
       return pos_type(off_type(-1));
 
-    setg(eback(), eback() + pos, egptr());
+    setg(this->eback(), this->eback() + pos, this->egptr());
   }
               
 private:
-  typedef Logger<RWindowStreambuf> log;
+  typedef Logger<WindowStreambuf> log;
 };
 
 //! @}
