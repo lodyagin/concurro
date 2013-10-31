@@ -302,7 +302,7 @@ template <
 >
 class WindowStreambuf 
   : public std::basic_streambuf<CharT, Traits>,
-    protected RWindow
+    public RWindow
 {
 public:
   typedef typename Traits::int_type int_type;
@@ -317,7 +317,8 @@ public:
     char* gbeg = const_cast<CharT*>
       (reinterpret_cast<const CharT*>(cdata()));
 
-    setg(gbeg, gbeg, gbeg + filled_size() / sizeof(CharT));
+    this->setg
+      (gbeg, gbeg, gbeg + filled_size() / sizeof(CharT));
   }
 
 protected:
