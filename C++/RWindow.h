@@ -311,7 +311,7 @@ public:
 
   WindowStreambuf(RWindow&& w) 
   {
-    RWindow::move(std::move(w));
+    RWindow::move(w);
     assert(state_is(*this, S(filled)));
 
     char* gbeg = const_cast<CharT*>
@@ -377,6 +377,7 @@ protected:
 
     this->setg
       (this->eback(), this->eback() + pos, this->egptr());
+    return pos;
   }
               
 private:
