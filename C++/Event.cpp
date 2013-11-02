@@ -130,20 +130,21 @@ void EvtBase::reset()
 
 bool EvtBase::wait_impl(int time) const
 {
-//  if (time != std::numeric_limits<uint64_t>::max()) {
-  if (time != -1) {
-    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
-              << RThread<std::thread>::current_pretty_id()
-              << ">\t event "
-              << universal_object_id 
-              << ">\t wait " << time << " msecs");
-  }
-  else {
-    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
-              << RThread<std::thread>::current_pretty_id()
-              << ">\t event "
-              << universal_object_id 
-              << ">\t waits w/o timeout");
+  if (log_params().wait) {
+    if (time != -1) {
+      LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+                   << RThread<std::thread>::current_pretty_id()
+                   << ">\t event "
+                   << universal_object_id 
+                   << ">\t wait " << time << " msecs");
+    }
+    else {
+      LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+                   << RThread<std::thread>::current_pretty_id()
+                   << ">\t event "
+                   << universal_object_id 
+                   << ">\t waits w/o timeout");
+    }
   }
 
   HANDLE evts[] = {
@@ -160,19 +161,23 @@ bool EvtBase::wait_impl(int time) const
 #else
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
-    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+    if (log_params().wait) {
+      LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
               << universal_object_id 
               << ">\t wait: timed out");
+    }
     return false;
   }
 #endif
-  LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+  if (log_params().wait) {
+    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event "
             << universal_object_id 
             << ">\t wait: signalled");
+  }
   return true;
 }
 
@@ -302,17 +307,19 @@ bool CompoundEvent::signalled() const
 
 bool CompoundEvent::wait_impl(int time) const
 {
-  if (time != -1) {
-    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
-              << RThread<std::thread>::current_pretty_id()
-              << ">\t event " << *this
-              << ">\t wait " << time << " msecs");
-  }
-  else {
-    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
-              << RThread<std::thread>::current_pretty_id()
-              << ">\t event " << *this
-              << ">\t waits w/o timeout");
+  if (log_params().wait) {
+    if (time != -1) {
+      LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+                   << RThread<std::thread>::current_pretty_id()
+                   << ">\t event " << *this
+                   << ">\t wait " << time << " msecs");
+    }
+    else {
+      LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+                   << RThread<std::thread>::current_pretty_id()
+                   << ">\t event " << *this
+                   << ">\t waits w/o timeout");
+    }
   }
 
   // an empty event is always signalled
@@ -328,16 +335,20 @@ bool CompoundEvent::wait_impl(int time) const
                                          time);
 
   if (code == ETIMEDOUT) {
-    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+    if (log_params().wait) {
+      LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event " << *this
               << ">\t wait: timed out");
+    }
     return false;
   }
-  LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
+  if (log_params().wait) {
+    LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event " << *this
             << ">\t wait: signalled");
+  }
   return true;
 }
 

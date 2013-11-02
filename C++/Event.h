@@ -79,11 +79,11 @@ class EventInterface : public ObjectWithLogging
 {
 public:
   mutable struct LogParams {
-    bool set, reset;
+    bool set, reset, wait;
     ObjectWithLogging* log_obj;
 
     LogParams(ObjectWithLogging* obj) 
-    : set(true), reset(true), log_obj(obj)
+    : set(true), reset(true), wait(false), log_obj(obj)
     {
       assert(log_obj);
     }

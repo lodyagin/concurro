@@ -178,6 +178,8 @@ protected:
       (SFORMAT(typeid(SSingleton<T, wait_m>).name()
                << ":is_complete()::is_complete_event"), 
        true, false);
+    // prevent infinit loop in RThreadRepository::current
+    is_complete_event.log_params().wait = false;
     return is_complete_event;
   }
 
