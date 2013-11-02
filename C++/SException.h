@@ -122,8 +122,9 @@ public:
 //! @deprecated Use log_and_throw() instead
 #define THROW_EXCEPTION(exception_class, par...) \
 do { \
-  log_and_throw(std::make_exception_ptr(exception_class{par}), \
-                LOG4CXX_LOCATION);  \
+  curr::log_and_throw( \
+     std::make_exception_ptr(exception_class{par}), \
+       LOG4CXX_LOCATION);  \
 } while (0)
 
 //! @deprecated Use log_and_throw() instead

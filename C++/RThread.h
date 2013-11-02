@@ -342,10 +342,14 @@ public:
     th->join(); 
   }
 
+  //! Create in the repository. 
+  template<class Thread>
+  static Thread* create(const Par&);
+
   //! Create in the repository. args are parameters to
   //! a %Thread::Par constructor.
-  template<class Thread, class... Args>
-    static Thread* create(Args&&... args);
+//  template<class Thread, class... Args>
+//  static Thread* create(Args&&... args);
 
   //! Destroy in the repository. 
   //! @param freeMemory Call a destructor (for using with

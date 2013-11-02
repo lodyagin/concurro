@@ -36,13 +36,20 @@
 
 namespace curr {
 
+template<class Thread>
+Thread* RThread<std::thread>::create(const Par& par)
+{
+  return dynamic_cast<Thread*>
+   (StdThreadRepository::instance().create_thread(par));
+}
+
+/*
 template<class Thread, class... Args>
 Thread* RThread<std::thread>::create(Args&&... args)
 {
-  return dynamic_cast<Thread*>
-   (StdThreadRepository::instance()
-    . create_thread(typename Thread::Par(args...)));
+  return create<Thread>(typename Thread::Par(args...));
 }
+*/
 
 }
 #endif

@@ -153,6 +153,9 @@ RThread<std::thread>* RThread<std::thread>
 #ifdef _WIN32
   return reinterpret_cast<RThread*> (_current.get ());
 #else
+#if 0
+  return _current;
+#else
   // it's ugly, but seams no another way
   const auto native_handle =
     fromString<std::thread::native_handle_type>
@@ -175,6 +178,7 @@ RThread<std::thread>* RThread<std::thread>
                            " in the thread repository");
     return nullptr;
   }
+#endif
 #endif
 }
 
