@@ -166,7 +166,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 		ptr = objects->at (id);
 		delete_object_id(id);
 		if (ptr == 0) 
-                  THROW_EXCEPTION(NoSuchId, id);
+        THROW_EXCEPTION(NoSuchId, id);
 	 }
 	 catch (const std::out_of_range&) {
 		THROW_EXCEPTION(NoSuchId, id);

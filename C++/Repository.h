@@ -268,9 +268,8 @@ class RepositoryBase
 {
 public:
   typedef RepositoryInterface<Obj, Par, ObjId> Parent;
-  typedef typename Parent::NoSuchId NoSuchId;
-  typedef typename Parent::IdIsAlreadyUsed 
-    IdIsAlreadyUsed;
+  using typename Parent::NoSuchId;
+  using typename Parent::IdIsAlreadyUsed; 
   
   RepositoryBase
     (const std::string& repo_name) 

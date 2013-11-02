@@ -89,30 +89,19 @@ struct ThrowSException
   const log4cxx::LoggerPtr logger;
 };
 
-//! Throw the exception and log the occurence place.
-template<class Log = curr::Logger<curr::LOG::Root>>
-void log_and_throw [[ noreturn ]]
-  (const SException& excp,
-   log4cxx::LoggerPtr l = Log::logger(),
-   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION)
-{
-  LOGGER_DEBUG_LOC(l, "Throw exception " << excp, loc);
-  throw excp;
-}
-
 //! Throw the stored exception and log the occurence place.
 template<class Log = curr::Logger<curr::LOG::Root>>
 void log_and_throw [[ noreturn ]]
   (std::exception_ptr excp,
-   log4cxx::LoggerPtr l = Log::logger(),
-   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION)
+   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION,
+   log4cxx::LoggerPtr l = Log::logger())
 {
   try {
     std::rethrow_exception(excp);
   }
   catch (const SException& e2) {
     LOGGER_DEBUG_LOC(l, "Throw exception " << e2, loc);
-    throw excp;
+    std::rethrow_exception(excp);
   }
 }
 
@@ -133,7 +122,8 @@ public:
 //! @deprecated Use log_and_throw() instead
 #define THROW_EXCEPTION(exception_class, par...) \
 do { \
-  log_and_throw(exception_class{par}); \
+  log_and_throw(std::make_exception_ptr(exception_class{par}), \
+                LOG4CXX_LOCATION);  \
 } while (0)
 
 //! @deprecated Use log_and_throw() instead
