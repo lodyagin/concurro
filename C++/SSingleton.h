@@ -172,16 +172,7 @@ public:
 protected:
   //! It is a statically accessible analog of
   //! the complete_construction event.
-  static Event is_complete()
-  {
-    static Event is_complete_event
-      (SFORMAT(typeid(SSingleton<T, wait_m>).name()
-               << ":is_complete()::is_complete_event"), 
-       true, false);
-    // prevent infinit loop in RThreadRepository::current
-    is_complete_event.log_params().wait = false;
-    return is_complete_event;
-  }
+  static Event is_complete();
 
 private:
   typedef Logger<SSingleton<T, wait_m>> log;

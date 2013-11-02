@@ -175,6 +175,25 @@ bool SSingleton<T, wait_m>::isConstructed()
   return !state_is(*this, S(in_construction));
 }
 
+template<class T, int wait_m>
+Event SSingleton<T, wait_m>::is_complete()
+{
+  static std::once_flag once;
+  static std::unique_ptr<Event> is_complete_event_ptr;
+
+  //FIXME once
+  std::call_once(once, []()
+  {
+    is_complete_event_ptr.reset(new Event
+      (SFORMAT(typeid(SSingleton<T, wait_m>).name()
+             << ":is_complete()::is_complete_event"), 
+       true, false));
+    // prevent infinit loop in RThreadRepository::current
+    is_complete_event_ptr->log_params().wait = false;
+  });
+  return *is_complete_event_ptr;
+}
+
 // SAutoSingleton
 
 template<class T, int wait_m>
