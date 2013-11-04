@@ -345,7 +345,8 @@ public:
 
   //! Create in the repository. 
   template<class Thread>
-  static Thread* create(const Par& par = Par());
+  static Thread* create
+    (const Par& par = typename Thread::Par());
 
   //! Create in the repository. args0, args... are
   //! parameters to a %Thread::Par constructor.

@@ -82,8 +82,8 @@ public:
     Par(const std::string& name_ = std::string())
       : name(name_) {}
 	 
-    RThreadBase* create_derivation
-    (const ObjectCreationInfo& oi) const
+    StdThread* create_derivation
+    (const ObjectCreationInfo& oi) const override
       { 
         return new T1(oi, *this); 
       }
