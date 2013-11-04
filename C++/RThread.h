@@ -355,7 +355,10 @@ public:
     class Arg0, 
     class... Args,
     class = typename std::enable_if <
-      !std::is_base_of<Par, Arg0>::value
+      ! std::is_base_of < 
+          Par, 
+          typename std::remove_reference<Arg0>::type
+        >::value
     >::type
   >
   static Thread* create(Arg0&& arg0, Args&&... args);
