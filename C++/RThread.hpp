@@ -43,13 +43,16 @@ Thread* RThread<std::thread>::create(const Par& par)
    (StdThreadRepository::instance().create_thread(par));
 }
 
-/*
-template<class Thread, class... Args>
-Thread* RThread<std::thread>::create(Args&&... args)
+template<class Thread, class Arg0, class... Args, class>
+Thread* RThread<std::thread>
+//
+::create(Arg0&& arg0, Args&&... args)
 {
-  return create<Thread>(typename Thread::Par(args...));
+  return create<Thread>
+    (typename Thread::Par
+      (std::forward<Arg0>(arg0), 
+       std::forward<Args>(args)...));
 }
-*/
 
 }
 #endif

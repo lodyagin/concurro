@@ -42,6 +42,7 @@
 #include <atomic>
 #include <thread>
 #include <memory>
+#include <type_traits>
 
 namespace curr {
 
@@ -344,12 +345,19 @@ public:
 
   //! Create in the repository. 
   template<class Thread>
-  static Thread* create(const Par&);
+  static Thread* create(const Par& par = Par());
 
-  //! Create in the repository. args are parameters to
-  //! a %Thread::Par constructor.
-//  template<class Thread, class... Args>
-//  static Thread* create(Args&&... args);
+  //! Create in the repository. args0, args... are
+  //! parameters to a %Thread::Par constructor.
+  template <
+    class Thread, 
+    class Arg0, 
+    class... Args,
+    class = typename std::enable_if <
+      !std::is_base_of<Par, Arg0>::value
+    >::type
+  >
+  static Thread* create(Arg0&& arg0, Args&&... args);
 
   //! Destroy in the repository. 
   //! @param freeMemory Call a destructor (for using with
