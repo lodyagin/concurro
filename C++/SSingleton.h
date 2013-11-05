@@ -219,6 +219,8 @@ class SAutoSingleton
   : public SSingleton<T, wait_m>,
     public SAutoSingletonBase
 {
+  friend class SAutoSingletonRegistry;
+
 public:
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to
@@ -226,6 +228,10 @@ public:
   static T & instance ();
 
 protected:
+  //! It is allowed only for SAutoSingletonRegistry to
+  //! prevent a double-destruction.
+  ~SAutoSingleton();
+
   //! Create the object if doesn't exist
   static void construct_once();
 

@@ -41,8 +41,22 @@ DEFINE_AXIS(
   { {"preinc_exist_several", "exist_one"} // failback
   });
 
-typedef std::list<SAutoSingletonBase*>
-  SAutoSingletonRegistry;
+SAutoSingletonRepository()
+//
+::~SAutoSingletonRepository()
+{
+  SAutoSingletonBase* ptr;
+
+  while (ases.pop(ptr))
+    delete ptr;
+}
+
+void SAutoSingletonRegistry
+//
+::reg(SAutoSingletonBase* ptr)
+{
+  ases.push(ptr);
+}
 
 externally_constructed<SAutoSingletonRegistry> auto_reg;
 

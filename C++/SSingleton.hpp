@@ -31,6 +31,7 @@
 #define CONCURRO_SSINGLETON_HPP_
 
 #include <list>
+#include <boost/lockfree/stack.hpp>
 #include "SSingleton.h"
 #include "RMutex.h"
 #include "Logging.h"
@@ -200,11 +201,23 @@ Event SSingleton<T, wait_m>::is_complete()
 class SAutoSingletonRegistry
 {
 public:
-  void reg(std::unique_ptr<SAutoSingletonBase>);
+  //! Deletes all registered singletons in the order
+  //! which is opposite to the registration.
+  ~SAutoSingletonRegistry() noexcept;
+
+  //! Registers a new singleton, take the ownership (in
+  //! means of destruction).
+  void reg(SAutoSingletonBase*) noexcept;
+
 protected:
-  RMutex mutex("SAutoSingletonRegistry::mutex");
-  std::list<std::unique_ptr<SAutoSingletonBase>> ases;
+  boost::lockfree::stack<SAutoSingletonBase*> ases;
 };
+
+template<class T, int wait_m>
+SAutoSingleton<T, wait_m>::~SAutoSingleton()
+{
+  auto_reg.dereg(this);
+}
 
 template<class T, int wait_m>
 T& SAutoSingleton<T, wait_m>::instance()
