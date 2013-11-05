@@ -31,6 +31,7 @@
 #include "StateMapRepository.h"
 #include "RThreadRepository.h"
 #include "RState.hpp"
+#include "types/ext_constr.h"
 
 namespace curr {
 
@@ -39,5 +40,29 @@ DEFINE_AXIS(
   {},
   { {"preinc_exist_several", "exist_one"} // failback
   });
+
+typedef std::list<SAutoSingletonBase*>
+  SAutoSingletonRegistry;
+
+externally_constructed<SAutoSingletonRegistry> auto_reg;
+
+int SAutoSingletonBase::nifty_counter;
+
+SAutoSingletonBase::Init::Init()
+{
+  if (nifty_counter++ == 0)
+  {
+    new (&auto_reg.m) SAutoSingletonRegistry();
+  }
+}
+
+ios_base::Init::~Init()
+{
+  if (--nifty_counter == 0)
+  {
+    auto_reg.m.~SAutoSingletonRegistry();
+  }
+}
+
 
 }

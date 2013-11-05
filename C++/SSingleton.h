@@ -22,7 +22,9 @@
 */
 
 /**
- * @file
+ * @file 
+ * Singletons. It always must be the first included
+ * file from the concurro library.
  *
  * @author Sergei Lodyagin
  */
@@ -182,13 +184,40 @@ private:
   static T* _instance;
 };
 
+//! It allows destroy SAutoSingleton - s.
+class SAutoSingletonBase
+{
+public:
+  virtual ~SAutoSingletonBase() = 0 {}
+  
+  //! We use the same method of initialization as std::cout
+  class Init
+  {
+  public:
+    Init();
+    ~Init();
+  protected;
+    // TODO not atomic?
+    static int nifty_counter;
+  };
+};
+
+namespace {
+
+//! It will help call SAutoSingleton destructors on exit.
+SAutoSingletonBase::Init auto_reg_init_helper;
+
+}
+
 /**
  * Extends SSingleton to allow auto-construct it by the
  * RAutoSingleton::instance() call.
  * \tparam wait_m The default construction wait timeout.
  */
 template<class T, int wait_m = 1000>
-class SAutoSingleton : public SSingleton<T, wait_m>
+class SAutoSingleton 
+  : public SSingleton<T, wait_m>,
+    public SAutoSingletonBase
 {
 public:
   //! Return the reference to the class instance. 

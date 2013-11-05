@@ -30,11 +30,12 @@
 #ifndef CONCURRO_SSINGLETON_HPP_
 #define CONCURRO_SSINGLETON_HPP_
 
+#include <list>
 #include "SSingleton.h"
+#include "RMutex.h"
 #include "Logging.h"
 #include "SCheck.h"
 #include "Existent.hpp"
-#include <mutex>
 
 namespace curr {
 
@@ -196,6 +197,15 @@ Event SSingleton<T, wait_m>::is_complete()
 
 // SAutoSingleton
 
+class SAutoSingletonRegistry
+{
+public:
+  void reg(std::unique_ptr<SAutoSingletonBase>);
+protected:
+  RMutex mutex("SAutoSingletonRegistry::mutex");
+  std::list<std::unique_ptr<SAutoSingletonBase>> ases;
+};
+
 template<class T, int wait_m>
 T& SAutoSingleton<T, wait_m>::instance()
 {
@@ -206,12 +216,16 @@ T& SAutoSingleton<T, wait_m>::instance()
 template<class T, int wait_m>
 void SAutoSingleton<T, wait_m>::construct_once()
 {
+  // It is guaranteed that thee auto_reg will be
+  // constructed before this method call.
+  extern SAutoSingletonRegistry auto_reg;
+
   if (!state_is(SSingleton<T, wait_m>::s_the_class(), 
        SSingleton<T, wait_m>::TheClass::exist_oneFun()))
   {
     try 
     { 
-      new T(); 
+      auto_reg.reg(new T()); 
     } 
     catch (const MustBeSingleton&) {}
   }
