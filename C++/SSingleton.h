@@ -188,7 +188,7 @@ private:
 class SAutoSingletonBase
 {
 public:
-  virtual ~SAutoSingletonBase() = 0 {}
+  virtual ~SAutoSingletonBase() = 0;
   
   //! We use the same method of initialization as std::cout
   class Init
@@ -196,7 +196,7 @@ public:
   public:
     Init();
     ~Init();
-  protected;
+  protected:
     // TODO not atomic?
     static int nifty_counter;
   };
@@ -217,7 +217,7 @@ SAutoSingletonBase::Init auto_reg_init_helper;
 template<class T, int wait_m = 1000>
 class SAutoSingleton 
   : public SSingleton<T, wait_m>,
-    public SAutoSingletonBase
+    public virtual SAutoSingletonBase
 {
   friend class SAutoSingletonRegistry;
 
@@ -230,7 +230,7 @@ public:
 protected:
   //! It is allowed only for SAutoSingletonRegistry to
   //! prevent a double-destruction.
-  ~SAutoSingleton();
+  //~SAutoSingleton();
 
   //! Create the object if doesn't exist
   static void construct_once();

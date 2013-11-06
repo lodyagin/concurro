@@ -213,11 +213,15 @@ protected:
   boost::lockfree::stack<SAutoSingletonBase*> ases;
 };
 
+/*
 template<class T, int wait_m>
 SAutoSingleton<T, wait_m>::~SAutoSingleton()
 {
+  extern SAutoSingletonRegistry auto_reg;
+
   auto_reg.dereg(this);
 }
+*/
 
 template<class T, int wait_m>
 T& SAutoSingleton<T, wait_m>::instance()
