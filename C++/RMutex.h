@@ -56,7 +56,7 @@ namespace curr {
 
 /// RAII version of MUTEX_ACQUIRE
 #define RLOCK(mutex) \
-  curr::RMutex::Lock _lock(mutex, true, LOG4CXX_LOCATION)
+  curr::RMutex::Lock _lock(mutex, LOG4CXX_LOCATION)
 
 /// RAII version of MUTEX_RELEASE (will acquire the mutex back on destruction)
 #define RUNLOCK(mutex) \
@@ -113,7 +113,7 @@ class RMutex::Lock : public SNotCopyable
 public:
 
   Lock(const RMutex &,
-       bool lock = true,
+//       bool lock = true,
        const log4cxx::spi::LocationInfo& debug_location = 
        LOG4CXX_LOCATION);
   ~Lock();
@@ -136,7 +136,7 @@ class RMutex::Unlock : public SNotCopyable
 public:
 
   Unlock(const RMutex &, 
-      bool, ///< dummy parameter to be compatible with RMutex::Lock::Lock
+//      bool, ///< dummy parameter to be compatible with RMutex::Lock::Lock
       const log4cxx::spi::LocationInfo& debug_location = 
           LOG4CXX_LOCATION);
   ~Unlock();
@@ -204,46 +204,46 @@ inline bool RMutex::is_locked()
 
 inline RMutex::Lock::Lock 
 (const RMutex & m,
- bool lock,
+// bool lock,
  const log4cxx::spi::LocationInfo& debug_location
 ) 
 :   location (debug_location),
     mutex(const_cast<RMutex &>(m))
 {
-  if ( lock ) {
+//  if ( lock ) {
    /*if (wait)
     mutex.wait ();
     else*/
    mutex.acquire(location);
-  }
+//  }
 }
 
 inline RMutex::Lock::~Lock()
 {
-  if ( locked ) { 
+//  if ( locked ) { 
    mutex.release(location); 
-  }
+//  }
 }
 
 inline void RMutex::Lock::acquire()
 {
-  assert(!locked); // precondition
+//  assert(!locked); // precondition
   mutex.acquire(location);
-  locked = true;
+//  locked = true;
 }
 
 inline void RMutex::Lock::release()
 {
-  assert(locked); // precondition
+//  assert(locked); // precondition
   mutex.release(location);
-  locked = false;
+//  locked = false;
 }
 
 
 // RMutex::Unlock  ===================================================
 
 inline RMutex::Unlock::Unlock
-(const RMutex & m, bool,
+(const RMutex & m, //bool,
  const log4cxx::spi::LocationInfo& debug_location
   ) 
 : location(debug_location),
