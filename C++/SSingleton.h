@@ -188,7 +188,7 @@ private:
 class SAutoSingletonBase
 {
 public:
-  virtual ~SAutoSingletonBase() = 0;
+  virtual ~SAutoSingletonBase() {}
   
   //! We use the same method of initialization as std::cout
   class Init
