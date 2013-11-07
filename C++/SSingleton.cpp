@@ -41,9 +41,9 @@ DEFINE_AXIS(
   { {"preinc_exist_several", "exist_one"} // failback
   });
 
-SAutoSingletonRepository()
+SAutoSingletonRegistry
 //
-::~SAutoSingletonRepository()
+::~SAutoSingletonRegistry()
 {
   SAutoSingletonBase* ptr;
 
@@ -53,14 +53,14 @@ SAutoSingletonRepository()
 
 void SAutoSingletonRegistry
 //
-::reg(SAutoSingletonBase* ptr)
+::reg(SAutoSingletonBase* ptr) noexcept
 {
   ases.push(ptr);
 }
 
 externally_constructed<SAutoSingletonRegistry> auto_reg;
 
-int SAutoSingletonBase::nifty_counter;
+int SAutoSingletonBase::Init::nifty_counter;
 
 SAutoSingletonBase::Init::Init()
 {
@@ -70,7 +70,7 @@ SAutoSingletonBase::Init::Init()
   }
 }
 
-ios_base::Init::~Init()
+SAutoSingletonBase::Init::~Init()
 {
   if (--nifty_counter == 0)
   {
