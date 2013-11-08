@@ -53,7 +53,7 @@ SAutoSingletonRegistry
 
 void SAutoSingletonRegistry
 //
-::reg(SAutoSingletonBase* ptr) noexcept
+::reg(SAutoSingletonBase* ptr) 
 {
   ases.push(ptr);
 }

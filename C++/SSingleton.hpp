@@ -201,13 +201,15 @@ Event SSingleton<T, wait_m>::is_complete()
 class SAutoSingletonRegistry
 {
 public:
+  SAutoSingletonRegistry() : ases(500) {}
+
   //! Deletes all registered singletons in the order
   //! which is opposite to the registration.
   ~SAutoSingletonRegistry() noexcept;
 
   //! Registers a new singleton, take the ownership (in
   //! means of destruction).
-  void reg(SAutoSingletonBase*) noexcept;
+  void reg(SAutoSingletonBase*);
 
 protected:
   boost::lockfree::stack<SAutoSingletonBase*> ases;
