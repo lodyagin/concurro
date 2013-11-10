@@ -30,8 +30,8 @@
 #ifndef CONCURRO_AUTOREPOSITORY_H_
 #define CONCURRO_AUTOREPOSITORY_H_
 
-#include "Repository.h"
 #include "SSingleton.h"
+#include "Repository.h"
 #include "SCommon.h"
 #include <map>
 

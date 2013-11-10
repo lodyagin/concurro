@@ -27,8 +27,8 @@
  * @author Sergei Lodyagin
  */
 
-#include "Repository.h"
 #include "SSingleton.h"
+#include "Repository.h"
 #include <unordered_map>
 
 namespace curr {

@@ -30,9 +30,9 @@
 #ifndef CONCURRO_RTHREADREPOSITORY_H_
 #define CONCURRO_RTHREADREPOSITORY_H_
 
+#include "SSingleton.h"
 #include "Repository.h"
 #include "RThread.h"
-#include "SSingleton.h"
 #include <list>
 #include <algorithm>
 #include <vector>
