@@ -30,12 +30,12 @@
 #ifndef CONCURRO_SEXCEPTION_H_
 #define CONCURRO_SEXCEPTION_H_
 
-#include "SCommon.h"
-#include "HasStringView.h"
-#include "Logging.h"
 #include <exception>
 #include <ostream>
 #include <log4cxx/spi/location/locationinfo.h>
+#include "Logging.h"
+#include "SCommon.h"
+#include "HasStringView.h"
 
 namespace curr {
 

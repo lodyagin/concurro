@@ -176,13 +176,13 @@ protected:
   //! the complete_construction event.
   static Event is_complete()
   {
-    static Event is_complete_event
+    static Event* is_complete_event = new Event
       (SFORMAT(typeid(SSingleton<T, wait_m>).name()
                << ":is_complete()::is_complete_event"), 
        true, false);
     // prevent infinit loop in RThreadRepository::current
-    is_complete_event.log_params().wait = false;
-    return is_complete_event;
+    is_complete_event->log_params().wait = false;
+    return *is_complete_event;
   }
 
 private:

@@ -31,12 +31,17 @@
 #define CONCURRO_LOGGING_H_
 //#pragma warning(disable: 4250 4251)
 
-#include "ObjectWithLogging.h"
+#include <string>
+#include <typeinfo>
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/spi/location/locationinfo.h>
-#include <string>
-#include <typeinfo>
+// try to fix __cxa_initialize order
+#include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/helpers/properties.h>
+#include <log4cxx/spi/location/locationinfo.h>
+//
+#include "ObjectWithLogging.h"
 
 namespace curr {
 
