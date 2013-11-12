@@ -135,9 +135,9 @@ SSingleton<T, wait_m>::~SSingleton()
   {
     // do not call it for moved-from objects (that have
     // paired pointed to a new moved-to instance)
-
     SCHECK(this->get_obj_count() == 1);
-    is_complete().reset();
+    // FIXME add a guard
+//    is_complete().reset();
     _instance = nullptr;
   }
 }
