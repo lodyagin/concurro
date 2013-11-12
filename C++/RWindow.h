@@ -321,6 +321,15 @@ public:
       (gbeg, gbeg, gbeg + filled_size() / sizeof(CharT));
   }
 
+  // Returns a WindowStreambuf which contains subwindow
+  // [ gptr(), gptr() + width )
+  WindowStreambuf window(std::size_t width)
+  {
+    return WindowStreambuf
+      (RWindow(*this, this->gptr() - this->eback(), 
+               this->gptr() + width - this->egptr()));
+  }
+
 protected:
   std::streamsize showmanyc() override
   {
