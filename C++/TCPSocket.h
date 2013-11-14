@@ -45,6 +45,9 @@ namespace curr {
 
 DECLARE_AXIS(TCPAxis, SocketBaseAxis);
 
+/**
+  * This socket component manages TCP proto states.
+  */
 class TCPSocket : virtual public RSocketBase
 , public RStateSplitter<TCPAxis, SocketBaseAxis>
 {
