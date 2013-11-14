@@ -127,10 +127,11 @@ RThreadBase::RThreadBase
              << ">\t created");
 }
 
-void RThreadBase::start ()
+RThreadBase& RThreadBase::start ()
 {
   ThreadState::move_to (*this, startingState);
   start_impl ();
+  return *this;
 }
 
 void RThreadBase::stop()
