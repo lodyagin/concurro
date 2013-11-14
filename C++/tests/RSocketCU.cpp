@@ -11,6 +11,7 @@
 
 void test_127001_socket_address();
 void test_localhost_socket_address();
+void test_server_socket_address();
 void test_client_socket_connection_refused();
 void test_client_socket_connection_timed_out();
 void test_client_socket_destination_unreachable();
@@ -23,6 +24,8 @@ CU_TestInfo RSocketTests[] = {
    test_127001_socket_address},
   {"test localhost socket address", 
    test_localhost_socket_address},
+  {"test server socket address", 
+   test_server_socket_address},
   {"test Client_Socket connection_refused",
    test_client_socket_connection_refused},
   {"test Client_Socket connection_timed_out",
@@ -57,7 +60,7 @@ void test_127001_socket_address()
 {
   RSocketAddressRepository sar;
   auto aiws = sar.create_addresses
-    <NetworkProtocol::TCP, IPVer::v4>
+    <SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
     ("127.0.0.1", 5555);
 
   CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
@@ -67,8 +70,21 @@ void test_localhost_socket_address()
 {
   RSocketAddressRepository sar;
   auto aiws = sar.create_addresses
-    <NetworkProtocol::TCP, IPVer::v4>
+    <SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
     ("localhost", 5555);
+
+  CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
+}
+
+void test_server_socket_address()
+{
+  RSocketAddressRepository sar;
+  auto aiws = sar.create_addresses
+    <SocketSide::Server, NetworkProtocol::TCP, IPVer::v4>
+    ("", 5555);
+
+  for (auto p : aiws)
+    std::clog << *p;
 
   CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
 }
@@ -85,7 +101,10 @@ void test_client_socket_connection_refused()
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses
+        < SocketSide::Client, 
+          NetworkProtocol::TCP, 
+          IPVer::v4 >
       ("localhost", 5555) . front()));
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
@@ -110,7 +129,10 @@ void test_client_socket_connection_timed_out()
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses
+        < SocketSide::Client, 
+          NetworkProtocol::TCP, 
+          IPVer::v4 >
       ("google.com", 12345) . front()));
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
@@ -134,7 +156,10 @@ void test_client_socket_destination_unreachable()
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses
+        < SocketSide::Client, 
+          NetworkProtocol::TCP, 
+          IPVer::v4 >
       ("dummdummdumm.kp", 80) . front()));
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
@@ -158,7 +183,10 @@ void test_client_socket_connected()
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses
+        < SocketSide::Client, 
+          NetworkProtocol::TCP, 
+          IPVer::v4 >
       ("rutracker.org", 80) . front()));
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*> 
     (cli_sock);
@@ -190,7 +218,7 @@ void test_in_socket_new_msg()
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses<SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
       ("192.168.25.240", 31001) . front()));
   auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);
   auto* cli_sock = dynamic_cast<ClientSocket*> (in_sock);
@@ -246,7 +274,7 @@ void test_out_socket_login()
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses<SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
       ("192.168.25.240", 31001) . front()));
   auto* out_sock = dynamic_cast<OutSocket*> (in_sock);
   auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);

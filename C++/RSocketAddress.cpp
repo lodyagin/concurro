@@ -75,7 +75,7 @@ NetworkProtocolHints<NetworkProtocol::TCP>
 
   hints.ai_socktype = SOCK_STREAM;
   rCheck
-	 (getprotobyname_r("TCP", &pent_buf, str_buf, 
+   (getprotobyname_r("TCP", &pent_buf, str_buf, 
                       sizeof(str_buf), &pent)==0);
   assert(pent = &pent_buf);
   hints.ai_protocol = pent->p_proto;
@@ -90,7 +90,7 @@ size_t AddressRequestBase
   // NULL is a special "wildcard" value for AI_PASSIVE, 
   // see man getaddrinfo
   const char *const node = 
-	 (host.empty()) ? NULL : host.c_str();
+   (host.empty()) ? NULL : host.c_str();
 
 
   /* check the address consistency */
@@ -98,7 +98,7 @@ size_t AddressRequestBase
   // AI_PASSIVE will be ignored if node != NULL
   // see getaddrinfo(3)
   SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
-							node == NULL));
+              node == NULL));
 
 
   rSocketCheck(
@@ -141,7 +141,7 @@ AddrinfoWrapper::~AddrinfoWrapper ()
 RSocketAddress::RSocketAddress
   (const ObjectCreationInfo& oi,
    const std::shared_ptr<AddrinfoWrapper>& ptr,
-	const addrinfo* ai_)
+  const addrinfo* ai_)
 :   StdIdMember(oi.objectId),
     ai(ai_), aw_ptr(ptr), fd(-1)
 {
@@ -167,7 +167,7 @@ RSocketBase* RSocketAddress::create_derivation
   }
 
   side = (ai->ai_flags & AI_PASSIVE) 
-	 ? SocketSide::Server : SocketSide::Client;
+   ? SocketSide::Server : SocketSide::Client;
 
   {
     struct protoent pent_buf, *pent;
@@ -182,16 +182,16 @@ RSocketBase* RSocketAddress::create_derivation
                             &pent) == 0);
         assert(&pent_buf == pent);
     if (strcmp(pent->p_name, "tcp") == 0
-		  || strcmp(pent->p_name, "TCP") == 0
-		) 
-	 {
+      || strcmp(pent->p_name, "TCP") == 0
+    ) 
+   {
       protocol = NetworkProtocol::TCP;
     }
     else THROW_NOT_IMPLEMENTED;
   }
 
   return RSocketAllocator0
-	 (side, protocol, ver, oi, *this);
+   (side, protocol, ver, oi, *this);
 }
 
 SOCKET RSocketAddress
@@ -199,10 +199,10 @@ SOCKET RSocketAddress
 {
   assert(ai);
   rSocketCheck
-	 ((fd = ::socket(ai->ai_family, 
-						  ai->ai_socktype,
-						  ai->ai_protocol)) >= 0);
-  return fd;
+   ((fd = ::socket(ai->ai_family, 
+              ai->ai_socktype,
+              ai->ai_protocol)) >= 0);
+   return fd;
 }
 
 
@@ -346,7 +346,15 @@ operator<< (std::ostream& out, const RSocketAddress& sa)
 template std::list<RSocketAddress*> 
 RSocketAddressRepository
 //
-::create_addresses<NetworkProtocol::TCP, IPVer::v4>
+::create_addresses
+  <SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
+    (const std::string& host, uint16_t port);
+
+template std::list<RSocketAddress*> 
+RSocketAddressRepository
+//
+::create_addresses
+  <SocketSide::Server, NetworkProtocol::TCP, IPVer::v4>
     (const std::string& host, uint16_t port);
 
 }

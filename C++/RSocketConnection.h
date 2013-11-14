@@ -90,8 +90,8 @@ public:
                   uint16_t a_port) 
     : host(a_host), port(a_port)
     {
-      sar->create_addresses<proto, ip_ver>
-        (host, port);
+      sar->create_addresses
+        <SocketSide::Client, proto, ip_ver> (host, port);
     }
 
     InetClientPar(InetClientPar&& par)

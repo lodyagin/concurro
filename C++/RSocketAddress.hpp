@@ -72,6 +72,7 @@ SocketSideHints<side>
 
 
 template<
+  enum SocketSide side,
   enum NetworkProtocol protocol, 
   enum IPVer ip_version
 >
@@ -79,7 +80,7 @@ std::list<RSocketAddress*> RSocketAddressRepository
 //
 ::create_addresses(const std::string& host, uint16_t port)
 {
-  AddressRequest<protocol, ip_version> par(host, port);   
+  AddressRequest<side,protocol,ip_version> par(host,port);
   return create_several_objects(par);
 }
 

@@ -38,7 +38,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-typedef struct addrinfo addrinfo;
 #endif
 #include "RCheck.h"
 
@@ -77,8 +76,8 @@ class NetworkProtocolHints : public virtual AddrinfoHints
 public: 
   NetworkProtocolHints() 
   { 
-	 // must use sepcializations
-	 THROW_NOT_IMPLEMENTED;
+   // must use sepcializations
+   THROW_NOT_IMPLEMENTED;
   }
 };
 
@@ -105,63 +104,17 @@ class NetworkProtocolHints<NetworkProtocol::TCP>
 /**
  * Make getaddrinfo(3) hints based on template parameters.
  */
-#if 1
 template<class... Bases> 
 class HintsBuilder : public virtual AddrinfoHints,
   public Bases...
 {
 public:
   HintsBuilder() 
-	 : AddrinfoHints(), // it is default,just for make sure
-	 Bases()... {}
+  : AddrinfoHints(), // it is default,just for make sure
+    Bases()... {}
 
-  operator addrinfo&& () { return std::move(hints); }
+  operator addrinfo () { return hints; }
 };
-
-#else
-template<SocketSide, NetworkProtocol, IPVer>
-class HintsBuilder
-{
- public:
-HintsBuilder() : 
-  {
-    // it is only compiled if there is not a valid
-    // specialization
-    THROW_NOT_IMPLEMENTED;
-  }
-  operator addrinfo&& () { return std::move(hints); }
- protected:
-  addrinfo hints;  
-};
-
-// a TCP specialization
-template<SocketSide, IPVer>
-class HintsBuilder<SocketSide, NetworkProtocol::TCP, IPVer>
-{
-public:
-  HintsBuilder();
-  operator addrinfo&& () { return hints; }
-protected:
-  addrinfo hints;  
-};
-
-#if 0
-template<>
-class HintsBuilder<NetworkProtocol::TCP, IPVer::v4>
-{
-public:
-  HintsBuilder() : hints({0})
-  {
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_INET;
-  }
-  operator addrinfo&& () 
-  { return hints; }
-protected:
-  addrinfo hints;  
-};
-#endif
-#endif
 
 /**
  * STL style wrapper over addrinfo.
@@ -270,7 +223,7 @@ public:
 
   AddressRequestBase(const std::string& host_, 
                      uint16_t port_, 
-                     addrinfo&& hints_)
+                     const addrinfo& hints_)
     : host(host_), port(port_), hints(hints_)
       {}
 
@@ -294,6 +247,7 @@ protected:
 
 
 template<
+  enum SocketSide side,
   enum NetworkProtocol protocol, 
   enum IPVer ip_version
 >
@@ -303,10 +257,12 @@ public:
   AddressRequest(const std::string& host_, 
                  uint16_t port_)
   : AddressRequestBase
-    (host_, port_, 
-	  HintsBuilder<NetworkProtocolHints<protocol>, 
-	               IPVerHints<ip_version>
-	  >())
+     ( host_, port_, 
+       HintsBuilder <
+         SocketSideHints<side>,
+         NetworkProtocolHints<protocol>, 
+         IPVerHints<ip_version>
+       >())
   {}
 };
 
@@ -361,8 +317,8 @@ public:
 
 protected:
   RSocketAddress(const ObjectCreationInfo& oi,
-	              const std::shared_ptr<AddrinfoWrapper>&,
-					  const addrinfo* ai_);
+                const std::shared_ptr<AddrinfoWrapper>&,
+            const addrinfo* ai_);
 
   //! Copy socket address
   //! The size of information copied is defined by 
@@ -406,7 +362,7 @@ class RSocketAddressRepository :
     RSocketAddress, 
     AddressRequestBase,
     std::vector,
-	 size_t
+    size_t
   >
 {
 public:
@@ -421,7 +377,7 @@ public:
   RSocketAddressRepository()
     : Parent("some RSocketAddressRepository", 8) {}
 
-  template<enum NetworkProtocol, enum IPVer>
+  template<SocketSide, NetworkProtocol, IPVer>
   std::list<RSocketAddress*> create_addresses
     (const std::string& host, uint16_t port);
 };

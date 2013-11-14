@@ -37,6 +37,7 @@ set (concurrent_SOURCES
   RThreadRepository.cpp
   RWindow.cpp
   SCommon.cpp
+  ServerSocket.cpp
   SException.cpp
   SShutdown.cpp
   SSingleton.cpp
