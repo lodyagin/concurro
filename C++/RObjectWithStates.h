@@ -37,7 +37,7 @@
 
 namespace curr {
 
-//! @addtogroup states
+//! @addtogroup exceptions
 //! @{
 
 class REventIsUnregistered : public SException
@@ -50,6 +50,11 @@ REventIsUnregistered(const UniversalEvent& ue)
 
   const UniversalEvent event;
 };
+
+//! @}
+
+//! @addtogroup states
+//! @{
 
 //TODO allow only delegates have subscribers list
 class RObjectWithStatesBase

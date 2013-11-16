@@ -39,6 +39,10 @@
 
 namespace curr {
 
+//! @defgroup exceptions
+//! Exception classes defined in the curr namespace level.
+//! @{
+
 //! A base for the all concurro exceptions
 class SException 
   : public std::exception, public HasStringView
@@ -190,6 +194,8 @@ public:
   //! A source value
   const Source source;
 };
+
+//! @}
 
 }
 #endif

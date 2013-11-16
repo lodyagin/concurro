@@ -46,12 +46,8 @@ typedef neosmart::neosmart_event_t HANDLE;
 
 namespace curr {
 
-/**
- * @defgroup events
- *
- * All about events.
- * @{
- */
+//! @addtogroup exceptions
+//! @{
 
 //! Exception: event waiting time out 
 class EventWaitingTimedOut : public SException
@@ -64,6 +60,15 @@ public:
             << "milliseconds")), 
     msecs(ms) {}
 };
+
+//! @}
+
+/**
+ * @defgroup events
+ *
+ * All about events.
+ * @{
+ */
 
 #define CURR_WAIT_L(logger, evt, time) \
   do { (evt).wait((time), curr::ThrowSException \
