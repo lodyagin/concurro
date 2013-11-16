@@ -32,7 +32,9 @@
 
 #include "RSocket.h"
 #include "ClientSocket.h"
+#include "ServerSocket.h"
 #include "TCPSocket.h"
+#include "ListeningSocket.h"
 #include "InSocket.h"
 #include "OutSocket.h"
 
@@ -63,7 +65,7 @@ RSocket<Bases...>
 
   // wait all parts termination
   /*for (auto& te : this->ancestor_terminals)
-	 te.wait();*/
+   te.wait();*/
   
   // TODO make an array holder instead of this
   // durty temporary solution
@@ -89,37 +91,33 @@ void RSocket<Bases...>
 {
   if (auto* tcp_sock = dynamic_cast<TCPSocket*>(this))
   {
-	 tcp_sock->ask_close_out();
+   tcp_sock->ask_close_out();
   }
 }
 */
-
-// temporary empty definitions
-class ServerSocket : public virtual RSocketBase {};
 
 inline RSocketBase* RSocketAllocator0
   (SocketSide side,
    NetworkProtocol protocol,
    IPVer ver,
-	const ObjectCreationInfo& oi,
-	const RSocketAddress& addr)
+  const ObjectCreationInfo& oi,
+  const RSocketAddress& addr)
 {
   switch(side)
   {
   case SocketSide::Client:
     return RSocketAllocator1
-      <ClientSocket> (protocol, ver, oi, addr);
-#if 0
+      <ClientSocket, InSocket, OutSocket> 
+        (protocol, ver, oi, addr);
   case SocketSide::Server:
-    return RSocketAllocator1
-      <ServerSocket>(protocol, ver, oi, addr);
-#endif
+    return RSocketAllocator1<ListeningSocket>
+      (protocol, ver, oi, addr);
   default: 
     THROW_NOT_IMPLEMENTED;
   }
 }
     
-template<class Side>
+template<class Side, class... Others>
 inline RSocketBase* RSocketAllocator1
  (NetworkProtocol protocol,
   IPVer ver,
@@ -129,25 +127,26 @@ inline RSocketBase* RSocketAllocator1
   switch(protocol)
   {
   case NetworkProtocol::TCP:
-    return RSocketAllocator2<Side, TCPSocket>
-		(ver, oi, addr);
+    return RSocketAllocator2<Side, TCPSocket, Others...>
+      (ver, oi, addr);
   default: 
     THROW_NOT_IMPLEMENTED;
   }
 }
 
-template<class Side, class Protocol>
+template<class Side, class Protocol, class... Others>
 inline RSocketBase* RSocketAllocator2
   (IPVer ver, 
-	const ObjectCreationInfo& oi,
-	const RSocketAddress& addr)
+  const ObjectCreationInfo& oi,
+  const RSocketAddress& addr)
 {
   switch(ver)
   {
   case IPVer::v4:
   case IPVer::v6:
   case IPVer::any:
-    return RSocketAllocator<Side, Protocol>(oi, addr);
+    return RSocketAllocator<Side, Protocol, Others...>
+      (oi, addr);
   default: 
     THROW_NOT_IMPLEMENTED;
   }
@@ -158,8 +157,7 @@ inline RSocketBase* RSocketAllocator
   (const ObjectCreationInfo& oi,
    const RSocketAddress& addr)
 {
-  return new RSocket<InSocket, OutSocket, Bases...>
-	 (oi, addr);
+  return new RSocket<Bases...> (oi, addr);
 }
 
 }    

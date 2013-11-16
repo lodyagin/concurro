@@ -23,6 +23,7 @@ set (concurrent_SOURCES
   Existent.cpp
   HasStringView.cpp
   InSocket.cpp
+  ListeningSocket.cpp
   Logging.cpp
   ObjectWithLogging.cpp
   OutSocket.cpp

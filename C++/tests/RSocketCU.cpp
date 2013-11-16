@@ -12,6 +12,7 @@
 void test_127001_socket_address();
 void test_localhost_socket_address();
 void test_server_socket_address();
+void test_listening_socket();
 void test_client_socket_connection_refused();
 void test_client_socket_connection_timed_out();
 void test_client_socket_destination_unreachable();
@@ -26,6 +27,8 @@ CU_TestInfo RSocketTests[] = {
    test_localhost_socket_address},
   {"test server socket address", 
    test_server_socket_address},
+  {"test listening socket", 
+   test_listening_socket},
   {"test Client_Socket connection_refused",
    test_client_socket_connection_refused},
   {"test Client_Socket connection_timed_out",
@@ -89,6 +92,32 @@ void test_server_socket_address()
   CU_ASSERT_EQUAL_FATAL(aiws.size(), 1);
 }
 
+void test_listening_socket()
+{
+  RSocketRepository sr
+    ("RSocketCU::test_listening_socket::sr", 10, 1);
+  ListeningSocket* srv_sock = dynamic_cast<ListeningSocket*>
+    (sr.create_object
+     (*RSocketAddressRepository()
+      . create_addresses
+        < SocketSide::Server, 
+          NetworkProtocol::TCP, 
+          IPVer::v4 > ("", 5555) . front()));
+  CU_ASSERT_TRUE_FATAL(
+    ListeningSocket::State::state_is
+      (*srv_sock, ListeningSocket::createdState));
+#if 0
+  srv_sock->ask_listen();
+  srv_sock->is_terminal_state().wait();
+  CU_ASSERT_TRUE_FATAL(
+    /*RSocketBase::State::*/state_is
+    (*srv_sock, RSocketBase::connection_refusedState));
+  // <NB> it is splitted state, the ClientSocketAxis
+  // is updated with delay
+//  cli_sock->is_connection_refused().wait();
+#endif
+}
+
 struct Log { typedef Logger<Log> log; };
 
 void test_client_socket_connection_refused()
@@ -96,7 +125,6 @@ void test_client_socket_connection_refused()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_refused::sr",
      10, 
-     &StdThreadRepository::instance(),
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -124,7 +152,6 @@ void test_client_socket_connection_timed_out()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_timed_out::sr",
      10, 
-     &StdThreadRepository::instance(),
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -151,7 +178,6 @@ void test_client_socket_destination_unreachable()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_destination_unreachable::sr",
      10, 
-     &StdThreadRepository::instance(),
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -177,7 +203,6 @@ void test_client_socket_connected()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connected::sr",
      10, 
-     &StdThreadRepository::instance(),
      1000 //TODO it has not a sence in this case
      );
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
@@ -210,7 +235,6 @@ void test_in_socket_new_msg()
   RSocketRepository sr
     ("RSocketCU::test_in_socket_new_msg::sr",
      10, 
-     &StdThreadRepository::instance(),
      1000
       );
   sr.set_connect_timeout_u(3500000);
@@ -266,7 +290,6 @@ void test_out_socket_login()
   RSocketRepository sr
     ("RSocketCU::test_out_socket_login::sr",
      10, 
-     &StdThreadRepository::instance(),
      1000
       );
   sr.set_connect_timeout_u(3500000);

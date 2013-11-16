@@ -123,7 +123,7 @@ NoStateWithTheName::NoStateWithTheName
   : 
   SException (SFORMAT(
                 "No state with the name [" << name << "]"
-                << " in the map " << (*map)))
+                << " in the map " << map->pretty_id()))
 {}
 
 StateMap* StateMapParBase::create_derivation
@@ -193,7 +193,8 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
               [Transitions::extent_range(1,n_states+1)]
               [Transitions::extent_range(1,n_states+1)]),
   repo(dynamic_cast<StateMapRepository*>(oi.repository)),
-  max_transition_id(parent->get_max_transition_id())
+  max_transition_id(parent->get_max_transition_id()),
+  axis_name(par.axis_name)
 {
   // TODO check numeric_id overflow
 
@@ -254,16 +255,25 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   for (auto tit = par.transitions.begin();
        tit != par.transitions.end(); tit++)
   {
-    const StateIdx st1 = name2idx.at(tit->first);
-    const StateIdx st2 = name2idx.at(tit->second);
-    TransitionId& old = transitions[st1][st2];
+    try {
+      const StateIdx st1 = name2idx.at(tit->first);
+      const StateIdx st2 = name2idx.at(tit->second);
+      TransitionId& old = transitions[st1][st2];
 
-    if (!old) {
-      // count only new transitions
-      old = ++(repo->max_trans_id);
-      trans2states[old] = std::pair<StateIdx, StateIdx>
-        (st1, st2);
-      local_transitions_arrivals.insert(st2);
+      if (!old) {
+        // count only new transitions
+        old = ++(repo->max_trans_id);
+        trans2states[old] = std::pair<StateIdx, StateIdx>
+          (st1, st2);
+        local_transitions_arrivals.insert(st2);
+      }
+    }
+    catch (const std::out_of_range&) {
+      LOGGER_ERROR
+        (rootLogger, 
+         "There is no transition [" << tit->first 
+         << "] -> [" << tit->second << "] in the StateMap "
+         << pretty_id());
     }
   }
   max_transition_id = repo->max_trans_id;

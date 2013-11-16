@@ -148,8 +148,8 @@ SocketThreadWithPair::~SocketThreadWithPair()
 RSocketRepository::RSocketRepository(
   const std::string& id,
   size_t reserved,
-  RThreadFactory *const tf,
-  size_t max_input_packet
+  size_t max_input_packet,
+  RThreadFactory *const tf
 ) : 
   Parent(id, reserved),
   thread_factory(tf),

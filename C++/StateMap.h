@@ -181,8 +181,11 @@ protected:
 std::ostream&
 operator<< (std::ostream& out, const UniversalEvent& ue);
 
+//! @}
 
-/* Exceptions */
+
+//! @addtogroup exceptions
+//! @{
 
 class InvalidState : public SException
 {
@@ -229,6 +232,13 @@ public:
   {}
 };
 
+//! @}
+
+
+
+//! @addtogroup states
+//! @{
+
 /* StateMap class */
 
 typedef int16_t StateMapId;
@@ -240,15 +250,18 @@ public:
   std::list<
     std::pair<std::string, std::string>> transitions;
   StateMapId parent_map;
+  std::string axis_name;
 
-  StateMapParBase (
-    std::initializer_list<std::string> states_,
-    std::initializer_list<
-    std::pair<std::string, std::string>> transitions_,
-    StateMapId parent_map_
-    )
-    : states(states_), transitions(transitions_),
-    parent_map(parent_map_) {}
+  StateMapParBase
+    (std::initializer_list<std::string> states_,
+     std::initializer_list<
+     std::pair<std::string, std::string>> transitions_,
+     StateMapId parent_map_,
+     const std::string& an_axis_name
+     )
+  : states(states_), transitions(transitions_),
+    parent_map(parent_map_), axis_name(an_axis_name)
+  {}
 
   virtual StateMap* create_derivation
     (const ObjectCreationInfo& oi) const;
@@ -276,7 +289,9 @@ public:
     std::pair<std::string, std::string>> transitions,
     StateMapId parent_map_ = 0 // default is top level
     )
-    : StateMapParBase(states, transitions, parent_map_) 
+    : StateMapParBase
+        (states, transitions, parent_map_, 
+         typeid(Axis).name()) 
   {}
 
   StateMapId get_id(ObjectCreationInfo& oi) const;
@@ -373,6 +388,11 @@ public:
       != local_transitions_arrivals.end();
   }
 
+  std::string pretty_id() const
+  {
+    return axis_name;
+  }
+
   const std::string universal_object_id;
   const int16_t numeric_id;
 
@@ -398,6 +418,8 @@ protected:
   //! States participating in transitions unique for this
   //! map as destinations. 
   std::set<StateIdx> local_transitions_arrivals;
+  //! The axis name
+  std::string axis_name;
 
   StateMap(const ObjectCreationInfo& oi,
            const StateMapParBase& par);

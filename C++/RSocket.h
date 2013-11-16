@@ -87,7 +87,6 @@ class RSocketBase
 
   DECLARE_EVENT(SocketBaseAxis, ready);
   DECLARE_EVENT(SocketBaseAxis, closed);
-  //DECLARE_EVENT(SocketBaseAxis, error);
   DECLARE_EVENT(SocketBaseAxis, connection_timed_out)
   DECLARE_EVENT(SocketBaseAxis, connection_refused)
   DECLARE_EVENT(SocketBaseAxis, destination_unreachable)
@@ -96,7 +95,6 @@ public:
   DECLARE_STATES(SocketBaseAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, ready);
-  //DECLARE_STATE_CONST(State, error);
   DECLARE_STATE_CONST(State, closed);
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
@@ -298,14 +296,14 @@ inline RSocketBase* RSocketAllocator0
  const ObjectCreationInfo& oi,
  const RSocketAddress& addr);
     
-template<class Side>
+template<class Side, class... Others>
 inline RSocketBase* RSocketAllocator1
 (NetworkProtocol protocol,
  IPVer ver,
  const ObjectCreationInfo& oi,
  const RSocketAddress& addr);
 
-template<class Side, class Protocol>
+template<class Side, class Protocol, class... Others>
   inline RSocketBase* RSocketAllocator2
   (IPVer ver, 
    const ObjectCreationInfo& oi,
@@ -331,13 +329,16 @@ public:
   //! Create repository (RSocket factory).
   //! @param id The repository name.
   //! @param reserved The initially allocated space.
+  //! @param max_input_packet The max input packet size
+  //! (logical piece of data defined in upper protocol,
+  //! not a size of tcp/ip packet).
   //! @param tf The thread factory.
-  //! @param max_input_packet The max input packet size.
   RSocketRepository(
     const std::string& id,
     size_t reserved,
-    RThreadFactory *const tf,
-    size_t max_input_packet
+    size_t max_input_packet,
+    RThreadFactory *const tf =
+      &StdThreadRepository::instance()
     );
 
   //! Set timeout for usecs. If usecs < 0 - do not use

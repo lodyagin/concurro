@@ -51,9 +51,10 @@ public:
             SFORMAT("TestConnection:" << oi.objectId
                     << ":RSocketRepository"),
             1,
+            1000,
             dynamic_cast<RConnectionRepository*>
-            (oi.repository)->thread_factory, 
-            1000)
+            (oi.repository)->thread_factory
+            )
           );
         socket_rep->set_connect_timeout_u(3500000);
         socket = socket_rep->create_object(*sock_addr);

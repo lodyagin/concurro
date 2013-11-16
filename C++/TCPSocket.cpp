@@ -40,15 +40,9 @@ DEFINE_AXIS(
   {
     "in_closed",    // input part of connection is closed
     "out_closed",
-    "listen",       // passive open
-    "accepting",    // in the middle of a new ServerSocket
     "closing",      // fin-wait, time-wait, closing,
   },
   {
-    {"created", "listen"},      // listen()
-    {"listen", "accepting"}, // connect() from other side
-    {"accepting", "listen"},
-    {"listen", "closed"},
     {"created", "ready"}, // initial send() is
       // recieved by other side
     {"created", "closed"},     // ask close() or timeout 

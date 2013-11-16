@@ -30,11 +30,12 @@
 #ifndef CONCURRO_TCPSOCKET_H_
 #define CONCURRO_TCPSOCKET_H_
 
+#include <netdb.h>
+#include "Logging.h"
 #include "RSocket.h"
 #include "RObjectWithStates.h"
 #include "StateMap.h"
-#include "Logging.h"
-#include <netdb.h>
+#include "ListeningSocket.h"
 
 namespace curr {
 
@@ -43,10 +44,31 @@ namespace curr {
  * @{
  */
 
-DECLARE_AXIS(TCPAxis, SocketBaseAxis);
+DECLARE_AXIS(TCPAxis, ListeningSocketAxis);
 
 /**
   * This socket component manages TCP proto states.
+  *
+  * @dot
+  * digraph {
+  *   start [shape = point]; 
+  *   closed [shape = doublecircle];
+  *   start -> created;
+  *   created -> listen;
+  *   listen -> accepting;
+  *   accepting -> listen;
+  *   listen -> closed;
+  *   created -> ready;
+  *   created -> closed;
+  *   ready -> closing;
+  *   ready -> in_closed;
+  *   ready -> out_closed;
+  *   closing -> closed;
+  *   in_closed -> closed;
+  *   out_closed -> closed;
+  *   closed -> closed;
+  * }
+  * @enddot
   */
 class TCPSocket : virtual public RSocketBase
 , public RStateSplitter<TCPAxis, SocketBaseAxis>
