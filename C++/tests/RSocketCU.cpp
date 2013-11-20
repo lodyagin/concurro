@@ -101,15 +101,15 @@ void test_listening_socket()
      (*RSocketAddressRepository()
       . create_addresses
         < SocketSide::Server, 
-          NetworkProtocol::TCP, 
-          IPVer::v4 > ("", 5555) . front()));
+          NetworkProtocol::TCP,
+          IPVer::v4 > ("", 5556) . front()));
+          // NB use different port than connect tests
   CU_ASSERT_TRUE_FATAL(
     ListeningSocket::State::state_is
       (*srv_sock, ListeningSocket::createdState));
   srv_sock->ask_listen();
-  CU_ASSERT_TRUE_FATAL(
-    ListeningSocket::State::state_is
-      (*srv_sock, ListeningSocket::listenState));
+  CURR_WAIT_L(rootLogger, srv_sock->is_listen(), 1);
+  // TODO address already in usexs
 #if 0
   srv_sock->is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(

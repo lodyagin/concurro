@@ -69,16 +69,28 @@ ListeningSocket::ListeningSocket
      ::state_hook(&ServerSocket::state_hook)*/
      ),
   CONSTRUCT_EVENT(pre_listen),
+  CONSTRUCT_EVENT(listen),
 
-  thread(dynamic_cast<Thread*>
-       (RSocketBase::repository->thread_factory
-        -> create_thread(Thread::Par(this))))
+  select_thread(
+    dynamic_cast<SelectThread*>
+    (RSocketBase::repository->thread_factory
+     -> create_thread(SelectThread::Par(this)))),
+  wait_thread(
+    dynamic_cast<WaitThread*>
+    (RSocketBase::repository->thread_factory
+     -> create_thread
+     (WaitThread::Par
+      (this, 
+       select_thread->get_notify_fd()))))
 {
-  SCHECK(thread);
+  SCHECK(select_thread);
+  SCHECK(wait_thread);
   RStateSplitter<ListeningSocketAxis, SocketBaseAxis>
     ::init();
   this->RSocketBase::threads_terminals.push_back
-    (thread->is_terminal_state());
+    (select_thread->is_terminal_state());
+  this->RSocketBase::threads_terminals.push_back
+    (wait_thread->is_terminal_state());
 
   ::bind
     (fd, 
@@ -87,10 +99,17 @@ ListeningSocket::ListeningSocket
   process_error(errno);
 }
 
+ListeningSocket::~ListeningSocket()
+{
+/*  State::compare_and_move
+    (*this, listenState, closedState);*/
+}
+
 void ListeningSocket::ask_listen()
 {
    State::move_to(*this, pre_listenState);
-   thread->start();
+   select_thread->start();
+   wait_thread->start();
 }
 
 void ListeningSocket::state_hook
@@ -119,7 +138,7 @@ void ListeningSocket::process_error(int error)
   }
 }
 
-void ListeningSocket::Thread::run()
+void ListeningSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
@@ -133,35 +152,67 @@ void ListeningSocket::Thread::run()
 
   if (lstn_sock->is_terminal_state().signalled())
     return;
-#if 0
+
   ::listen
       (lstn_sock->fd, 
        lstn_sock->repository
        -> get_pending_connections_queue_size());
 
   lstn_sock->process_error(errno);
-#endif
+
+  ListeningSocket::State::move_to
+    (*lstn_sock, ListeningSocket::listenState);
+
   fd_set rfds;
   FD_ZERO(&rfds);
 
   const SOCKET fd = socket->fd;
   SCHECK(fd >= 0);
 
-  FD_SET(fd, &rfds);
+  for (;;) {
+    FD_SET(fd, &rfds);
+    FD_SET(sock_pair[ForSelect], &rfds);
+    const int maxfd = std::max(sock_pair[ForSelect], fd)
+      + 1;
 
-  const int res = ::select(fd+1, &rfds, NULL, NULL, NULL);
-  rSocketCheck(res > 0);
+    const int res = ::select
+      (maxfd, &rfds, NULL, NULL, NULL);
+    rSocketCheck(res > 0);
+    LOG_DEBUG
+      (ListeningSocket::log, "ListeningSocket>\t ::select");
 
-  LOG_DEBUG
-    (ListeningSocket::log, "ListeningSocket>\t ::select");
+    if (FD_ISSET(fd, &rfds)) {
+      int error = 0;
+      socklen_t error_len = sizeof(error);
+      rSocketCheck(
+        getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
+                   &error_len) == 0);
+      if (error) {
+        lstn_sock->process_error(error);
+      }
+      else {
+        const int res2 = ::accept(fd, NULL, NULL);
+ 
+        LOG_DEBUG
+          (ListeningSocket::log, 
+           "ListeningSocket>\t ::accept " << res2 
+           << "errno" << errno);
+      }
+    }
+    if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
+      break;
+    }
+  }
+}
 
-  int error = 0;
-  socklen_t error_len = sizeof(error);
-  rSocketCheck(
-    getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
-               &error_len) == 0);
+void ListeningSocket::WaitThread::run()
+{
+  ThreadState::move_to(*this, workingState);
+  socket->is_construction_complete_event.wait();
 
-  lstn_sock->process_error(error);
+  socket->is_terminal_state().wait();
+  static char dummy_buf[1] = {1};
+  rSocketCheck(::write(notify_fd, &dummy_buf, 1) == 1);
 }
 
 }

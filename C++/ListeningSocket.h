@@ -67,6 +67,7 @@ class ListeningSocket
       <ListeningSocketAxis, SocketBaseAxis>
 {
   DECLARE_EVENT(ListeningSocketAxis, pre_listen);
+  DECLARE_EVENT(ListeningSocketAxis, listen);
 
 public:
   //! @cond
@@ -78,6 +79,13 @@ public:
   DECLARE_STATE_CONST(State, accepting);
   DECLARE_STATE_CONST(State, closed);
   //! @endcond
+
+  ~ListeningSocket();
+
+  /*CompoundEvent is_terminal_state() const override
+  {
+    return is_terminal_state_event;
+  }*/
 
   //! Start listening for incoming connections. It moves
   //! the object in the `listen' state.
@@ -129,33 +137,70 @@ public:
     ax.update_events(this, trans_id, to);
   }
 protected:
+  //const CompoundEvent is_terminal_state_event;
+
   ListeningSocket
     (const ObjectCreationInfo& oi, 
      const RSocketAddress& par);
 
-  class Thread : public SocketThread
+  class SelectThread : public SocketThreadWithPair
   {
   public:
-    struct Par : public SocketThread::Par
+    struct Par : public SocketThreadWithPair::Par
     { 
-      Par(RSocketBase* sock) : SocketThread::Par(sock) 
+      Par(RSocketBase* sock) 
+        : SocketThreadWithPair::Par(sock) 
       {
-        thread_name = SFORMAT("ListeningSocket:" << sock->fd);
+        thread_name = SFORMAT("ListeningSocket(select):" 
+                              << sock->fd);
       }
 
       RThreadBase* create_derivation
         (const ObjectCreationInfo& oi) const
       { 
-        return new Thread(oi, *this); 
+        return new SelectThread(oi, *this); 
+      }
+    };
+
+  protected:
+    SelectThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThreadWithPair(oi, p) {}
+    ~SelectThread() { destroy(); }
+    void run();
+  }* select_thread;
+
+  class WaitThread : public SocketThread
+  {
+  public:
+    struct Par : public SocketThread::Par
+    { 
+      SOCKET notify_fd;
+      Par(RSocketBase* sock, SOCKET notify) 
+        : SocketThread::Par(sock),
+        notify_fd(notify)
+        {
+          thread_name = SFORMAT("ListeningSocket(wait):" 
+                                << sock->fd);
+        }
+
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new WaitThread(oi, *this); 
       }
     };
 
     void run();
+
   protected:
-    Thread(const ObjectCreationInfo& oi, const Par& p)
-      : SocketThread(oi, p) {}
-    ~Thread() { destroy(); }
-  }* thread;
+    SOCKET notify_fd;
+
+    WaitThread
+      (const ObjectCreationInfo& oi, const Par& p)
+      : SocketThread(oi, p), notify_fd(p.notify_fd) {}
+    ~WaitThread() { destroy(); }
+  }* wait_thread;
 
   void process_error(int error);
 

@@ -171,18 +171,9 @@ void TCPSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
-  //ClientSocket* cli_sock = 0;
-  //if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
-  // THROW_NOT_IMPLEMENTED;
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  /*( socket->is_ready()
-    | socket->is_terminal_state()) . wait();
-
-    if (socket->is_terminal_state().isSignalled())
-    return;*/
-
   // wait for close
   fd_set wfds, rfds;
   FD_ZERO(&wfds);
@@ -202,11 +193,6 @@ void TCPSocket::SelectThread::run()
     const int maxfd = std::max(sock_pair[ForSelect], fd)
       + 1;
 
-    /*if (State::state_is(*tcp_sock, out_closedState))
-      FD_CLR(fd, &wfds);
-      else
-      FD_SET(fd, &wfds);*/
-
     rSocketCheck(
       ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
     LOG_DEBUG(TCPSocket::log, "TCPSocket>\t ::select");
@@ -224,8 +210,6 @@ void TCPSocket::SelectThread::run()
       rSocketCheck(res >=0);
       assert(res >= 0);
       if (res == 0) {
-
-        // TODO accept for listening socket
 
         if (TCPSocket::State::state_is
             (*tcp_sock, TCPSocket::closedState))
