@@ -225,6 +225,8 @@ void TCPSocket::SelectThread::run()
       assert(res >= 0);
       if (res == 0) {
 
+        // TODO accept for listening socket
+
         if (TCPSocket::State::state_is
             (*tcp_sock, TCPSocket::closedState))
           break;

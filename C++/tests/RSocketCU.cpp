@@ -106,8 +106,11 @@ void test_listening_socket()
   CU_ASSERT_TRUE_FATAL(
     ListeningSocket::State::state_is
       (*srv_sock, ListeningSocket::createdState));
-#if 0
   srv_sock->ask_listen();
+  CU_ASSERT_TRUE_FATAL(
+    ListeningSocket::State::state_is
+      (*srv_sock, ListeningSocket::listenState));
+#if 0
   srv_sock->is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
     /*RSocketBase::State::*/state_is

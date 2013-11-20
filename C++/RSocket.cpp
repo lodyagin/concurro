@@ -154,6 +154,7 @@ RSocketRepository::RSocketRepository(
   Parent(id, reserved),
   thread_factory(tf),
   connect_timeout{0},
+  pending_connections_queue_size(128),
   use_connect_timeout(false),
   max_input_packet_size(max_input_packet)
 {

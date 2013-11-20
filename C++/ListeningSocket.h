@@ -51,7 +51,8 @@ DECLARE_AXIS(ListeningSocketAxis, SocketBaseAxis);
   *   start [shape = point]; 
   *   closed [shape = doublecircle];
   *   start -> created;
-  *   created -> listen;
+  *   created -> pre_listen;
+  *   pre_listen -> listen;
   *   listen -> accepting;
   *   accepting -> listen;
   *   listen -> closed;
@@ -65,15 +66,22 @@ class ListeningSocket
     public RStateSplitter
       <ListeningSocketAxis, SocketBaseAxis>
 {
+  DECLARE_EVENT(ListeningSocketAxis, pre_listen);
+
 public:
   //! @cond
   DECLARE_STATES(ListeningSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, ready);
+  DECLARE_STATE_CONST(State, pre_listen);
   DECLARE_STATE_CONST(State, listen);
   DECLARE_STATE_CONST(State, accepting);
   DECLARE_STATE_CONST(State, closed);
   //! @endcond
+
+  //! Start listening for incoming connections. It moves
+  //! the object in the `listen' state.
+  virtual void ask_listen();
 
   void state_changed
     (StateAxis& ax, 
@@ -124,6 +132,34 @@ protected:
   ListeningSocket
     (const ObjectCreationInfo& oi, 
      const RSocketAddress& par);
+
+  class Thread : public SocketThread
+  {
+  public:
+    struct Par : public SocketThread::Par
+    { 
+      Par(RSocketBase* sock) : SocketThread::Par(sock) 
+      {
+        thread_name = SFORMAT("ListeningSocket:" << sock->fd);
+      }
+
+      RThreadBase* create_derivation
+        (const ObjectCreationInfo& oi) const
+      { 
+        return new Thread(oi, *this); 
+      }
+    };
+
+    void run();
+  protected:
+    Thread(const ObjectCreationInfo& oi, const Par& p)
+      : SocketThread(oi, p) {}
+    ~Thread() { destroy(); }
+  }* thread;
+
+  void process_error(int error);
+
+  DEFAULT_LOGGER(ListeningSocket);
 };
 
 

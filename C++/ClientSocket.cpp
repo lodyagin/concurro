@@ -118,30 +118,32 @@ void ClientSocket::state_hook
 
 void ClientSocket::process_error(int error)
 {
-   switch (error) {
-   case EINPROGRESS:
-      State::move_to(*this, connectingState);
-      // <NB> there are no connecting->connecting
-      // transition
-      return;
-   case 0:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, readyState);
-      return;
-   case ETIMEDOUT:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, connection_timed_outState);
-      break;
-   case ECONNREFUSED:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, connection_refusedState);
-      break;
-   case ENETUNREACH:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, destination_unreachableState);
-      break;
-   }
-   //RSocketBase::process_error(error);
+  switch (error) {
+  case EINPROGRESS:
+    State::move_to(*this, connectingState);
+    // <NB> there are no connecting->connecting
+    // transition
+    return;
+  case 0:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, readyState);
+    return;
+  case ETIMEDOUT:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, connection_timed_outState);
+    break;
+  case ECONNREFUSED:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, connection_refusedState);
+    break;
+  case ENETUNREACH:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, destination_unreachableState);
+    break;
+  default:
+    THROW_NOT_IMPLEMENTED;
+  }
+  //RSocketBase::process_error(error);
 }
 
 void ClientSocket::Thread::run()

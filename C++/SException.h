@@ -105,7 +105,7 @@ void log_and_throw [[ noreturn ]]
   }
   catch (const SException& e2) {
     LOGGER_DEBUG_LOC(l, "Throw exception " << e2, loc);
-    std::rethrow_exception(excp);
+    throw;
   }
 }
 

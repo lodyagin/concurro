@@ -350,6 +350,17 @@ public:
     return use_connect_timeout; 
   }
 
+  //! Sets the backlob parameter to listen(2)
+  void set_pending_connections_queue_size(int size)
+  {
+    pending_connections_queue_size = size;
+  }
+
+  int get_pending_connections_queue_size() const
+  {
+    return pending_connections_queue_size;
+  }
+
   //! Return a copy of timeval
   const std::unique_ptr<struct timeval> 
     connect_timeout_timeval() const;
@@ -360,6 +371,7 @@ public:
 
 protected:
   struct timeval connect_timeout;
+  std::atomic<int> pending_connections_queue_size;
   std::atomic<bool> use_connect_timeout;
   std::atomic<size_t> max_input_packet_size;
 };
