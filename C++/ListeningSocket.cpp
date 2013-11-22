@@ -36,22 +36,32 @@ namespace curr {
 DEFINE_AXIS(
   ListeningSocketAxis, 
   {
+    "bound",
     "pre_listen",
     "listen",       // passive open
     "accepting",    // in the middle of a new ServerSocket
+    "accepted"
   },
   {
-    {"created", "pre_listen"},      // ask_listen()
+    {"created", "bound"},                 // in constructor
+    {"created", "address_already_in_use"}, // in constructor
+    {"bound", "pre_listen"},      // ask_listen()
     {"pre_listen", "listen"},
     {"listen", "accepting"}, // connect() from other side
+    {"accepting", "accepted"},
     {"accepting", "listen"},
+    {"accepted", "listen"},
     {"listen", "closed"},
+    {"bound", "closed"},
   }
   );
 
 DEFINE_STATES(ListeningSocketAxis);
 
 DEFINE_STATE_CONST(ListeningSocket, State, created);
+DEFINE_STATE_CONST(ListeningSocket, State, bound);
+DEFINE_STATE_CONST(ListeningSocket, State, 
+                   address_already_in_use);
 DEFINE_STATE_CONST(ListeningSocket, State, ready);
 DEFINE_STATE_CONST(ListeningSocket, State, pre_listen);
 DEFINE_STATE_CONST(ListeningSocket, State, listen);
@@ -96,7 +106,7 @@ ListeningSocket::ListeningSocket
     (fd, 
      par.get_aw_ptr()->begin()->ai_addr,
      par.get_aw_ptr()->begin()->ai_addrlen);
-  process_error(errno);
+  process_bind_error(errno);
 }
 
 ListeningSocket::~ListeningSocket()
@@ -128,11 +138,29 @@ void ListeningSocket::state_hook
   }
 }
 
-void ListeningSocket::process_error(int error)
+void ListeningSocket::process_bind_error(int error)
 {
   switch(error) {
   case 0:
-    return;
+    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
+      (*this, boundState);
+    break;
+  case EADDRINUSE:
+    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
+      (*this, address_already_in_useState);
+    break;
+  default:
+    THROW_NOT_IMPLEMENTED;
+  }
+}
+
+void ListeningSocket::process_listen_error(int error)
+{
+  switch(error) {
+  case 0:
+    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
+      (*this, listenState);
+    break;
   default:
     THROW_NOT_IMPLEMENTED;
   }
@@ -157,11 +185,7 @@ void ListeningSocket::SelectThread::run()
       (lstn_sock->fd, 
        lstn_sock->repository
        -> get_pending_connections_queue_size());
-
-  lstn_sock->process_error(errno);
-
-  ListeningSocket::State::move_to
-    (*lstn_sock, ListeningSocket::listenState);
+  lstn_sock->process_listen_error(errno);
 
   fd_set rfds;
   FD_ZERO(&rfds);
@@ -182,22 +206,12 @@ void ListeningSocket::SelectThread::run()
       (ListeningSocket::log, "ListeningSocket>\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
-      int error = 0;
-      socklen_t error_len = sizeof(error);
-      rSocketCheck(
-        getsockopt(fd, SOL_SOCKET, SO_ERROR, &error,
-                   &error_len) == 0);
-      if (error) {
-        lstn_sock->process_error(error);
-      }
-      else {
-        const int res2 = ::accept(fd, NULL, NULL);
+      const int res2 = ::accept(fd, NULL, NULL);
  
-        LOG_DEBUG
-          (ListeningSocket::log, 
-           "ListeningSocket>\t ::accept " << res2 
-           << "errno" << errno);
-      }
+      LOG_DEBUG
+        (ListeningSocket::log, 
+         "ListeningSocket>\t ::accept " << res2 
+         << "errno" << errno);
     }
     if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
       break;

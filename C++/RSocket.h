@@ -65,12 +65,14 @@ class SocketThread;
  *   connection_timed_out [shape = doublecircle];
  *   connection_refused [shape = doublecircle];
  *   destination_unreachable [shape = doublecircle];
+ *   address_already_in_use [shape = doublecircle];
  *   closed [shape = doublecircle];
  *   start -> created;
  *   created -> ready;
  *   created -> connection_timed_out;
  *   created -> connection_refused;
  *   created -> destination_unreachable;
+ *   created -> address_already_in_use;
  *   ready -> closed;
  *   closed -> closed;
  * }
@@ -90,6 +92,7 @@ class RSocketBase
   DECLARE_EVENT(SocketBaseAxis, connection_timed_out)
   DECLARE_EVENT(SocketBaseAxis, connection_refused)
   DECLARE_EVENT(SocketBaseAxis, destination_unreachable)
+  DECLARE_EVENT(SocketBaseAxis, address_already_in_use)
 
 public:
   DECLARE_STATES(SocketBaseAxis, State);
@@ -99,6 +102,7 @@ public:
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
+  DECLARE_STATE_CONST(State, address_already_in_use);
 
   virtual ~RSocketBase () {}
 

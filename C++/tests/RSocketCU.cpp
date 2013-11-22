@@ -13,6 +13,7 @@ void test_127001_socket_address();
 void test_localhost_socket_address();
 void test_server_socket_address();
 void test_listening_socket();
+void test_addrinuse();
 void test_client_socket_connection_refused();
 void test_client_socket_connection_timed_out();
 void test_client_socket_destination_unreachable();
@@ -29,6 +30,8 @@ CU_TestInfo RSocketTests[] = {
    test_server_socket_address},
   {"test listening socket", 
    test_listening_socket},
+  {"test address_already_in_use", 
+   test_addrinuse},
   {"test Client_Socket connection_refused",
    test_client_socket_connection_refused},
   {"test Client_Socket connection_timed_out",
@@ -106,19 +109,40 @@ void test_listening_socket()
           // NB use different port than connect tests
   CU_ASSERT_TRUE_FATAL(
     ListeningSocket::State::state_is
-      (*srv_sock, ListeningSocket::createdState));
+      (*srv_sock, ListeningSocket::boundState));
   srv_sock->ask_listen();
   CURR_WAIT_L(rootLogger, srv_sock->is_listen(), 1);
-  // TODO address already in usexs
-#if 0
-  srv_sock->is_terminal_state().wait();
+}
+
+void test_addrinuse()
+{
+  RSocketRepository sr
+    ("RSocketCU::test_listening_socket::sr", 10, 1);
+  ListeningSocket* srv_sock = dynamic_cast<ListeningSocket*>
+    (sr.create_object
+     (*RSocketAddressRepository()
+      . create_addresses
+        < SocketSide::Server, 
+          NetworkProtocol::TCP,
+          IPVer::v4 > ("", 5557) . front()));
+          // NB use different port than connect tests
+
+  ListeningSocket* s2_sock = dynamic_cast<ListeningSocket*>
+    (sr.create_object
+     (*RSocketAddressRepository()
+      . create_addresses
+        < SocketSide::Server, 
+          NetworkProtocol::TCP,
+          IPVer::v4 > ("", 5557) . front()));
+          // NB use different port than connect tests
+
   CU_ASSERT_TRUE_FATAL(
-    /*RSocketBase::State::*/state_is
-    (*srv_sock, RSocketBase::connection_refusedState));
-  // <NB> it is splitted state, the ClientSocketAxis
-  // is updated with delay
-//  cli_sock->is_connection_refused().wait();
-#endif
+    ListeningSocket::State::state_is
+      (*srv_sock, ListeningSocket::boundState));
+  CU_ASSERT_TRUE_FATAL(
+    ListeningSocket::State::state_is
+      (*s2_sock, 
+       ListeningSocket::address_already_in_useState));
 }
 
 struct Log { typedef Logger<Log> log; };

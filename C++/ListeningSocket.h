@@ -49,14 +49,19 @@ DECLARE_AXIS(ListeningSocketAxis, SocketBaseAxis);
   * @dot
   * digraph {
   *   start [shape = point]; 
+  *   address_already_in_use [shape = doublecircle];
   *   closed [shape = doublecircle];
   *   start -> created;
-  *   created -> pre_listen;
+  *   created -> bound;
+  *   created -> address_already_in_use;
+  *   bound -> pre_listen;
   *   pre_listen -> listen;
   *   listen -> accepting;
+  *   accepting -> accepted;
   *   accepting -> listen;
+  *   accepted -> listen;
   *   listen -> closed;
-  *   created -> closed;
+  *   bound -> closed;
   *   closed -> closed;
   * }
   * @enddot
@@ -73,6 +78,8 @@ public:
   //! @cond
   DECLARE_STATES(ListeningSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
+  DECLARE_STATE_CONST(State, bound);
+  DECLARE_STATE_CONST(State, address_already_in_use);
   DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, pre_listen);
   DECLARE_STATE_CONST(State, listen);
@@ -202,7 +209,8 @@ protected:
     ~WaitThread() { destroy(); }
   }* wait_thread;
 
-  void process_error(int error);
+  void process_bind_error(int error);
+  void process_listen_error(int error);
 
   DEFAULT_LOGGER(ListeningSocket);
 };
