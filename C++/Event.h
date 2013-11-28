@@ -57,7 +57,7 @@ public:
 
   EventWaitingTimedOut(int ms) : SException(
     SFORMAT("Event waiting timed out after " << ms 
-            << "milliseconds")), 
+            << " milliseconds")), 
     msecs(ms) {}
 };
 
@@ -88,7 +88,7 @@ public:
     ObjectWithLogging* log_obj;
 
     LogParams(ObjectWithLogging* obj) 
-    : set(true), reset(true), wait(false), log_obj(obj)
+    : set(true), reset(true), wait(true), log_obj(obj)
     {
       assert(log_obj);
     }
