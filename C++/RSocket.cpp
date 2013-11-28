@@ -44,21 +44,24 @@ namespace curr {
 DEFINE_AXIS(
   SocketBaseAxis,
   {
-    "created",
-      "ready",
+      "created",
+      "io_ready",
+      "bound",
       "closed",
       "connection_timed_out",
       "connection_refused",
       "destination_unreachable",
       "address_already_in_use"
       },
-  { {"created", "ready"},
+  { {"created", "io_ready"},
+    {"created", "bound"},
     {"created", "closed"},
     {"created", "connection_timed_out"},
     {"created", "connection_refused"},
     {"created", "destination_unreachable"},
     {"created", "address_already_in_use"},
-    {"ready", "closed"},
+    {"bound",  "closed"},
+    {"io_ready", "closed"},
     {"closed", "closed"},
   }
   );
@@ -66,7 +69,8 @@ DEFINE_AXIS(
 DEFINE_STATES(SocketBaseAxis);
 
 DEFINE_STATE_CONST(RSocketBase, State, created);
-DEFINE_STATE_CONST(RSocketBase, State, ready);
+DEFINE_STATE_CONST(RSocketBase, State, io_ready);
+DEFINE_STATE_CONST(RSocketBase, State, bound);
 DEFINE_STATE_CONST(RSocketBase, State, closed);
 DEFINE_STATE_CONST(RSocketBase, State, 
              connection_timed_out);
@@ -82,7 +86,8 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
                  const RSocketAddress& addr) 
   : StdIdMember(SFORMAT(addr.get_fd())),
    RObjectWithEvents(createdState),
-   CONSTRUCT_EVENT(ready),
+   CONSTRUCT_EVENT(io_ready),
+   CONSTRUCT_EVENT(bound),
    CONSTRUCT_EVENT(closed),
    CONSTRUCT_EVENT(connection_timed_out),
    CONSTRUCT_EVENT(connection_refused),

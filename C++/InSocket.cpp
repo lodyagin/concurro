@@ -92,7 +92,7 @@ void InSocket::SelectThread::run()
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
 
-  ( socket->is_ready()
+  ( socket->is_io_ready()
     | socket->is_terminal_state()
     ) . wait();
 
@@ -112,7 +112,7 @@ void InSocket::SelectThread::run()
   for(;;) {
     // Wait for new data
     if (RSocketBase::State::state_is
-        (*socket, RSocketBase::readyState))
+        (*socket, RSocketBase::io_readyState))
       FD_SET(fd, &rfds);
     else
       FD_CLR(fd, &rfds);

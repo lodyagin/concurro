@@ -107,11 +107,9 @@ void test_listening_socket()
           NetworkProtocol::TCP,
           IPVer::v4 > ("", 5556) . front()));
           // NB use different port than connect tests
-  CU_ASSERT_TRUE_FATAL(
-    ListeningSocket::State::state_is
-      (*srv_sock, ListeningSocket::boundState));
+  CURR_WAIT_L(rootLogger, srv_sock->is_bound(), 1);
   srv_sock->ask_listen();
-  CURR_WAIT_L(rootLogger, srv_sock->is_listen(), 1);
+  CURR_WAIT_L(rootLogger, srv_sock->is_listen(), -1);
 }
 
 void test_addrinuse()
@@ -247,8 +245,8 @@ void test_client_socket_connected()
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
   cli_sock->ask_connect();
-  cli_sock->is_ready().wait();
-  tcp_sock->is_ready().wait();
+  cli_sock->is_io_ready().wait();
+  tcp_sock->is_io_ready().wait();
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
     RSocketBase::State::state_is

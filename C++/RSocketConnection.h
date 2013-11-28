@@ -187,26 +187,26 @@ DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
  *   clearly_closed [shape = doublecircle];
  *   aborted [shape = doublecircle];
  *   start -> created;
- *   created -> ready;
+ *   created -> io_ready;
  *   created -> connection_timed_out;
  *   created -> connection_refused;
  *   created -> destination_unreachable;
- *   ready -> closed;
+ *   io_ready -> closed;
  *   closed -> closed;
  *   created -> closed;
  *   created -> pre_connecting
  *      [label="ask_connect()"];
  *   pre_connecting -> connecting
  *      [label="EINPROGRESS"];
- *   connecting -> ready;
+ *   connecting -> io_ready;
  *   connecting -> connection_timed_out
  *      [label="ETIMEDOUT"];
  *   connecting -> connection_refused
  *      [label="ECONNREFUSED"];
  *   connecting -> destination_unreachable
  *      [label="ENETUNREACH"];
- *   ready -> closed;
- *   ready -> aborting;
+ *   io_ready -> closed;
+ *   io_ready -> aborting;
  *   aborting -> aborted;
  *   closed -> clearly_closed;
  *   closed -> aborting;

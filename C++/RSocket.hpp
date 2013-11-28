@@ -47,6 +47,7 @@ RSocket<Bases...>
           const RSocketAddress& addr)
   : RSocketBase(oi, addr), Bases(oi, addr)...
 {
+  this->bind();
   RSocketBase::is_construction_complete_event.set();
 }
 
@@ -59,7 +60,7 @@ RSocket<Bases...>
   RSocketBase::State::compare_and_move
     (*this, 
      { RSocketBase::createdState,
-       RSocketBase::readyState 
+       RSocketBase::io_readyState 
      },
      RSocketBase::closedState);
 

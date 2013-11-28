@@ -80,7 +80,7 @@ public:
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, bound);
   DECLARE_STATE_CONST(State, address_already_in_use);
-  DECLARE_STATE_CONST(State, ready);
+  DECLARE_STATE_CONST(State, io_ready);
   DECLARE_STATE_CONST(State, pre_listen);
   DECLARE_STATE_CONST(State, listen);
   DECLARE_STATE_CONST(State, accepting);
@@ -93,6 +93,8 @@ public:
   {
     return is_terminal_state_event;
   }*/
+
+  void bind() override;
 
   //! Start listening for incoming connections. It moves
   //! the object in the `listen' state.
@@ -143,6 +145,7 @@ public:
   {
     ax.update_events(this, trans_id, to);
   }
+
 protected:
   //const CompoundEvent is_terminal_state_event;
 

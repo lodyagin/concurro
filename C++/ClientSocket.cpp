@@ -44,11 +44,11 @@ DEFINE_AXIS(
     {"created", "closed"},
     {"created", "pre_connecting"},
     {"pre_connecting", "connecting"},
-    {"connecting", "ready"},
+    {"connecting", "io_ready"},
     {"connecting", "connection_timed_out"},
     {"connecting", "connection_refused"},
     {"connecting", "destination_unreachable"},
-    {"ready", "closed"}
+    {"io_ready", "closed"}
   }
   );
 
@@ -57,7 +57,7 @@ DEFINE_STATES(ClientSocketAxis);
 DEFINE_STATE_CONST(ClientSocket, State, created);
 DEFINE_STATE_CONST(ClientSocket, State, pre_connecting);
 DEFINE_STATE_CONST(ClientSocket, State, connecting);
-DEFINE_STATE_CONST(ClientSocket, State, ready);
+DEFINE_STATE_CONST(ClientSocket, State, io_ready);
 DEFINE_STATE_CONST(ClientSocket, State, 
                    connection_timed_out);
 DEFINE_STATE_CONST(ClientSocket, State, 
@@ -78,7 +78,7 @@ ClientSocket::ClientSocket
      ),
    CONSTRUCT_EVENT(pre_connecting),
    CONSTRUCT_EVENT(connecting),
-   CONSTRUCT_EVENT(ready),
+   CONSTRUCT_EVENT(io_ready),
    CONSTRUCT_EVENT(connection_timed_out),
    CONSTRUCT_EVENT(connection_refused),
    CONSTRUCT_EVENT(destination_unreachable),
@@ -126,7 +126,7 @@ void ClientSocket::process_error(int error)
     return;
   case 0:
     RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-      (*this, readyState);
+      (*this, io_readyState);
     return;
   case ETIMEDOUT:
     RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to

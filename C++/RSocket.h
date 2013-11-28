@@ -67,14 +67,16 @@ class SocketThread;
  *   destination_unreachable [shape = doublecircle];
  *   address_already_in_use [shape = doublecircle];
  *   closed [shape = doublecircle];
- *   start -> created;
- *   created -> ready;
- *   created -> connection_timed_out;
- *   created -> connection_refused;
- *   created -> destination_unreachable;
- *   created -> address_already_in_use;
- *   ready -> closed;
- *   closed -> closed;
+ *   start    -> created;
+ *   created  -> io_ready;
+ *   created  -> bound;
+ *   created  -> connection_timed_out;
+ *   created  -> connection_refused;
+ *   created  -> destination_unreachable;
+ *   created  -> address_already_in_use;
+ *   bound    -> closed;
+ *   io_ready -> closed;
+ *   closed   -> closed;
  * }
  * @enddot
  *
@@ -87,7 +89,8 @@ class RSocketBase
   friend std::ostream&
 	 operator<< (std::ostream&, const RSocketBase&);
 
-  DECLARE_EVENT(SocketBaseAxis, ready);
+  DECLARE_EVENT(SocketBaseAxis, io_ready);
+  DECLARE_EVENT(SocketBaseAxis, bound);
   DECLARE_EVENT(SocketBaseAxis, closed);
   DECLARE_EVENT(SocketBaseAxis, connection_timed_out)
   DECLARE_EVENT(SocketBaseAxis, connection_refused)
@@ -97,7 +100,8 @@ class RSocketBase
 public:
   DECLARE_STATES(SocketBaseAxis, State);
   DECLARE_STATE_CONST(State, created);
-  DECLARE_STATE_CONST(State, ready);
+  DECLARE_STATE_CONST(State, io_ready);
+  DECLARE_STATE_CONST(State, bound);
   DECLARE_STATE_CONST(State, closed);
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
@@ -108,6 +112,9 @@ public:
 
   //! A socket file descriptor.
   const SOCKET fd;
+
+  //! Binds the socket to its address.
+  virtual void bind() {};
 
   virtual void ask_close_out() = 0;
 
@@ -131,9 +138,9 @@ protected:
   //! A socket address
   std::shared_ptr<AddrinfoWrapper> aw_ptr;
   
-  //! List of all ancestors terminal events. Each derived
-  //! (with a public virtual base) class appends its
-  //! terminal event here from its constructor.
+  // List of all ancestors terminal events. Each derived
+  // (with a public virtual base) class appends its
+  // terminal event here from its constructor.
   //std::list<CompoundEvent> ancestor_terminals;
 
 public:

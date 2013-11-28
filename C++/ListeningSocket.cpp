@@ -36,15 +36,13 @@ namespace curr {
 DEFINE_AXIS(
   ListeningSocketAxis, 
   {
-    "bound",
     "pre_listen",
     "listen",       // passive open
     "accepting",    // in the middle of a new ServerSocket
     "accepted"
   },
   {
-    {"created", "bound"},                 // in constructor
-    {"created", "address_already_in_use"}, // in constructor
+    {"created", "address_already_in_use"}, //in constructor
     {"bound", "pre_listen"},      // ask_listen()
     {"pre_listen", "listen"},
     {"listen", "accepting"}, // connect() from other side
@@ -52,7 +50,6 @@ DEFINE_AXIS(
     {"accepting", "listen"},
     {"accepted", "listen"},
     {"listen", "closed"},
-    {"bound", "closed"},
   }
   );
 
@@ -62,7 +59,7 @@ DEFINE_STATE_CONST(ListeningSocket, State, created);
 DEFINE_STATE_CONST(ListeningSocket, State, bound);
 DEFINE_STATE_CONST(ListeningSocket, State, 
                    address_already_in_use);
-DEFINE_STATE_CONST(ListeningSocket, State, ready);
+DEFINE_STATE_CONST(ListeningSocket, State, io_ready);
 DEFINE_STATE_CONST(ListeningSocket, State, pre_listen);
 DEFINE_STATE_CONST(ListeningSocket, State, listen);
 DEFINE_STATE_CONST(ListeningSocket, State, accepting);
@@ -74,10 +71,10 @@ ListeningSocket::ListeningSocket
  : 
   RSocketBase(oi, par),
   RStateSplitter<ListeningSocketAxis, SocketBaseAxis>
-    (this, createdState/*,
+  (this, createdState,
     RStateSplitter<ListeningSocketAxis, SocketBaseAxis>
-     ::state_hook(&ServerSocket::state_hook)*/
-     ),
+     ::state_hook(&ListeningSocket::state_hook)
+  ),
   CONSTRUCT_EVENT(pre_listen),
   CONSTRUCT_EVENT(listen),
 
@@ -101,18 +98,21 @@ ListeningSocket::ListeningSocket
     (select_thread->is_terminal_state());
   this->RSocketBase::threads_terminals.push_back
     (wait_thread->is_terminal_state());
-
-  ::bind
-    (fd, 
-     par.get_aw_ptr()->begin()->ai_addr,
-     par.get_aw_ptr()->begin()->ai_addrlen);
-  process_bind_error(errno);
 }
 
 ListeningSocket::~ListeningSocket()
 {
 /*  State::compare_and_move
     (*this, listenState, closedState);*/
+}
+
+void ListeningSocket::bind()
+{
+  ::bind
+    (fd, 
+     aw_ptr->begin()->ai_addr,
+     aw_ptr->begin()->ai_addrlen);
+  process_bind_error(errno);
 }
 
 void ListeningSocket::ask_listen()
@@ -131,8 +131,8 @@ void ListeningSocket::state_hook
     const RState<ListeningSocketAxis> st(new_state);
     ListeningSocket::State::move_to(*this, st);
 
-    if (st == readyState) {
-      THROW_PROGRAM_ERROR; // "ready" state is impossible
+    if (st == io_readyState) {
+      THROW_PROGRAM_ERROR; // "io_ready" state is impossible
                            // for listening socket
     }
   }
@@ -142,8 +142,13 @@ void ListeningSocket::process_bind_error(int error)
 {
   switch(error) {
   case 0:
+#if 1
+    RSocketBase::State::move_to
+      (*this, RSocketBase::boundState);
+#else
     RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
       (*this, boundState);
+#endif
     break;
   case EADDRINUSE:
     RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
@@ -158,8 +163,7 @@ void ListeningSocket::process_listen_error(int error)
 {
   switch(error) {
   case 0:
-    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
-      (*this, listenState);
+    RAxis<ListeningSocketAxis>::move_to(*this, listenState);
     break;
   default:
     THROW_NOT_IMPLEMENTED;

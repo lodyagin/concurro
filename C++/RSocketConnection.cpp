@@ -45,7 +45,7 @@ DEFINE_AXIS(
      "clearly_closed" // all pending data 
                       // was received / sent
   },
-  { { "ready", "aborting" },
+  { { "io_ready", "aborting" },
     { "aborting", "aborted" },
     { "closed", "clearly_closed" },
     { "closed", "aborting" }

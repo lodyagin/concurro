@@ -43,13 +43,13 @@ DEFINE_AXIS(
     "closing",      // fin-wait, time-wait, closing,
   },
   {
-    {"created", "ready"}, // initial send() is
+    {"created", "io_ready"}, // initial send() is
       // recieved by other side
     {"created", "closed"},     // ask close() or timeout 
-    {"ready", "closing"}, // our close() or FIN from
+    {"io_ready", "closing"}, // our close() or FIN from
       // other side
-    {"ready", "in_closed"},
-    {"ready", "out_closed"},
+    {"io_ready", "in_closed"},
+    {"io_ready", "out_closed"},
     {"closing", "closed"},
     {"in_closed", "closed"},
     {"out_closed", "closed"},
@@ -65,7 +65,7 @@ DEFINE_STATE_CONST(TCPSocket, State, in_closed);
 DEFINE_STATE_CONST(TCPSocket, State, out_closed);
 DEFINE_STATE_CONST(TCPSocket, State, listen);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
-DEFINE_STATE_CONST(TCPSocket, State, ready);
+DEFINE_STATE_CONST(TCPSocket, State, io_ready);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
 
 TCPSocket::TCPSocket
@@ -78,7 +78,7 @@ TCPSocket::TCPSocket
      RStateSplitter<TCPAxis, SocketBaseAxis>
      ::state_hook(&TCPSocket::state_hook)
     ),
-  CONSTRUCT_EVENT(ready),
+  CONSTRUCT_EVENT(io_ready),
   CONSTRUCT_EVENT(closed),
   CONSTRUCT_EVENT(in_closed),
   CONSTRUCT_EVENT(out_closed),
@@ -122,7 +122,7 @@ void TCPSocket::state_hook
     const RState<TCPAxis> st(new_state);
     State::move_to(*this, st);
 
-    if (st == readyState) {
+    if (st == io_readyState) {
       select_thread->start();
       wait_thread->start();
     }
@@ -142,7 +142,7 @@ void TCPSocket::ask_close_out()
       A_STATE(TCPSocket, TCPAxis, move_to, closed);
       RSocketBase::State::compare_and_move
         (*this, 
-         { RSocketBase::readyState,
+         { RSocketBase::io_readyState,
              RSocketBase::createdState
              }, 
          RSocketBase::closedState);
@@ -152,12 +152,12 @@ void TCPSocket::ask_close_out()
 
 #if 1
   State::compare_and_move
-    (*this, readyState, out_closedState) ||
+    (*this, io_readyState, out_closedState) ||
   State::compare_and_move
     (*this, in_closedState, closedState);
 #else
   if (State::compare_and_move
-      (*this, readyState, out_closedState)
+      (*this, io_readyState, out_closedState)
       ||
       State::compare_and_move
       (*this, in_closedState, closedState)
@@ -217,7 +217,7 @@ void TCPSocket::SelectThread::run()
 
         if (TCPSocket::State::compare_and_move
             (*tcp_sock, 
-             TCPSocket::readyState, 
+             TCPSocket::io_readyState, 
              TCPSocket::in_closedState
               )
             || 

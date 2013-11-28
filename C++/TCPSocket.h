@@ -58,11 +58,11 @@ DECLARE_AXIS(TCPAxis, ListeningSocketAxis);
   *   listen -> accepting;
   *   accepting -> listen;
   *   listen -> closed;
-  *   created -> ready;
+  *   created -> io_ready;
   *   created -> closed;
-  *   ready -> closing;
-  *   ready -> in_closed;
-  *   ready -> out_closed;
+  *   io_ready -> closing;
+  *   io_ready -> in_closed;
+  *   io_ready -> out_closed;
   *   closing -> closed;
   *   in_closed -> closed;
   *   out_closed -> closed;
@@ -73,7 +73,7 @@ DECLARE_AXIS(TCPAxis, ListeningSocketAxis);
 class TCPSocket : virtual public RSocketBase
 , public RStateSplitter<TCPAxis, SocketBaseAxis>
 {
-  DECLARE_EVENT(TCPAxis, ready);
+  DECLARE_EVENT(TCPAxis, io_ready);
   DECLARE_EVENT(TCPAxis, closed);
   DECLARE_EVENT(TCPAxis, in_closed);
   DECLARE_EVENT(TCPAxis, out_closed);
@@ -86,7 +86,7 @@ public:
   DECLARE_STATE_CONST(State, out_closed);
   DECLARE_STATE_CONST(State, listen);
   DECLARE_STATE_CONST(State, accepting);
-  DECLARE_STATE_CONST(State, ready);
+  DECLARE_STATE_CONST(State, io_ready);
   DECLARE_STATE_CONST(State, closing);
 
   ~TCPSocket();
