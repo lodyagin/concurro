@@ -116,6 +116,7 @@ public:
   //! Binds the socket to its address.
   virtual void bind() {};
 
+  //! Closes an outbound part
   virtual void ask_close_out() = 0;
 
   virtual std::string universal_id() const

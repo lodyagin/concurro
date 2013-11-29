@@ -60,7 +60,8 @@ RSocket<Bases...>
   RSocketBase::State::compare_and_move
     (*this, 
      { RSocketBase::createdState,
-       RSocketBase::io_readyState 
+       RSocketBase::boundState, // includes ListeningSocket::listen
+       RSocketBase::io_readyState
      },
      RSocketBase::closedState);
 

@@ -102,6 +102,7 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
     is_connection_timed_out_event,
     is_connection_refused_event,
     is_destination_unreachable_event,
+    is_address_already_in_use_event,
     is_closed_event  
    },
    aw_ptr(addr.get_aw_ptr())

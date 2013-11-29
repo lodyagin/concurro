@@ -301,14 +301,13 @@ void move_to
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 bool compare_and_move
   (T& obj, 
    const curr::RState<typename T::State::axis>& from,
    const curr::RState<typename T::State::axis>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: compare_and_move(obj, from, to);
 }
 
@@ -332,7 +331,7 @@ using REvent = RMixedEvent<Axis, Axis>;
 
 //! Wait is_from_event then perform 
 //! RMixedAxis<Axis,Axis2>::compare_and_move 
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 void wait_and_move
   (T& obj, 
    const REvent<typename T::State::axis>& is_from_event,

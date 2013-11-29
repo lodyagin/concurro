@@ -91,7 +91,6 @@ public:
 
   ~TCPSocket();
 
-  //! Ask to close an outbound part
   void ask_close_out() override;
 
   std::string universal_id() const override

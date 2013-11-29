@@ -102,8 +102,8 @@ ListeningSocket::ListeningSocket
 
 ListeningSocket::~ListeningSocket()
 {
-/*  State::compare_and_move
-    (*this, listenState, closedState);*/
+  /*wait_and_move<ListeningSocket, ListeningSocketAxis>
+    (*this, is_listen(), closedState);*/
 }
 
 void ListeningSocket::bind()

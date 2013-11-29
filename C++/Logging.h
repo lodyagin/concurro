@@ -339,13 +339,13 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 //! Add this to a class declaration for implement logging
 //! in the class
 #define DEFAULT_LOGGER(class_) \
-private: \
-  typedef curr::Logger<class_> log;               \
-  \
+public: \
   log4cxx::LoggerPtr logger() const override \
   { \
    return log::logger(); \
-  }
+  } \
+private: \
+  typedef curr::Logger<class_> log;
 
 }
 
