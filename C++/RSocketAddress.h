@@ -384,6 +384,8 @@ protected:
   RSocketAddressRepository* repository;
 };
 
+class ListeningSocket;
+
 std::ostream&
 operator<< (std::ostream&, const RSocketAddress&);
 
