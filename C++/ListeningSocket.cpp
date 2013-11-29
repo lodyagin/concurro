@@ -132,8 +132,10 @@ void ListeningSocket::state_hook
     ListeningSocket::State::move_to(*this, st);
 
     if (st == io_readyState) {
-      THROW_PROGRAM_ERROR; // "io_ready" state is impossible
+      THROW_PROGRAM_ERROR; //"io_ready" state is impossible
                            // for listening socket
+      // TODO add impossible states to other types of
+      // sockets 
     }
   }
 }
@@ -146,13 +148,13 @@ void ListeningSocket::process_bind_error(int error)
     RSocketBase::State::move_to
       (*this, RSocketBase::boundState);
 #else
-    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
-      (*this, boundState);
+    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>
+      ::move_to (*this, boundState);
 #endif
     break;
   case EADDRINUSE:
-    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>::move_to
-      (*this, address_already_in_useState);
+    RMixedAxis<ListeningSocketAxis, SocketBaseAxis>
+      ::move_to (*this, address_already_in_useState);
     break;
   default:
     THROW_NOT_IMPLEMENTED;
@@ -163,7 +165,18 @@ void ListeningSocket::process_listen_error(int error)
 {
   switch(error) {
   case 0:
-    RAxis<ListeningSocketAxis>::move_to(*this, listenState);
+    RAxis<ListeningSocketAxis>
+      ::move_to(*this, listenState);
+    break;
+  default:
+    THROW_NOT_IMPLEMENTED;
+  }
+}
+
+void ListeningSocket::process_accept_error(int error)
+{
+  switch(error) {
+  case 0:
     break;
   default:
     THROW_NOT_IMPLEMENTED;
@@ -207,15 +220,18 @@ void ListeningSocket::SelectThread::run()
       (maxfd, &rfds, NULL, NULL, NULL);
     rSocketCheck(res > 0);
     LOG_DEBUG
-      (ListeningSocket::log, "ListeningSocket>\t ::select");
+      (ListeningSocket::log,"ListeningSocket>\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
-      const int res2 = ::accept4(fd, NULL, NULL, SOCK_NONBLOCK);
- 
-      LOG_DEBUG
-        (ListeningSocket::log, 
-         "ListeningSocket>\t ::accept " << res2 
-         << "errno" << errno);
+      move_to(*this, acceptingState);
+
+      const SOCKET new_fd = ::accept4
+        (fd, NULL, NULL, SOCK_NONBLOCK);
+      process_accept_error(errno);
+      
+      socket->repository->create_object
+        (*socket->address->repository->create_addresses
+           (*this, new_fd));
     }
     if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
       break;

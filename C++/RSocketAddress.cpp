@@ -194,9 +194,13 @@ RSocketAddress::RSocketAddress
    )
 :   StdIdMember(oi.objectId),
     ai(ai_), aw_ptr(ptr), fd(fd_),
-    is_server_socket_address(fd_ >= 0)
+    is_server_socket_address(fd_ >= 0),
+    repository
+      (dynamic_cast<RSocketAddressRepository*>
+        (oi.repository));
 {
   assert(ai);
+  SCHECK(repository);
 }
 
 RSocketBase* RSocketAddress::create_derivation

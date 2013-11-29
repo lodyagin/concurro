@@ -136,8 +136,10 @@ public:
 protected:
   const CompoundEvent is_terminal_state_event;
 
-  //! A socket address
-  std::shared_ptr<AddrinfoWrapper> aw_ptr;
+  //! A socket address.
+  //FIXME Use RHolder to remove the address from
+  //repository on the socket destruction.
+  RSocketAddress* address;
   
   // List of all ancestors terminal events. Each derived
   // (with a public virtual base) class appends its

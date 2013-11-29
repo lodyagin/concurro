@@ -214,6 +214,7 @@ protected:
 
   void process_bind_error(int error);
   void process_listen_error(int error);
+  void process_accept_error(int error);
 
   DEFAULT_LOGGER(ListeningSocket);
 };

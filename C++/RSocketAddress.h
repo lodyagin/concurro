@@ -292,6 +292,7 @@ public:
 };
 
 class RSocketBase;
+class RSocketAddressRepository;
 
 class RSocketAddress 
 : public StdIdMember
@@ -379,6 +380,8 @@ protected:
   //! The server socket address is for already existing
   //! accepted socket.
   bool is_server_socket_address;
+
+  RSocketAddressRepository* repository;
 };
 
 std::ostream&
@@ -408,9 +411,19 @@ public:
   RSocketAddressRepository()
     : Parent("some RSocketAddressRepository", 8) {}
 
+  //FIXME wait all addresses are removed by an external
+  //power before destruction
+  //~RSocketAddressRepository() ;
+
   template<SocketSide, NetworkProtocol, IPVer>
   std::list<RSocketAddress*> create_addresses
     (const std::string& host, uint16_t port);
+
+  //! Generate the address of the socket created as a
+  //! result to accept(2) call.
+  //! It returns the list with exactly 1 element.
+  std::list<RSocketAddress*> create_addresses
+    (const ListeningSocket& parent, SOCKET new_fd);
 };
 
 //! @}
