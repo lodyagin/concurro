@@ -61,7 +61,7 @@ class AddressRequestBase;
 
 enum class NetworkProtocol { TCP, UDP };
 enum class IPVer { v4, v6, any };
-enum class SocketSide { Client, Server };
+enum class SocketSide { Client, Listening, Server };
 
 class AddrinfoHints
 {
@@ -185,6 +185,14 @@ public:
   // If _ai == 0 then size () == 0 and empty () == true.
   AddrinfoWrapper (addrinfo* _ai);
 
+  //! Create one addrinfo* by sockaddr and listening
+  //! socket addrinfo.
+  AddrinfoWrapper 
+    (const struct sockaddr& sa, 
+     socklen_t sa_len, 
+     std::shared_ptr<AddrinfoWrapper>& listening
+     );
+
   ~AddrinfoWrapper (); // destroy addrinfo
 
   const_iterator begin () const
@@ -221,11 +229,28 @@ public:
   uint16_t port;
   addrinfo hints;
 
+  //! If fd >= 0 the host, port and hints are ignored
+  SOCKET fd = -1;
+  //! The address of a listening socket which produce the
+  //! fd above. 
+  std::shared_ptr<AddrinfoWrapper> listening_aw_ptr;
+
   AddressRequestBase(const std::string& host_, 
                      uint16_t port_, 
                      const addrinfo& hints_)
     : host(host_), port(port_), hints(hints_)
-      {}
+  {}
+
+  //! The request for get the address of the given socket
+  AddressRequestBase
+    ( SOCKET fd_,
+      std::shared_ptr<AddrinfoWrapper>& aw 
+    )
+    : fd(fd_), listening_aw_ptr(aw)
+  {
+    assert(fd > 0);
+    assert(listening_aw_ptr);
+  }
 
   size_t n_objects(const ObjectCreationInfo& oi);
 
@@ -316,9 +341,11 @@ public:
   { return aw_ptr; }
 
 protected:
-  RSocketAddress(const ObjectCreationInfo& oi,
-                const std::shared_ptr<AddrinfoWrapper>&,
-            const addrinfo* ai_);
+  RSocketAddress
+    (const ObjectCreationInfo& oi,
+     const std::shared_ptr<AddrinfoWrapper>&,
+     const addrinfo* ai_,
+     SOCKET fd_);
 
   //! Copy socket address
   //! The size of information copied is defined by 
@@ -348,6 +375,10 @@ protected:
   //!  1) create fd (it will be RSocket ID in a repo)
   //!  2) create RSocket object
   mutable SOCKET fd;
+
+  //! The server socket address is for already existing
+  //! accepted socket.
+  bool is_server_socket_address;
 };
 
 std::ostream&

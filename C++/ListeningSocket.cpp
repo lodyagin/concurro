@@ -210,7 +210,7 @@ void ListeningSocket::SelectThread::run()
       (ListeningSocket::log, "ListeningSocket>\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
-      const int res2 = ::accept(fd, NULL, NULL);
+      const int res2 = ::accept4(fd, NULL, NULL, SOCK_NONBLOCK);
  
       LOG_DEBUG
         (ListeningSocket::log, 

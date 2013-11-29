@@ -111,6 +111,10 @@ inline RSocketBase* RSocketAllocator0
     return RSocketAllocator1
       <ClientSocket, InSocket, OutSocket> 
         (protocol, ver, oi, addr);
+  case SocketSide::Listening:
+    return RSocketAllocator1
+      <InSocket, OutSocket> 
+        (protocol, ver, oi, addr);
   case SocketSide::Server:
     return RSocketAllocator1<ListeningSocket>
       (protocol, ver, oi, addr);

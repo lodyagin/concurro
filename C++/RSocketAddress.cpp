@@ -85,29 +85,47 @@ size_t AddressRequestBase
 //
 ::n_objects(const ObjectCreationInfo& oi)
 {
-  addrinfo* ai_;
+  if (fd >=0) {
+    // get the address of an existing socket
+    struct sockaddr_storage sockaddr;
+    socklen_t addrlen = sizeof(sockaddr);
 
-  // NULL is a special "wildcard" value for AI_PASSIVE, 
-  // see man getaddrinfo
-  const char *const node = 
-   (host.empty()) ? NULL : host.c_str();
+    rSocketCheck(
+      ::getsockname
+        (fd, (struct sockaddr*) &sockaddr, &addrlen)
+      == 0);
+
+    aw_ptr = std::make_shared<AddrinfoWrapper>
+      ((const struct sockaddr&) sockaddr, 
+       addrlen, 
+       listening_aw_ptr);
+  }
+  else {
+    addrinfo* ai_;
+
+    // NULL is a special "wildcard" value for AI_PASSIVE, 
+    // see man getaddrinfo
+    const char *const node = 
+      (host.empty()) ? NULL : host.c_str();
 
 
-  /* check the address consistency */
+    /* check the address consistency */
 
-  // AI_PASSIVE will be ignored if node != NULL
-  // see getaddrinfo(3)
-  SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
-              node == NULL));
+    // AI_PASSIVE will be ignored if node != NULL
+    // see getaddrinfo(3)
+    SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
+                       node == NULL));
 
 
-  rSocketCheck(
-    getaddrinfo(node,
-                SFORMAT(port).c_str(), 
-                &hints, &ai_) 
-    == 0);
+    rSocketCheck(
+      getaddrinfo(node,
+                  SFORMAT(port).c_str(), 
+                  &hints, &ai_) 
+      == 0);
 
-  aw_ptr = std::make_shared<AddrinfoWrapper>(ai_);
+    aw_ptr = std::make_shared<AddrinfoWrapper>(ai_);
+  }
+
   next_obj = aw_ptr->begin();
   return aw_ptr->size();
 }
@@ -116,7 +134,7 @@ RSocketAddress* AddressRequestBase
 //
 ::create_next_derivation(const ObjectCreationInfo& oi)
 {
-  return new RSocketAddress(oi, aw_ptr, &*next_obj++);
+  return new RSocketAddress(oi, aw_ptr, &*next_obj++, fd);
 }
 
 AddrinfoWrapper::AddrinfoWrapper (addrinfo* _ai)
@@ -125,6 +143,36 @@ AddrinfoWrapper::AddrinfoWrapper (addrinfo* _ai)
   // Count the size
   for (addrinfo* ail = ai; ail != 0; ail = ail->ai_next)
     theSize++;
+}
+
+AddrinfoWrapper::AddrinfoWrapper 
+  ( const struct sockaddr& sa, 
+    socklen_t sa_len,
+    std::shared_ptr<AddrinfoWrapper>& listening
+   ) : ai(nullptr), theSize(1)
+{
+  try {
+    if (!(ai = (addrinfo*) calloc(1, sizeof(addrinfo))))
+      throw std::bad_alloc();
+    if (!(ai->ai_addr = (sockaddr*) malloc(sa_len)))
+      throw std::bad_alloc();
+
+    addrinfo*& lai = listening.get()->ai;
+    ai->ai_flags = 0;
+    ai->ai_family = lai->ai_family;
+    ai->ai_socktype = lai->ai_socktype;
+    ai->ai_protocol = lai->ai_protocol;
+    ai->ai_addrlen = sa_len;
+    ai->ai_canonname = nullptr;
+    memcpy(ai->ai_addr, &sa, sa_len);
+    ai->ai_next = nullptr;
+  }
+  catch (...) {
+    if (ai)
+      free(ai->ai_addr);
+    free(ai);
+    throw;
+  }
 }
 
 AddrinfoWrapper::~AddrinfoWrapper ()
@@ -141,9 +189,12 @@ AddrinfoWrapper::~AddrinfoWrapper ()
 RSocketAddress::RSocketAddress
   (const ObjectCreationInfo& oi,
    const std::shared_ptr<AddrinfoWrapper>& ptr,
-  const addrinfo* ai_)
+   const addrinfo* ai_,
+   SOCKET fd_ 
+   )
 :   StdIdMember(oi.objectId),
-    ai(ai_), aw_ptr(ptr), fd(-1)
+    ai(ai_), aw_ptr(ptr), fd(fd_),
+    is_server_socket_address(fd_ >= 0)
 {
   assert(ai);
 }
@@ -166,8 +217,12 @@ RSocketBase* RSocketAddress::create_derivation
   default:        THROW_NOT_IMPLEMENTED;
   }
 
-  side = (ai->ai_flags & AI_PASSIVE) 
-   ? SocketSide::Server : SocketSide::Client;
+  if (is_server_socket_address)
+    side = SocketSide::Server;
+  else if (ai->ai_flags & AI_PASSIVE) 
+    side = SocketSide::Listening;
+  else 
+    side = SocketSide::Client;
 
   {
     struct protoent pent_buf, *pent;
@@ -198,11 +253,13 @@ SOCKET RSocketAddress
 ::get_id(ObjectCreationInfo& oi) const
 {
   assert(ai);
-  rSocketCheck
-   ((fd = ::socket(ai->ai_family, 
-              ai->ai_socktype,
-              ai->ai_protocol)) >= 0);
-   return fd;
+  if (!is_server_socket_address) {
+    rSocketCheck
+      ((fd = ::socket(ai->ai_family, 
+                      ai->ai_socktype,
+                      ai->ai_protocol)) >= 0);
+  }
+  return fd;
 }
 
 
@@ -343,6 +400,7 @@ operator<< (std::ostream& out, const RSocketAddress& sa)
   return out;
 }
 
+#if 0
 template std::list<RSocketAddress*> 
 RSocketAddressRepository
 //
@@ -356,5 +414,6 @@ RSocketAddressRepository
 ::create_addresses
   <SocketSide::Server, NetworkProtocol::TCP, IPVer::v4>
     (const std::string& host, uint16_t port);
+#endif
 
 }
