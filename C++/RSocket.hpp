@@ -113,10 +113,10 @@ inline RSocketBase* RSocketAllocator0
         (protocol, ver, oi, addr);
   case SocketSide::Listening:
     return RSocketAllocator1
-      <InSocket, OutSocket> 
+      <ListeningSocket, InSocket, OutSocket> 
         (protocol, ver, oi, addr);
   case SocketSide::Server:
-    return RSocketAllocator1<ListeningSocket>
+    return RSocketAllocator1<InSocket, OutSocket>
       (protocol, ver, oi, addr);
   default: 
     THROW_NOT_IMPLEMENTED;
