@@ -163,8 +163,8 @@ void ClientSocket::Thread::run()
 
    ::connect
       (cli_sock->fd, 
-       cli_sock->aw_ptr->begin()->ai_addr, 
-       cli_sock->aw_ptr->begin()->ai_addrlen);
+       cli_sock->address->get_aw_ptr()->begin()->ai_addr, 
+       cli_sock->address->get_aw_ptr()->begin()->ai_addrlen);
    cli_sock->process_error(errno);
 
    fd_set wfds;
