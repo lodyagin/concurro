@@ -64,12 +64,9 @@ SocketSideHints<side>
 //
 ::SocketSideHints()
 {
-  if (side == SocketSide::Server)
-	 hints.ai_flags |= AI_PASSIVE;
+  if (side == SocketSide::Listening)
+    hints.ai_flags |= AI_PASSIVE;
 }
-
-
-
 
 template<
   enum SocketSide side,

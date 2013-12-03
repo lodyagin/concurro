@@ -86,7 +86,7 @@ void test_server_socket_address()
 {
   RSocketAddressRepository sar;
   auto aiws = sar.create_addresses
-    <SocketSide::Server, NetworkProtocol::TCP, IPVer::v4>
+    <SocketSide::Listening, NetworkProtocol::TCP, IPVer::v4>
     ("", 5555);
 
   for (auto p : aiws)
@@ -99,11 +99,12 @@ void test_listening_socket()
 {
   RSocketRepository sr
     ("RSocketCU::test_listening_socket::sr", 10, 1);
-  ListeningSocket* srv_sock = dynamic_cast<ListeningSocket*>
+  ListeningSocket* srv_sock = 
+    dynamic_cast<ListeningSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
       . create_addresses
-        < SocketSide::Server, 
+        < SocketSide::Listening, 
           NetworkProtocol::TCP,
           IPVer::v4 > ("", 5556) . front()));
           // NB use different port than connect tests
@@ -121,11 +122,12 @@ void test_addrinuse()
 {
   RSocketRepository sr
     ("RSocketCU::test_listening_socket::sr", 10, 1);
-  ListeningSocket* srv_sock = dynamic_cast<ListeningSocket*>
+  ListeningSocket* srv_sock = 
+    dynamic_cast<ListeningSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
       . create_addresses
-        < SocketSide::Server, 
+        < SocketSide::Listening, 
           NetworkProtocol::TCP,
           IPVer::v4 > ("", 5557) . front()));
           // NB use different port than connect tests
@@ -134,7 +136,7 @@ void test_addrinuse()
     (sr.create_object
      (*RSocketAddressRepository()
       . create_addresses
-        < SocketSide::Server, 
+        < SocketSide::Listening, 
           NetworkProtocol::TCP,
           IPVer::v4 > ("", 5557) . front()));
           // NB use different port than connect tests
@@ -148,12 +150,33 @@ void test_addrinuse()
        ListeningSocket::address_already_in_useState));
 }
 
+void test_accept()
+{
+  RSocketRepository sr
+    ("RSocketCU::test_accept::sr", 10, 1);
+  RSocketAddressRepository sar
+    ("RSocketCU::test_accept::sar");
+
+  ListeningSocket* lstn_sock = 
+    dynamic_cast<ListeningSocket*>
+      (sr.create_object
+        (*sar.create_addresses
+          < SocketSide::Listening, 
+            NetworkProtocol::TCP,
+            IPVer::v4 > ("", 5558) . front()));
+
+  lstn_sock->ask_listen();
+
+  
+}
+
 struct Log { typedef Logger<Log> log; };
 
 void test_client_socket_connection_refused()
 {
   RSocketRepository sr
-    ("RSocketCU::test_client_socket_connection_refused::sr",
+    ("RSocketCU::test_client_socket_connection_refused"
+     "::sr",
      10, 
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
@@ -180,7 +203,8 @@ void test_client_socket_connection_refused()
 void test_client_socket_connection_timed_out()
 {
   RSocketRepository sr
-    ("RSocketCU::test_client_socket_connection_timed_out::sr",
+    ("RSocketCU::test_client_socket_connection_timed_out"
+     "::sr",
      10, 
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
@@ -206,7 +230,8 @@ void test_client_socket_connection_timed_out()
 void test_client_socket_destination_unreachable()
 {
   RSocketRepository sr
-    ("RSocketCU::test_client_socket_destination_unreachable::sr",
+    ("RSocketCU"
+     "::test_client_socket_destination_unreachable::sr",
      10, 
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
@@ -224,7 +249,8 @@ void test_client_socket_destination_unreachable()
   cli_sock->ClientSocket::is_terminal_state().wait();
   CU_ASSERT_TRUE_FATAL(
     RSocketBase::State::state_is
-    (*cli_sock, RSocketBase::destination_unreachableState));
+    (*cli_sock, 
+     RSocketBase::destination_unreachableState));
   cli_sock->is_destination_unreachable().wait();
 }
 

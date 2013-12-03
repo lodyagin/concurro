@@ -411,8 +411,10 @@ public:
   > Parent;
   typedef size_t Id;
 
-  RSocketAddressRepository()
-    : Parent("some RSocketAddressRepository", 8) {}
+  RSocketAddressRepository
+    (const std::string& name = 
+      std::string("some RSocketAddressRepository"))
+    : Parent(name, 8) {}
 
   //FIXME wait all addresses are removed by an external
   //power before destruction
