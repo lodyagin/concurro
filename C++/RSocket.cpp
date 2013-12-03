@@ -105,12 +105,12 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
     is_address_already_in_use_event,
     is_closed_event  
    },
-   aw_ptr(addr.get_aw_ptr())
+   address(&addr)
 {
   assert(fd >= 0);
   assert(repository);
-  assert(aw_ptr);
-  assert(aw_ptr->begin()->ai_addr);
+  assert(address);
+  assert(address->get_aw_ptr()->begin()->ai_addr);
 
   set_blocking(false);
 }

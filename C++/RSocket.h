@@ -129,6 +129,11 @@ public:
     return is_terminal_state_event;
   }
 
+  const RSocketAddress* get_address() const
+  {
+    return address;
+  }
+
   Event is_construction_complete_event;
 
   RSocketRepository *const repository;
@@ -139,7 +144,7 @@ protected:
   //! A socket address.
   //FIXME Use RHolder to remove the address from
   //repository on the socket destruction.
-  RSocketAddress* address;
+  const RSocketAddress* address;
   
   // List of all ancestors terminal events. Each derived
   // (with a public virtual base) class appends its

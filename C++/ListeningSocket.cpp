@@ -110,8 +110,8 @@ void ListeningSocket::bind()
 {
   ::bind
     (fd, 
-     aw_ptr->begin()->ai_addr,
-     aw_ptr->begin()->ai_addrlen);
+     address->get_aw_ptr()->begin()->ai_addr,
+     address->get_aw_ptr()->begin()->ai_addrlen);
   process_bind_error(errno);
 }
 
@@ -223,15 +223,16 @@ void ListeningSocket::SelectThread::run()
       (ListeningSocket::log,"ListeningSocket>\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
-      move_to(*this, acceptingState);
+      move_to<ListeningSocket, ListeningSocketAxis>
+        (*lstn_sock, acceptingState);
 
       const SOCKET new_fd = ::accept4
         (fd, NULL, NULL, SOCK_NONBLOCK);
-      process_accept_error(errno);
+      lstn_sock->process_accept_error(errno);
       
       socket->repository->create_object
-        (*socket->address->repository->create_addresses
-           (*this, new_fd));
+        (**socket->get_address()->repository
+          -> create_addresses(*lstn_sock, new_fd).begin());
     }
     if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
       break;

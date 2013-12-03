@@ -213,14 +213,16 @@ public:
 
   //! Atomic compare-and-change state which use rules from
   //! the trs map and tries to find an appropriate map
-  //! element and change a state pair::first -> pair::second
+  //! element and change a state pair::first ->
+  //! pair::second
   //! (if the current state is pair::first). 
   //! \return The constant interator to performed
   //! transition from trs or trs.end() if no transition
   //! was performed.
   static auto compare_and_move
     (ObjectWithStatesInterface<Axis2>& obj, 
-     const std::map<const RState<Axis>, const RState<Axis>>& trs
+     const std::map<const RState<Axis>, 
+     const RState<Axis>>& trs
      ) -> typename std::remove_reference
             <decltype(trs)>::type::const_iterator;
 
@@ -290,13 +292,12 @@ bool state_is
 }
 
 //! RMixedAxis<Axis,Axis2>::move_to adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 void move_to
   (T& obj, 
    const curr::RState<typename T::State::axis>& to)
 {
-  curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  curr::RMixedAxis<typename T::State::axis, Axis2>
     :: move_to(obj, to);
 }
 

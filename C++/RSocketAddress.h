@@ -244,7 +244,7 @@ public:
   //! The request for get the address of the given socket
   AddressRequestBase
     ( SOCKET fd_,
-      std::shared_ptr<AddrinfoWrapper>& aw 
+      std::shared_ptr<AddrinfoWrapper> aw 
     )
     : fd(fd_), listening_aw_ptr(aw)
   {
@@ -381,7 +381,8 @@ protected:
   //! accepted socket.
   bool is_server_socket_address;
 
-  RSocketAddressRepository* repository;
+public:
+  mutable RSocketAddressRepository* repository;
 };
 
 class ListeningSocket;

@@ -89,7 +89,8 @@ ClientSocket::ClientSocket
            -> create_thread(Thread::Par(this))))
 {
    SCHECK(thread);
-   RStateSplitter<ClientSocketAxis, SocketBaseAxis>::init();
+   RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+     ::init();
    this->RSocketBase::threads_terminals.push_back
       (thread->is_terminal_state());
 }
@@ -163,8 +164,9 @@ void ClientSocket::Thread::run()
 
    ::connect
       (cli_sock->fd, 
-       cli_sock->aw_ptr->begin()->ai_addr, 
-       cli_sock->aw_ptr->begin()->ai_addrlen);
+       cli_sock->address->get_aw_ptr()->begin()->ai_addr, 
+       cli_sock->address->get_aw_ptr()->begin()
+         -> ai_addrlen);
    cli_sock->process_error(errno);
 
    fd_set wfds;
@@ -188,12 +190,14 @@ void ClientSocket::Thread::run()
      // process time out by the repository request
      assert(use_timeout);
       RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-        (*cli_sock, ClientSocket::connection_timed_outState);
+        (*cli_sock, 
+         ClientSocket::connection_timed_outState);
      return;
    }
    else rSocketCheck(res > 0);
    
-   LOG_DEBUG(ClientSocket::log, "ClientSocket>\t ::select");
+   LOG_DEBUG(ClientSocket::log, 
+             "ClientSocket>\t ::select");
 
    int error = 0;
    socklen_t error_len = sizeof(error);

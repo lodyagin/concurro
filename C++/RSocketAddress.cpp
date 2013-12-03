@@ -192,12 +192,12 @@ RSocketAddress::RSocketAddress
    const addrinfo* ai_,
    SOCKET fd_ 
    )
-:   StdIdMember(oi.objectId),
+  : StdIdMember(oi.objectId),
     ai(ai_), aw_ptr(ptr), fd(fd_),
     is_server_socket_address(fd_ >= 0),
     repository
       (dynamic_cast<RSocketAddressRepository*>
-        (oi.repository));
+        (oi.repository))
 {
   assert(ai);
   SCHECK(repository);
@@ -404,20 +404,15 @@ operator<< (std::ostream& out, const RSocketAddress& sa)
   return out;
 }
 
-#if 0
-template std::list<RSocketAddress*> 
-RSocketAddressRepository
+std::list<RSocketAddress*> RSocketAddressRepository
 //
 ::create_addresses
-  <SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
-    (const std::string& host, uint16_t port);
+  (const ListeningSocket& parent, SOCKET new_fd)
+{
+  AddressRequestBase par
+    (new_fd, parent.get_address()->get_aw_ptr());
 
-template std::list<RSocketAddress*> 
-RSocketAddressRepository
-//
-::create_addresses
-  <SocketSide::Server, NetworkProtocol::TCP, IPVer::v4>
-    (const std::string& host, uint16_t port);
-#endif
+  return create_several_objects(par);
+}
 
 }
