@@ -410,7 +410,7 @@ std::list<RSocketAddress*> RSocketAddressRepository
   (const ListeningSocket& parent, SOCKET new_fd)
 {
   AddressRequestBase par
-    (new_fd, parent.get_address()->get_aw_ptr());
+    (new_fd, parent.get_address().get_aw_ptr());
 
   return create_several_objects(par);
 }

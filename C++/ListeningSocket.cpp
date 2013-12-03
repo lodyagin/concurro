@@ -110,8 +110,8 @@ void ListeningSocket::bind()
 {
   ::bind
     (fd, 
-     address->get_aw_ptr()->begin()->ai_addr,
-     address->get_aw_ptr()->begin()->ai_addrlen);
+     address.get_aw_ptr()->begin()->ai_addr,
+     address.get_aw_ptr()->begin()->ai_addrlen);
   process_bind_error(errno);
 }
 
@@ -231,7 +231,7 @@ void ListeningSocket::SelectThread::run()
       lstn_sock->process_accept_error(errno);
       
       socket->repository->create_object
-        (**socket->get_address()->repository
+        (**socket->get_address().repository
           -> create_addresses(*lstn_sock, new_fd).begin());
     }
     if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
