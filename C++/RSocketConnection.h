@@ -47,9 +47,7 @@ namespace curr {
  * @{
  */
 
-class RSocketConnection 
-: //public RObjectWithEvents<ConnectionAxis>,
-public StdIdMember
+class RSocketConnection : public StdIdMember
 {
 public:
   struct Par {
@@ -79,7 +77,7 @@ public:
     mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
 
-  //! Parameters to create client side of an Internet
+  //! Parameters to create a client side of an Internet
   //! connection. 
   template<NetworkProtocol proto, IPVer ip_ver>
   struct InetClientPar : public virtual Par
@@ -96,6 +94,23 @@ public:
       port(par.port) {}
   };
 
+#if 0
+  //! Parameters to create a server side of an Internet
+  //! connection. 
+  template<NetworkProtocol proto, IPVer ip_ver>
+  struct InetServerPar : public virtual Par
+  {
+    uint16_t port;
+
+    InetServerPar(uint16_t a_port);
+
+    InetServerPar(InetServerPar&& par)
+      : Par(std::move(par)),
+        port(par.port) 
+    {}
+  };
+#endif
+
   virtual ~RSocketConnection() {}
 
   virtual RSocketConnection&
@@ -109,9 +124,6 @@ public:
 
   //! Skip all data (non-blocking)
   virtual void ask_abort() = 0;
-
-  //! A window repostiry
-  //RConnectedWindowRepository<SOCKET> win_rep;
 
 protected:
   RSocketConnection
@@ -132,8 +144,8 @@ class ConnectionThread : public SocketThread
 public:
   struct Par : public SocketThread::Par
   {
-  Par(Connection* c) 
-    : SocketThread::Par(c->socket), con(c)
+    Par(Connection* c) 
+      : SocketThread::Par(c->socket), con(c)
     {
       thread_name = SFORMAT(
         typeid(Connection).name() << socket->fd);
@@ -168,7 +180,7 @@ protected:
   Connection* con;
 };
 
-DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
+DECLARE_AXIS(SocketConnectionAxis, ClientSocketAxis);
 
 /**
  * A connection which always uses only one socket.
@@ -213,15 +225,15 @@ DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
-  <ClientConnectionAxis, ClientSocketAxis>
+  <SocketConnectionAxis, ClientSocketAxis>
 {
-  DECLARE_EVENT(ClientConnectionAxis, aborting);
-  DECLARE_EVENT(ClientConnectionAxis, aborted);
-  DECLARE_EVENT(ClientConnectionAxis, clearly_closed);
+  DECLARE_EVENT(SocketConnectionAxis, aborting);
+  DECLARE_EVENT(SocketConnectionAxis, aborted);
+  DECLARE_EVENT(SocketConnectionAxis, clearly_closed);
 
 public:
   //! @cond
-  DECLARE_STATES(ClientConnectionAxis, State);
+  DECLARE_STATES(SocketConnectionAxis, State);
   DECLARE_STATE_CONST(State, aborting);
   DECLARE_STATE_CONST(State, aborted);
   DECLARE_STATE_CONST(State, clearly_closed);
@@ -284,6 +296,25 @@ public:
           (std::move(par)) {}
   };
 
+#if 0
+  template<NetworkProtocol proto, IPVer ip_ver>
+  struct InetServerPar 
+  : public Par,
+    public RSocketConnection::InetServerPar<proto, ip_ver>
+  {
+    InetServerPar(uint16_t a_port) 
+    : RSocketConnection::InetClientPar<proto, ip_ver>
+      (a_host, a_port) {}
+
+    InetServerPar(InetClientPar&& par)
+      : RSocketConnection::Par(std::move(par)),
+                            // virtual base
+        Par(std::move(par)),
+        RSocketConnection::InetClientPar<proto, ip_ver>
+          (std::move(par)) {}
+  };
+#endif
+
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
@@ -327,7 +358,7 @@ protected:
   SocketThread* thread;
   RConnectedWindow<SOCKET>* in_win;
 
-  A_DECLARE_EVENT(ClientConnectionAxis, 
+  A_DECLARE_EVENT(SocketConnectionAxis, 
                   ClientSocketAxis, closed);
 
 protected:

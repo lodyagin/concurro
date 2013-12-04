@@ -39,7 +39,7 @@
 namespace curr {
 
 DEFINE_AXIS(
-  ClientConnectionAxis,
+  SocketConnectionAxis,
   { "aborting", // skipping data and closing buffers
      "aborted",   // after aborting
      "clearly_closed" // all pending data 
@@ -52,7 +52,7 @@ DEFINE_AXIS(
   }
 );
 
-DEFINE_STATES(ClientConnectionAxis);
+DEFINE_STATES(SocketConnectionAxis);
 
 DEFINE_STATE_CONST(RSingleSocketConnection, State, 
                    aborting);
