@@ -31,6 +31,8 @@
 #define CONCURRO_LISTENINGSOCKET_H_
 
 #include "RSocket.h"
+#include "RMutex.h"
+#include <stack>
 
 namespace curr {
 
@@ -58,7 +60,6 @@ DECLARE_AXIS(ListeningSocketAxis, SocketBaseAxis);
   *   pre_listen -> listen;
   *   listen -> accepting;
   *   accepting -> accepted;
-  *   accepting -> listen;
   *   accepted -> listen;
   *   listen -> closed;
   *   bound -> closed;
@@ -73,6 +74,7 @@ class ListeningSocket
 {
   DECLARE_EVENT(ListeningSocketAxis, pre_listen);
   DECLARE_EVENT(ListeningSocketAxis, listen);
+  DECLARE_EVENT(ListeningSocketAxis, accepted);
 
 public:
   //! @cond
@@ -84,15 +86,11 @@ public:
   DECLARE_STATE_CONST(State, pre_listen);
   DECLARE_STATE_CONST(State, listen);
   DECLARE_STATE_CONST(State, accepting);
+  DECLARE_STATE_CONST(State, accepted);
   DECLARE_STATE_CONST(State, closed);
   //! @endcond
 
   ~ListeningSocket();
-
-  /*CompoundEvent is_terminal_state() const override
-  {
-    return is_terminal_state_event;
-  }*/
 
   void bind() override;
 
@@ -145,6 +143,10 @@ public:
   {
     ax.update_events(this, trans_id, to);
   }
+
+  //! Wait the accepted state, return the accepted socket
+  //! and move to listen state.
+  RSocketBase* get_accepted();
 
 protected:
   //const CompoundEvent is_terminal_state_event;
@@ -211,6 +213,8 @@ protected:
       : SocketThread(oi, p), notify_fd(p.notify_fd) {}
     ~WaitThread() { destroy(); }
   }* wait_thread;
+
+  RSocketBase* last_accepted = nullptr;
 
   void process_bind_error(int error);
   void process_listen_error(int error);

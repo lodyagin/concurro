@@ -47,7 +47,6 @@ DEFINE_AXIS(
     {"pre_listen", "listen"},
     {"listen", "accepting"}, // connect() from other side
     {"accepting", "accepted"},
-    {"accepting", "listen"},
     {"accepted", "listen"},
     {"listen", "closed"},
   }
@@ -63,6 +62,7 @@ DEFINE_STATE_CONST(ListeningSocket, State, io_ready);
 DEFINE_STATE_CONST(ListeningSocket, State, pre_listen);
 DEFINE_STATE_CONST(ListeningSocket, State, listen);
 DEFINE_STATE_CONST(ListeningSocket, State, accepting);
+DEFINE_STATE_CONST(ListeningSocket, State, accepted);
 DEFINE_STATE_CONST(ListeningSocket, State, closed);
 
 ListeningSocket::ListeningSocket
@@ -77,6 +77,7 @@ ListeningSocket::ListeningSocket
   ),
   CONSTRUCT_EVENT(pre_listen),
   CONSTRUCT_EVENT(listen),
+  CONSTRUCT_EVENT(accepted),
 
   select_thread(
     dynamic_cast<SelectThread*>
@@ -183,6 +184,15 @@ void ListeningSocket::process_accept_error(int error)
   }
 }
 
+RSocketBase* ListeningSocket::get_accepted()
+{
+  is_accepted().wait();
+  RSocketBase* sock = last_accepted;
+  move_to<ListeningSocket, ListeningSocketAxis>
+    (*this, listenState);
+  return sock;
+}
+
 void ListeningSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
@@ -230,9 +240,23 @@ void ListeningSocket::SelectThread::run()
         (fd, NULL, NULL, SOCK_NONBLOCK);
       lstn_sock->process_accept_error(errno);
       
-      socket->repository->create_object
-        (**socket->get_address().repository
-          -> create_addresses(*lstn_sock, new_fd).begin());
+      lstn_sock->last_accepted = 
+        socket->repository->create_object
+          (**socket->get_address().repository
+            -> create_addresses(*lstn_sock, new_fd)
+              . begin());
+
+      RAxis<ListeningSocketAxis>::move_to
+        (*lstn_sock, acceptedState);
+      move_to<RSocketBase, SocketBaseAxis>
+        (*lstn_sock->last_accepted, 
+         RSocketBase::io_readyState);
+
+      // wait lstn_sock->get_accepted() call
+      ( lstn_sock->is_listen()
+      | lstn_sock->is_terminal_state() ).wait();
+      if (lstn_sock->is_terminal_state().signalled())
+        break;
     }
     if (FD_ISSET(sock_pair[ForSelect], &rfds)) {
       break;

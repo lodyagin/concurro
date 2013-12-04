@@ -14,6 +14,7 @@ void test_localhost_socket_address();
 void test_server_socket_address();
 void test_listening_socket();
 void test_addrinuse();
+void test_accept();
 void test_client_socket_connection_refused();
 void test_client_socket_connection_timed_out();
 void test_client_socket_destination_unreachable();
@@ -32,6 +33,7 @@ CU_TestInfo RSocketTests[] = {
    test_listening_socket},
   {"test address_already_in_use", 
    test_addrinuse},
+  {"test accept", test_accept},
   {"test Client_Socket connection_refused",
    test_client_socket_connection_refused},
   {"test Client_Socket connection_timed_out",
@@ -163,11 +165,54 @@ void test_accept()
         (*sar.create_addresses
           < SocketSide::Listening, 
             NetworkProtocol::TCP,
-            IPVer::v4 > ("", 5558) . front()));
+            IPVer::v4 
+          > ("", 5558) . front()));
+
+  ClientSocket* cli_sock = 
+    dynamic_cast<ClientSocket*>
+      (sr.create_object
+        (*sar.create_addresses
+          < SocketSide::Client, 
+            NetworkProtocol::TCP,
+            IPVer::v4 
+          > ("localhost", 5558) . front()));
 
   lstn_sock->ask_listen();
+  cli_sock->ask_connect();
+  CURR_WAIT_L(rootLogger, cli_sock->is_io_ready(), 100);
 
-  
+  RSocketBase* srv_sock = lstn_sock->get_accepted();
+
+  InSocket* srv_in = 
+    dynamic_cast<InSocket*>(srv_sock);
+  OutSocket* srv_out = 
+    dynamic_cast<OutSocket*>(srv_sock);
+  InSocket* cli_in = 
+    dynamic_cast<InSocket*>(cli_sock);
+  OutSocket* cli_out = 
+    dynamic_cast<OutSocket*>(cli_sock);
+
+  // send 'w'
+  cli_out->msg.reserve(1, 0);
+  *(char*) cli_out->msg.data() = 'w';
+  cli_out->msg.resize(1);
+
+  // receive 'w'
+  CURR_WAIT_L(rootLogger, srv_in->msg.is_charged(), 100);
+  CU_ASSERT_EQUAL_FATAL
+    (*(const char*)srv_in->msg.cdata(), 'w');
+  srv_in->msg.clear();
+
+  // send 'W'
+  srv_out->msg.reserve(1, 0);
+  *(char*) srv_out->msg.data() = 'W';
+  srv_out->msg.resize(1);
+
+  // receive 'W'
+  CURR_WAIT_L(rootLogger, cli_in->msg.is_charged(), 100);
+  CU_ASSERT_EQUAL_FATAL
+    (*(const char*)cli_in->msg.cdata(), 'W');
+  cli_in->msg.clear();
 }
 
 struct Log { typedef Logger<Log> log; };
@@ -353,8 +398,13 @@ void test_out_socket_login()
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
      (*RSocketAddressRepository()
-      . create_addresses<SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
+      . create_addresses <
+          SocketSide::Client, 
+          NetworkProtocol::TCP, 
+          IPVer::v4
+        >
       ("192.168.25.240", 31001) . front()));
+
   auto* out_sock = dynamic_cast<OutSocket*> (in_sock);
   auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);
   auto* cli_sock = dynamic_cast<ClientSocket*> (in_sock);
