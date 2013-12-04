@@ -32,6 +32,7 @@
 
 #include "Repository.h"
 #include "RSocket.h"
+#include "RSocketAddress.h"
 #include "ClientSocket.h"
 #include "RWindow.h"
 #include <string>
@@ -81,18 +82,13 @@ public:
   //! Parameters to create client side of an Internet
   //! connection. 
   template<NetworkProtocol proto, IPVer ip_ver>
-    struct InetClientPar : public virtual Par
+  struct InetClientPar : public virtual Par
   {
     std::string host;
     uint16_t port;
 
     InetClientPar(const std::string& a_host,
-                  uint16_t a_port) 
-    : host(a_host), port(a_port)
-    {
-      sar->create_addresses
-        <SocketSide::Client, proto, ip_ver> (host, port);
-    }
+                  uint16_t a_port) ;
 
     InetClientPar(InetClientPar&& par)
       : Par(std::move(par)),

@@ -28,7 +28,7 @@
  */
 
 #include "StdAfx.h"
-#include "RSocketConnection.h"
+#include "RSocketConnection.hpp"
 #include "OutSocket.h"
 #include "ClientSocket.h"
 #include "REvent.hpp"
