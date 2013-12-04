@@ -367,6 +367,40 @@ public:
   {}
 };
 
+DECLARE_AXIS(ServerConnectionFactoryAxis, ListeningSocketAxis);
+
+/**
+  * A factory of socket server connections based on a
+  * single ListeningSocket.
+  *
+  * @dot
+  * digraph {
+  *   start [shape = point]; 
+  *   address_already_in_use [shape = doublecircle];
+  *   closed [shape = doublecircle];
+  *   start -> created;
+  *   created -> bound;
+  *   created -> address_already_in_use;
+  *   bound -> pre_listen;
+  *   pre_listen -> listen;
+  *   listen -> accepting;
+  *   accepting -> accepted;
+  *   accepted -> listen;
+  *   listen -> closed;
+  *   bound -> closed;
+  *   closed -> closed;
+  * }
+  * @enddot
+  */
+class RServerConnectionFactory final
+  : public RStateSplitter
+      <ServerConnectionFactoryAxis, ListeningSocketAxis>,
+    public RObjectWithThreads<RServerConnectionFactory>
+{
+public:
+  RServerConnectionFactory(RSocketAddress lstn_addr);
+};
+
 //! @}
 
 }
