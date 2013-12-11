@@ -30,15 +30,18 @@
 #ifndef CONCURRO_RSOCKETCONNECTION_H_
 #define CONCURRO_RSOCKETCONNECTION_H_
 
+#include <iostream>
+#include <string>
+#include <memory>
+#include <vector>
+
 #include "Repository.h"
 #include "RSocket.h"
 #include "RSocketAddress.h"
 #include "ClientSocket.h"
+#include "ListeningSocket.h"
 #include "RWindow.h"
-#include <string>
-#include <memory>
-#include <vector>
-#include <iostream>
+#include "RObjectWithThreads.h"
 
 namespace curr {
 
@@ -394,7 +397,8 @@ public:
   {}
 };
 
-DECLARE_AXIS(ServerConnectionFactoryAxis, ListeningSocketAxis);
+DECLARE_AXIS(ServerConnectionFactoryAxis, 
+             ListeningSocketAxis);
 
 /**
   * A factory of socket server connections based on a
@@ -425,6 +429,24 @@ class RServerConnectionFactory final
     public RObjectWithThreads<RServerConnectionFactory>
 {
 public:
+  class ListenThread final :
+    public ObjectThread<RServerConnectionFactory>
+  {
+  public:
+    struct Par :
+      public ObjectThread<RServerConnectionFactory>::Par
+    {
+      Par() : 
+        ObjectThread<RServerConnectionFactory>::Par
+          ("RServerConnectionFactory::ListenThread") {}
+
+      PAR_DEFAULT_OVERRIDE(StdThread, ListenThread);
+    };
+
+  protected:
+    void run() override;
+  };
+
   RServerConnectionFactory(RSocketAddress lstn_addr);
 };
 

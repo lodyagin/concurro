@@ -197,7 +197,9 @@ void RSingleSocketConnection::run()
     // The socket has a message.
     ( socket->msg.is_charged()
       | is_aborting() | is_terminal_state() ). wait();
-    LOG_DEBUG(clog, *socket << " has a new state or packet");
+
+    LOG_DEBUG(clog, 
+              *socket << " has a new state or packet");
 
     // We already need it.
     ( iw().is_wait_for_buffer()
@@ -253,4 +255,20 @@ void RSingleSocketConnection::ask_abort()
     is_aborted().wait();
 #endif
 }
+
+DEFINE_AXIS(
+  ServerConnectionFactoryAxis,
+  {}, {}
+);
+
+RServerConnectionFactory
+::RServerConnectionFactory(RListeningSocket* lstn_sock)
+  : RStateSplitter
+      <ServerConnectionFactoryAxis, ListeningSocketAxis>
+        (lstn_sock, ListeningSocket::createdState),
+    RObjectWithThreads{ ListenThread::Par() }
+{
+  
+}
+
 }
