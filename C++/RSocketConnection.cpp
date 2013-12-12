@@ -127,25 +127,25 @@ void RSingleSocketConnection::state_changed
 {
   //FIXME no parent call
 
-  RState<ClientConnectionAxis> st =
+  RState<SocketConnectionAxis> st =
     state_ax.bound(object->current_state(state_ax));
 
   // aborting state check
-  if (st == RState<ClientConnectionAxis>
+  if (st == RState<SocketConnectionAxis>
       (ClientSocket::closedState)
-      && RMixedAxis<ClientConnectionAxis, ClientSocketAxis>
+      && RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
       ::compare_and_move
       (*this, abortingState, abortedState))
     return;
 
   // aborted state check
-  if (st == RState<ClientConnectionAxis>
+  if (st == RState<SocketConnectionAxis>
       (ClientSocket::closedState)
       && A_STATE(RSingleSocketConnection, 
-                 ClientConnectionAxis, state_is, aborted))
+                 SocketConnectionAxis, state_is, aborted))
     return;
 
-  RMixedAxis<ClientConnectionAxis, ClientSocketAxis>
+  RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
     ::neg_compare_and_move(*this, st, st);
 
   LOG_TRACE(log, "moved to " << st);
@@ -242,13 +242,13 @@ void RSingleSocketConnection::ask_abort()
 {
 #if 1
   A_STATE(RSingleSocketConnection, 
-          ClientConnectionAxis, move_to, aborting);
+          SocketConnectionAxis, move_to, aborting);
 #else
   // we block because no connecting -> aborting transition
   // (need change ClientSocket to allow it)
   is_can_abort().wait();
 
-  if (RMixedAxis<ClientConnectionAxis, ClientSocketAxis>
+  if (RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
       ::compare_and_move
       (*this, ClientSocket::connectedState,
        RSingleSocketConnection::abortingState))
@@ -262,13 +262,38 @@ DEFINE_AXIS(
 );
 
 RServerConnectionFactory
-::RServerConnectionFactory(RListeningSocket* lstn_sock)
+::RServerConnectionFactory(ListeningSocket* l_sock)
   : RStateSplitter
       <ServerConnectionFactoryAxis, ListeningSocketAxis>
-        (lstn_sock, ListeningSocket::createdState),
-    RObjectWithThreads{ ListenThread::Par() }
+        (l_sock, ListeningSocket::boundState),
+    lstn_sock(l_sock)
 {
-  
+  assert(lstn_sock);
+  SCHECK(state_is(*l_sock, boundState));
+}
+
+RServerConnectionFactory::Threads::Threads
+  (RServerConnectionFactory* o)
+    : RObjectWithThreads{ new ListenThread::Par() },
+      obj(o)
+{
+}
+
+void RServerConnectionFactory::ListenThread::run()
+{
+  RServerConnectionFactory* fact = object->obj;
+  ListeningSocket* lstn_sock = fact->lstn_sock;
+
+  assert(lstn_sock);
+  lstn_sock->ask_listen();
+  for (;;) {
+    (lstn_sock->is_accepted() | isStopRequested).wait();
+    if (isStopRequested).signalled())
+      break;
+
+    RSocketBase* srv_sock = lstn_sock->get_accepted();
+    
+  }
 }
 
 }

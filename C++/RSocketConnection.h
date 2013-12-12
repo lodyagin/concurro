@@ -425,29 +425,44 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   */
 class RServerConnectionFactory final
   : public RStateSplitter
-      <ServerConnectionFactoryAxis, ListeningSocketAxis>,
-    public RObjectWithThreads<RServerConnectionFactory>
+      <ServerConnectionFactoryAxis, ListeningSocketAxis>
 {
 public:
-  class ListenThread final :
-    public ObjectThread<RServerConnectionFactory>
+  //! Accepts ListeningSocket in the bound state.
+  RServerConnectionFactory(ListeningSocket* l_sock);
+
+protected:
+  //! It is an internal object to prevent states mixing
+  class Threads : public RObjectWithThreads<Threads>
   {
   public:
-    struct Par :
-      public ObjectThread<RServerConnectionFactory>::Par
+    Threads(RServerConnectionFactory* o);
+
+    RServerConnectionFactory* obj;
+  };
+
+  class ListenThread final : public ObjectThread<Threads>
+  {
+  public:
+    struct Par : ObjectThread<Threads>::Par
     {
       Par() : 
-        ObjectThread<RServerConnectionFactory>::Par
-          ("RServerConnectionFactory::ListenThread") {}
+        ObjectThread::Par
+          ("RServerConnectionFactory::Threads::"
+           "ListenThread")
+      {}
 
       PAR_DEFAULT_OVERRIDE(StdThread, ListenThread);
     };
 
   protected:
+    REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
+      ListenThread, ObjectThread, StdThread);
+
     void run() override;
   };
 
-  RServerConnectionFactory(RSocketAddress lstn_addr);
+  ListeningSocket* lstn_sock;
 };
 
 //! @}

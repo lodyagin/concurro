@@ -135,7 +135,7 @@ template<class Object>
 class ObjectFunThread : public ObjectThread<Object>
 {
 public:
-  struct Par : public ObjectThread<Object>::Par
+  struct Par : ObjectThread<Object>::Par
   {
     std::function<void(Object&)> fun;
 

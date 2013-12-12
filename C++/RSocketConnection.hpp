@@ -32,6 +32,7 @@
 
 #include "RSocketConnection.h"
 #include "RSocketAddress.hpp"
+#include "RObjectWithThreads.hpp"
 
 namespace curr {
 
