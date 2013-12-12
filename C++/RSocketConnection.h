@@ -97,23 +97,6 @@ public:
       port(par.port) {}
   };
 
-#if 0
-  //! Parameters to create a server side of an Internet
-  //! connection. 
-  template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetServerPar : public virtual Par
-  {
-    uint16_t port;
-
-    InetServerPar(uint16_t a_port);
-
-    InetServerPar(InetServerPar&& par)
-      : Par(std::move(par)),
-        port(par.port) 
-    {}
-  };
-#endif
-
   virtual ~RSocketConnection() {}
 
   virtual RSocketConnection&
@@ -250,6 +233,7 @@ public:
   struct Par : public virtual RSocketConnection::Par
   {
     RSocketAddress* sock_addr;
+    mutable RSocketBase* socket;
 
     Par()
     : sock_addr(0), // descendats must init it by an
@@ -277,8 +261,6 @@ public:
       return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
-
-    mutable RSocketBase* socket;
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
@@ -299,24 +281,22 @@ public:
           (std::move(par)) {}
   };
 
-#if 0
-  template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetServerPar 
-  : public Par,
-    public RSocketConnection::InetServerPar<proto, ip_ver>
+  struct InetServerPar : Par
   {
-    InetServerPar(uint16_t a_port) 
-    : RSocketConnection::InetClientPar<proto, ip_ver>
-      (a_host, a_port) {}
+    RSocketBase* srv_sock;
+
+    InetServerPar(RSocketBase* srv_sock) : 
+      sock_addr(srv_sock->address), socket(srv_sock)
+    {
+      assert(sock_addr);
+      assert(socket);
+    }
 
     InetServerPar(InetClientPar&& par)
-      : RSocketConnection::Par(std::move(par)),
-                            // virtual base
-        Par(std::move(par)),
-        RSocketConnection::InetClientPar<proto, ip_ver>
-          (std::move(par)) {}
+      : Par(std::move(par)),
+        srv_sock(par.srv_sock) 
+    {}
   };
-#endif
 
   void state_changed
     (StateAxis& ax, 
@@ -423,13 +403,16 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   * }
   * @enddot
   */
+template<class Connection>
 class RServerConnectionFactory final
   : public RStateSplitter
-      <ServerConnectionFactoryAxis, ListeningSocketAxis>
+      <ServerConnectionFactoryAxis, ListeningSocketAxis>,
+    public RConnectionRepository
 {
 public:
   //! Accepts ListeningSocket in the bound state.
-  RServerConnectionFactory(ListeningSocket* l_sock);
+  RServerConnectionFactory
+    (ListeningSocket* l_sock);
 
 protected:
   //! It is an internal object to prevent states mixing

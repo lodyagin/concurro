@@ -261,39 +261,4 @@ DEFINE_AXIS(
   {}, {}
 );
 
-RServerConnectionFactory
-::RServerConnectionFactory(ListeningSocket* l_sock)
-  : RStateSplitter
-      <ServerConnectionFactoryAxis, ListeningSocketAxis>
-        (l_sock, ListeningSocket::boundState),
-    lstn_sock(l_sock)
-{
-  assert(lstn_sock);
-  SCHECK(state_is(*l_sock, boundState));
-}
-
-RServerConnectionFactory::Threads::Threads
-  (RServerConnectionFactory* o)
-    : RObjectWithThreads{ new ListenThread::Par() },
-      obj(o)
-{
-}
-
-void RServerConnectionFactory::ListenThread::run()
-{
-  RServerConnectionFactory* fact = object->obj;
-  ListeningSocket* lstn_sock = fact->lstn_sock;
-
-  assert(lstn_sock);
-  lstn_sock->ask_listen();
-  for (;;) {
-    (lstn_sock->is_accepted() | isStopRequested).wait();
-    if (isStopRequested).signalled())
-      break;
-
-    RSocketBase* srv_sock = lstn_sock->get_accepted();
-    
-  }
-}
-
 }
