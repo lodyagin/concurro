@@ -49,30 +49,25 @@ namespace curr {
  * @addtogroup connections
  * @{
  */
-
 class RSocketConnection : public StdIdMember
 {
 public:
-  struct Par {
-    //! Available addresses for socket(s)
-    std::unique_ptr<RSocketAddressRepository> sar;
+  struct Par 
+  {
+    Par() {}
 
-    Par() : sar(new RSocketAddressRepository)
-    {
-      assert(sar);
-    }
-
-    Par(Par&& par)
-    : sar(std::move(par.sar)),
+    Par(Par&& par) :
       socket_rep(std::move(par.socket_rep)) 
     {}
 
     virtual ~Par() {}
+
     virtual RSocketConnection* create_derivation
-    (const ObjectCreationInfo& oi) const = 0;
+      (const ObjectCreationInfo& oi) const = 0;
+
     virtual RSocketConnection* transform_object
-    (const RSocketConnection*) const
-      { THROW_NOT_IMPLEMENTED; }
+      (const RSocketConnection*) const
+    { THROW_NOT_IMPLEMENTED; }
 
     //! Must be inited from derived classes.
     //! A scope of a socket repository can be any: per
@@ -85,16 +80,29 @@ public:
   template<NetworkProtocol proto, IPVer ip_ver>
   struct InetClientPar : public virtual Par
   {
+    //! Available addresses for socket(s)
+    //RSocketAddressRepository* sar;
+    const RSocketAddress* sock_addr;
+
+#if 1
+    InetClientPar(RSocketAddress* sa) : sock_addr(sa)
+    {
+      assert(sock_addr);
+    }
+#else
     std::string host;
     uint16_t port;
 
-    InetClientPar(const std::string& a_host,
-                  uint16_t a_port) ;
+    InetClientPar
+      ( const std::string& a_host,
+        uint16_t a_port );
 
-    InetClientPar(InetClientPar&& par)
-      : Par(std::move(par)),
+    InetClientPar(InetClientPar&& par) :
+      Par(std::move(par)),
       host(std::move(par.host)),
-      port(par.port) {}
+      port(par.port) 
+    {}
+#endif
   };
 
   virtual ~RSocketConnection() {}
@@ -232,31 +240,30 @@ public:
 
   struct Par : public virtual RSocketConnection::Par
   {
-    const RSocketAddress* sock_addr;
     mutable RSocketBase* socket;
 
-    Par()
-    : sock_addr(0), // descendats must init it by an
+    Par() :
+      //sock_addr(0), // descendats must init it by an
       // address
       // from the address repository (sar)
       socket(0) // descendant must create it in
       // create_derivation 
-      {}
+    {}
 
-    Par(Par&& par) 
-      : RSocketConnection::Par(std::move(par)),
-      sock_addr(par.sock_addr),
+    Par(Par&& par) :
+      RSocketConnection::Par(std::move(par)),
+      //sock_addr(par.sock_addr),
       socket(par.socket) {}
 
     virtual std::unique_ptr<SocketThread::Par> 
-      get_thread_par(RSingleSocketConnection* c) const
+    get_thread_par(RSingleSocketConnection* c) const
     {
       return std::unique_ptr<Thread::Par>
         (new Thread::Par(c));
     }
 
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
-      get_window_par(RSocketBase* sock) const
+    get_window_par(RSocketBase* sock) const
     {
       return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
@@ -264,14 +271,13 @@ public:
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar 
-  : public Par,
+  struct InetClientPar :
+    public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
-    InetClientPar(const std::string& a_host,
-                  uint16_t a_port) 
-    : RSocketConnection::InetClientPar<proto, ip_ver>
-      (a_host, a_port) {}
+    InetClientPar(RSocketAddress* sa) :
+      RSocketConnection::InetClientPar<proto, ip_ver> (sa)
+    {}
 
     InetClientPar(InetClientPar&& par)
       : RSocketConnection::Par(std::move(par)),
@@ -285,9 +291,9 @@ public:
   {
     InetServerPar(RSocketBase* srv_sock)
     {
-      sock_addr = srv_sock->get_address();
+      //sock_addr = srv_sock->get_address();
       socket = srv_sock;
-      assert(sock_addr);
+      //assert(sock_addr);
       assert(socket);
     }
 

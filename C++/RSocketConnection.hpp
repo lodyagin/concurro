@@ -36,6 +36,7 @@
 
 namespace curr {
 
+#if 0
 template<NetworkProtocol proto, IPVer ip_ver>
 RSocketConnection::InetClientPar<proto, ip_ver>
 //
@@ -46,6 +47,7 @@ RSocketConnection::InetClientPar<proto, ip_ver>
   sar->create_addresses
     <SocketSide::Client, proto, ip_ver> (host, port);
 }
+#endif
 
 template<class Connection>
 RServerConnectionFactory<Connection>

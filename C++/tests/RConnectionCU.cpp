@@ -1,8 +1,11 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
+#include "RSocketAddress.h"
 #include "RSocketConnection.hpp"
 #include "RWindow.hpp"
 #include "tests.h"
+
+using namespace curr;
 
 void test_connection_aborted();
 void test_connection_clearly_closed();
@@ -36,11 +39,15 @@ public:
 
   struct Par : public ParentPar
   {
-    Par(const std::string& host, uint16_t port)
-      : ParentPar (host, port) 
-      {
-        sock_addr = sar->get_object_by_id(1);
-      }
+    Par(RSocketAddress* sa) : ParentPar (sa) 
+    {}
+
+    Par(const std::string& host, uint16_t port) :
+      Par(sar.create_addresses
+            < SocketSide::Client, 
+              NetworkProtocol::TCP, 
+              IPVer::v4 > (host, port) . front())
+    {}
 
     RSocketConnection* create_derivation
     (const ObjectCreationInfo& oi) const
@@ -71,10 +78,15 @@ public:
     return "TestConnection";
   }
 
+  static RSocketAddressRepository sar;
+
 };
+
+RSocketAddressRepository TestConnection::sar;
 
 static void test_connection(bool do_abort)
 {
+  RSocketAddressRepository sar;
   RConnectionRepository con_rep
     ("RConnectionCU::test_connection::sr", 10, 
      &StdThreadRepository::instance()
@@ -84,7 +96,8 @@ static void test_connection(bool do_abort)
 
   auto* con = dynamic_cast<TestConnection*>
     (con_rep.create_object
-     (TestConnection::Par("192.168.25.240", 31001)));
+      (TestConnection::Par("192.168.25.240", 31001)));
+
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
