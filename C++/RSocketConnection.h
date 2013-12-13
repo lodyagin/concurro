@@ -232,7 +232,7 @@ public:
 
   struct Par : public virtual RSocketConnection::Par
   {
-    RSocketAddress* sock_addr;
+    const RSocketAddress* sock_addr;
     mutable RSocketBase* socket;
 
     Par()
@@ -283,18 +283,16 @@ public:
 
   struct InetServerPar : Par
   {
-    RSocketBase* srv_sock;
-
-    InetServerPar(RSocketBase* srv_sock) : 
-      sock_addr(srv_sock->address), socket(srv_sock)
+    InetServerPar(RSocketBase* srv_sock)
     {
+      sock_addr = srv_sock->get_address();
+      socket = srv_sock;
       assert(sock_addr);
       assert(socket);
     }
 
-    InetServerPar(InetClientPar&& par)
-      : Par(std::move(par)),
-        srv_sock(par.srv_sock) 
+    InetServerPar(InetServerPar&& par)
+      : Par(std::move(par))
     {}
   };
 
@@ -412,7 +410,7 @@ class RServerConnectionFactory final
 public:
   //! Accepts ListeningSocket in the bound state.
   RServerConnectionFactory
-    (ListeningSocket* l_sock);
+    (ListeningSocket* l_sock, size_t reserved);
 
 protected:
   //! It is an internal object to prevent states mixing
@@ -430,7 +428,7 @@ protected:
     struct Par : ObjectThread<Threads>::Par
     {
       Par() : 
-        ObjectThread::Par
+        ObjectThread<Threads>::Par
           ("RServerConnectionFactory::Threads::"
            "ListenThread")
       {}
@@ -440,7 +438,7 @@ protected:
 
   protected:
     REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
-      ListenThread, ObjectThread, StdThread);
+      ListenThread, ObjectThread<Threads>, StdThread);
 
     void run() override;
   };

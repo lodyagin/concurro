@@ -162,10 +162,11 @@ void ClientSocket::Thread::run()
    if (cli_sock->is_terminal_state().signalled())
       return;
 
+   assert(cli_sock->address);
    ::connect
       (cli_sock->fd, 
-       cli_sock->address.get_aw_ptr()->begin()->ai_addr, 
-       cli_sock->address.get_aw_ptr()->begin()
+       cli_sock->address->get_aw_ptr()->begin()->ai_addr, 
+       cli_sock->address->get_aw_ptr()->begin()
          -> ai_addrlen);
    cli_sock->process_error(errno);
 

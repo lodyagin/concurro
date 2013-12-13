@@ -82,9 +82,11 @@ DEFINE_STATE_CONST(RSocketBase, State,
              address_already_in_use);
 
 //! This type is only for repository creation
-RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
-                 const RSocketAddress& addr) 
-  : StdIdMember(SFORMAT(addr.get_fd())),
+RSocketBase::RSocketBase
+  (const ObjectCreationInfo& oi,
+   const RSocketAddress& addr) 
+ : 
+   StdIdMember(SFORMAT(addr.get_fd())),
    RObjectWithEvents(createdState),
    CONSTRUCT_EVENT(io_ready),
    CONSTRUCT_EVENT(bound),
@@ -105,11 +107,12 @@ RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
     is_address_already_in_use_event,
     is_closed_event  
    },
-   address(addr)
+   address(&addr)
 {
   assert(fd >= 0);
   assert(repository);
-  assert(address.get_aw_ptr()->begin()->ai_addr);
+  assert(address);
+  assert(address->get_aw_ptr()->begin()->ai_addr);
 
   set_blocking(false);
 }

@@ -1,6 +1,6 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
-#include "RSocketConnection.h"
+#include "RSocketConnection.hpp"
 #include "RWindow.hpp"
 #include "tests.h"
 

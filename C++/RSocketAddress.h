@@ -294,8 +294,7 @@ public:
 class RSocketBase;
 class RSocketAddressRepository;
 
-class RSocketAddress 
-: public StdIdMember
+class RSocketAddress : public StdIdMember
 {
   friend class AddressRequestBase;
 public:

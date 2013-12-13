@@ -219,6 +219,7 @@ struct Log { typedef Logger<Log> log; };
 
 void test_client_socket_connection_refused()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_refused"
      "::sr",
@@ -226,8 +227,7 @@ void test_client_socket_connection_refused()
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses
+     (*sar.create_addresses
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
@@ -247,6 +247,7 @@ void test_client_socket_connection_refused()
 
 void test_client_socket_connection_timed_out()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_timed_out"
      "::sr",
@@ -254,8 +255,7 @@ void test_client_socket_connection_timed_out()
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses
+     (*sar.create_addresses
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
@@ -274,6 +274,7 @@ void test_client_socket_connection_timed_out()
 
 void test_client_socket_destination_unreachable()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU"
      "::test_client_socket_destination_unreachable::sr",
@@ -281,8 +282,7 @@ void test_client_socket_destination_unreachable()
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses
+     (*sar.create_addresses
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
@@ -301,6 +301,7 @@ void test_client_socket_destination_unreachable()
 
 void test_client_socket_connected()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connected::sr",
      10, 
@@ -308,8 +309,7 @@ void test_client_socket_connected()
      );
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses
+     (*sar.create_addresses
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
@@ -333,6 +333,7 @@ void test_client_socket_connected()
 
 void test_in_socket_new_msg()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_in_socket_new_msg::sr",
      10, 
@@ -342,9 +343,12 @@ void test_in_socket_new_msg()
 
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses<SocketSide::Client, NetworkProtocol::TCP, IPVer::v4>
-      ("192.168.25.240", 31001) . front()));
+      (*sar.create_addresses
+        < SocketSide::Client, 
+          NetworkProtocol::TCP, 
+          IPVer::v4 >
+        ("192.168.25.240", 31001) . front()));
+
   auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);
   auto* cli_sock = dynamic_cast<ClientSocket*> (in_sock);
 
@@ -388,6 +392,7 @@ void test_out_socket_login()
 {
   typedef Logger<LOG::Root> log;
 
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_out_socket_login::sr",
      10, 
@@ -397,8 +402,7 @@ void test_out_socket_login()
 
   auto* in_sock = dynamic_cast<InSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses <
+     (*sar.create_addresses <
           SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4

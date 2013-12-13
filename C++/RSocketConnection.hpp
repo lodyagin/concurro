@@ -52,24 +52,29 @@ RServerConnectionFactory<Connection>
 //
 ::RServerConnectionFactory
   (ListeningSocket* l_sock, size_t reserved)
-  : RStateSplitter
-      <ServerConnectionFactoryAxis, ListeningSocketAxis>
-        (l_sock, ListeningSocket::boundState),
-    RConnectionRepository
-      ( typeid(*this).name(), 
-        reserved,
-        &StdThreadRepository::instance()),
-    lstn_sock(l_sock)
+: 
+  RStateSplitter
+    <ServerConnectionFactoryAxis, ListeningSocketAxis>
+      (l_sock, ListeningSocket::boundState),
+  RConnectionRepository
+    ( typeid(*this).name(), 
+      reserved,
+      &StdThreadRepository::instance()),
+  lstn_sock(l_sock)
 {
   assert(lstn_sock);
-  SCHECK(state_is(*l_sock, boundState));
+  SCHECK(state_is(*l_sock, ListeningSocket::boundState));
 }
 
 template<class Connection>
 RServerConnectionFactory<Connection>::Threads
 //
 ::Threads(RServerConnectionFactory* o) :
-  RObjectWithThreads{ new ListenThread::Par() },
+  RObjectWithThreads<Threads>
+  { 
+    new typename RServerConnectionFactory<Connection>
+      ::ListenThread::Par() 
+  },
   obj(o)
 {
 }
@@ -79,14 +84,18 @@ void RServerConnectionFactory<Connection>
 //
 ::ListenThread::run()
 {
-  RServerConnectionFactory* fact = object->obj;
+  RServerConnectionFactory* fact = this->object->obj;
   ListeningSocket* lstn_sock = fact->lstn_sock;
 
   assert(lstn_sock);
   lstn_sock->ask_listen();
   for (;;) {
-    (lstn_sock->is_accepted() | isStopRequested).wait();
-    if (isStopRequested).signalled())
+
+    ( lstn_sock->is_accepted() 
+    | this->isStopRequested
+    ).wait();
+
+    if (this->isStopRequested.signalled())
       break;
 
     RSocketBase* sock = lstn_sock->get_accepted();
