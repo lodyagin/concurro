@@ -418,15 +418,30 @@ public:
   RServerConnectionFactory
     (ListeningSocket* l_sock, size_t reserved);
 
+  CompoundEvent is_terminal_state() const override
+  {
+    assert(lstn_sock);
+    return lstn_sock->is_terminal_state();
+    // FIXME & treads.is_terminal_state();
+  }
+
 protected:
   //! It is an internal object to prevent states mixing
-  class Threads : public RObjectWithThreads<Threads>
+  class Threads final : public RObjectWithThreads<Threads>
   {
   public:
     Threads(RServerConnectionFactory* o);
 
+    ~Threads() { this->destroy(); }
+
+    CompoundEvent is_terminal_state() const override
+    {
+      return CompoundEvent();
+    }
+
     RServerConnectionFactory* obj;
-  };
+
+  } threads;
 
   class ListenThread final : public ObjectThread<Threads>
   {
@@ -448,6 +463,15 @@ protected:
 
     void run() override;
   };
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
+  {
+    THROW_PROGRAM_ERROR;
+  }
 
   ListeningSocket* lstn_sock;
 };

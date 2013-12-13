@@ -99,13 +99,13 @@ void test_server_socket_address()
 
 void test_listening_socket()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_listening_socket::sr", 10, 1);
   ListeningSocket* srv_sock = 
     dynamic_cast<ListeningSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses
+     (*sar.create_addresses
         < SocketSide::Listening, 
           NetworkProtocol::TCP,
           IPVer::v4 > ("", 5556) . front()));
@@ -122,13 +122,13 @@ void test_listening_socket()
 
 void test_addrinuse()
 {
+  RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_listening_socket::sr", 10, 1);
   ListeningSocket* srv_sock = 
     dynamic_cast<ListeningSocket*>
     (sr.create_object
-     (*RSocketAddressRepository()
-      . create_addresses
+     (*sar.create_addresses
         < SocketSide::Listening, 
           NetworkProtocol::TCP,
           IPVer::v4 > ("", 5557) . front()));

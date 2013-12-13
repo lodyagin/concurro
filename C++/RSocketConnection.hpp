@@ -62,10 +62,12 @@ RServerConnectionFactory<Connection>
     ( typeid(*this).name(), 
       reserved,
       &StdThreadRepository::instance()),
+  threads(this),
   lstn_sock(l_sock)
 {
   assert(lstn_sock);
-  SCHECK(state_is(*l_sock, ListeningSocket::boundState));
+  SCHECK(state_is//<ListeningSocket, SocketBaseAxis>
+    (*lstn_sock, RSocketBase::boundState));
 }
 
 template<class Connection>

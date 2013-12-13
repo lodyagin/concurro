@@ -87,16 +87,29 @@ RSocketAddressRepository TestConnection::sar;
 static void test_connection(bool do_abort)
 {
   RSocketAddressRepository sar;
+  RSocketRepository sr
+    ("RConnectionCU::test_connection::sr", 10, 1);
   RConnectionRepository con_rep
     ("RConnectionCU::test_connection::sr", 10, 
      &StdThreadRepository::instance()
       );
 
+  ListeningSocket* lstn = dynamic_cast<ListeningSocket*>
+    (sr.create_object
+      (*sar.create_addresses
+        < SocketSide::Listening, 
+          NetworkProtocol::TCP,
+          IPVer::v4 > ("", 31001) . front()));
+
+  CU_ASSERT_PTR_NOT_NULL_FATAL(lstn);
+
+  RServerConnectionFactory<TestConnection> scf(lstn, 1);
+
   RWindow wc;
 
   auto* con = dynamic_cast<TestConnection*>
     (con_rep.create_object
-      (TestConnection::Par("192.168.25.240", 31001)));
+      (TestConnection::Par("localhost", 31001)));
 
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
