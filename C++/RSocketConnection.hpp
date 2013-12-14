@@ -66,8 +66,10 @@ RServerConnectionFactory<Connection>
   lstn_sock(l_sock)
 {
   assert(lstn_sock);
-  SCHECK(state_is//<ListeningSocket, SocketBaseAxis>
-    (*lstn_sock, RSocketBase::boundState));
+  const bool isBound = state_is
+    <ListeningSocket, ListeningSocketAxis>
+      (*lstn_sock, RSocketBase::boundState);
+  SCHECK(isBound);
 }
 
 template<class Connection>

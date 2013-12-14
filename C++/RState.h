@@ -281,13 +281,12 @@ private:
 };
 
 //! RMixedAxis<Axis,Axis2>::state_is adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 bool state_is
   (T& obj, 
    const curr::RState<typename T::State::axis>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: state_is(obj, to);
 }
 
