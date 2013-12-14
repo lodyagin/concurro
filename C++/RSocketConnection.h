@@ -287,9 +287,9 @@ public:
           (std::move(par)) {}
   };
 
-  struct InetServerPar : Par
+  struct ServerPar : Par
   {
-    InetServerPar(RSocketBase* srv_sock)
+    ServerPar(RSocketBase* srv_sock)
     {
       //sock_addr = srv_sock->get_address();
       socket = srv_sock;
@@ -297,7 +297,7 @@ public:
       assert(socket);
     }
 
-    InetServerPar(InetServerPar&& par)
+    ServerPar(InetServerPar&& par)
       : Par(std::move(par))
     {}
   };

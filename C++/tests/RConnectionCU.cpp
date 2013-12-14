@@ -35,11 +35,12 @@ class TestConnection : public RSingleSocketConnection
 {
 public:
   typedef RSingleSocketConnection::InetClientPar
-  <NetworkProtocol::TCP, IPVer::v4> ParentPar;
+    <NetworkProtocol::TCP, IPVer::v4> ClientPar;
+  using RSingleSocketConnection::ServerPar;
 
-  struct Par : public ParentPar
+  struct Par : public ClientPar
   {
-    Par(RSocketAddress* sa) : ParentPar (sa) 
+    Par(RSocketAddress* sa) : ClientPar (sa) 
     {}
 
     Par(const std::string& host, uint16_t port) :
@@ -48,6 +49,8 @@ public:
               NetworkProtocol::TCP, 
               IPVer::v4 > (host, port) . front())
     {}
+
+    Par(RSocketBase* srv_sock) : ServerPar(srv_sock) {}
 
     RSocketConnection* create_derivation
     (const ObjectCreationInfo& oi) const

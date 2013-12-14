@@ -105,7 +105,7 @@ void RServerConnectionFactory<Connection>
       break;
 
     RSocketBase* sock = lstn_sock->get_accepted();
-    create_object(Connection::Par(sock));
+    create_object(typename Connection::Par(sock));
   }
 }
 
