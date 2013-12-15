@@ -224,6 +224,7 @@ class RSingleSocketConnection
   DECLARE_EVENT(SocketConnectionAxis, aborting);
   DECLARE_EVENT(SocketConnectionAxis, aborted);
   DECLARE_EVENT(SocketConnectionAxis, clearly_closed);
+  DECLARE_EVENT(SocketConnectionAxis, io_ready);
 
 public:
   //! @cond
@@ -297,7 +298,7 @@ public:
       assert(socket);
     }
 
-    ServerPar(InetServerPar&& par)
+    ServerPar(ServerPar&& par)
       : Par(std::move(par))
     {}
   };

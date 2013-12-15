@@ -34,42 +34,53 @@ int RConnectionCUClean()
 class TestConnection : public RSingleSocketConnection
 {
 public:
-  typedef RSingleSocketConnection::InetClientPar
-    <NetworkProtocol::TCP, IPVer::v4> ClientPar;
-  using RSingleSocketConnection::ServerPar;
-
-  struct Par : public ClientPar
+  struct ClientPar : 
+    RSingleSocketConnection::InetClientPar
+      <NetworkProtocol::TCP, IPVer::v4>
   {
-    Par(RSocketAddress* sa) : ClientPar (sa) 
+    ClientPar(RSocketAddress* sa) : 
+      RSingleSocketConnection::InetClientPar
+       <NetworkProtocol::TCP, IPVer::v4> (sa) 
     {}
 
-    Par(const std::string& host, uint16_t port) :
-      Par(sar.create_addresses
+    ClientPar(const std::string& host, uint16_t port) :
+      ClientPar(sar.create_addresses
             < SocketSide::Client, 
               NetworkProtocol::TCP, 
               IPVer::v4 > (host, port) . front())
     {}
 
-    Par(RSocketBase* srv_sock) : ServerPar(srv_sock) {}
+    RSocketConnection* create_derivation
+      (const ObjectCreationInfo& oi) const
+    {
+      assert(sock_addr);
+      socket_rep.reset(
+        new RSocketRepository(
+          SFORMAT("TestConnection(client):" << oi.objectId
+                  << ":RSocketRepository"),
+          1,
+          1000,
+          dynamic_cast<RConnectionRepository*>
+            (oi.repository)->thread_factory
+          )
+        );
+      socket_rep->set_connect_timeout_u(3500000);
+      socket = socket_rep->create_object(*sock_addr);
+      return new TestConnection(oi, *this);
+    }
+  };
+
+  struct ServerPar : RSingleSocketConnection::ServerPar
+  {
+    ServerPar(RSocketBase* srv_sock) : 
+      ServerPar(srv_sock) 
+    {}
 
     RSocketConnection* create_derivation
-    (const ObjectCreationInfo& oi) const
-      {
-        assert(sock_addr);
-        socket_rep.reset(
-          new RSocketRepository(
-            SFORMAT("TestConnection:" << oi.objectId
-                    << ":RSocketRepository"),
-            1,
-            1000,
-            dynamic_cast<RConnectionRepository*>
-            (oi.repository)->thread_factory
-            )
-          );
-        socket_rep->set_connect_timeout_u(3500000);
-        socket = socket_rep->create_object(*sock_addr);
-        return new TestConnection(oi, *this);
-      }
+      (const ObjectCreationInfo& oi) const
+    {
+      return new TestConnection(oi, *this);
+    }
   };
 
   TestConnection(const ObjectCreationInfo& oi,
@@ -112,12 +123,13 @@ static void test_connection(bool do_abort)
 
   auto* con = dynamic_cast<TestConnection*>
     (con_rep.create_object
-      (TestConnection::Par("localhost", 31001)));
+      (TestConnection::ClientPar("localhost", 31001)));
 
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
   con->ask_connect();
+  CURR_WAIT_L(rootLogger, con->is_io_ready(), 1000);
 
   *con << "Labcdef12345678902H23456789         1\n";
   const std::string answer("+Soup2.0\n");

@@ -87,6 +87,7 @@ RSingleSocketConnection::RSingleSocketConnection
     CONSTRUCT_EVENT(aborting),
     CONSTRUCT_EVENT(aborted),
     CONSTRUCT_EVENT(clearly_closed),
+    CONSTRUCT_EVENT(io_ready),
     socket(dynamic_cast<InSocket*>(par.socket)),
     cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
     thread(dynamic_cast<SocketThread*>
