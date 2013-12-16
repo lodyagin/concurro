@@ -72,7 +72,8 @@ public:
     //! Must be inited from derived classes.
     //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
-    mutable std::unique_ptr<RSocketRepository> socket_rep;
+    mutable RSocketRepository* socket_rep;
+    //mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
 
   //! Parameters to create a client side of an Internet
@@ -460,7 +461,10 @@ protected:
 
   protected:
     REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
-      ListenThread, ObjectThread<Threads>, StdThread);
+      ListenThread, 
+      ObjectThread<Threads>, 
+      ObjectThread<Threads>
+    );
 
     void run() override;
   };

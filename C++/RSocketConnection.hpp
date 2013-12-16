@@ -70,6 +70,7 @@ RServerConnectionFactory<Connection>
     <ListeningSocket, ListeningSocketAxis>
       (*lstn_sock, RSocketBase::boundState);
   SCHECK(isBound);
+  threads.complete_construction();
 }
 
 template<class Connection>

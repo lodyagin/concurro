@@ -125,8 +125,15 @@ public:
 
   ~ObjectThread() { destroy(); }
 
-  REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
-    ObjectThread<Object>, StdThread, StdThread);
+protected:
+  ObjectThread
+    (const ObjectCreationInfo& oi, 
+     const Par& par)
+  : StdThread(oi, par),
+    object(par.object)
+  {
+    assert(object);
+  }
 
   Object* object;
 };
