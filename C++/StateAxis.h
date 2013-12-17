@@ -82,10 +82,10 @@ inline bool is_same_axis(const StateAxis& ax)
   return Axis::is_same(ax);
 }
 
-#define DECLARE_AXIS(axis, parent)	\
+#define DECLARE_AXIS0(axis, parent, parent_tn)	\
 struct axis : public parent \
 { \
-  typedef parent Parent; \
+  typedef parent_tn Parent; \
   static axis self_; \
   static axis& self() { \
     static std::once_flag of; \
@@ -126,6 +126,12 @@ struct axis : public parent \
   \
   curr::UniversalState bound(uint32_t st) const override;\
 }; 
+
+#define DECLARE_AXIS(axis, parent) \
+  DECLARE_AXIS0(axis, parent, parent)
+
+#define DECLARE_AXIS_TEMPL(axis, parent) \
+  DECLARE_AXIS0(axis, parent, typename parent)
 
 //! @}
 

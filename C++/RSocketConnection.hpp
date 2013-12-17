@@ -33,21 +33,201 @@
 #include "RSocketConnection.h"
 #include "RSocketAddress.hpp"
 #include "RObjectWithThreads.hpp"
+#include "OutSocket.h"
+#include "ClientSocket.h"
 
 namespace curr {
 
-#if 0
-template<NetworkProtocol proto, IPVer ip_ver>
-RSocketConnection::InetClientPar<proto, ip_ver>
-//
-::InetClientPar
-  (const std::string& a_host, uint16_t a_port) 
-  : host(a_host), port(a_port)
+template<class Socket>
+RSingleSocketConnection<Socket>::RSingleSocketConnection
+(const ObjectCreationInfo& oi,
+ const Par& par)
+  : RSocketConnection(oi, par),
+    Splitter
+      (dynamic_cast<ClientSocket*>(par.socket), 
+       Socket::createdState),
+    CONSTRUCT_EVENT(aborting),
+    CONSTRUCT_EVENT(aborted),
+    CONSTRUCT_EVENT(clearly_closed),
+    CONSTRUCT_EVENT(io_ready),
+    socket(dynamic_cast<InSocket*>(par.socket)),
+    cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
+    thread(dynamic_cast<SocketThread*>
+           (StdThreadRepository::instance().create_thread
+            (*par.get_thread_par(this)))),
+    in_win(RConnectedWindowRepository<SOCKET>::instance()
+           .create_object(*par.get_window_par(cli_sock))),
+    is_closed_event(cli_sock, "closed"),
+    is_terminal_state_event { 
+      is_clearly_closed_event,
+      is_aborted_event,
+      socket->is_terminal_state()
+    }
 {
-  sar->create_addresses
-    <SocketSide::Client, proto, ip_ver> (host, port);
+  assert(socket);
+  assert(cli_sock);
+  SCHECK(thread);
+  SCHECK(in_win);
+  Splitter::init();
+  thread->start();
 }
+
+template<class Socket>
+RSingleSocketConnection<Socket>::~RSingleSocketConnection()
+{
+  //TODO not only TCP
+  //dynamic_cast<TCPSocket*>(socket)->ask_close();
+  //socket->ask_close_out();
+  is_terminal_state_event.wait();
+  socket_rep->delete_object(socket, true);
+}
+
+template<class Socket>
+void RSingleSocketConnection<Socket>::state_changed
+  (StateAxis&, 
+   const StateAxis& state_ax,     
+   AbstractObjectWithStates* object,
+   const UniversalState&
+   )
+{
+  //FIXME no parent call
+
+  RState<SocketConnectionAxis> st =
+    state_ax.bound(object->current_state(state_ax));
+
+  // aborting state check
+  if (st == RState<SocketConnectionAxis>
+      (ClientSocket::closedState)
+      && RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
+      ::compare_and_move
+      (*this, abortingState, abortedState))
+    return;
+
+  // aborted state check
+  if (st == RState<SocketConnectionAxis>
+      (ClientSocket::closedState)
+      && A_STATE(RSingleSocketConnection, 
+                 SocketConnectionAxis, state_is, aborted))
+    return;
+
+  RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
+    ::neg_compare_and_move(*this, st, st);
+
+  LOG_TRACE(log, "moved to " << st);
+}
+
+template<class Socket>
+RSocketConnection& RSingleSocketConnection<Socket>
+::operator<< (const std::string& str)
+{
+  auto* out_sock = dynamic_cast<OutSocket*>(socket);
+  SCHECK(out_sock);
+
+  ( out_sock->msg.is_discharged() 
+  | out_sock->msg.is_dummy() ).wait();
+  out_sock->msg.reserve(str.size(), 0);
+  ::strncpy((char*)out_sock->msg.data(), str.c_str(),
+            str.size());
+  out_sock->msg.resize(str.size());
+  return *this;
+}
+
+template<class Socket>
+RSocketConnection& RSingleSocketConnection<Socket>
+::operator<< (RSingleBuffer&& buf)
+{
+  auto* out_sock = dynamic_cast<OutSocket*>(socket);
+  SCHECK(out_sock);
+
+  ( out_sock->msg.is_discharged() 
+  | out_sock->msg.is_dummy() ).wait();
+  out_sock->msg.move(&buf);
+  return *this;
+}
+
+template<class Socket>
+void RSingleSocketConnection<Socket>::ask_connect()
+{
+  dynamic_cast<ClientSocket*>(socket)->ask_connect();
+}
+
+template<class Socket>
+void RSingleSocketConnection<Socket>::ask_close()
+{
+  socket->ask_close_out();
+}
+
+template<class Socket>
+void RSingleSocketConnection<Socket>::run()
+{
+  typedef Logger<LOG::Connections> clog;
+
+  //<NB> it is not a thread run(), it is called from it
+  socket->is_construction_complete_event.wait();
+
+  for (;;) {
+    // The socket has a message.
+    ( socket->msg.is_charged()
+      | is_aborting() | is_terminal_state() ). wait();
+
+    LOG_DEBUG(clog, 
+              *socket << " has a new state or packet");
+
+    // We already need it.
+    ( iw().is_wait_for_buffer()
+      | is_aborting() | is_terminal_state() ). wait();
+
+    if (is_aborting().signalled()) {
+      LOG_DEBUG(clog, "the connection is aborting");
+      goto LAborting;
+    }
+    else if (is_terminal_state().signalled()) {
+      LOG_DEBUG(clog, "the connection is closing");
+      goto LClosed;
+    }
+
+    LOG_DEBUG(clog, iw() << " asked for more data");
+
+    std::unique_ptr<RSingleBuffer> buf 
+      (new RSingleBuffer(&socket->msg));
+
+    // a content of the buffer will be cleared after
+    // everybody stops using it
+    buf->set_autoclear(true);
+    iw().new_buffer(std::move(buf));
+  }
+
+LAborting:
+  is_aborting().wait();
+  ask_close();
+  socket->InSocket::is_terminal_state().wait();
+  // No sence to start aborting while a socket is working
+  iw().detach();
+
+LClosed:
+  if (!STATE_OBJ(RBuffer, state_is, socket->msg, 
+                 discharged))
+    socket->msg.clear();
+}
+
+template<class Socket>
+void RSingleSocketConnection<Socket>::ask_abort()
+{
+#if 1
+  A_STATE(RSingleSocketConnection, 
+          SocketConnectionAxis, move_to, aborting);
+#else
+  // we block because no connecting -> aborting transition
+  // (need change ClientSocket to allow it)
+  is_can_abort().wait();
+
+  if (RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
+      ::compare_and_move
+      (*this, ClientSocket::connectedState,
+       RSingleSocketConnection::abortingState))
+    is_aborted().wait();
 #endif
+}
 
 template<class Connection>
 RServerConnectionFactory<Connection>

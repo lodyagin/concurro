@@ -38,8 +38,8 @@
 #include "Repository.h"
 #include "RSocket.h"
 #include "RSocketAddress.h"
-#include "ClientSocket.h"
-#include "ListeningSocket.h"
+//#include "ClientSocket.h"
+//#include "ListeningSocket.h"
 #include "RWindow.h"
 #include "RObjectWithThreads.h"
 
@@ -175,52 +175,22 @@ protected:
   Connection* con;
 };
 
-DECLARE_AXIS(SocketConnectionAxis, ClientSocketAxis);
+template<class Socket>
+DECLARE_AXIS_TEMPL(SocketConnectionAxis, 
+                   Socket::State::axis);
 
 /**
- * A connection which always uses only one socket.
- *
- * @dot
- * digraph {
- *   start [shape = point]; 
- *   connection_timed_out [shape = doublecircle];
- *   connection_refused [shape = doublecircle];
- *   destination_unreachable [shape = doublecircle];
- *   closed [shape = doublecircle];
- *   clearly_closed [shape = doublecircle];
- *   aborted [shape = doublecircle];
- *   start -> created;
- *   created -> io_ready;
- *   created -> connection_timed_out;
- *   created -> connection_refused;
- *   created -> destination_unreachable;
- *   io_ready -> closed;
- *   closed -> closed;
- *   created -> closed;
- *   created -> pre_connecting
- *      [label="ask_connect()"];
- *   pre_connecting -> connecting
- *      [label="EINPROGRESS"];
- *   connecting -> io_ready;
- *   connecting -> connection_timed_out
- *      [label="ETIMEDOUT"];
- *   connecting -> connection_refused
- *      [label="ECONNREFUSED"];
- *   connecting -> destination_unreachable
- *      [label="ENETUNREACH"];
- *   io_ready -> closed;
- *   io_ready -> aborting;
- *   aborting -> aborted;
- *   closed -> clearly_closed;
- *   closed -> aborting;
- * }
- * @enddot
- *
+ * A connection which always uses only one socket defined
+ * as a template parameter.
  */
+template<class Socket>
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
-  <SocketConnectionAxis, ClientSocketAxis>
+  <
+    SocketConnectionAxis<Socket>, 
+    typename Socket::State::axis
+  >
 {
   DECLARE_EVENT(SocketConnectionAxis, aborting);
   DECLARE_EVENT(SocketConnectionAxis, aborted);
@@ -234,6 +204,12 @@ public:
   DECLARE_STATE_CONST(State, aborted);
   DECLARE_STATE_CONST(State, clearly_closed);
   //! @endcond
+
+  typedef RStateSplitter
+  <
+    SocketConnectionAxis, 
+    typename Socket::State::axis
+  > Splitter;
 
   //! Only input thread.
   typedef ConnectionThread<RSingleSocketConnection>
@@ -260,8 +236,8 @@ public:
     virtual std::unique_ptr<SocketThread::Par> 
     get_thread_par(RSingleSocketConnection* c) const
     {
-      return std::unique_ptr<Thread::Par>
-        (new Thread::Par(c));
+      return std::unique_ptr<typename Thread::Par>
+        (new typename Thread::Par(c));
     }
 
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
