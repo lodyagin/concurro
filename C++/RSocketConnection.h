@@ -192,22 +192,22 @@ class RSingleSocketConnection
     typename Socket::State::axis
   >
 {
-  DECLARE_EVENT(SocketConnectionAxis, aborting);
-  DECLARE_EVENT(SocketConnectionAxis, aborted);
-  DECLARE_EVENT(SocketConnectionAxis, clearly_closed);
-  DECLARE_EVENT(SocketConnectionAxis, io_ready);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, aborted);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, clearly_closed);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, io_ready);
 
 public:
   //! @cond
-  DECLARE_STATES(SocketConnectionAxis, State);
-  DECLARE_STATE_CONST(State, aborting);
-  DECLARE_STATE_CONST(State, aborted);
-  DECLARE_STATE_CONST(State, clearly_closed);
+  DECLARE_STATES(SocketConnectionAxis<Socket>, State);
+  DECLARE_STATE_CONST(typename State, aborting);
+  DECLARE_STATE_CONST(typename State, aborted);
+  DECLARE_STATE_CONST(typename State, clearly_closed);
   //! @endcond
 
   typedef RStateSplitter
   <
-    SocketConnectionAxis, 
+    SocketConnectionAxis<Socket>, 
     typename Socket::State::axis
   > Splitter;
 
@@ -319,7 +319,7 @@ protected:
 
   //RSocketBase* socket;
   InSocket* socket;
-  ClientSocket* cli_sock;
+  //ClientSocket* cli_sock;
   SocketThread* thread;
   RConnectedWindow<SOCKET>* in_win;
 
