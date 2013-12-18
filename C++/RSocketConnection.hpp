@@ -38,26 +38,56 @@
 
 namespace curr {
 
+DEFINE_AXIS_TEMPL(
+  Socket,
+  SocketConnectionAxis,
+  { "aborting", // skipping data and closing buffers
+     "aborted",   // after aborting
+     "clearly_closed" // all pending data 
+                      // was received / sent
+  },
+  { { "io_ready", "aborting" },
+    { "aborting", "aborted" },
+    { "closed", "clearly_closed" },
+    { "closed", "aborting" }
+  }
+);
+
+template<class Socket>
+DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
+                   aborting);
+
+template<class Socket>
+DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
+                   aborted);
+
+template<class Socket>
+DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
+                   clearly_closed);
+
 template<class Socket>
 RSingleSocketConnection<Socket>::RSingleSocketConnection
-(const ObjectCreationInfo& oi,
- const Par& par)
-  : RSocketConnection(oi, par),
+  (const ObjectCreationInfo& oi,
+   const Par& par)
+  : 
+    RSocketConnection(oi, par),
     Splitter
-      (dynamic_cast<ClientSocket*>(par.socket), 
+      (dynamic_cast<Socket*>(par.socket), 
        Socket::createdState),
     CONSTRUCT_EVENT(aborting),
     CONSTRUCT_EVENT(aborted),
     CONSTRUCT_EVENT(clearly_closed),
     CONSTRUCT_EVENT(io_ready),
+    CONSTRUCT_EVENT(closed),
     socket(dynamic_cast<InSocket*>(par.socket)),
-    cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
+
+    //cli_sock(dynamic_cast<ClientSocket*>(par.socket)),
     thread(dynamic_cast<SocketThread*>
            (StdThreadRepository::instance().create_thread
             (*par.get_thread_par(this)))),
     in_win(RConnectedWindowRepository<SOCKET>::instance()
-           .create_object(*par.get_window_par(cli_sock))),
-    is_closed_event(cli_sock, "closed"),
+           .create_object(*par.get_window_par(socket))),
+    //is_closed_event(socket, "closed"),
     is_terminal_state_event { 
       is_clearly_closed_event,
       is_aborted_event,
@@ -65,7 +95,7 @@ RSingleSocketConnection<Socket>::RSingleSocketConnection
     }
 {
   assert(socket);
-  assert(cli_sock);
+//  assert(cli_sock);
   SCHECK(thread);
   SCHECK(in_win);
   Splitter::init();
@@ -92,26 +122,35 @@ void RSingleSocketConnection<Socket>::state_changed
 {
   //FIXME no parent call
 
-  RState<SocketConnectionAxis> st =
+  RState<SocketConnectionAxis<Socket>> st =
     state_ax.bound(object->current_state(state_ax));
 
   // aborting state check
-  if (st == RState<SocketConnectionAxis>
-      (ClientSocket::closedState)
-      && RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
-      ::compare_and_move
-      (*this, abortingState, abortedState))
+  if (st == RState<SocketConnectionAxis<Socket>>
+        (ClientSocket::closedState)
+      && compare_and_move
+         <
+          RSingleSocketConnection<Socket>, 
+          SocketConnectionAxis<Socket>
+         >
+         (*this, abortingState, abortedState)
+      )
     return;
 
   // aborted state check
-  if (st == RState<SocketConnectionAxis>
+  if (st == RState<SocketConnectionAxis<Socket>>
       (ClientSocket::closedState)
       && A_STATE(RSingleSocketConnection, 
-                 SocketConnectionAxis, state_is, aborted))
+                 SocketConnectionAxis<Socket>, 
+                 state_is, aborted))
     return;
 
-  RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
-    ::neg_compare_and_move(*this, st, st);
+  neg_compare_and_move
+  <
+     RSingleSocketConnection<Socket>, 
+     SocketConnectionAxis<Socket>
+  >
+  (*this, st, st);
 
   LOG_TRACE(log, "moved to " << st);
 }
@@ -215,13 +254,13 @@ void RSingleSocketConnection<Socket>::ask_abort()
 {
 #if 1
   A_STATE(RSingleSocketConnection, 
-          SocketConnectionAxis, move_to, aborting);
+          SocketConnectionAxis<Socket>, move_to, aborting);
 #else
   // we block because no connecting -> aborting transition
   // (need change ClientSocket to allow it)
   is_can_abort().wait();
 
-  if (RMixedAxis<SocketConnectionAxis, ClientSocketAxis>
+  if (RMixedAxis<SocketConnectionAxis<Socket>, ClientSocketAxis>
       ::compare_and_move
       (*this, ClientSocket::connectedState,
        RSingleSocketConnection::abortingState))

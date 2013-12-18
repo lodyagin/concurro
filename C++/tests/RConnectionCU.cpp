@@ -13,8 +13,8 @@ void test_connection_clearly_closed();
 CU_TestInfo RConnectionTests[] = {
   {"test RConnection (aborted)", 
     test_connection_aborted},
-/*  {"test RConnection (clearly closed)", 
-   test_connection_clearly_closed},*/
+  {"test RConnection (clearly closed)", 
+   test_connection_clearly_closed},
   CU_TEST_INFO_NULL
 };
 
@@ -31,7 +31,45 @@ int RConnectionCUClean()
   return 0;
 }
 
-class TestConnection : public RSingleSocketConnection
+template<class Socket>
+class TestConnection : 
+  public RSingleSocketConnection<Socket>
+{
+public:
+  struct ServerPar : 
+    RSingleSocketConnection<Socket>::ServerPar
+  {
+    ServerPar(RSocketBase* srv_sock) : 
+      RSingleSocketConnection<Socket>::ServerPar(srv_sock) 
+    {
+      assert(srv_sock);
+      this->socket_rep = srv_sock->repository;
+      assert(this->socket_rep);
+    }
+
+    RSocketConnection* create_derivation
+      (const ObjectCreationInfo& oi) const
+    {
+      return new TestConnection(oi, *this);
+    }
+  };
+
+  TestConnection(const ObjectCreationInfo& oi,
+                 const ServerPar& par)
+    : RSingleSocketConnection<Socket>(oi, par) {}
+
+  std::string object_name() const override
+  {
+    return "TestConnection(Server)";
+  }
+
+  static RSocketAddressRepository sar;
+
+};
+
+template<>
+class TestConnection<ClientSocket> : 
+  public RSingleSocketConnection<ClientSocket>
 {
 public:
   struct ClientPar : 
@@ -69,37 +107,22 @@ public:
     }
   };
 
-  struct ServerPar : RSingleSocketConnection::ServerPar
-  {
-    ServerPar(RSocketBase* srv_sock) : 
-      RSingleSocketConnection::ServerPar(srv_sock) 
-    {
-      assert(srv_sock);
-      socket_rep = srv_sock->repository;
-      assert(socket_rep);
-    }
-
-    RSocketConnection* create_derivation
-      (const ObjectCreationInfo& oi) const
-    {
-      return new TestConnection(oi, *this);
-    }
-  };
-
   TestConnection(const ObjectCreationInfo& oi,
                  const Par& par)
     : RSingleSocketConnection(oi, par) {}
 
   std::string object_name() const override
   {
-    return "TestConnection";
+    return "TestConnection(Client)";
   }
 
   static RSocketAddressRepository sar;
-
 };
 
-RSocketAddressRepository TestConnection::sar;
+template<class Socket>
+RSocketAddressRepository TestConnection<Socket>::sar;
+
+RSocketAddressRepository TestConnection<ClientSocket>::sar;
 
 static void test_connection(bool do_abort)
 {
@@ -120,13 +143,15 @@ static void test_connection(bool do_abort)
 
   CU_ASSERT_PTR_NOT_NULL_FATAL(lstn);
 
-  RServerConnectionFactory<TestConnection> scf(lstn, 1);
+  RServerConnectionFactory<TestConnection<RSocketBase>> 
+    scf(lstn, 1);
 
   RWindow wc;
 
-  auto* con = dynamic_cast<TestConnection*>
+  auto* con = dynamic_cast<TestConnection<ClientSocket>*>
     (con_rep.create_object
-      (TestConnection::ClientPar("localhost", 31001)));
+      (TestConnection<ClientSocket>
+        ::ClientPar("localhost", 31001)));
 
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
@@ -137,7 +162,11 @@ static void test_connection(bool do_abort)
   *con << "Labcdef12345678902H23456789         1\n";
   const std::string answer("+Soup2.0\n");
   con->iw().forward_top(answer.size());
-  (con->iw().is_filled() | con->is_terminal_state()).wait();
+  CURR_WAIT_L
+    (rootLogger, 
+     con->iw().is_filled() | con->is_terminal_state(),
+     100);
+
   if (con->is_terminal_state().signalled())
     CU_FAIL_FATAL("The connection is closed unexpectedly.");
   const std::string a(&con->iw()[0], con->iw().size());

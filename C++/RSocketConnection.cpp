@@ -36,34 +36,6 @@
 
 namespace curr {
 
-DEFINE_AXIS(
-  SocketConnectionAxis,
-  { "aborting", // skipping data and closing buffers
-     "aborted",   // after aborting
-     "clearly_closed" // all pending data 
-                      // was received / sent
-  },
-  { { "io_ready", "aborting" },
-    { "aborting", "aborted" },
-    { "closed", "clearly_closed" },
-    { "closed", "aborting" }
-  }
-);
-
-DEFINE_STATES(SocketConnectionAxis);
-
-template<class Socket>
-DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
-                   aborting);
-
-template<class Socket>
-DEFINE_STATE_CONST(RSingleSocketConnection, State, 
-                   aborted);
-
-template<class Socket>
-DEFINE_STATE_CONST(RSingleSocketConnection, State, 
-                   clearly_closed);
-
 std::ostream&
 operator<< (std::ostream& out, const RSocketConnection& c)
 {

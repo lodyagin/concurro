@@ -1,6 +1,7 @@
 #include "SSingleton.hpp"
 #include "ClassWithStates.h"
 #include "CUnit.h"
+#include "RThreadRepository.hpp"
 #include "tests.h"
 #include <string>
 

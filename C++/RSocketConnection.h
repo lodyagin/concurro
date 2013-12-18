@@ -39,7 +39,7 @@
 #include "RSocket.h"
 #include "RSocketAddress.h"
 //#include "ClientSocket.h"
-//#include "ListeningSocket.h"
+#include "ListeningSocket.h"
 #include "RWindow.h"
 #include "RObjectWithThreads.h"
 
@@ -194,8 +194,10 @@ class RSingleSocketConnection
 {
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborted);
-  DECLARE_EVENT(SocketConnectionAxis<Socket>, clearly_closed);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, 
+                clearly_closed);
   DECLARE_EVENT(SocketConnectionAxis<Socket>, io_ready);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, closed);
 
 public:
   //! @cond
@@ -270,9 +272,9 @@ public:
     ServerPar(RSocketBase* srv_sock)
     {
       //sock_addr = srv_sock->get_address();
-      socket = srv_sock;
+      this->socket = srv_sock;
       //assert(sock_addr);
-      assert(socket);
+      assert(this->socket);
     }
 
     ServerPar(ServerPar&& par)
@@ -317,14 +319,18 @@ protected:
   // <NB> not virtual
   void run();
 
-  //RSocketBase* socket;
+#if 0
+  RSocketBase* socket;
+#else
   InSocket* socket;
+#endif
   //ClientSocket* cli_sock;
   SocketThread* thread;
   RConnectedWindow<SOCKET>* in_win;
 
-  A_DECLARE_EVENT(SocketConnectionAxis, 
-                  ClientSocketAxis, closed);
+  /*A_DECLARE_EVENT(SocketConnectionAxis<Socket>, 
+                  typename Socket::State::axis, 
+                  closed);*/
 
 protected:
   CompoundEvent is_terminal_state_event;
