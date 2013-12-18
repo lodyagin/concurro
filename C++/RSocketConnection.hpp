@@ -314,6 +314,8 @@ void RServerConnectionFactory<Connection>
   ListeningSocket* lstn_sock = fact->lstn_sock;
 
   assert(lstn_sock);
+  move_to(*this, RThreadBase::workingState);
+
   lstn_sock->ask_listen();
   for (;;) {
 

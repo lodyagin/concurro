@@ -96,8 +96,13 @@ void RObjectWithThreads<Object>
   if (destructor_delegate_is_called) 
     return;
 
+  for (RThreadBase* th : threads)
+    th->stop();
+
   for (auto& teh : threads_terminals)
+  {
     teh.wait();
+  }
   for (RThreadBase* th : threads)
     StdThreadRepository
       ::instance().delete_thread(th);

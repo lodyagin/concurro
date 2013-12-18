@@ -56,7 +56,11 @@ public:
 
   TestConnection(const ObjectCreationInfo& oi,
                  const ServerPar& par)
-    : RSingleSocketConnection<Socket>(oi, par) {}
+    : RSingleSocketConnection<Socket>(oi, par),
+      threads(this)
+  {
+    threads.complete_construction();
+  }
 
   std::string object_name() const override
   {
@@ -65,7 +69,67 @@ public:
 
   static RSocketAddressRepository sar;
 
+protected:
+  class Threads final : public RObjectWithThreads<Threads>
+  {
+  public:
+    Threads(TestConnection* tc);
+
+    ~Threads() { this->destroy(); }
+
+    CompoundEvent is_terminal_state() const override
+    {
+      return CompoundEvent();
+    }
+    TestConnection* obj;
+  } threads;
+    
+  class ServerThread final : public ObjectThread<Threads>
+  {
+  public:
+    struct Par : ObjectThread<Threads>::Par
+    {
+      Par() : 
+        ObjectThread<Threads>::Par
+          ("TestConnection::Threads::ServerThread")
+      {}
+
+      PAR_DEFAULT_OVERRIDE(StdThread, ServerThread);
+    };
+
+  protected:
+    REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
+      ServerThread, 
+      ObjectThread<Threads>, 
+      ObjectThread<Threads>
+    );
+
+    void run() override;
+  };
 };
+
+template<class Socket>
+TestConnection<Socket>::Threads
+//
+::Threads(TestConnection* tc) 
+:
+  RObjectWithThreads<Threads>
+  {
+   new typename TestConnection<Socket>::ServerThread::Par()
+  },
+  obj(tc)
+{}
+
+template<class Socket>
+void TestConnection<Socket>::ServerThread::run()
+{
+  TestConnection* tc = this->object->obj;
+  assert(tc);
+
+  move_to(*this, RThreadBase::workingState);
+
+  *tc << "+Soup2.0\n";
+}
 
 template<>
 class TestConnection<ClientSocket> : 
@@ -165,7 +229,7 @@ static void test_connection(bool do_abort)
   CURR_WAIT_L
     (rootLogger, 
      con->iw().is_filled() | con->is_terminal_state(),
-     100);
+     -1);
 
   if (con->is_terminal_state().signalled())
     CU_FAIL_FATAL("The connection is closed unexpectedly.");

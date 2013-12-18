@@ -73,7 +73,7 @@ public:
     //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
     mutable RSocketRepository* socket_rep;
-    //mutable std::unique_ptr<RSocketRepository> socket_rep;
+   //mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
 
   //! Parameters to create a client side of an Internet
@@ -125,7 +125,7 @@ protected:
     (const ObjectCreationInfo& oi,
      const Par& par);
 
-  std::shared_ptr<RSocketRepository> socket_rep;
+  RSocketRepository* socket_rep;
 };
 
 std::ostream&
@@ -181,7 +181,8 @@ DECLARE_AXIS_TEMPL(SocketConnectionAxis,
 
 /**
  * A connection which always uses only one socket defined
- * as a template parameter.
+ * as a template parameter. There is an internal input
+ * thread which reads packets into iw() input window.
  */
 template<class Socket>
 class RSingleSocketConnection 
@@ -319,12 +320,7 @@ protected:
   // <NB> not virtual
   void run();
 
-#if 0
-  RSocketBase* socket;
-#else
   InSocket* socket;
-#endif
-  //ClientSocket* cli_sock;
   SocketThread* thread;
   RConnectedWindow<SOCKET>* in_win;
 
