@@ -118,13 +118,18 @@ void TCPSocket::state_hook
    const StateAxis& ax,
    const UniversalState& new_state)
 {
+  const RState<TCPAxis> st(new_state);
   if (!TCPAxis::is_same(ax)) {
-    const RState<TCPAxis> st(new_state);
     State::move_to(*this, st);
 
     if (st == io_readyState) {
       select_thread->start();
       wait_thread->start();
+    }
+  }
+  else {
+    if (st == closedState) {
+      ::close(fd);
     }
   }
 }
