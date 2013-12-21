@@ -268,19 +268,26 @@ public:
           (std::move(par)) {}
   };
 
+  template<class Connection>
   struct ServerPar : Par
   {
     ServerPar(RSocketBase* srv_sock)
     {
-      //sock_addr = srv_sock->get_address();
+      assert(srv_sock);
       this->socket = srv_sock;
-      //assert(sock_addr);
-      assert(this->socket);
+      assert(srv_sock->repository);
+      this->socket_rep = srv_sock->repository;
     }
 
     ServerPar(ServerPar&& par)
       : Par(std::move(par))
     {}
+
+    RSocketConnection* create_derivation
+      (const ObjectCreationInfo& oi) const
+    {
+      return new Connection(oi, *this);
+    }
   };
 
   void state_changed

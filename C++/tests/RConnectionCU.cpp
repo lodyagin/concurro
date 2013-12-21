@@ -36,23 +36,8 @@ class TestConnection :
   public RSingleSocketConnection<Socket>
 {
 public:
-  struct ServerPar : 
-    RSingleSocketConnection<Socket>::ServerPar
-  {
-    ServerPar(RSocketBase* srv_sock) : 
-      RSingleSocketConnection<Socket>::ServerPar(srv_sock) 
-    {
-      assert(srv_sock);
-      this->socket_rep = srv_sock->repository;
-      assert(this->socket_rep);
-    }
-
-    RSocketConnection* create_derivation
-      (const ObjectCreationInfo& oi) const
-    {
-      return new TestConnection(oi, *this);
-    }
-  };
+  typedef typename RSingleSocketConnection<Socket>
+    ::template ServerPar<TestConnection<Socket>> ServerPar;
 
   TestConnection(const ObjectCreationInfo& oi,
                  const ServerPar& par)
