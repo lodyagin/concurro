@@ -181,7 +181,9 @@ protected:
                << ":is_complete()::is_complete_event"), 
        true, false);
     // prevent infinit loop in RThreadRepository::current
-    is_complete_event->log_params().wait = false;
+    is_complete_event->log_params().wait = 
+      is_complete_event->log_params().set = 
+        is_complete_event->log_params().reset = false;
     return *is_complete_event;
   }
 
