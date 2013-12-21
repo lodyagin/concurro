@@ -100,31 +100,16 @@ RThreadBase::RThreadBase
   externalTerminated (extTerminated)
 {
   LOG_DEBUG (log, "thread " << pretty_id() 
-             << ">\t created");
+             << ">\t created [0x" 
+             << std::hex << id << "]");
 }
 
 RThreadBase::RThreadBase
   (const ObjectCreationInfo& oi, const Par& p)
 : 
-#if 1
     RThreadBase
       (oi.objectId, p.extTerminated, p.thread_name)
-#else
-  RObjectWithEvents<ThreadAxis> (readyState),
-  CONSTRUCT_EVENT(starting),
-  CONSTRUCT_EVENT(terminated),
-  universal_object_id (oi.objectId),
-  thread_name(p.thread_name),
-  destructor_delegate_is_called(false),
-  isStopRequested 
-  (SFORMAT("RThreadBase[id=" << oi.objectId
-           << "]::isStopRequested"),
-   true, false),
-  externalTerminated (p.extTerminated)
-#endif
 {
-  LOG_DEBUG (log, "thread " << pretty_id() 
-             << ">\t created");
 }
 
 RThreadBase& RThreadBase::start ()
