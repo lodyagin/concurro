@@ -32,6 +32,7 @@
 
 #include "RThreadRepository.h"
 #include "RCheck.h"
+#include "SSingleton.hpp"
 #include <signal.h>
 
 namespace curr {

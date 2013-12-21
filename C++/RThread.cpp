@@ -28,8 +28,8 @@
  */
 
 #include "StdAfx.h"
-#include "RThread.h"
-#include "RThreadRepository.h"
+#include "RThread.hpp"
+#include "RThreadRepository.hpp"
 #include "SShutdown.h"
 #include "Logging.h"
 #include "REvent.hpp"

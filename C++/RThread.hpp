@@ -32,7 +32,7 @@
 #define CONCURRO_RTHREAD_HPP_
 
 #include "RThread.h"
-#include "RThreadRepository.h"
+#include "RThreadRepository.hpp"
 
 namespace curr {
 
