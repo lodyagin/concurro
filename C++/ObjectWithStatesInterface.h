@@ -219,14 +219,7 @@ current_state(const curr::StateAxis& ax) const override \
   return ax.current_state(this); \
 } 
 
-#define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS  \
-MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS    \
-\
-curr::CompoundEvent create_event                \
-(const curr::UniversalEvent& ue) const override \
-{ \
-  return create_event(ue); \
-} \
+#define MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS  \
 \
 void update_events \
 (curr::StateAxis& ax, \
@@ -235,6 +228,10 @@ void update_events \
 { \
   ax.update_events(this, trans_id, to); \
 }
+
+#define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS  \
+MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS    \
+MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS
 
 //! @}
 

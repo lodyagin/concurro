@@ -38,7 +38,6 @@
 #include "Repository.h"
 #include "RSocket.h"
 #include "RSocketAddress.h"
-//#include "ClientSocket.h"
 #include "ListeningSocket.h"
 #include "RWindow.h"
 #include "RObjectWithThreads.h"
@@ -186,19 +185,19 @@ DECLARE_AXIS_TEMPL(SocketConnectionAxis,
  * as a template parameter. There is an internal input
  * thread which reads packets into iw() input window.
  *
- * \tparam Connection a real connection as a descendant of
- * RSingleSocketConnection
  * \tparam Socket either ClientSocket or server (accepted)
  * socket. It defines the connection side.
  */
-template<class Connection, class Socket>
+template<class Socket>
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
     typename Socket::State::axis
-  >
+  >,
+  public RObjectWithThreads
+    <RSingleSocketConnection<Socket>>
 {
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborted);
@@ -279,6 +278,7 @@ public:
           (std::move(par)) {}
   };
 
+  template<class Connection>
   struct ServerPar : Par
   {
     ServerPar(RSocketBase* srv_sock)
@@ -329,11 +329,11 @@ public:
   }
   
 protected:
+#if 0
   class Threads final : public RObjectWithThreads<Threads>
   {
   public:
-    template<class... Pars>
-    Threads(Connection* tc) : 
+    Threads(RSingleSocketConnection* tc) : 
       RObjectWithThreads<Threads> { new Pars()... },
       obj(tc)
     {}
@@ -347,11 +347,26 @@ protected:
 
     Connection* obj;
   } threads;
+#endif
 
   RSingleSocketConnection
     (const ObjectCreationInfo& oi,
      const Par& par);
   ~RSingleSocketConnection();
+
+  std::atomic<uint32_t>&
+  current_state(const curr::StateAxis& ax) override
+  {
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>&
+  current_state(const curr::StateAxis& ax) const override
+  {
+    return ax.current_state(this);
+  } 
+
+  MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS;
 
   // <NB> not virtual
   void run();
