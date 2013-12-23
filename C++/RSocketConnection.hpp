@@ -39,8 +39,7 @@
 namespace curr {
 
 DEFINE_AXIS_TEMPL(
-  Socket,
-  SocketConnectionAxis,
+  SocketConnectionAxis, RSocketBase,
   { "aborting", // skipping data and closing buffers
      "aborted",   // after aborting
      "clearly_closed" // all pending data 
@@ -53,22 +52,32 @@ DEFINE_AXIS_TEMPL(
   }
 );
 
-template<class Socket>
-DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
-                   aborting);
+template<class Connection, class Socket>
+const RState
+  <typename RSingleSocketConnection<Connection, Socket>
+    ::State::axis>
+RSingleSocketConnection<Connection, Socket>
+::abortingState("aborting");
 
-template<class Socket>
-DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
-                   aborted);
+template<class Connection, class Socket>
+const RState
+  <typename RSingleSocketConnection<Connection, Socket>
+    ::State::axis>
+RSingleSocketConnection<Connection, Socket>
+::abortedState("aborted");
 
-template<class Socket>
-DEFINE_STATE_CONST(RSingleSocketConnection<Socket>, State, 
-                   clearly_closed);
+template<class Connection, class Socket>
+const RState
+  <typename RSingleSocketConnection<Connection, Socket>
+    ::State::axis>
+RSingleSocketConnection<Connection, Socket>
+::clearly_closedState("clearly_closed");
 
-//struct : ObjectFunThread<Threads>::Par {} a;
 
-template<class Socket>
-RSingleSocketConnection<Socket>::RSingleSocketConnection
+template<class Connection, class Socket>
+RSingleSocketConnection<Connection, Socket>
+//
+::RSingleSocketConnection
   (const ObjectCreationInfo& oi,
    const Par& par)
   : 
@@ -76,11 +85,10 @@ RSingleSocketConnection<Socket>::RSingleSocketConnection
     Splitter
       (dynamic_cast<Socket*>(par.socket), 
        Socket::createdState),
-    RObjectWithThreads<RSingleSocketConnection<Socket>>
+    RObjectWithThreads<Connection>
     {
       // FIXME check memory leak (use Par&& ?)
-      new typename ObjectFunThread
-      <RSingleSocketConnection<Socket>>::Par
+      new typename ObjectFunThread<Connection>::Par
         ( SFORMAT(typeid(*this).name() << par.socket->fd),
           [](RSingleSocketConnection& obj)
           {
@@ -107,33 +115,32 @@ RSingleSocketConnection<Socket>::RSingleSocketConnection
     }
 {
   assert(socket);
-  //SCHECK(thread);
   SCHECK(in_win);
   Splitter::init();
-  this->complete_construction();
-//  thread->start();
 }
 
-template<class Socket>
-RSingleSocketConnection<Socket>::~RSingleSocketConnection()
+template<class Connection, class Socket>
+RSingleSocketConnection<Connection, Socket>
+//
+::~RSingleSocketConnection()
 {
-  //TODO not only TCP
-  //dynamic_cast<TCPSocket*>(socket)->ask_close();
-  //socket->ask_close_out();
+  SCHECK(this->destructor_delegate_is_called);
   is_terminal_state_event.wait();
-  this->destroy();
   socket_rep->delete_object(socket, true);
 }
 
-template<class Socket>
-void RSingleSocketConnection<Socket>::state_changed
+template<class Connection, class Socket>
+void RSingleSocketConnection<Connection, Socket>
+//
+::state_changed
   (StateAxis& ax, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
-   const UniversalState&
+   const UniversalState& new_state
    )
 {
-  //FIXME no parent call
+  RObjectWithThreads<Connection>::state_changed
+    (ax, state_ax, object, new_state);
 
   if (!SocketConnectionAxis<Socket>::is_same(ax))
     return;
@@ -146,7 +153,7 @@ void RSingleSocketConnection<Socket>::state_changed
         (ClientSocket::closedState)
       && compare_and_move
          <
-          RSingleSocketConnection<Socket>, 
+          RSingleSocketConnection<Connection, Socket>, 
           SocketConnectionAxis<Socket>
          >
          (*this, abortingState, abortedState)
@@ -163,7 +170,7 @@ void RSingleSocketConnection<Socket>::state_changed
 
   neg_compare_and_move
   <
-     RSingleSocketConnection<Socket>, 
+     RSingleSocketConnection<Connection, Socket>, 
      SocketConnectionAxis<Socket>
   >
   (*this, st, st);
@@ -171,8 +178,8 @@ void RSingleSocketConnection<Socket>::state_changed
   LOG_TRACE(log, "moved to " << st);
 }
 
-template<class Socket>
-RSocketConnection& RSingleSocketConnection<Socket>
+template<class Connection, class Socket>
+RSocketConnection& RSingleSocketConnection<Connection, Socket>
 ::operator<< (const std::string& str)
 {
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
@@ -187,8 +194,8 @@ RSocketConnection& RSingleSocketConnection<Socket>
   return *this;
 }
 
-template<class Socket>
-RSocketConnection& RSingleSocketConnection<Socket>
+template<class Connection, class Socket>
+RSocketConnection& RSingleSocketConnection<Connection, Socket>
 ::operator<< (RSingleBuffer&& buf)
 {
   auto* out_sock = dynamic_cast<OutSocket*>(socket);
@@ -200,20 +207,20 @@ RSocketConnection& RSingleSocketConnection<Socket>
   return *this;
 }
 
-template<class Socket>
-void RSingleSocketConnection<Socket>::ask_connect()
+template<class Connection, class Socket>
+void RSingleSocketConnection<Connection, Socket>::ask_connect()
 {
   dynamic_cast<ClientSocket*>(socket)->ask_connect();
 }
 
-template<class Socket>
-void RSingleSocketConnection<Socket>::ask_close()
+template<class Connection, class Socket>
+void RSingleSocketConnection<Connection, Socket>::ask_close()
 {
   socket->ask_close_out();
 }
 
-template<class Socket>
-void RSingleSocketConnection<Socket>::run()
+template<class Connection, class Socket>
+void RSingleSocketConnection<Connection, Socket>::run()
 {
   typedef Logger<LOG::Connections> clog;
 
@@ -265,8 +272,8 @@ LClosed:
     socket->msg.clear();
 }
 
-template<class Socket>
-void RSingleSocketConnection<Socket>::ask_abort()
+template<class Connection, class Socket>
+void RSingleSocketConnection<Connection, Socket>::ask_abort()
 {
 #if 1
   A_STATE(RSingleSocketConnection, 

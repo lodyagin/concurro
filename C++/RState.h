@@ -30,11 +30,13 @@
 #ifndef CONCURRO_RSTATE_H_
 #define CONCURRO_RSTATE_H_
 
+#include <type_traits>
+#include <mutex>
+
+#include "types/meta.h"
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 #include "StateAxis.h"
-#include <type_traits>
-#include <mutex>
 
 namespace curr {
 
@@ -429,9 +431,11 @@ void wait_and_move
 #define DEFINE_AXIS_NS(axis, pars...) \
   DEFINE_AXIS_NS_TEMPL0(axis, , pars) 
 
-#define DEFINE_AXIS_TEMPL(templ, axis, pars...) \
+#define DEFINE_AXIS_TEMPL(axis, templ_base, pars...) \
   DEFINE_AXIS_NS_TEMPL0 \
-    (axis<templ>, template<class templ>, pars) 
+    (CURR_TEMPLATE_AND_PARS(axis, T, \
+      CURR_ENABLE_BASE_TYPE(templ_base, T)), \
+     template<class T>, pars)
 
 #define DEFINE_AXIS(axis, pars...)	\
   DEFINE_AXIS_NS(axis, pars) \

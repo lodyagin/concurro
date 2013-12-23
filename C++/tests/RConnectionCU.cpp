@@ -32,19 +32,29 @@ int RConnectionCUClean()
 }
 
 template<class Socket>
-class TestConnection : 
-  public RSingleSocketConnection<Socket>
+class TestConnection final : 
+  public RSingleSocketConnection
+    <TestConnection<Socket>, Socket>
 {
 public:
-  typedef typename RSingleSocketConnection<Socket>
-    ::template ServerPar<TestConnection<Socket>> ServerPar;
+  typedef RSingleSocketConnection
+    <TestConnection<Socket>, Socket>
+  Parent;
+
+  typedef typename Parent::ServerPar ServerPar;
 
   TestConnection(const ObjectCreationInfo& oi,
                  const ServerPar& par)
-    : RSingleSocketConnection<Socket>(oi, par),
+    : Parent(oi, par),
       threads(this)
   {
+    this->complete_construction();
     threads.complete_construction();
+  }
+
+  ~TestConnection()
+  {
+    this->destroy();
   }
 
   std::string object_name() const override
@@ -118,7 +128,8 @@ void TestConnection<Socket>::ServerThread::run()
 
 template<>
 class TestConnection<ClientSocket> : 
-  public RSingleSocketConnection<ClientSocket>
+  public RSingleSocketConnection
+    <TestConnection<ClientSocket>, ClientSocket>
 {
 public:
   struct ClientPar : 
@@ -158,7 +169,15 @@ public:
 
   TestConnection(const ObjectCreationInfo& oi,
                  const Par& par)
-    : RSingleSocketConnection(oi, par) {}
+    : RSingleSocketConnection(oi, par)
+  {
+    this->complete_construction();
+  }
+
+  ~TestConnection()
+  {
+    this->destroy();
+  }
 
   std::string object_name() const override
   {

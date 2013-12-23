@@ -84,25 +84,10 @@ public:
     //RSocketAddressRepository* sar;
     const RSocketAddress* sock_addr;
 
-#if 1
     InetClientPar(RSocketAddress* sa) : sock_addr(sa)
     {
       assert(sock_addr);
     }
-#else
-    std::string host;
-    uint16_t port;
-
-    InetClientPar
-      ( const std::string& a_host,
-        uint16_t a_port );
-
-    InetClientPar(InetClientPar&& par) :
-      Par(std::move(par)),
-      host(std::move(par.host)),
-      port(par.port) 
-    {}
-#endif
   };
 
   virtual ~RSocketConnection() {}
@@ -130,65 +115,20 @@ protected:
 std::ostream&
 operator<< (std::ostream&, const RSocketConnection&);
 
-#if 0
-class InSocket;
-
-template<class Connection>
-class ConnectionThread : public SocketThread
-{
-public:
-  struct Par : public SocketThread::Par
-  {
-    Par(Connection* c) 
-      : SocketThread::Par(c->socket), con(c)
-    {
-      thread_name = SFORMAT(
-        typeid(Connection).name() << socket->fd);
-    }
-
-    RThreadBase* create_derivation
-      (const ObjectCreationInfo& oi) const override
-    { 
-      return new ConnectionThread(oi, *this); 
-    }
-
-    Connection* con;
-  };
-
-protected:
-  ConnectionThread(const ObjectCreationInfo& oi, 
-                 const Par& p)
-  : SocketThread(oi, p), con(p.con) 
-  {
-    con->socket->threads_terminals.push_back
-      (this->is_terminal_state());
-  }
-
-  ~ConnectionThread() { destroy(); }
-
-  void run()
-  {
-    ThreadState::move_to(*this, workingState);
-    con->run();
-  }
-
-  Connection* con;
-};
-#endif
-
-template<class Socket>
 DECLARE_AXIS_TEMPL(SocketConnectionAxis, 
-                   Socket::State::axis);
-
+                   RSocketBase,
+                   T::State::axis);
 /**
  * A connection which always uses only one socket defined
  * as a template parameter. There is an internal input
  * thread which reads packets into iw() input window.
  *
+ * \tparam Connection is a final descendant - the actual
+ * connection class.
  * \tparam Socket either ClientSocket or server (accepted)
  * socket. It defines the connection side.
  */
-template<class Socket>
+template<class Connection, class Socket>
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
@@ -196,8 +136,7 @@ class RSingleSocketConnection
     SocketConnectionAxis<Socket>, 
     typename Socket::State::axis
   >,
-  public RObjectWithThreads
-    <RSingleSocketConnection<Socket>>
+  public RObjectWithThreads<Connection>
 {
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborted);
@@ -220,13 +159,6 @@ public:
     typename Socket::State::axis
   > Splitter;
 
-#if 0
-  //! Only input thread.
-  typedef ConnectionThread<RSingleSocketConnection>
-    Thread;
-  friend Thread;
-#endif
-
   struct Par : public virtual RSocketConnection::Par
   {
     mutable RSocketBase* socket;
@@ -243,15 +175,6 @@ public:
       RSocketConnection::Par(std::move(par)),
       //sock_addr(par.sock_addr),
       socket(par.socket) {}
-
-#if 0
-    virtual std::unique_ptr<SocketThread::Par> 
-    get_thread_par(RSingleSocketConnection* c) const
-    {
-      return std::unique_ptr<typename Thread::Par>
-        (new typename Thread::Par(c));
-    }
-#endif
 
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
     get_window_par(RSocketBase* sock) const
@@ -278,7 +201,6 @@ public:
           (std::move(par)) {}
   };
 
-  template<class Connection>
   struct ServerPar : Par
   {
     ServerPar(RSocketBase* srv_sock)
@@ -329,26 +251,6 @@ public:
   }
   
 protected:
-#if 0
-  class Threads final : public RObjectWithThreads<Threads>
-  {
-  public:
-    Threads(RSingleSocketConnection* tc) : 
-      RObjectWithThreads<Threads> { new Pars()... },
-      obj(tc)
-    {}
-
-    ~Threads() { this->destroy(); }
-
-    CompoundEvent is_terminal_state() const override
-    {
-      return CompoundEvent(); //TODO?
-    }
-
-    Connection* obj;
-  } threads;
-#endif
-
   RSingleSocketConnection
     (const ObjectCreationInfo& oi,
      const Par& par);
@@ -374,10 +276,6 @@ protected:
   InSocket* socket;
   //SocketThread* thread;
   RConnectedWindow<SOCKET>* in_win;
-
-  /*A_DECLARE_EVENT(SocketConnectionAxis<Socket>, 
-                  typename Socket::State::axis, 
-                  closed);*/
 
 protected:
   CompoundEvent is_terminal_state_event;
