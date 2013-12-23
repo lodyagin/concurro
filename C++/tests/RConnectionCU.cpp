@@ -34,13 +34,7 @@ int RConnectionCUClean()
 template<class Socket>
 class TestConnection final : 
   public RSingleSocketConnection
-  <
-    TestConnection<Socket>, 
-    Socket,
-    struct : typename 
-      ObjectFunThread<TestConnection<Socket>>::Par*/
-    {}
-  >
+    <TestConnection<Socket>, Socket>
 {
 public:
   typedef RSingleSocketConnection

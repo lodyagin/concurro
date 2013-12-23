@@ -87,7 +87,6 @@ RSingleSocketConnection<Connection, Socket, Threads...>
        Socket::createdState),
     RObjectWithThreads<Connection>
     {
-      // FIXME check memory leak (use Par&& ?)
       new typename ObjectFunThread<Connection>::Par
         ( SFORMAT(typeid(*this).name() << par.socket->fd),
           [](RSingleSocketConnection& obj)

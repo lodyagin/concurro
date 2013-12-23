@@ -72,6 +72,7 @@ public:
   //! complete_construction for each parameter a thread
   //! will be created and started in
   //! RThreadRepository<RThread<std::thread>>
+  //! The object takes ownership of all ThreadPar-s.
   RObjectWithThreads(std::initializer_list<ThreadPar*>);
 
   //! A deleted copy constructor.
