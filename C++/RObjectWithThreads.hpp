@@ -68,8 +68,11 @@ void RObjectWithThreads<Object>
    const UniversalState& new_state
   )
 {
-  if (RAxis<ConstructibleAxis>::state_is(
-        *this, complete_constructionState))
+  if (!ConstructibleAxis::is_same(ax))
+    return;
+
+  const RState<ConstructibleAxis> newst(new_state);
+  if (newst == complete_constructionState)
   {
     while (!threads_pars.empty()) {
       ThreadPar* par = threads_pars.front().get();
