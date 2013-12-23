@@ -130,10 +130,11 @@ void RSingleSocketConnection<Socket>::state_changed
   (StateAxis& ax, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,
-   const UniversalState&
+   const UniversalState& new_state
    )
 {
-  //FIXME no parent call
+  RObjectWithThreads<RSingleSocketConnection<Socket>>
+    ::state_changed(ax, state_ax, object, new_state);
 
   if (!SocketConnectionAxis<Socket>::is_same(ax))
     return;
