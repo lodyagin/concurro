@@ -127,8 +127,11 @@ DECLARE_AXIS_TEMPL(SocketConnectionAxis,
  * connection class.
  * \tparam Socket either ClientSocket or server (accepted)
  * socket. It defines the connection side.
+ * \tparam Threads pars of (additional) threads that serve
+ * this connection; it is mandatory for a server side of
+ * the connection.
  */
-template<class Connection, class Socket>
+template<class Connection, class Socket, class... Threads>
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter

@@ -34,7 +34,13 @@ int RConnectionCUClean()
 template<class Socket>
 class TestConnection final : 
   public RSingleSocketConnection
-    <TestConnection<Socket>, Socket>
+  <
+    TestConnection<Socket>, 
+    Socket,
+    struct : typename 
+      ObjectFunThread<TestConnection<Socket>>::Par*/
+    {}
+  >
 {
 public:
   typedef RSingleSocketConnection
@@ -45,11 +51,9 @@ public:
 
   TestConnection(const ObjectCreationInfo& oi,
                  const ServerPar& par)
-    : Parent(oi, par),
-      threads(this)
+    : Parent(oi, par)
   {
     this->complete_construction();
-    threads.complete_construction();
   }
 
   ~TestConnection()
@@ -65,6 +69,7 @@ public:
   static RSocketAddressRepository sar;
 
 protected:
+#if 0
   class Threads final : public RObjectWithThreads<Threads>
   {
   public:
@@ -78,7 +83,7 @@ protected:
     }
     TestConnection* obj;
   } threads;
-    
+
   class ServerThread final : public ObjectThread<Threads>
   {
   public:
@@ -101,8 +106,10 @@ protected:
 
     void run() override;
   };
+#endif    
 };
 
+#if 0
 template<class Socket>
 TestConnection<Socket>::Threads
 //
@@ -125,6 +132,7 @@ void TestConnection<Socket>::ServerThread::run()
 
   *tc << "+Soup2.0\n";
 }
+#endif
 
 template<>
 class TestConnection<ClientSocket> : 
