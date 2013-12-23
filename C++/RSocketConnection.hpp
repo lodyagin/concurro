@@ -94,7 +94,7 @@ RSingleSocketConnection<Connection, Socket, Threads...>
             obj.run();
           }
         ),
-      new Threads()...
+      new Threads(par.socket->fd)...
     },
     CONSTRUCT_EVENT(aborting),
     CONSTRUCT_EVENT(aborted),

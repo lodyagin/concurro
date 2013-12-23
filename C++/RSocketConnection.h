@@ -290,6 +290,61 @@ public:
   RConnectedWindow<SOCKET>& iw() { return *in_win; }
 };
 
+namespace connection { 
+
+//! Allows define a server thread as a virtual method
+//! override.
+template<class Connection>
+class abstract_server
+{
+public:
+  struct Par : ObjectFunThread<Connection>::Par
+  {
+    Par(SOCKET fd) : 
+      ObjectFunThread<Connection>::Par
+        (SFORMAT
+          (typeid(abstract_server<Connection>). name() 
+           << fd),
+         [](abstract_server& obj)
+         {
+           obj.server_run();
+         }
+        )
+     {}
+  };
+
+  virtual void server_run() = 0;
+};
+
+namespace single_socket {
+
+//! This class defines a server thread, you can inherit
+//! from it and overwrite server_run().
+template<class Connection, class Socket, class... Threads>
+class server :
+  public RSingleSocketConnection
+  <
+    Connection, 
+    Socket,
+    typename abstract_server<Connection>::Par,
+    //!< a server thread par
+    Threads...
+  >,
+  public abstract_server<Connection>
+{
+protected:
+  using RSingleSocketConnection
+  <
+    Connection, 
+    Socket,
+    typename abstract_server<Connection>::Par,
+    //!< a server thread par
+    Threads...
+  >::RSingleSocketConnection;
+};
+
+}}
+
 class RConnectionRepository
 : public Repository<
   RSocketConnection, 

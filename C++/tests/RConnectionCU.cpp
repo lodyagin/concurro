@@ -33,13 +33,12 @@ int RConnectionCUClean()
 
 template<class Socket>
 class TestConnection final : 
-  public RSingleSocketConnection
+  public connection::single_socket::server
     <TestConnection<Socket>, Socket>
 {
 public:
-  typedef RSingleSocketConnection
-    <TestConnection<Socket>, Socket>
-  Parent;
+  typedef connection::single_socket::server
+    <TestConnection<Socket>, Socket> Parent;
 
   typedef typename Parent::ServerPar ServerPar;
 
@@ -63,70 +62,13 @@ public:
   static RSocketAddressRepository sar;
 
 protected:
-#if 0
-  class Threads final : public RObjectWithThreads<Threads>
+  void server_run() override
   {
-  public:
-    Threads(TestConnection* tc);
-
-    ~Threads() { this->destroy(); }
-
-    CompoundEvent is_terminal_state() const override
-    {
-      return CompoundEvent();
-    }
-    TestConnection* obj;
-  } threads;
-
-  class ServerThread final : public ObjectThread<Threads>
-  {
-  public:
-    struct Par : ObjectThread<Threads>::Par
-    {
-      Par() : 
-        ObjectThread<Threads>::Par
-          ("TestConnection::Threads::ServerThread")
-      {}
-
-      PAR_DEFAULT_OVERRIDE(StdThread, ServerThread);
-    };
-
-  protected:
-    REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
-      ServerThread, 
-      ObjectThread<Threads>, 
-      ObjectThread<Threads>
-    );
-
-    void run() override;
-  };
-#endif    
+    auto* tc = dynamic_cast<TestConnection<Socket>*>(this);
+    assert(tc);
+    *tc << "+Soup2.0\n";
+  }
 };
-
-#if 0
-template<class Socket>
-TestConnection<Socket>::Threads
-//
-::Threads(TestConnection* tc) 
-:
-  RObjectWithThreads<Threads>
-  {
-   new typename TestConnection<Socket>::ServerThread::Par()
-  },
-  obj(tc)
-{}
-
-template<class Socket>
-void TestConnection<Socket>::ServerThread::run()
-{
-  TestConnection* tc = this->object->obj;
-  assert(tc);
-
-  move_to(*this, RThreadBase::workingState);
-
-  *tc << "+Soup2.0\n";
-}
-#endif
 
 template<>
 class TestConnection<ClientSocket> : 
