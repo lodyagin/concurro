@@ -43,6 +43,7 @@
 #  include <stdlib.h>
 #endif
 
+#include <iostream>
 #include "Logging.h"
 //#include "RCheck.h"
 #include "SException.h"

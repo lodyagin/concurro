@@ -27,15 +27,12 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef CONCURRO_TCPSOCKET_H_
-#define CONCURRO_TCPSOCKET_H_
+#ifndef CONCURRO_LISTENINGSOCKET_H_
+#define CONCURRO_LISTENINGSOCKET_H_
 
-#include <netdb.h>
-#include "Logging.h"
 #include "RSocket.h"
-#include "RObjectWithStates.h"
-#include "StateMap.h"
-#include "ListeningSocket.h"
+#include "RMutex.h"
+#include <stack>
 
 namespace curr {
 
@@ -44,63 +41,66 @@ namespace curr {
  * @{
  */
 
-DECLARE_AXIS(TCPAxis, ListeningSocketAxis);
+DECLARE_AXIS(ListeningSocketAxis, SocketBaseAxis);
 
 /**
-  * This socket component manages TCP proto states.
+  * Just a marker class for a socket which use accept()
+  * system call for generating new ServerSocket -s. Really
+  * all its functionality is implemented in TCPSocket.
   *
   * @dot
   * digraph {
   *   start [shape = point]; 
+  *   address_already_in_use [shape = doublecircle];
   *   closed [shape = doublecircle];
   *   start -> created;
-  *   created -> listen;
+  *   created -> bound;
+  *   created -> address_already_in_use;
+  *   bound -> pre_listen;
+  *   pre_listen -> listen;
   *   listen -> accepting;
-  *   accepting -> listen;
+  *   accepting -> accepted;
+  *   accepted -> listen;
   *   listen -> closed;
-  *   created -> io_ready;
-  *   created -> closed;
-  *   io_ready -> closing;
-  *   io_ready -> in_closed;
-  *   io_ready -> out_closed;
-  *   closing -> closed;
-  *   in_closed -> closed;
-  *   out_closed -> closed;
+  *   bound -> closed;
   *   closed -> closed;
   * }
   * @enddot
   */
-class TCPSocket : virtual public RSocketBase
-, public RStateSplitter<TCPAxis, SocketBaseAxis>
+class ListeningSocket 
+  : virtual public RSocketBase,
+    public RStateSplitter
+      <ListeningSocketAxis, SocketBaseAxis>
 {
-  DECLARE_EVENT(TCPAxis, io_ready);
-  DECLARE_EVENT(TCPAxis, closed);
-  DECLARE_EVENT(TCPAxis, in_closed);
-  DECLARE_EVENT(TCPAxis, out_closed);
+  DECLARE_EVENT(ListeningSocketAxis, pre_listen);
+  DECLARE_EVENT(ListeningSocketAxis, listen);
+  DECLARE_EVENT(ListeningSocketAxis, accepted);
 
 public:
-  DECLARE_STATES(TCPAxis, State);
+  //! @cond
+  DECLARE_STATES(ListeningSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
-  DECLARE_STATE_CONST(State, closed);
-  DECLARE_STATE_CONST(State, in_closed);
-  DECLARE_STATE_CONST(State, out_closed);
+  DECLARE_STATE_CONST(State, bound);
+  DECLARE_STATE_CONST(State, address_already_in_use);
+  DECLARE_STATE_CONST(State, io_ready);
+  DECLARE_STATE_CONST(State, pre_listen);
   DECLARE_STATE_CONST(State, listen);
   DECLARE_STATE_CONST(State, accepting);
-  DECLARE_STATE_CONST(State, io_ready);
-  DECLARE_STATE_CONST(State, closing);
+  DECLARE_STATE_CONST(State, accepted);
+  DECLARE_STATE_CONST(State, closed);
+  //! @endcond
 
-  ~TCPSocket();
+  ~ListeningSocket();
 
-  void ask_close_out() override;
+  void bind() override;
 
-  std::string universal_id() const override
-  {
-    return RSocketBase::universal_id();
-  }
+  //! Start listening for incoming connections. It moves
+  //! the object in the `listen' state.
+  virtual void ask_listen();
 
   void state_changed
     (StateAxis& ax, 
-     const StateAxis& state_ax,
+     const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override
   {
@@ -115,36 +115,25 @@ public:
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override
   { 
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::current_state(ax);
-  }
+    return RStateSplitter
+      <ListeningSocketAxis,SocketBaseAxis>
+        ::current_state(ax);
+    }
 
   const std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) const override
   { 
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::current_state(ax);
+    return RStateSplitter
+      <ListeningSocketAxis,SocketBaseAxis>
+        ::current_state(ax);
   }
-
-#if 0
-  Event get_event (const UniversalEvent& ue) override
-  {
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::get_event(ue);
-  }
-
-  Event get_event (const UniversalEvent& ue) const override
-  {
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::get_event(ue);
-  }
-#endif
 
   CompoundEvent create_event
     (const UniversalEvent& ue) const override
   {
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::create_event(ue);
+    return RStateSplitter
+      <ListeningSocketAxis,SocketBaseAxis>
+        ::create_event(ue);
   }
 
   void update_events
@@ -152,22 +141,17 @@ public:
      TransitionId trans_id, 
      uint32_t to) override
   {
-#if 1
     ax.update_events(this, trans_id, to);
-#else
-    LOG_TRACE(log, "update_events");
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::update_events(ax, trans_id, to);
-#endif
-}
+  }
+
+  //! Wait the accepted state, return the accepted socket
+  //! and move to listen state.
+  RSocketBase* get_accepted();
 
 protected:
-  //! It is set in the constructor by 
-  //! ::getprotobyname("TCP") call
-  struct protoent* tcp_protoent;
-  
-  //! Create a TCP socket in a "closed" state.
-  TCPSocket
+  //const CompoundEvent is_terminal_state_event;
+
+  ListeningSocket
     (const ObjectCreationInfo& oi, 
      const RSocketAddress& par);
 
@@ -175,11 +159,11 @@ protected:
   {
   public:
     struct Par : public SocketThreadWithPair::Par
-    {
-    Par(RSocketBase* sock) 
-      : SocketThreadWithPair::Par(sock)
+    { 
+      Par(RSocketBase* sock) 
+        : SocketThreadWithPair::Par(sock) 
       {
-        thread_name = SFORMAT("TCPSocket(select):" 
+        thread_name = SFORMAT("ListeningSocket(select):" 
                               << sock->fd);
       }
 
@@ -208,7 +192,7 @@ protected:
         : SocketThread::Par(sock),
         notify_fd(notify)
         {
-          thread_name = SFORMAT("TCPSocket(wait):" 
+          thread_name = SFORMAT("ListeningSocket(wait):" 
                                 << sock->fd);
         }
 
@@ -230,12 +214,17 @@ protected:
     ~WaitThread() { destroy(); }
   }* wait_thread;
 
-private:
-  typedef Logger<TCPSocket> log;
+  RSocketBase* last_accepted = nullptr;
+
+  void process_bind_error(int error);
+  void process_listen_error(int error);
+  void process_accept_error(int error);
+
+  DEFAULT_LOGGER(ListeningSocket);
 };
+
 
 //! @}
 
 }
 #endif
-

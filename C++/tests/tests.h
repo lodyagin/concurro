@@ -8,8 +8,6 @@
 
 using namespace curr;
 
-typedef RThread<std::thread> RT;
-
 #define USLEEP(msec) usleep((msec) * 1000)
 
 #endif

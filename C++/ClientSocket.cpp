@@ -44,11 +44,11 @@ DEFINE_AXIS(
     {"created", "closed"},
     {"created", "pre_connecting"},
     {"pre_connecting", "connecting"},
-    {"connecting", "ready"},
+    {"connecting", "io_ready"},
     {"connecting", "connection_timed_out"},
     {"connecting", "connection_refused"},
     {"connecting", "destination_unreachable"},
-    {"ready", "closed"}
+    {"io_ready", "closed"}
   }
   );
 
@@ -57,7 +57,7 @@ DEFINE_STATES(ClientSocketAxis);
 DEFINE_STATE_CONST(ClientSocket, State, created);
 DEFINE_STATE_CONST(ClientSocket, State, pre_connecting);
 DEFINE_STATE_CONST(ClientSocket, State, connecting);
-DEFINE_STATE_CONST(ClientSocket, State, ready);
+DEFINE_STATE_CONST(ClientSocket, State, io_ready);
 DEFINE_STATE_CONST(ClientSocket, State, 
                    connection_timed_out);
 DEFINE_STATE_CONST(ClientSocket, State, 
@@ -78,7 +78,7 @@ ClientSocket::ClientSocket
      ),
    CONSTRUCT_EVENT(pre_connecting),
    CONSTRUCT_EVENT(connecting),
-   CONSTRUCT_EVENT(ready),
+   CONSTRUCT_EVENT(io_ready),
    CONSTRUCT_EVENT(connection_timed_out),
    CONSTRUCT_EVENT(connection_refused),
    CONSTRUCT_EVENT(destination_unreachable),
@@ -89,7 +89,8 @@ ClientSocket::ClientSocket
            -> create_thread(Thread::Par(this))))
 {
    SCHECK(thread);
-   RStateSplitter<ClientSocketAxis, SocketBaseAxis>::init();
+   RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+     ::init();
    this->RSocketBase::threads_terminals.push_back
       (thread->is_terminal_state());
 }
@@ -118,30 +119,32 @@ void ClientSocket::state_hook
 
 void ClientSocket::process_error(int error)
 {
-   switch (error) {
-   case EINPROGRESS:
-      State::move_to(*this, connectingState);
-      // <NB> there are no connecting->connecting
-      // transition
-      return;
-   case 0:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, readyState);
-      return;
-   case ETIMEDOUT:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, connection_timed_outState);
-      break;
-   case ECONNREFUSED:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, connection_refusedState);
-      break;
-   case ENETUNREACH:
-      RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-         (*this, destination_unreachableState);
-      break;
-   }
-   //RSocketBase::process_error(error);
+  switch (error) {
+  case EINPROGRESS:
+    State::move_to(*this, connectingState);
+    // <NB> there are no connecting->connecting
+    // transition
+    return;
+  case 0:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, io_readyState);
+    return;
+  case ETIMEDOUT:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, connection_timed_outState);
+    break;
+  case ECONNREFUSED:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, connection_refusedState);
+    break;
+  case ENETUNREACH:
+    RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
+      (*this, destination_unreachableState);
+    break;
+  default:
+    THROW_NOT_IMPLEMENTED;
+  }
+  //RSocketBase::process_error(error);
 }
 
 void ClientSocket::Thread::run()
@@ -159,10 +162,12 @@ void ClientSocket::Thread::run()
    if (cli_sock->is_terminal_state().signalled())
       return;
 
+   assert(cli_sock->address);
    ::connect
       (cli_sock->fd, 
-       cli_sock->aw_ptr->begin()->ai_addr, 
-       cli_sock->aw_ptr->begin()->ai_addrlen);
+       cli_sock->address->get_aw_ptr()->begin()->ai_addr, 
+       cli_sock->address->get_aw_ptr()->begin()
+         -> ai_addrlen);
    cli_sock->process_error(errno);
 
    fd_set wfds;
@@ -186,12 +191,14 @@ void ClientSocket::Thread::run()
      // process time out by the repository request
      assert(use_timeout);
       RMixedAxis<ClientSocketAxis, SocketBaseAxis>::move_to
-        (*cli_sock, ClientSocket::connection_timed_outState);
+        (*cli_sock, 
+         ClientSocket::connection_timed_outState);
      return;
    }
    else rSocketCheck(res > 0);
    
-   LOG_DEBUG(ClientSocket::log, "ClientSocket>\t ::select");
+   LOG_DEBUG(ClientSocket::log, 
+             "ClientSocket>\t ::select");
 
    int error = 0;
    socklen_t error_len = sizeof(error);

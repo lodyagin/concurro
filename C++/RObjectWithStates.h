@@ -37,7 +37,7 @@
 
 namespace curr {
 
-//! @addtogroup states
+//! @addtogroup exceptions
 //! @{
 
 class REventIsUnregistered : public SException
@@ -50,6 +50,11 @@ REventIsUnregistered(const UniversalEvent& ue)
 
   const UniversalEvent event;
 };
+
+//! @}
+
+//! @addtogroup states
+//! @{
 
 //TODO allow only delegates have subscribers list
 class RObjectWithStatesBase
@@ -75,9 +80,11 @@ public:
      const UniversalState& new_state) override;
 
 protected:
-  //! No more changes in subscribers list
-  std::atomic<bool> is_frozen;
-  std::atomic<bool> is_changing;
+  // No more changes in subscribers list
+  //std::atomic<bool> is_frozen;
+  //std::atomic<bool> is_changing;
+  RMutex subscribe_mt
+    { "RObjectWithStatesBase::subscribe_mt" };
 
   typedef std::pair<AbstractObjectWithEvents*, StateAxis*>
     Subscriber;

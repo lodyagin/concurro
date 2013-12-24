@@ -65,14 +65,18 @@ class SocketThread;
  *   connection_timed_out [shape = doublecircle];
  *   connection_refused [shape = doublecircle];
  *   destination_unreachable [shape = doublecircle];
+ *   address_already_in_use [shape = doublecircle];
  *   closed [shape = doublecircle];
- *   start -> created;
- *   created -> ready;
- *   created -> connection_timed_out;
- *   created -> connection_refused;
- *   created -> destination_unreachable;
- *   ready -> closed;
- *   closed -> closed;
+ *   start    -> created;
+ *   created  -> io_ready;
+ *   created  -> bound;
+ *   created  -> connection_timed_out;
+ *   created  -> connection_refused;
+ *   created  -> destination_unreachable;
+ *   created  -> address_already_in_use;
+ *   bound    -> closed;
+ *   io_ready -> closed;
+ *   closed   -> closed;
  * }
  * @enddot
  *
@@ -85,28 +89,34 @@ class RSocketBase
   friend std::ostream&
 	 operator<< (std::ostream&, const RSocketBase&);
 
-  DECLARE_EVENT(SocketBaseAxis, ready);
+  DECLARE_EVENT(SocketBaseAxis, io_ready);
+  DECLARE_EVENT(SocketBaseAxis, bound);
   DECLARE_EVENT(SocketBaseAxis, closed);
-  //DECLARE_EVENT(SocketBaseAxis, error);
   DECLARE_EVENT(SocketBaseAxis, connection_timed_out)
   DECLARE_EVENT(SocketBaseAxis, connection_refused)
   DECLARE_EVENT(SocketBaseAxis, destination_unreachable)
+  DECLARE_EVENT(SocketBaseAxis, address_already_in_use)
 
 public:
   DECLARE_STATES(SocketBaseAxis, State);
   DECLARE_STATE_CONST(State, created);
-  DECLARE_STATE_CONST(State, ready);
-  //DECLARE_STATE_CONST(State, error);
+  DECLARE_STATE_CONST(State, io_ready);
+  DECLARE_STATE_CONST(State, bound);
   DECLARE_STATE_CONST(State, closed);
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
+  DECLARE_STATE_CONST(State, address_already_in_use);
 
   virtual ~RSocketBase () {}
 
   //! A socket file descriptor.
   const SOCKET fd;
 
+  //! Binds the socket to its address.
+  virtual void bind() {};
+
+  //! Closes an outbound part
   virtual void ask_close_out() = 0;
 
   virtual std::string universal_id() const
@@ -119,6 +129,11 @@ public:
     return is_terminal_state_event;
   }
 
+  const RSocketAddress* get_address() const
+  {
+    return address;
+  }
+
   Event is_construction_complete_event;
 
   RSocketRepository *const repository;
@@ -126,12 +141,12 @@ public:
 protected:
   const CompoundEvent is_terminal_state_event;
 
-  //! A socket address
-  std::shared_ptr<AddrinfoWrapper> aw_ptr;
+  //! A socket address.
+  const RSocketAddress* address = nullptr;
   
-  //! List of all ancestors terminal events. Each derived
-  //! (with a public virtual base) class appends its
-  //! terminal event here from its constructor.
+  // List of all ancestors terminal events. Each derived
+  // (with a public virtual base) class appends its
+  // terminal event here from its constructor.
   //std::list<CompoundEvent> ancestor_terminals;
 
 public:
@@ -298,14 +313,14 @@ inline RSocketBase* RSocketAllocator0
  const ObjectCreationInfo& oi,
  const RSocketAddress& addr);
     
-template<class Side>
+template<class Side, class... Others>
 inline RSocketBase* RSocketAllocator1
 (NetworkProtocol protocol,
  IPVer ver,
  const ObjectCreationInfo& oi,
  const RSocketAddress& addr);
 
-template<class Side, class Protocol>
+template<class Side, class Protocol, class... Others>
   inline RSocketBase* RSocketAllocator2
   (IPVer ver, 
    const ObjectCreationInfo& oi,
@@ -317,9 +332,9 @@ inline RSocketBase* RSocketAllocator
  const RSocketAddress& addr);
 
 
-class RSocketRepository
-: public Repository
-<RSocketBase, RSocketAddress, std::map, SOCKET>
+class RSocketRepository :
+  public Repository
+    <RSocketBase, RSocketAddress, std::map, SOCKET>
 {
 public:
   typedef Repository
@@ -331,13 +346,15 @@ public:
   //! Create repository (RSocket factory).
   //! @param id The repository name.
   //! @param reserved The initially allocated space.
+  //! @param max_input_packet The max input packet size
+  //! (logical piece of data defined in upper protocol,
+  //! not a size of tcp/ip packet).
   //! @param tf The thread factory.
-  //! @param max_input_packet The max input packet size.
   RSocketRepository(
     const std::string& id,
-    size_t reserved,
-    RThreadFactory *const tf,
-    size_t max_input_packet
+    size_t max_input_packet,
+    RThreadFactory *const tf =
+      &StdThreadRepository::instance()
     );
 
   //! Set timeout for usecs. If usecs < 0 - do not use
@@ -347,6 +364,17 @@ public:
   bool is_use_connect_timeout() const
   { 
     return use_connect_timeout; 
+  }
+
+  //! Sets the backlob parameter to listen(2)
+  void set_pending_connections_queue_size(int size)
+  {
+    pending_connections_queue_size = size;
+  }
+
+  int get_pending_connections_queue_size() const
+  {
+    return pending_connections_queue_size;
   }
 
   //! Return a copy of timeval
@@ -359,6 +387,7 @@ public:
 
 protected:
   struct timeval connect_timeout;
+  std::atomic<int> pending_connections_queue_size;
   std::atomic<bool> use_connect_timeout;
   std::atomic<size_t> max_input_packet_size;
 };

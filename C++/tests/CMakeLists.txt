@@ -4,7 +4,7 @@ set(Boost_USE_STATIC_LIBS OFF)
 #set(Boost_USE_STATIC_RUNTIME OFF)
 #set(Boost_ADDITIONAL_VERSIONS 1.53.0)
 set(Boost_USE_MULTITHREADED ON)  
-find_package(Boost 1.49 COMPONENTS system thread REQUIRED)
+find_package(Boost 1.54 COMPONENTS system thread REQUIRED)
 
 message(${Boost_THREAD_LIBRARY})
 

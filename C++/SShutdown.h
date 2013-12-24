@@ -44,7 +44,7 @@ namespace curr {
 #define SSHUTDOWN  SShutdown::instance()
 
 
-class SShutdown : public SSingleton<SShutdown>
+class SShutdown final : public SSingleton<SShutdown>
 {
 public:
 
@@ -69,6 +69,9 @@ private:
 };
 #endif
 
+//! @addtogroup exceptions
+//! @{
+
 class XShuttingDown : public SException
 {
 public:
@@ -84,6 +87,7 @@ private:
 
 };
 
+//! @}
 
 // throw XShuttindDown
 void xShuttingDown( const std::string & interruptedAction = "unknown" );

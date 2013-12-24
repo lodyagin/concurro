@@ -38,21 +38,23 @@ void test_cast_exception(){
   bool goal = false;
   try {
     fromString<int>("yh");
-  } catch (boost::bad_lexical_cast) {
+  } catch (const BadCastBase&) {
     goal = true;
   }
   CU_ASSERT_TRUE_FATAL(goal);
   goal = false;
   try {
     fromString<float>("yh");
-  } catch (SException) {
+  } catch (const SException&) {
     goal = true;
   }
   CU_ASSERT_TRUE_FATAL(goal);
   goal = false;
   try {
     fromString<char>("yh");
-  } catch (FromStringCastException) {
+  } catch (const BadCast<char,const char (&)[3]>& bc) 
+  {
+    CU_ASSERT_EQUAL_FATAL(bc.source, std::string("yh"));
     goal = true;
   }
   CU_ASSERT_TRUE_FATAL(goal);

@@ -27,11 +27,17 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
-#include "RThreadRepository.hpp"
-#include "Repository.hpp"
-#include <thread>
+#include "Enum.h"
 
 namespace curr {
+
+const int EnumBase::xalloc = std::ios_base::xalloc();
+
+std::ios_base& enumalpha(std::ios_base& ios)
+{
+  ios.iword(EnumBase::xalloc) = 
+    !ios.iword(EnumBase::xalloc);
+  return ios;
+}
 
 }

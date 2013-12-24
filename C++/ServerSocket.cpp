@@ -27,11 +27,40 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
-#include "RThreadRepository.hpp"
-#include "Repository.hpp"
-#include <thread>
+#include "ServerSocket.h"
 
 namespace curr {
+
+/*DEFINE_AXIS(
+  ServerSocketAxis,
+  {},
+  {}
+);*/
+
+ServerSocket::ServerSocket
+  (const ObjectCreationInfo& oi, 
+   const RSocketAddress& par)
+ : 
+   RSocketBase(oi, par)/*,
+   RStateSplitter<ServerSocketAxis, SocketBaseAxis>
+     (this, createdState,
+      RStateSplitter<ServerSocketAxis, SocketBaseAxis>
+      ::state_hook(&ServerSocket::state_hook)
+     )*//*,
+   thread(dynamic_cast<Thread*>
+          (RSocketBase::repository->thread_factory
+           -> create_thread(Thread::Par(this))))*/
+{
+   //SCHECK(thread);
+   //RStateSplitter<ServerSocketAxis, SocketBaseAxis>::init();
+   //this->RSocketBase::threads_terminals.push_back
+   //   (thread->is_terminal_state());
+}
+
+ServerSocket::~ServerSocket()
+{
+   LOG_DEBUG(log, "~ServerSocket()");
+}
+
 
 }

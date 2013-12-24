@@ -36,13 +36,13 @@
 #  include <sys/types.h>
 #  include <unistd.h>
 #endif
+#include <fstream>
+#include <iostream>
+#include <unistd.h>
 #include "Logging.h"
 #include "SCheck.h"
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/properties.h>
-#include <fstream>
-#include <iostream>
-#include <unistd.h>
 
 namespace curr {
 

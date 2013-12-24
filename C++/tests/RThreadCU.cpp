@@ -53,6 +53,8 @@ DEFINE_AXIS(
   }
   );
 
+typedef RThread<std::thread> RT;
+
 class T1 : public RT, public RObjectWithEvents<T1Axis>
 { 
   DECLARE_EVENT(T1Axis, check_passed);
@@ -80,8 +82,8 @@ public:
     Par(const std::string& name_ = std::string())
       : name(name_) {}
 	 
-    RThreadBase* create_derivation
-    (const ObjectCreationInfo& oi) const
+    StdThread* create_derivation
+    (const ObjectCreationInfo& oi) const override
       { 
         return new T1(oi, *this); 
       }
@@ -240,10 +242,12 @@ void test_local_no_start()
   t2.stop();
 }
 
+typedef RThread<std::thread> RT;
+
 void test_thread_in_repository()
 {
-  RThreadRepository<RT>& tr =
-    RThreadRepository<RThread<std::thread>>::instance();
+  StdThreadRepository& tr =
+    StdThreadRepository::instance();
 
   RThreadFactory& tf = tr;
 
@@ -277,8 +281,8 @@ void test_thread_in_repository()
 
 void test_current()
 {
-  RThreadRepository<RT>& tr =
-    RThreadRepository<RThread<std::thread>>::instance();
+  StdThreadRepository& tr =
+    StdThreadRepository::instance();
 
   // this thread is not registered;
   CU_ASSERT_PTR_NULL_FATAL(RT::current());

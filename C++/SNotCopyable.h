@@ -34,6 +34,7 @@ namespace curr {
 
 // base for classes with disabled copy semantics
 
+//! @deprecated
 class SNotCopyable
 {
 public:
@@ -47,6 +48,10 @@ private:
   SNotCopyable & operator = ( const SNotCopyable );
 
 };
+
+#define CURR_NO_COPY(class_) \
+  class_(const class_&) = delete; \
+  class_& operator=(const class_&) = delete;
 
 }
 #endif

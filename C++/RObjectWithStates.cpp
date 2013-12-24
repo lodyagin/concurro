@@ -31,8 +31,9 @@
 
 namespace curr {
 
-RObjectWithStatesBase::RObjectWithStatesBase()
-  : is_frozen(false), is_changing(false)
+RObjectWithStatesBase::RObjectWithStatesBase() //:
+  //is_frozen(false), 
+  //is_changing(false)
 {}
 
 RObjectWithStatesBase
@@ -51,9 +52,9 @@ RObjectWithStatesBase::~RObjectWithStatesBase()
 RObjectWithStatesBase& RObjectWithStatesBase
 ::operator=(RObjectWithStatesBase&& o)
 {
-  SCHECK(o.is_frozen);
-  is_frozen = true;
-  is_changing = false;
+  //SCHECK(o.is_frozen);
+  //is_frozen = true;
+  //is_changing = false;
   subscribers = std::move(o.subscribers);
   subscribers_terminals =
     std::move(o.subscribers_terminals);
@@ -66,12 +67,7 @@ void RObjectWithStatesBase
    StateAxis* ax
   )
 {
-  // A guard
-  is_changing = true;
-  if (is_frozen) {
-	 is_changing = false;
-	 THROW_PROGRAM_ERROR;
-  }
+  RLOCK(subscribe_mt);
 
   assert(sub);
   subscribers.insert(std::make_pair(sub, ax));
@@ -79,7 +75,6 @@ void RObjectWithStatesBase
 	 (std::move(sub->is_terminal_state()));
   assert(subscribers_terminals.size() <= 
 			subscribers.size());
-  is_changing = false;
 }
 
 void RObjectWithStatesBase
@@ -89,10 +84,7 @@ void RObjectWithStatesBase
    AbstractObjectWithStates* object,
    const UniversalState& new_state)
 {
-  // A guard
-  is_frozen = true;
-  if (is_changing) 
-	 THROW_PROGRAM_ERROR;
+  RLOCK(subscribe_mt);
 
   for (auto sub : subscribers) 
     dynamic_cast<AbstractObjectWithStates*>

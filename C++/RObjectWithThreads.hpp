@@ -68,15 +68,18 @@ void RObjectWithThreads<Object>
    const UniversalState& new_state
   )
 {
-  if (RAxis<ConstructibleAxis>::state_is(
-        *this, complete_constructionState))
+  if (!ConstructibleAxis::is_same(ax))
+    return;
+
+  const RState<ConstructibleAxis> newst(new_state);
+  if (newst == complete_constructionState)
   {
     while (!threads_pars.empty()) {
       ThreadPar* par = threads_pars.front().get();
       par->object = dynamic_cast<Object*>(this);
       SCHECK(par->object);
       threads.push_back(
-        RThreadRepository<RThread<std::thread>>
+        StdThreadRepository
         ::instance().create_thread(*par));
       threads_pars.pop();
     }
@@ -85,7 +88,7 @@ void RObjectWithThreads<Object>
       th->start();
     }
   }
-  RConstructibleObject::state_changed
+  ConstructibleObject::state_changed
     (ax, state_ax, object, new_state);
 }
 
@@ -96,10 +99,15 @@ void RObjectWithThreads<Object>
   if (destructor_delegate_is_called) 
     return;
 
-  for (auto& teh : threads_terminals)
-    teh.wait();
   for (RThreadBase* th : threads)
-    RThreadRepository<RThread<std::thread>>
+    th->stop();
+
+  for (auto& teh : threads_terminals)
+  {
+    teh.wait();
+  }
+  for (RThreadBase* th : threads)
+    StdThreadRepository
       ::instance().delete_thread(th);
 
   destructor_delegate_is_called = true;

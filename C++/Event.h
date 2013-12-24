@@ -46,12 +46,8 @@ typedef neosmart::neosmart_event_t HANDLE;
 
 namespace curr {
 
-/**
- * @defgroup events
- *
- * All about events.
- * @{
- */
+//! @addtogroup exceptions
+//! @{
 
 //! Exception: event waiting time out 
 class EventWaitingTimedOut : public SException
@@ -61,9 +57,18 @@ public:
 
   EventWaitingTimedOut(int ms) : SException(
     SFORMAT("Event waiting timed out after " << ms 
-            << "milliseconds")), 
+            << " milliseconds")), 
     msecs(ms) {}
 };
+
+//! @}
+
+/**
+ * @defgroup events
+ *
+ * All about events.
+ * @{
+ */
 
 #define CURR_WAIT_L(logger, evt, time) \
   do { (evt).wait((time), curr::ThrowSException \
@@ -78,18 +83,20 @@ public:
 class EventInterface : public ObjectWithLogging
 {
 public:
-  struct LogParams {
-    bool set, reset;
+  mutable struct LogParams {
+    bool set, reset, wait;
     ObjectWithLogging* log_obj;
 
     LogParams(ObjectWithLogging* obj) 
-    : set(true), reset(true), log_obj(obj)
+    : set(true), reset(true), wait(true), log_obj(obj)
     {
       assert(log_obj);
     }
-  } log_params;
+  } log_params_;
+
+  LogParams& log_params() const { return log_params_; }
   
-  EventInterface() : log_params(this) {}
+  EventInterface() : log_params_(this) {}
   virtual ~EventInterface() {}
 
   //! Wait for event or time in msecs. 
@@ -309,7 +316,7 @@ public:
 
   EvtBase::LogParams& log_params() const
   {
-    return evt_ptr->log_params;
+    return evt_ptr->log_params();
   }
 
 protected:

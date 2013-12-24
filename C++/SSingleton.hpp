@@ -30,11 +30,13 @@
 #ifndef CONCURRO_SSINGLETON_HPP_
 #define CONCURRO_SSINGLETON_HPP_
 
+#include <list>
+#include <boost/lockfree/stack.hpp>
 #include "SSingleton.h"
+#include "RMutex.h"
 #include "Logging.h"
 #include "SCheck.h"
 #include "Existent.hpp"
-#include <mutex>
 
 namespace curr {
 
@@ -133,9 +135,9 @@ SSingleton<T, wait_m>::~SSingleton()
   {
     // do not call it for moved-from objects (that have
     // paired pointed to a new moved-to instance)
-
     SCHECK(this->get_obj_count() == 1);
-    is_complete().reset();
+    // FIXME add a guard
+//    is_complete().reset();
     _instance = nullptr;
   }
 }
@@ -143,10 +145,11 @@ SSingleton<T, wait_m>::~SSingleton()
 template<class T, int wait_m>
 void SSingleton<T, wait_m>::complete_construction()
 {
-  _instance = dynamic_cast<T*>(this);
-  SCHECK(_instance);
-  ObjParent::complete_construction();
-  is_complete().set();
+  if ((_instance = dynamic_cast<T*>(this))) 
+  { // wait the call from T::T
+    ObjParent::complete_construction();
+    is_complete().set();
+  }
 }
 
 template<class T, int wait_m>
@@ -176,20 +179,56 @@ bool SSingleton<T, wait_m>::isConstructed()
 
 // SAutoSingleton
 
+class SAutoSingletonRegistry
+{
+public:
+  SAutoSingletonRegistry() : ases(500) {}
+
+  //! Deletes all registered singletons in the order
+  //! which is opposite to the registration.
+  ~SAutoSingletonRegistry() noexcept;
+
+  //! Registers a new singleton, take the ownership (in
+  //! means of destruction).
+  void reg(SAutoSingletonBase*);
+
+protected:
+  boost::lockfree::stack<SAutoSingletonBase*> ases;
+};
+
+/*
+template<class T, int wait_m>
+SAutoSingleton<T, wait_m>::~SAutoSingleton()
+{
+  extern SAutoSingletonRegistry auto_reg;
+
+  auto_reg.dereg(this);
+}
+*/
+
 template<class T, int wait_m>
 T& SAutoSingleton<T, wait_m>::instance()
 {
-  if (!state_is(SSingleton<T, wait_m>::the_class(), 
-                SSingleton<T, wait_m>::TheClass::exist_oneFun()))
+  construct_once();
+  return SSingleton<T, wait_m>::instance ();
+}
+
+template<class T, int wait_m>
+void SAutoSingleton<T, wait_m>::construct_once()
+{
+  // It is guaranteed that thee auto_reg will be
+  // constructed before this method call.
+  extern SAutoSingletonRegistry auto_reg;
+
+  if (!state_is(SSingleton<T, wait_m>::s_the_class(), 
+       SSingleton<T, wait_m>::TheClass::exist_oneFun()))
   {
     try 
     { 
-      new T(); 
+      auto_reg.reg(new T()); 
     } 
     catch (const MustBeSingleton&) {}
   }
-
-  return SSingleton<T, wait_m>::instance ();
 }
 
 }

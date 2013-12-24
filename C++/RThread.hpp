@@ -32,16 +32,26 @@
 #define CONCURRO_RTHREAD_HPP_
 
 #include "RThread.h"
-#include "RThreadRepository.h"
+#include "RThreadRepository.hpp"
 
 namespace curr {
 
-template<class Thread, class... Args>
-Thread* RThread<std::thread>::create(Args&&... args)
+template<class Thread>
+Thread* RThread<std::thread>::create(const Par& par)
 {
   return dynamic_cast<Thread*>
-	 (RThreadRepository<RThread<std::thread>>::instance()
-	  . create_thread(typename Thread::Par(args...)));
+   (StdThreadRepository::instance().create_thread(par));
+}
+
+template<class Thread, class Arg0, class... Args, class>
+Thread* RThread<std::thread>
+//
+::create(Arg0&& arg0, Args&&... args)
+{
+  return create<Thread>
+    (typename Thread::Par
+      (std::forward<Arg0>(arg0), 
+       std::forward<Args>(args)...));
 }
 
 }

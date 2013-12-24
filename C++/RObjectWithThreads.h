@@ -34,6 +34,7 @@
 #include "ConstructibleObject.h"
 #include <list>
 #include <queue>
+#include <functional>
 
 namespace curr {
 
@@ -59,9 +60,11 @@ public:
  * An object which owns one or several threads.
  */
 template<class Object>
-class RObjectWithThreads : public RConstructibleObject
+class RObjectWithThreads 
+  : public virtual ConstructibleObject
 {
 public:
+  using Parent = ConstructibleObject;
   using ThreadPar = ThreadOfObjectPar<Object>;
 
   //! Create the object and remember thread initialization
@@ -69,6 +72,7 @@ public:
   //! complete_construction for each parameter a thread
   //! will be created and started in
   //! RThreadRepository<RThread<std::thread>>
+  //! The object takes ownership of all ThreadPar-s.
   RObjectWithThreads(std::initializer_list<ThreadPar*>);
 
   //! A deleted copy constructor.
@@ -79,6 +83,12 @@ public:
   //! A deleted assignment.
   RObjectWithThreads& operator=
     (const RObjectWithThreads&) = delete;
+
+  void complete_construction() override
+  {
+    if (dynamic_cast<Object*>(this))
+      Parent::complete_construction();
+  }
 
 protected:
   void state_changed
@@ -98,6 +108,72 @@ protected:
   std::queue< std::unique_ptr<ThreadPar> > threads_pars;
   std::list<RThreadBase*> threads;
   std::list<CompoundEvent> threads_terminals;
+};
+
+template<class Object>
+class ObjectThread : public StdThread
+{
+public:
+  struct Par : public ThreadOfObjectPar<Object>
+  {
+    Par(const std::string& pretty_name)
+      : ThreadOfObjectPar<Object>(pretty_name)
+    {}
+    
+    //PAR_DEFAULT_OVERRIDE(RThreadBase, 
+    //                     ObjectThread<Object>);
+  };
+
+  ~ObjectThread() { destroy(); }
+
+protected:
+  ObjectThread
+    (const ObjectCreationInfo& oi, 
+     const Par& par)
+  : StdThread(oi, par),
+    object(par.object)
+  {
+    assert(object);
+  }
+
+  Object* object;
+};
+
+template<class Object>
+class ObjectFunThread : public ObjectThread<Object>
+{
+public:
+  struct Par : ObjectThread<Object>::Par
+  {
+    std::function<void(Object&)> fun;
+
+    template<class Fun>
+    Par(const std::string& name, Fun f) 
+      : ObjectThread<Object>::Par(name),
+        fun(f) 
+    {}
+
+    PAR_DEFAULT_OVERRIDE(
+      StdThread, ObjectFunThread<Object>);
+  };
+
+protected:
+  std::function<void(Object&)> fun;
+
+  ObjectFunThread
+    (const ObjectCreationInfo& oi, 
+     const typename ObjectThread<Object>::Par& par
+     )
+    : ObjectThread<Object>(oi, par),
+      fun(dynamic_cast<const Par&>(par).fun)
+  {}
+
+  void run() override
+  {
+    move_to(*this, RThreadBase::workingState);
+    assert(this->object);
+    fun(*this->object);
+  }
 };
 
 //! @}

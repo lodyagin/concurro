@@ -44,19 +44,24 @@ namespace curr {
 DEFINE_AXIS(
   SocketBaseAxis,
   {
-    "created",
-      "ready",
+      "created",
+      "io_ready",
+      "bound",
       "closed",
       "connection_timed_out",
       "connection_refused",
-      "destination_unreachable"
+      "destination_unreachable",
+      "address_already_in_use"
       },
-  { {"created", "ready"},
+  { {"created", "io_ready"},
+    {"created", "bound"},
     {"created", "closed"},
     {"created", "connection_timed_out"},
     {"created", "connection_refused"},
     {"created", "destination_unreachable"},
-    {"ready", "closed"},
+    {"created", "address_already_in_use"},
+    {"bound",  "closed"},
+    {"io_ready", "closed"},
     {"closed", "closed"},
   }
   );
@@ -64,42 +69,50 @@ DEFINE_AXIS(
 DEFINE_STATES(SocketBaseAxis);
 
 DEFINE_STATE_CONST(RSocketBase, State, created);
-DEFINE_STATE_CONST(RSocketBase, State, ready);
+DEFINE_STATE_CONST(RSocketBase, State, io_ready);
+DEFINE_STATE_CONST(RSocketBase, State, bound);
 DEFINE_STATE_CONST(RSocketBase, State, closed);
 DEFINE_STATE_CONST(RSocketBase, State, 
-						 connection_timed_out);
+             connection_timed_out);
 DEFINE_STATE_CONST(RSocketBase, State, 
-						 connection_refused);
+             connection_refused);
 DEFINE_STATE_CONST(RSocketBase, State, 
-						 destination_unreachable);
+             destination_unreachable);
+DEFINE_STATE_CONST(RSocketBase, State, 
+             address_already_in_use);
 
 //! This type is only for repository creation
-RSocketBase::RSocketBase(const ObjectCreationInfo& oi,
-								 const RSocketAddress& addr) 
-  : StdIdMember(SFORMAT(addr.get_fd())),
-	 RObjectWithEvents(createdState),
-	 CONSTRUCT_EVENT(ready),
-	 CONSTRUCT_EVENT(closed),
-	 CONSTRUCT_EVENT(connection_timed_out),
-	 CONSTRUCT_EVENT(connection_refused),
-	 CONSTRUCT_EVENT(destination_unreachable),
-	 fd(addr.get_fd()), 
-	 is_construction_complete_event
-		("RSocketBase::construction_complete", true),
-	 repository(dynamic_cast<RSocketRepository*>
-					(oi.repository)),
-	 is_terminal_state_event {
-		is_connection_timed_out_event,
-		is_connection_refused_event,
-		is_destination_unreachable_event,
-		is_closed_event  
-	 },
-	 aw_ptr(addr.get_aw_ptr())
+RSocketBase::RSocketBase
+  (const ObjectCreationInfo& oi,
+   const RSocketAddress& addr) 
+ : 
+   StdIdMember(SFORMAT(addr.get_fd())),
+   RObjectWithEvents(createdState),
+   CONSTRUCT_EVENT(io_ready),
+   CONSTRUCT_EVENT(bound),
+   CONSTRUCT_EVENT(closed),
+   CONSTRUCT_EVENT(connection_timed_out),
+   CONSTRUCT_EVENT(connection_refused),
+   CONSTRUCT_EVENT(destination_unreachable),
+   CONSTRUCT_EVENT(address_already_in_use),
+   fd(addr.get_fd()), 
+   is_construction_complete_event
+    ("RSocketBase::construction_complete", true),
+   repository(dynamic_cast<RSocketRepository*>
+          (oi.repository)),
+   is_terminal_state_event {
+    is_connection_timed_out_event,
+    is_connection_refused_event,
+    is_destination_unreachable_event,
+    is_address_already_in_use_event,
+    is_closed_event  
+   },
+   address(&addr)
 {
   assert(fd >= 0);
   assert(repository);
-  assert(aw_ptr);
-  assert(aw_ptr->begin()->ai_addr);
+  assert(address);
+  assert(address->get_aw_ptr()->begin()->ai_addr);
 
   set_blocking(false);
 }
@@ -113,9 +126,9 @@ void RSocketBase::set_blocking (bool blocking)
   int opts = 0;
   rSocketCheck((opts = fcntl(fd, F_GETFL)) != -1);
   if (blocking)
-	 opts &= (~O_NONBLOCK);
+   opts &= (~O_NONBLOCK);
   else
-	 opts |= O_NONBLOCK;
+   opts |= O_NONBLOCK;
   rSocketCheck(fcntl(fd, F_SETFL, opts) != -1);
 #endif
 }
@@ -132,7 +145,7 @@ SocketThreadWithPair::SocketThreadWithPair
   : SocketThread(oi, p), sock_pair{-1}
 {
   rSocketCheck(
-	 ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);
+   ::socketpair(AF_LOCAL, SOCK_DGRAM, 0, sock_pair) == 0);
 }
 
 SocketThreadWithPair::~SocketThreadWithPair()
@@ -145,15 +158,15 @@ SocketThreadWithPair::~SocketThreadWithPair()
 /*======= RSocketRepository =======*/
 /*=================================*/
 
-RSocketRepository::RSocketRepository(
-  const std::string& id,
-  size_t reserved,
-  RThreadFactory *const tf,
-  size_t max_input_packet
-) : 
-  Parent(id, reserved),
+RSocketRepository::RSocketRepository
+ (const std::string& id,
+  size_t max_input_packet,
+  RThreadFactory *const tf) 
+: 
+  Parent(id, 1),
   thread_factory(tf),
   connect_timeout{0},
+  pending_connections_queue_size(128),
   use_connect_timeout(false),
   max_input_packet_size(max_input_packet)
 {

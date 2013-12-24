@@ -27,6 +27,8 @@ int RSignalCUClean()
   return 0;
 }
 
+typedef RThread<std::thread> RT;
+
 struct ST1 : public RT 
 { 
   typedef Logger<ST1> log;

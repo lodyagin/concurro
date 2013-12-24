@@ -32,35 +32,14 @@
 
 #include "RThreadRepository.h"
 #include "RCheck.h"
+#include "SSingleton.hpp"
 #include <signal.h>
 
 namespace curr {
 
-template<class Val>
-struct ThreadCanceller
-  : std::unary_function<Val, void>
-{
-  void operator () (Val th)
-  {
-    if (th) th->cancel();
-  }
-};
-
-template<class Key, class Val>
-  struct ThreadCanceller<std::pair<Key, Val>>
-  : std::unary_function<std::pair<Key, Val>&, void>
-{
-  void operator () (std::pair<Key, Val>& p)
-  {
-    if (p.second) 
-      p.second->cancel();
-  }
-};
-
-
-template<class Thread>
-RThreadRepository<Thread>::RThreadRepository(int w)
-  : Parent(typeid(RThreadRepository<Thread>).name(), 
+template<class Thread, class T>
+RThreadRepository<Thread, T>::RThreadRepository(int w)
+  : Parent(typeid(RThreadRepository<Thread, T>).name(), 
            100 // the value is ignored for std::map
     ), wait_m(w)
 {
@@ -71,56 +50,47 @@ RThreadRepository<Thread>::RThreadRepository(int w)
   rCheck(::sigdelset(&ss, SIGINT) == 0);
   rCheck(::pthread_sigmask(SIG_SETMASK, &ss, NULL) == 0);
   
-  RepositoryBase<
-    Thread, typename Thread::Par,
-    std::map, typename Thread::Id
-    >
-    ::log_params.get_object_by_id = false;
+  this->log_params().get_object_by_id = false;
+  this->complete_construction();
 }
 
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::stop_subthreads ()
 {
-  std::for_each (
-    this->objects->begin (),
-    this->objects->end (),
-    ThreadStopper<typename RepositoryMapType
-    <Thread, ThreadId, std::map>
-    ::Map::value_type
-    > ()
-    );
+  this->for_each([](Thread& th)
+  {
+    if (th.is_running())
+      th.stop();
+  });
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::wait_subthreads ()
 {
-
-  for (const auto& v : *this->objects)
-    CURR_WAIT(Value(v)->is_terminated(), wait_m);
+  this->for_each([this](Thread& th)
+  {
+    CURR_WAIT(th.is_terminated(), wait_m);
+  });
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::cancel_subthreads ()
 {
-  std::for_each (
-    this->objects->begin (),
-    this->objects->end (),
-    ThreadCanceller<typename RepositoryMapType
-    <Thread, ThreadId, std::map>
-    ::Map::value_type
-    > ()
-    );
+  this->for_each([](Thread& th)
+  {
+    th.cancel();
+  });
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::delete_object(Thread* thread, bool freeMemory)
 {
@@ -130,8 +100,8 @@ void RThreadRepository<Thread>
   delete_object_by_id(id, freeMemory);
 }
 
-template<class Thread>
-void RThreadRepository<Thread>
+template<class Thread, class T>
+void RThreadRepository<Thread, T>
 //
 ::delete_object_by_id (ThreadId id, bool freeMemory)
 {

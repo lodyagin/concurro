@@ -30,15 +30,18 @@
 #ifndef CONCURRO_RWINDOW_H_
 #define CONCURRO_RWINDOW_H_
 
+#include <iostream>
 #include "InSocket.h"
 #include "RBuffer.h"
 #include "RState.h"
 #include "RThread.h"
 #include "RObjectWithStates.h"
 #include "AutoRepository.h"
-#include <iostream>
+#include "types/safe.h"
 
 namespace curr {
+
+using namespace types;
 
 /**
  * @defgroup connections
@@ -286,9 +289,109 @@ operator<<(std::ostream&,
  * 
  */
 template<class ConnectionId>
-class RConnectedWindowRepository : public
-  AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>
-{};
+using RConnectedWindowRepository =
+  AutoRepository<RConnectedWindow<ConnectionId>, ConnectionId>;
+
+
+/**
+  * An RWindow as a streambuf.
+  */
+template <
+  class CharT,
+  class Traits = std::char_traits<CharT>
+>
+class WindowStreambuf 
+  : public std::basic_streambuf<CharT, Traits>,
+    public RWindow
+{
+public:
+  typedef typename Traits::int_type int_type;
+  typedef typename Traits::pos_type pos_type;
+  typedef typename Traits::off_type off_type;
+
+  WindowStreambuf(RWindow&& w) 
+  {
+    RWindow::move(w);
+    assert(state_is(*this, S(filled)));
+
+    char* gbeg = const_cast<CharT*>
+      (reinterpret_cast<const CharT*>(cdata()));
+
+    this->setg
+      (gbeg, gbeg, gbeg + filled_size() / sizeof(CharT));
+  }
+
+  // Returns a WindowStreambuf which contains subwindow
+  // [ gptr(), gptr() + width )
+  WindowStreambuf window(std::size_t width)
+  {
+    return WindowStreambuf
+      (RWindow(*this, this->gptr() - this->eback(), 
+               this->gptr() + width - this->egptr()));
+  }
+
+protected:
+  std::streamsize showmanyc() override
+  {
+    return this->egptr() - this->gptr();
+  }
+
+  int_type underflow() override
+  {
+    return (showmanyc()) 
+      ? Traits::to_int_type(*this->gptr()) 
+      : Traits::eof();
+  }
+
+  pos_type seekoff
+    ( 
+      off_type off, 
+      std::ios_base::seekdir dir,
+      std::ios_base::openmode which = std::ios_base::in
+     ) override
+  {
+    using namespace std;
+    const pos_type end_pos = this->egptr() - this->eback();
+    safe<off_type> abs_pos(0);
+
+    switch((uint32_t)dir) {
+      case ios_base::beg: 
+        abs_pos = off;
+        break;
+      case ios_base::end:
+        abs_pos = end_pos + off;
+        break;
+      case ios_base::cur:
+        abs_pos = this->gptr() - this->eback() + off;
+        break;
+    }
+
+    if (!(bool) abs_pos || abs_pos < safe<off_type>(0)) 
+      // the rest will be checked in seekpos
+      return pos_type(off_type(-1));
+    
+    return seekpos((off_type) abs_pos);
+  }
+
+  pos_type seekpos
+    ( 
+      pos_type pos, 
+      std::ios_base::openmode which = std::ios_base::in
+     ) override
+  {
+    const pos_type end_pos = this->egptr() - this->eback();
+
+    if (pos > end_pos || which & std::ios_base::out)
+      return pos_type(off_type(-1));
+
+    this->setg
+      (this->eback(), this->eback() + pos, this->egptr());
+    return pos;
+  }
+              
+private:
+  typedef Logger<WindowStreambuf> log;
+};
 
 //! @}
 

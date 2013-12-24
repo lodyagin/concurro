@@ -30,14 +30,18 @@
 #ifndef CONCURRO_SEXCEPTION_H_
 #define CONCURRO_SEXCEPTION_H_
 
-#include "SCommon.h"
-#include "HasStringView.h"
-#include "Logging.h"
 #include <exception>
 #include <ostream>
 #include <log4cxx/spi/location/locationinfo.h>
+#include "Logging.h"
+#include "SCommon.h"
+#include "HasStringView.h"
 
 namespace curr {
+
+//! @defgroup exceptions
+//! Exception classes defined in the curr namespace level.
+//! @{
 
 //! A base for the all concurro exceptions
 class SException 
@@ -66,9 +70,8 @@ protected:
   bool alreadyLoggedFlag;
 };
 
-//! A type used for passing for functions/methods that
-//! throw exception. Keep the location and logger of the
-//! caller. 
+//! A type passed for functions/methods.
+//! It keeps the location and the logger of the caller. 
 struct ThrowSException 
 {
   ThrowSException
@@ -90,6 +93,22 @@ struct ThrowSException
   const log4cxx::LoggerPtr logger;
 };
 
+//! Throw the stored exception and log the occurence place.
+template<class Log = curr::Logger<curr::LOG::Root>>
+void log_and_throw [[ noreturn ]]
+  (std::exception_ptr excp,
+   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION,
+   log4cxx::LoggerPtr l = Log::logger())
+{
+  try {
+    std::rethrow_exception(excp);
+  }
+  catch (const SException& e2) {
+    LOGGER_DEBUG_LOC(l, "Throw exception " << e2, loc);
+    throw;
+  }
+}
+
 //! Exception: Program Error (means general logic error)
 class ProgramError : public SException
 {
@@ -104,13 +123,15 @@ public:
   NotImplemented() : SException("Not implemented") {}
 };
 
-#define THROW_EXCEPTION(exception_class, par...) do { \
-	 exception_class exc_{par};								\
-  LOG_DEBUG(curr::Logger<curr::LOG::Root>, \
-    "Throw exception " << exc_); \
-  throw exc_; \
-  } while (0)
+//! @deprecated Use log_and_throw() instead
+#define THROW_EXCEPTION(exception_class, par...) \
+do { \
+  curr::log_and_throw( \
+     std::make_exception_ptr(exception_class{par}), \
+       LOG4CXX_LOCATION);  \
+} while (0)
 
+//! @deprecated Use log_and_throw() instead
 #define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
 	 exception_class exc_{par};			 \
   LOG_DEBUG_PLACE(curr::Logger<curr::LOG::Root>, place,   \
@@ -151,16 +172,30 @@ public: \
 };
 #endif
 
-//! Exception: invalid cast (fromString())
-class FromStringCastException
-  : public boost::bad_lexical_cast,
-    public SException 
+class BadCastBase : public SException
 {
 public:
-  FromStringCastException(boost::bad_lexical_cast e) :
-    boost::bad_lexical_cast(e.source_type(), e.target_type()),
-    SException("FromStringCastException, bad cast"){}
+  BadCastBase(const std::string& s) : SException(s) {}
 };
+
+//! Exception: bad cast
+template<class Target, class Source>
+class BadCast : public BadCastBase
+{
+public:
+  BadCast(const Source& src)
+    : BadCastBase
+      (SFORMAT("Bad cast of a value of type " 
+         << typeid(Source).name()
+         << "to " << typeid(Target).name())),
+      source(src)
+  {}
+
+  //! A source value
+  const Source source;
+};
+
+//! @}
 
 }
 #endif

@@ -48,20 +48,20 @@ DECLARE_AXIS(ClientSocketAxis, SocketBaseAxis);
  *   destination_unreachable [shape = doublecircle];
  *   closed [shape = doublecircle];
  *   start -> created;
- *   created -> ready;
+ *   created -> io_ready;
  *   created -> connection_timed_out;
  *   created -> connection_refused;
  *   created -> destination_unreachable;
- *   ready -> closed;
+ *   io_ready -> closed;
  *   closed -> closed;
  *   created -> closed;
  *   created -> pre_connecting;
  *   pre_connecting -> connecting;
- *   connecting -> ready;
+ *   connecting -> io_ready;
  *   connecting -> connection_timed_out;
  *   connecting -> connection_refused;
  *   connecting -> destination_unreachable;
- *   ready -> closed;
+ *   io_ready -> closed;
  * }
  * @enddot
  *
@@ -71,7 +71,7 @@ class ClientSocket : virtual public RSocketBase,
 {
   DECLARE_EVENT(ClientSocketAxis, pre_connecting);
   DECLARE_EVENT(ClientSocketAxis, connecting);
-  DECLARE_EVENT(ClientSocketAxis, ready);
+  DECLARE_EVENT(ClientSocketAxis, io_ready);
   DECLARE_EVENT(ClientSocketAxis, connection_timed_out);
   DECLARE_EVENT(ClientSocketAxis, connection_refused);
   DECLARE_EVENT(ClientSocketAxis, destination_unreachable);
@@ -83,7 +83,7 @@ public:
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, pre_connecting);
   DECLARE_STATE_CONST(State, connecting);
-  DECLARE_STATE_CONST(State, ready);
+  DECLARE_STATE_CONST(State, io_ready);
   DECLARE_STATE_CONST(State, connection_timed_out);
   DECLARE_STATE_CONST(State, connection_refused);
   DECLARE_STATE_CONST(State, destination_unreachable);
@@ -105,7 +105,7 @@ public:
   ~ClientSocket();
 
   //! Start connection to a server. It can result in
-  //! connecting -> {ready, connection_timed_out,
+  //! connecting -> {io_ready, connection_timed_out,
   //! connection_refused and destination_unreachable}
   //! states.
   virtual void ask_connect();

@@ -114,7 +114,7 @@ public:
   };
 
   NReaders1WriterGuard(T* object) 
-    : RObjectWithEvents<NReaders1WriterAxis>("free"),
+    : RObjectWithEvents<NReaders1WriterAxis>(S(free)),
       CONSTRUCT_EVENT(free),
       CONSTRUCT_EVENT(readers_entered),
       readers_cnt(0),
@@ -201,10 +201,14 @@ DECLARE_AXIS(HolderAxis, StateAxis);
 
 /**
  * It is a "view" of an object T in a repository.
+ *
+ * \tparam Obj is a (polymorphic) type of a repository
+ * object, T is the same or a derivation of Obj
  */
 template
 <
-  class Obj,
+  class T,
+  class Obj = T,
 
   template<class, int>
   class Guard = NReaders1WriterGuard,
@@ -252,14 +256,14 @@ public:
 
   //! Make a read-only object call (see
   //! NReaders1WriterGuard) 
-  const Obj* operator->() const
+  const typename Guard<T,wait_m>::ReadPtr operator->() const
   {
     return guarded.operator->();
   }
 
   //! Make a read/write object call (see
   //! NReaders1WriterGuard) 
-  Obj* operator->()
+  typename Guard<T, wait_m>::WritePtr operator->()
   {
     return guarded.operator->();
   }
@@ -268,7 +272,7 @@ public:
 
 protected:
   // The guarded object
-  Guard<Obj, wait_m> guarded;
+  Guard<T, wait_m> guarded;
 };
 
 #if 0

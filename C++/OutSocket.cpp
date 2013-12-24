@@ -88,7 +88,7 @@ void OutSocket::SelectThread::run()
 	 (socket);
   SCHECK(out_sock);
 
-  ( socket->is_ready()
+  ( socket->is_io_ready()
   | socket->is_terminal_state()
   ) . wait();
 
@@ -108,7 +108,7 @@ void OutSocket::SelectThread::run()
   for(;;) {
     // Wait for buffer space
     if (RSocketBase::State::state_is
-        (*socket, RSocketBase::readyState))
+        (*socket, RSocketBase::io_readyState))
       FD_SET(fd, &wfds);
     else
       FD_CLR(fd, &wfds);

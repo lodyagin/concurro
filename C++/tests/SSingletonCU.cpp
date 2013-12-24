@@ -184,8 +184,8 @@ void test_concurrent_creation()
   }
   CU_ASSERT_FALSE_FATAL(exception_in_thread);
 
-  RThreadRepository<RT>& tr =
-    RThreadRepository<RThread<std::thread>>::instance();
+  StdThreadRepository& tr =
+    StdThreadRepository::instance();
 
 #if 0
   // Delete threads

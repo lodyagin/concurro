@@ -27,8 +27,8 @@
  * @author Sergei Lodyagin
  */
 
-#include "Repository.h"
 #include "SSingleton.h"
+#include "Repository.h"
 #include <unordered_map>
 
 namespace curr {
@@ -73,7 +73,7 @@ public:
   
 };
 
-class RSignalRepository 
+class RSignalRepository final
   : public Repository<
       RSignalBase, RSignalBase::Par, 
       std::unordered_map, int

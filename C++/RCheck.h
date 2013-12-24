@@ -45,36 +45,41 @@ void rErrorCode( DWORD code, const wchar_t * fmt, ... );
 #define rCheck rSocketCheck
 #endif
 
+//! @addtogroup exceptions
+//! @{
+
 class RSystemError : public SException
 {
 public:
   const int error_code;
 
   RSystemError(int err_code, 
-					const std::string& msg = std::string())
+          const std::string& msg = std::string())
   : SException(SFORMAT("System error : " 
-							  << rErrorMsg(err_code) << ' ')),
-	 error_code(err_code) {}
+                << rErrorMsg(err_code) << ' ')),
+   error_code(err_code) {}
 };
+
+//! @}
 
 class RSocketError : public RSystemError
 {
 public:
   RSocketError(int err_code, 
-					const std::string& msg = std::string())
-	 : RSystemError(err_code, msg) {}
+          const std::string& msg = std::string())
+   : RSystemError(err_code, msg) {}
 };
 
 #ifdef _WIN32
 #define rSocketCheck(cond) \
 { \
   if (!(cond)) \
-	 THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
+   THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
 }
 #else
 #define rSocketCheck(cond) \
 { \
-  if (!(cond)) {	 \
+  if (!(cond)) {   \
     THROW_EXCEPTION (RSystemError, errno); \
   } \
 }
@@ -84,28 +89,28 @@ public:
 #define rSocketCheck(cond) \
 { \
   if (!(cond)) \
-	 THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
+   THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
 }
 #else
 #define rSocketCheck(cond) \
 { \
-  if (!(cond)) {	 \
+  if (!(cond)) {   \
     THROW_EXCEPTION (RSystemError, errno); \
   } \
 }
 #endif
 
 #ifdef _WIN32
-#define rSocketCheckWithMsg(cond, msg)					\
+#define rSocketCheckWithMsg(cond, msg)          \
 { \
   if (!(cond)) \
-	 THROW_EXCEPTION(RSystemError, WSAGetLastError(),msg);\
+   THROW_EXCEPTION(RSystemError, WSAGetLastError(),msg);\
 }
 #else
-#define rSocketCheckWithMsg(cond, msg)				\
+#define rSocketCheckWithMsg(cond, msg)        \
 { \
-  if (!(cond)) {	 \
-    THROW_EXCEPTION (RSystemError, errno, msg);		\
+  if (!(cond)) {   \
+    THROW_EXCEPTION (RSystemError, errno, msg);    \
   } \
 }
 #endif

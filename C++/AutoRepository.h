@@ -30,8 +30,8 @@
 #ifndef CONCURRO_AUTOREPOSITORY_H_
 #define CONCURRO_AUTOREPOSITORY_H_
 
-#include "Repository.h"
 #include "SSingleton.h"
+#include "Repository.h"
 #include "SCommon.h"
 #include <map>
 
@@ -39,20 +39,27 @@ namespace curr {
 
 /**
  * An AutoSingleton which allows have one and only one
- * Repository for each Object/ObjectId par. <NB> There are
+ * Repository for each Object/ObjectId par, so there are
  * can be different repositories for the same Object type
  * differs by an identification schema (ObjectId).
+ *
+ * It is final for prevent SAutoSingleton::instance return
+ * incomplete class.
+ *
  * @ingroup repositories
  */
 template<class Object, class ObjectId>
-class AutoRepository 
-  : public SAutoSingleton<AutoRepository<Object, ObjectId>>
+class AutoRepository final
+  : public SAutoSingleton
+      <AutoRepository<Object, ObjectId>>,
+    public virtual RepositoryInterface
+      <Object, typename Object::Par, ObjectId>
 {
 public:
   typedef typename Object::Par Par;
   typedef RepositoryInterface<Object, Par, ObjectId> RepI;
   typedef SAutoSingleton<AutoRepository<Object, ObjectId>>
-    Singleton;
+    AutoSingleton;
 
   template<template <class...> class Cont>
   using Rep = Repository<Object, Par, Cont, ObjectId>;
@@ -68,6 +75,51 @@ public:
     this->complete_construction();
   }
 
+  size_t size() const override
+  {
+    return rep->size();
+  }
+
+  Object* create_object (const Par& param) override
+  {
+    return rep->create_object(param);
+  }
+  
+  void delete_object(Object* obj, bool freeMemory) override
+  {
+    rep->delete_object(obj, freeMemory);
+  }
+
+  void delete_object_by_id
+    (const ObjectId& id, bool freeMemory) override
+  {
+    rep->delete_object_by_id(id, freeMemory);
+  }
+
+  Object* get_object_by_id (const ObjectId& id) const override
+  {
+    return rep->get_object_by_id(id);
+  }
+
+  Object* replace_object 
+    (const ObjectId& id, const Par& param, bool freeMemory) 
+    override
+  {
+    return rep->replace_object(id, param, freeMemory);
+  }
+  
+  void for_each
+    (std::function<void(Object&)> f) override
+  {
+    return rep->for_each(f);
+  }
+
+  void for_each
+    (std::function<void(const Object&)> f) const override
+  {
+    return const_cast<const RepI*>(rep)->for_each(f);
+  }
+
   //! Init with the specified Cont type.
   template <
     template<class...> class Cont, 
@@ -81,8 +133,6 @@ public:
           << "[" << typeid(ObjectId).name() << "]>"),
         initial_capacity));
   }
-
-  static RepI& instance();
 
 protected:
   RepI* rep;

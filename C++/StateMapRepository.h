@@ -59,7 +59,8 @@ public:
     StateMapId > Parent;
 
   //! For id == 0 return empty map.
-  StateMap* get_object_by_id(StateMapId id) const override;
+  StateMap* get_object_by_id
+    (const StateMapId& id) const override;
 
   //! Return max used transition id
   TransitionId max_transition_id() const

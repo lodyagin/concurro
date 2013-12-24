@@ -30,10 +30,12 @@
 #ifndef CONCURRO_STATEAXIS_H_
 #define CONCURRO_STATEAXIS_H_
 
-#include "StateMap.h"
-#include <atomic>
 #include <iostream>
+#include <atomic>
 #include <mutex> // for axis singleton
+
+#include "types/meta.h"
+#include "StateMap.h"
 
 namespace curr {
 
@@ -82,10 +84,9 @@ inline bool is_same_axis(const StateAxis& ax)
   return Axis::is_same(ax);
 }
 
-#define DECLARE_AXIS(axis, parent)	\
-struct axis : public parent \
+#define DECLARE_AXIS0(axis, parent_tn)	\
 { \
-  typedef parent Parent; \
+  typedef parent_tn Parent; \
   static axis self_; \
   static axis& self() { \
     static std::once_flag of; \
@@ -126,6 +127,19 @@ struct axis : public parent \
   \
   curr::UniversalState bound(uint32_t st) const override;\
 }; 
+
+#define DECLARE_AXIS(axis, parent) \
+  struct axis : parent \
+  DECLARE_AXIS0(axis, parent)
+
+#define DECLARE_AXIS_TEMPL(axis, templ_base, parent) \
+  template<class T, class Enable = void> \
+  struct axis; \
+  \
+  template<class T> \
+  struct axis<T, CURR_ENABLE_BASE_TYPE(templ_base, T)> :\
+      parent \
+  DECLARE_AXIS0(axis, typename parent)
 
 //! @}
 

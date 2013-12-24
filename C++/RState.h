@@ -30,11 +30,13 @@
 #ifndef CONCURRO_RSTATE_H_
 #define CONCURRO_RSTATE_H_
 
+#include <type_traits>
+#include <mutex>
+
+#include "types/meta.h"
 #include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 #include "StateAxis.h"
-#include <type_traits>
-#include <mutex>
 
 namespace curr {
 
@@ -213,14 +215,16 @@ public:
 
   //! Atomic compare-and-change state which use rules from
   //! the trs map and tries to find an appropriate map
-  //! element and change a state pair::first -> pair::second
+  //! element and change a state pair::first ->
+  //! pair::second
   //! (if the current state is pair::first). 
   //! \return The constant interator to performed
   //! transition from trs or trs.end() if no transition
   //! was performed.
   static auto compare_and_move
     (ObjectWithStatesInterface<Axis2>& obj, 
-     const std::map<const RState<Axis>, const RState<Axis>>& trs
+     const std::map<const RState<Axis>, 
+     const RState<Axis>>& trs
      ) -> typename std::remove_reference
             <decltype(trs)>::type::const_iterator;
 
@@ -279,50 +283,57 @@ private:
 };
 
 //! RMixedAxis<Axis,Axis2>::state_is adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 bool state_is
   (T& obj, 
    const curr::RState<typename T::State::axis>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: state_is(obj, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::move_to adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 void move_to
   (T& obj, 
    const curr::RState<typename T::State::axis>& to)
 {
-  curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  curr::RMixedAxis<typename T::State::axis, Axis2>
     :: move_to(obj, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 bool compare_and_move
   (T& obj, 
    const curr::RState<typename T::State::axis>& from,
    const curr::RState<typename T::State::axis>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: compare_and_move(obj, from, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 bool compare_and_move
   (T& obj, 
    const std::set
      <curr::RState<typename T::State::axis>>& from_set,
    const curr::RState<typename T::State::axis>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis,
-                          typename T::axis>
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: compare_and_move(obj, from_set, to);
+}
+
+//! RMixedAxis<Axis,Axis2>::neg_compare_and_move adapter
+template<class T, class Axis2 = typename T::axis>
+bool neg_compare_and_move
+  (T& obj, 
+   const curr::RState<typename T::State::axis>& from,
+   const curr::RState<typename T::State::axis>& to)
+{
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
+    :: neg_compare_and_move(obj, from, to);
 }
 
 template<class Axis, class Axis2> class RMixedEvent;
@@ -332,7 +343,7 @@ using REvent = RMixedEvent<Axis, Axis>;
 
 //! Wait is_from_event then perform 
 //! RMixedAxis<Axis,Axis2>::compare_and_move 
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 void wait_and_move
   (T& obj, 
    const REvent<typename T::State::axis>& is_from_event,
@@ -360,7 +371,8 @@ void wait_and_move
    const CompoundEvent& is_from_event,
    int wait_m = -1);
 
-#define DEFINE_AXIS_NS(axis, pars...)	\
+#define DEFINE_AXIS_NS_TEMPL0(axis, templ, pars...)	\
+  templ \
   const std::atomic<uint32_t>& axis::current_state    \
     (const curr::AbstractObjectWithStates* obj) const \
   { \
@@ -370,6 +382,7 @@ void wait_and_move
           (*this);  \
   } \
   \
+  templ \
   std::atomic<uint32_t>& axis::current_state \
     (curr::AbstractObjectWithStates* obj) const \
   { \
@@ -378,6 +391,7 @@ void wait_and_move
         ::current_state(*this);  \
   } \
   \
+  templ \
   void axis::update_events \
     (curr::AbstractObjectWithEvents* obj,       \
      curr::TransitionId trans_id,               \
@@ -389,6 +403,7 @@ void wait_and_move
       (*this, trans_id, to); \
   } \
   \
+  templ \
   void axis::state_changed \
     (curr::AbstractObjectWithStates* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \
@@ -400,16 +415,27 @@ void wait_and_move
       -> curr::RObjectWithStates<axis>::state_changed \
       (*this, state_ax, publisher, new_state);        \
   } \
+  templ \
   curr::StateMapPar<axis> axis::get_state_map_par()   \
   {	\
     return curr::StateMapPar<axis>(pars,                \
       curr::StateMapInstance<typename axis::Parent> \
         ::get_map_id());  \
   } \
+  templ \
   curr::UniversalState axis::bound(uint32_t st) const \
   { \
     return curr::RState<axis>(st);              \
   } 
+
+#define DEFINE_AXIS_NS(axis, pars...) \
+  DEFINE_AXIS_NS_TEMPL0(axis, , pars) 
+
+#define DEFINE_AXIS_TEMPL(axis, templ_base, pars...) \
+  DEFINE_AXIS_NS_TEMPL0 \
+    (CURR_TEMPLATE_AND_PARS(axis, T, \
+      CURR_ENABLE_BASE_TYPE(templ_base, T)), \
+     template<class T>, pars)
 
 #define DEFINE_AXIS(axis, pars...)	\
   DEFINE_AXIS_NS(axis, pars) \
@@ -459,6 +485,9 @@ void wait_and_move
   A_STATE_OBJ(class_, axis_, action, *this, state)
 
 #define S(state) (state ## State)
+
+#define CURR_STATE_DEF(axis, state) \
+  const curr::RState<axis> S(state)(# state);
 
 //! @}
 

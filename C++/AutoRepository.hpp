@@ -35,15 +35,6 @@
 
 namespace curr {
 
-template<class Object, class ObjectId>
-typename AutoRepository<Object, ObjectId>::RepI&
-AutoRepository<Object, ObjectId>
-//
-::instance()
-{
-  return *Singleton::instance().rep;
-}
-
 };
 
 #endif

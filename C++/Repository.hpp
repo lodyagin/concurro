@@ -103,10 +103,16 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   return obj;
 }
 
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
+template <
+  class Obj, 
+  class Par, 
+  template<class...> class ObjMap, 
+  class ObjId
+>
 Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::replace_object (ObjId id, const Par& param, bool freeMemory)
+::replace_object 
+  (const ObjId& id, const Par& param, bool freeMemory)
 {
   RLOCK(objectsM);
 
@@ -150,7 +156,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::delete_object_by_id (ObjId id, bool freeMemory)
+::delete_object_by_id (const ObjId& id, bool freeMemory)
 {
   Obj* ptr = 0;
   {
@@ -160,7 +166,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 		ptr = objects->at (id);
 		delete_object_id(id);
 		if (ptr == 0) 
-                  THROW_EXCEPTION(NoSuchId, id);
+        THROW_EXCEPTION(NoSuchId, id);
 	 }
 	 catch (const std::out_of_range&) {
 		THROW_EXCEPTION(NoSuchId, id);
@@ -173,7 +179,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 template <class Obj, class Par, template<class...> class ObjMap, class ObjId>
 Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
 //
-::get_object_by_id (ObjId id) const
+::get_object_by_id (const ObjId& id) const
 {
   try { 
     RLOCK(objectsM);
@@ -229,10 +235,9 @@ template <
   class Obj, class Par, template<class...> class ObjMap, 
   class ObjId
 >
-template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::for_each (Op f)
+::for_each(std::function<void(Obj&)> f)
 {
   RLOCK(objectsM);
 
@@ -246,10 +251,9 @@ template <
   class Obj, class Par, template<class...> class ObjMap, 
   class ObjId
 >
-template<class Op>
 void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
-::for_each (Op f) const
+::for_each(std::function<void(const Obj&)> f) const
 {
   RLOCK(objectsM);
 

@@ -30,9 +30,9 @@
 #ifndef CONCURRO_RTHREADREPOSITORY_H_
 #define CONCURRO_RTHREADREPOSITORY_H_
 
+#include "SSingleton.h"
 #include "Repository.h"
 #include "RThread.h"
-#include "SSingleton.h"
 #include <list>
 #include <algorithm>
 #include <vector>
@@ -60,28 +60,34 @@ public:
     (RThreadBase* thread, bool freeMemory = true) = 0;
 };
 
-template<class Thread>
-class RThreadRepository 
-  : public Repository<
+template<class Thread, class T>
+class RThreadRepository
+  : public virtual RThreadFactory,
+    public Repository<
       Thread,
       typename Thread::Par, 
       std::map, 
       typename Thread::Id
-  >,
-  public RThreadFactory
+    >,
+    public SAutoSingleton<T>
 {
 public:
-  typedef Repository<
+  typedef Repository <
       Thread,
       typename Thread::Par, 
       std::map, 
       typename Thread::Id
-	 > Parent;
+  > Parent;
   typedef typename Thread::Par Par;
   typedef typename Thread::Id ThreadId;
   typedef typename Parent::NoSuchId NoSuchId;
   typedef typename Parent::IdIsAlreadyUsed IdIsAlreadyUsed;
-  typedef typename Parent::Value Value;
+
+  RThreadRepository(int w = 1000);
+  //! Init with the specified operation timeout in msecs
+  RThreadRepository(const RThreadRepository&) = delete;
+  RThreadRepository& operator=
+    (const RThreadRepository&) = delete;
 
   //! Init with the specified operation timeout in msecs
   static void init(int w)
@@ -123,74 +129,23 @@ public:
        "replace_object is not implemented for threads.");
   }
 
-  static RThreadRepository& instance()
-  {
-    typedef RThreadRepository T;
-    static std::once_flag of;
-    static T* instance = nullptr;
-    std::call_once(of, [](){ instance = new T(); });
-    assert(instance);
-    return *instance;
-  }
-
 protected:
   int wait_m;
 
 private:
-  typedef Logger<RThreadRepository<Thread>> log;
-
-  //! Init with the specified operation timeout in msecs
-  RThreadRepository(int w = 1000);
-  RThreadRepository(const RThreadRepository&) = delete;
-  ~RThreadRepository() {}
-  RThreadRepository& operator=
-    (const RThreadRepository&) = delete;
+  typedef Logger<RThreadRepository<Thread, T>> log;
 };
 
-template<class Obj>
-struct ThreadStopper
-  : std::unary_function<Obj, void>
+class StdThreadRepository final
+  : public RThreadRepository
+      <RThread<std::thread>, StdThreadRepository> 
 {
-  void operator () (Obj th)
+public:
+  StdThreadRepository()
   {
-    if (th && th->is_running ()) th->stop ();
+    complete_construction();
   }
 };
-
-// std::pair version
-template<class Key, class Val>
-  struct ThreadStopper<std::pair<Key, Val>>
-  : std::unary_function<std::pair<Key, Val>&, void>
-{
-  void operator () (std::pair<Key, Val>& p)
-  {
-    if (p.second && p.second->is_running ()) 
-      p.second->stop ();
-  }
-};
-
-#if 0
-template<class Val>
-struct ThreadWaiter
-  : std::unary_function<Val, void>
-{
-  void operator () (Val th)
-  {
-    if (th) th->is_terminated().wait();
-  }
-};
-
-template<class Key, class Val>
-  struct ThreadWaiter<std::pair<Key, Val>>
-  : std::unary_function<std::pair<Key, Val>&, void>
-{
-  void operator () (std::pair<Key, Val>& p)
-  {
-    if (p.second) 
-      CURR_WAIT(p.second->is_terminated(), wait_w);
-  }
-};
-#endif
 
 //! @}
 

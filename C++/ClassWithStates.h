@@ -96,6 +96,10 @@ protected:
   //! here to access from StateHook-s (without dynamic
   //! casting).
   ClassWithStates* paired = nullptr;
+
+public:
+  //! The class state.
+  virtual TheClass& the_class() const = 0;
 };
 
 template <

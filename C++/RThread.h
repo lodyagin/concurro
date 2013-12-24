@@ -42,6 +42,7 @@
 #include <atomic>
 #include <thread>
 #include <memory>
+#include <type_traits>
 
 namespace curr {
 
@@ -153,7 +154,7 @@ public:
 
   // TODO add std::call_once conditions. (? Also to dtr).
 
-  void start();
+  RThreadBase& start();
   virtual void stop (); //!< try to stop implicitly
 
   //! Move non-started thread to the `cancelled' state and
@@ -190,7 +191,7 @@ public:
 protected:
   struct LogParams {
     static bool current;
-  } log_params;
+  } log_params_;
 
   bool destructor_delegate_is_called;
 
@@ -342,10 +343,25 @@ public:
     th->join(); 
   }
 
-  //! Create in the repository. args are parameters to
-  //! a %Thread::Par constructor.
-  template<class Thread, class... Args>
-    static Thread* create(Args&&... args);
+  //! Create in the repository. 
+  template<class Thread>
+  static Thread* create
+    (const Par& par = typename Thread::Par());
+
+  //! Create in the repository. args0, args... are
+  //! parameters to a %Thread::Par constructor.
+  template <
+    class Thread, 
+    class Arg0, 
+    class... Args,
+    class = typename std::enable_if <
+      ! std::is_base_of < 
+          Par, 
+          typename std::remove_reference<Arg0>::type
+        >::value
+    >::type
+  >
+  static Thread* create(Arg0&& arg0, Args&&... args);
 
   //! Destroy in the repository. 
   //! @param freeMemory Call a destructor (for using with
@@ -374,6 +390,8 @@ public:
 
 protected:
   //! It is for creation from ThreadRepository
+  //! NB use RThread::Par to ensure not mix different
+  //! threads models in one repository.
   RThread(const ObjectCreationInfo& oi, const Par& par)
     : RThreadBase(oi, par),
     th(const_cast<Par&>(par).move_thread()) {}

@@ -22,7 +22,9 @@
 */
 
 /**
- * @file
+ * @file 
+ * Singletons. It always must be the first included
+ * file from the concurro library.
  *
  * @author Sergei Lodyagin
  */
@@ -30,11 +32,11 @@
 #ifndef CONCURRO_SSINGLETON_H_
 #define CONCURRO_SSINGLETON_H_
 
+#include "Logging.h"
 #include "Existent.h"
 #include "SException.h"
 #include "ConstructibleObject.h"
 #include "Event.h"
-#include "Logging.h"
 #include <thread>
 
 namespace curr {
@@ -119,8 +121,9 @@ public:
  */
 template<class T, int wait_m = 1000>
 class SSingleton 
-  : public Existent<T, SingletonStateHook<T, wait_m>>,
-    public ConstructibleObject
+  : public virtual Existent
+      <T, SingletonStateHook<T, wait_m>>,
+    public virtual ConstructibleObject
 {
   friend SingletonStateHook<T, wait_m>;
 public:
@@ -131,8 +134,8 @@ public:
 
   //! One and only one class instance must be created with
   //! this function.
-  //! @exception MustBeSingleton a copy of SSingleton<T, wait_m>
-  //! already exists.
+  //! @exception MustBeSingleton a copy of SSingleton<T,
+  //! wait_m> already exists.
   SSingleton();
 
   //! A deleted copy constructor
@@ -173,11 +176,15 @@ protected:
   //! the complete_construction event.
   static Event is_complete()
   {
-    static Event is_complete_event
+    static Event* is_complete_event = new Event
       (SFORMAT(typeid(SSingleton<T, wait_m>).name()
                << ":is_complete()::is_complete_event"), 
        true, false);
-    return is_complete_event;
+    // prevent infinit loop in RThreadRepository::current
+    is_complete_event->log_params().wait = 
+      is_complete_event->log_params().set = 
+        is_complete_event->log_params().reset = false;
+    return *is_complete_event;
   }
 
 private:
@@ -188,19 +195,56 @@ private:
   static T* _instance;
 };
 
+//! It allows destroy SAutoSingleton - s.
+class SAutoSingletonBase
+{
+public:
+  virtual ~SAutoSingletonBase() {}
+  
+  //! We use the same method of initialization as std::cout
+  class Init
+  {
+  public:
+    Init();
+    ~Init();
+  protected:
+    // TODO not atomic?
+    static int nifty_counter;
+  };
+};
+
+namespace {
+
+//! It will help call SAutoSingleton destructors on exit.
+SAutoSingletonBase::Init auto_reg_init_helper;
+
+}
+
 /**
  * Extends SSingleton to allow auto-construct it by the
  * RAutoSingleton::instance() call.
  * \tparam wait_m The default construction wait timeout.
  */
 template<class T, int wait_m = 1000>
-class SAutoSingleton : public SSingleton<T, wait_m>
+class SAutoSingleton 
+  : public SSingleton<T, wait_m>,
+    public virtual SAutoSingletonBase
 {
+  friend class SAutoSingletonRegistry;
+
 public:
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to
   //! redesign with RHolder).
   static T & instance ();
+
+protected:
+  //! It is allowed only for SAutoSingletonRegistry to
+  //! prevent a double-destruction.
+  //~SAutoSingleton();
+
+  //! Create the object if doesn't exist
+  static void construct_once();
 
 private:
   typedef Logger<SAutoSingleton<T, wait_m>> log;

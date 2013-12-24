@@ -40,22 +40,16 @@ DEFINE_AXIS(
   {
     "in_closed",    // input part of connection is closed
     "out_closed",
-    "listen",       // passive open
-    "accepting",    // in the middle of a new ServerSocket
     "closing",      // fin-wait, time-wait, closing,
   },
   {
-    {"created", "listen"},      // listen()
-    {"listen", "accepting"}, // connect() from other side
-    {"accepting", "listen"},
-    {"listen", "closed"},
-    {"created", "ready"}, // initial send() is
+    {"created", "io_ready"}, // initial send() is
       // recieved by other side
     {"created", "closed"},     // ask close() or timeout 
-    {"ready", "closing"}, // our close() or FIN from
+    {"io_ready", "closing"}, // our close() or FIN from
       // other side
-    {"ready", "in_closed"},
-    {"ready", "out_closed"},
+    {"io_ready", "in_closed"},
+    {"io_ready", "out_closed"},
     {"closing", "closed"},
     {"in_closed", "closed"},
     {"out_closed", "closed"},
@@ -71,7 +65,7 @@ DEFINE_STATE_CONST(TCPSocket, State, in_closed);
 DEFINE_STATE_CONST(TCPSocket, State, out_closed);
 DEFINE_STATE_CONST(TCPSocket, State, listen);
 DEFINE_STATE_CONST(TCPSocket, State, accepting);
-DEFINE_STATE_CONST(TCPSocket, State, ready);
+DEFINE_STATE_CONST(TCPSocket, State, io_ready);
 DEFINE_STATE_CONST(TCPSocket, State, closing);
 
 TCPSocket::TCPSocket
@@ -84,7 +78,7 @@ TCPSocket::TCPSocket
      RStateSplitter<TCPAxis, SocketBaseAxis>
      ::state_hook(&TCPSocket::state_hook)
     ),
-  CONSTRUCT_EVENT(ready),
+  CONSTRUCT_EVENT(io_ready),
   CONSTRUCT_EVENT(closed),
   CONSTRUCT_EVENT(in_closed),
   CONSTRUCT_EVENT(out_closed),
@@ -124,13 +118,18 @@ void TCPSocket::state_hook
    const StateAxis& ax,
    const UniversalState& new_state)
 {
+  const RState<TCPAxis> st(new_state);
   if (!TCPAxis::is_same(ax)) {
-    const RState<TCPAxis> st(new_state);
     State::move_to(*this, st);
 
-    if (st == readyState) {
+    if (st == io_readyState) {
       select_thread->start();
       wait_thread->start();
+    }
+  }
+  else {
+    if (st == closedState) {
+      ::close(fd);
     }
   }
 }
@@ -148,7 +147,7 @@ void TCPSocket::ask_close_out()
       A_STATE(TCPSocket, TCPAxis, move_to, closed);
       RSocketBase::State::compare_and_move
         (*this, 
-         { RSocketBase::readyState,
+         { RSocketBase::io_readyState,
              RSocketBase::createdState
              }, 
          RSocketBase::closedState);
@@ -158,12 +157,12 @@ void TCPSocket::ask_close_out()
 
 #if 1
   State::compare_and_move
-    (*this, readyState, out_closedState) ||
+    (*this, io_readyState, out_closedState) ||
   State::compare_and_move
     (*this, in_closedState, closedState);
 #else
   if (State::compare_and_move
-      (*this, readyState, out_closedState)
+      (*this, io_readyState, out_closedState)
       ||
       State::compare_and_move
       (*this, in_closedState, closedState)
@@ -177,18 +176,9 @@ void TCPSocket::SelectThread::run()
 {
   ThreadState::move_to(*this, workingState);
   socket->is_construction_complete_event.wait();
-  //ClientSocket* cli_sock = 0;
-  //if (!(cli_sock = dynamic_cast<ClientSocket*>(socket))) 
-  // THROW_NOT_IMPLEMENTED;
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*>(socket);
   assert(tcp_sock);
   
-  /*( socket->is_ready()
-    | socket->is_terminal_state()) . wait();
-
-    if (socket->is_terminal_state().isSignalled())
-    return;*/
-
   // wait for close
   fd_set wfds, rfds;
   FD_ZERO(&wfds);
@@ -207,11 +197,6 @@ void TCPSocket::SelectThread::run()
     FD_SET(sock_pair[ForSelect], &rfds);
     const int maxfd = std::max(sock_pair[ForSelect], fd)
       + 1;
-
-    /*if (State::state_is(*tcp_sock, out_closedState))
-      FD_CLR(fd, &wfds);
-      else
-      FD_SET(fd, &wfds);*/
 
     rSocketCheck(
       ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
@@ -237,7 +222,7 @@ void TCPSocket::SelectThread::run()
 
         if (TCPSocket::State::compare_and_move
             (*tcp_sock, 
-             TCPSocket::readyState, 
+             TCPSocket::io_readyState, 
              TCPSocket::in_closedState
               )
             || 

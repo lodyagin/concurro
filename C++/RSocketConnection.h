@@ -30,14 +30,17 @@
 #ifndef CONCURRO_RSOCKETCONNECTION_H_
 #define CONCURRO_RSOCKETCONNECTION_H_
 
-#include "Repository.h"
-#include "RSocket.h"
-#include "ClientSocket.h"
-#include "RWindow.h"
+#include <iostream>
 #include <string>
 #include <memory>
 #include <vector>
-#include <iostream>
+
+#include "Repository.h"
+#include "RSocket.h"
+#include "RSocketAddress.h"
+#include "ListeningSocket.h"
+#include "RWindow.h"
+#include "RObjectWithThreads.h"
 
 namespace curr {
 
@@ -45,59 +48,46 @@ namespace curr {
  * @addtogroup connections
  * @{
  */
-
-class RSocketConnection 
-: //public RObjectWithEvents<ConnectionAxis>,
-public StdIdMember
+class RSocketConnection : public StdIdMember
 {
 public:
-  struct Par {
-    //! Available addresses for socket(s)
-    std::unique_ptr<RSocketAddressRepository> sar;
+  struct Par 
+  {
+    Par() {}
 
-    Par() : sar(new RSocketAddressRepository)
-    {
-      assert(sar);
-    }
-
-    Par(Par&& par)
-    : sar(std::move(par.sar)),
+    Par(Par&& par) :
       socket_rep(std::move(par.socket_rep)) 
     {}
 
     virtual ~Par() {}
+
     virtual RSocketConnection* create_derivation
-    (const ObjectCreationInfo& oi) const = 0;
+      (const ObjectCreationInfo& oi) const = 0;
+
     virtual RSocketConnection* transform_object
-    (const RSocketConnection*) const
-      { THROW_NOT_IMPLEMENTED; }
+      (const RSocketConnection*) const
+    { THROW_NOT_IMPLEMENTED; }
 
     //! Must be inited from derived classes.
     //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
-    mutable std::unique_ptr<RSocketRepository> socket_rep;
+    mutable RSocketRepository* socket_rep;
+   //mutable std::unique_ptr<RSocketRepository> socket_rep;
   };
 
-  //! Parameters to create client side of an Internet
+  //! Parameters to create a client side of an Internet
   //! connection. 
   template<NetworkProtocol proto, IPVer ip_ver>
-    struct InetClientPar : public virtual Par
+  struct InetClientPar : public virtual Par
   {
-    std::string host;
-    uint16_t port;
+    //! Available addresses for socket(s)
+    //RSocketAddressRepository* sar;
+    const RSocketAddress* sock_addr;
 
-    InetClientPar(const std::string& a_host,
-                  uint16_t a_port) 
-    : host(a_host), port(a_port)
+    InetClientPar(RSocketAddress* sa) : sock_addr(sa)
     {
-      sar->create_addresses<proto, ip_ver>
-        (host, port);
+      assert(sock_addr);
     }
-
-    InetClientPar(InetClientPar&& par)
-      : Par(std::move(par)),
-      host(std::move(par.host)),
-      port(par.port) {}
   };
 
   virtual ~RSocketConnection() {}
@@ -114,171 +104,109 @@ public:
   //! Skip all data (non-blocking)
   virtual void ask_abort() = 0;
 
-  //! A window repostiry
-  //RConnectedWindowRepository<SOCKET> win_rep;
-
 protected:
   RSocketConnection
     (const ObjectCreationInfo& oi,
      const Par& par);
 
-  std::shared_ptr<RSocketRepository> socket_rep;
+  RSocketRepository* socket_rep;
 };
 
 std::ostream&
 operator<< (std::ostream&, const RSocketConnection&);
 
-class InSocket;
-
-template<class Connection>
-class ConnectionThread : public SocketThread
-{
-public:
-  struct Par : public SocketThread::Par
-  {
-  Par(Connection* c) 
-    : SocketThread::Par(c->socket), con(c)
-    {
-      thread_name = SFORMAT(
-        typeid(Connection).name() << socket->fd);
-    }
-
-    RThreadBase* create_derivation
-      (const ObjectCreationInfo& oi) const override
-    { 
-      return new ConnectionThread(oi, *this); 
-    }
-
-    Connection* con;
-  };
-
-protected:
-  ConnectionThread(const ObjectCreationInfo& oi, 
-                 const Par& p)
-  : SocketThread(oi, p), con(p.con) 
-  {
-    con->socket->threads_terminals.push_back
-      (this->is_terminal_state());
-  }
-
-  ~ConnectionThread() { destroy(); }
-
-  void run()
-  {
-    ThreadState::move_to(*this, workingState);
-    con->run();
-  }
-
-  Connection* con;
-};
-
-DECLARE_AXIS(ClientConnectionAxis, ClientSocketAxis);
+DECLARE_AXIS_TEMPL(SocketConnectionAxis, 
+                   RSocketBase,
+                   T::State::axis);
 
 /**
- * A connection which always uses only one socket.
+ * A connection which always uses only one socket defined
+ * as a template parameter. There is an internal input
+ * thread which reads packets into iw() input window.
  *
- * @dot
- * digraph {
- *   start [shape = point]; 
- *   connection_timed_out [shape = doublecircle];
- *   connection_refused [shape = doublecircle];
- *   destination_unreachable [shape = doublecircle];
- *   closed [shape = doublecircle];
- *   clearly_closed [shape = doublecircle];
- *   aborted [shape = doublecircle];
- *   start -> created;
- *   created -> ready;
- *   created -> connection_timed_out;
- *   created -> connection_refused;
- *   created -> destination_unreachable;
- *   ready -> closed;
- *   closed -> closed;
- *   created -> closed;
- *   created -> pre_connecting
- *      [label="ask_connect()"];
- *   pre_connecting -> connecting
- *      [label="EINPROGRESS"];
- *   connecting -> ready;
- *   connecting -> connection_timed_out
- *      [label="ETIMEDOUT"];
- *   connecting -> connection_refused
- *      [label="ECONNREFUSED"];
- *   connecting -> destination_unreachable
- *      [label="ENETUNREACH"];
- *   ready -> closed;
- *   ready -> aborting;
- *   aborting -> aborted;
- *   closed -> clearly_closed;
- *   closed -> aborting;
- * }
- * @enddot
- *
+ * \tparam Connection is a final descendant - the actual
+ * connection class.
+ * \tparam Socket either ClientSocket or server (accepted)
+ * socket. It defines the connection side.
+ * \tparam Threads pars of (additional) threads that serve
+ * this connection; it is mandatory for a server side of
+ * the connection.
  */
+template<class Connection, class Socket, class... Threads>
 class RSingleSocketConnection 
 : public RSocketConnection,
   public RStateSplitter
-  <ClientConnectionAxis, ClientSocketAxis>
+  <
+    SocketConnectionAxis<Socket>, 
+    typename Socket::State::axis
+  >,
+  public RObjectWithThreads<Connection>
 {
-  DECLARE_EVENT(ClientConnectionAxis, aborting);
-  DECLARE_EVENT(ClientConnectionAxis, aborted);
-  DECLARE_EVENT(ClientConnectionAxis, clearly_closed);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, aborted);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, 
+                clearly_closed);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, io_ready);
+  DECLARE_EVENT(SocketConnectionAxis<Socket>, closed);
 
 public:
   //! @cond
-  DECLARE_STATES(ClientConnectionAxis, State);
-  DECLARE_STATE_CONST(State, aborting);
-  DECLARE_STATE_CONST(State, aborted);
-  DECLARE_STATE_CONST(State, clearly_closed);
+  DECLARE_STATES(SocketConnectionAxis<Socket>, State);
+  DECLARE_STATE_CONST(typename State, aborting);
+  DECLARE_STATE_CONST(typename State, aborted);
+  DECLARE_STATE_CONST(typename State, clearly_closed);
   //! @endcond
 
-  //! Only input thread.
-  typedef ConnectionThread<RSingleSocketConnection>
-    Thread;
-  friend Thread;
+  typedef RStateSplitter
+  <
+    SocketConnectionAxis<Socket>, 
+    typename Socket::State::axis
+  > Splitter;
 
   struct Par : public virtual RSocketConnection::Par
   {
-    RSocketAddress* sock_addr;
+    mutable RSocketBase* socket;
 
-    Par()
-    : sock_addr(0), // descendats must init it by an
+    Par() :
+      //sock_addr(0), // descendats must init it by an
       // address
       // from the address repository (sar)
       socket(0) // descendant must create it in
       // create_derivation 
-      {}
+    {}
 
-    Par(Par&& par) 
-      : RSocketConnection::Par(std::move(par)),
-      sock_addr(par.sock_addr),
+    Par(Par&& par) :
+      RSocketConnection::Par(std::move(par)),
+      //sock_addr(par.sock_addr),
       socket(par.socket) {}
 
-    virtual std::unique_ptr<SocketThread::Par> 
-      get_thread_par(RSingleSocketConnection* c) const
-    {
-      return std::unique_ptr<Thread::Par>
-        (new Thread::Par(c));
-    }
-
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
-      get_window_par(RSocketBase* sock) const
+    get_window_par(RSocketBase* sock) const
     {
       return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
-
-    mutable RSocketBase* socket;
   };
 
   template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar 
-  : public Par,
+  struct InetClientPar :
+    public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
-    InetClientPar(const std::string& a_host,
-                  uint16_t a_port) 
-    : RSocketConnection::InetClientPar<proto, ip_ver>
-      (a_host, a_port) {}
+    //! The max input packet size
+    //! (logical piece of data defined in upper protocol,
+    //! not a size of tcp/ip packet).
+    size_t max_input_packet = -1;
+
+    //! The connection timeout in usecs
+    uint64_t max_connection_timeout = 3500000;
+
+    InetClientPar
+      (RSocketAddress* sa, size_t max_packet) 
+    :
+       RSocketConnection::InetClientPar<proto, ip_ver>(sa),
+       max_input_packet(max_packet)
+    {}
 
     InetClientPar(InetClientPar&& par)
       : RSocketConnection::Par(std::move(par)),
@@ -286,6 +214,30 @@ public:
         Par(std::move(par)),
         RSocketConnection::InetClientPar<proto, ip_ver>
           (std::move(par)) {}
+
+    RSocketConnection* create_derivation
+      (const ObjectCreationInfo& oi) const override;
+  };
+
+  struct ServerPar : Par
+  {
+    ServerPar(RSocketBase* srv_sock)
+    {
+      assert(srv_sock);
+      this->socket = srv_sock;
+      assert(srv_sock->repository);
+      this->socket_rep = srv_sock->repository;
+    }
+
+    ServerPar(ServerPar&& par)
+      : Par(std::move(par))
+    {}
+
+    RSocketConnection* create_derivation
+      (const ObjectCreationInfo& oi) const
+    {
+      return new Connection(oi, *this);
+    }
   };
 
   void state_changed
@@ -322,17 +274,26 @@ protected:
      const Par& par);
   ~RSingleSocketConnection();
 
+  std::atomic<uint32_t>&
+  current_state(const curr::StateAxis& ax) override
+  {
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>&
+  current_state(const curr::StateAxis& ax) const override
+  {
+    return ax.current_state(this);
+  } 
+
+  MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS;
+
   // <NB> not virtual
   void run();
 
-  //RSocketBase* socket;
   InSocket* socket;
-  ClientSocket* cli_sock;
-  SocketThread* thread;
+  //SocketThread* thread;
   RConnectedWindow<SOCKET>* in_win;
-
-  A_DECLARE_EVENT(ClientConnectionAxis, 
-                  ClientSocketAxis, closed);
 
 protected:
   CompoundEvent is_terminal_state_event;
@@ -343,6 +304,61 @@ public:
   //! A current window
   RConnectedWindow<SOCKET>& iw() { return *in_win; }
 };
+
+namespace connection { 
+
+//! Allows define a server thread as a virtual method
+//! override.
+template<class Connection>
+class abstract_server
+{
+public:
+  struct Par : ObjectFunThread<Connection>::Par
+  {
+    Par(SOCKET fd) : 
+      ObjectFunThread<Connection>::Par
+        (SFORMAT
+          (typeid(abstract_server<Connection>). name() 
+           << fd),
+         [](abstract_server& obj)
+         {
+           obj.server_run();
+         }
+        )
+     {}
+  };
+
+  virtual void server_run() = 0;
+};
+
+namespace single_socket {
+
+//! This class defines a server thread, you can inherit
+//! from it and overwrite server_run().
+template<class Connection, class Socket, class... Threads>
+class server :
+  public RSingleSocketConnection
+  <
+    Connection, 
+    Socket,
+    typename abstract_server<Connection>::Par,
+    //!< a server thread par
+    Threads...
+  >,
+  public abstract_server<Connection>
+{
+protected:
+  using RSingleSocketConnection
+  <
+    Connection, 
+    Socket,
+    typename abstract_server<Connection>::Par,
+    //!< a server thread par
+    Threads...
+  >::RSingleSocketConnection;
+};
+
+}}
 
 class RConnectionRepository
 : public Repository<
@@ -360,11 +376,112 @@ public:
 
   RThreadFactory *const thread_factory;
 
-  RConnectionRepository(const std::string& id,
-                        size_t reserved,
-                        RThreadFactory *const tf)
+  RConnectionRepository
+    (const std::string& id,
+     size_t reserved,
+     RThreadFactory *const tf = 
+       &StdThreadRepository::instance()
+    )
   : Parent(id, reserved), thread_factory(tf)
   {}
+};
+
+DECLARE_AXIS(ServerConnectionFactoryAxis, 
+             ListeningSocketAxis);
+
+/**
+  * A factory of socket server connections based on a
+  * single ListeningSocket.
+  *
+  * @dot
+  * digraph {
+  *   start [shape = point]; 
+  *   address_already_in_use [shape = doublecircle];
+  *   closed [shape = doublecircle];
+  *   start -> created;
+  *   created -> bound;
+  *   created -> address_already_in_use;
+  *   bound -> pre_listen;
+  *   pre_listen -> listen;
+  *   listen -> accepting;
+  *   accepting -> accepted;
+  *   accepted -> listen;
+  *   listen -> closed;
+  *   bound -> closed;
+  *   closed -> closed;
+  * }
+  * @enddot
+  */
+template<class Connection>
+class RServerConnectionFactory final
+  : public RStateSplitter
+      <ServerConnectionFactoryAxis, ListeningSocketAxis>,
+    public RConnectionRepository
+{
+public:
+  //! Accepts ListeningSocket in the bound state.
+  RServerConnectionFactory
+    (ListeningSocket* l_sock, size_t reserved);
+
+  CompoundEvent is_terminal_state() const override
+  {
+    assert(lstn_sock);
+    return lstn_sock->is_terminal_state();
+    // FIXME & treads.is_terminal_state();
+  }
+
+protected:
+  //! It is an internal object to prevent states mixing
+  class Threads final : public RObjectWithThreads<Threads>
+  {
+  public:
+    Threads(RServerConnectionFactory* o);
+
+    ~Threads() { this->destroy(); }
+
+    CompoundEvent is_terminal_state() const override
+    {
+      return CompoundEvent();
+    }
+
+    RServerConnectionFactory* obj;
+
+  } threads;
+
+  class ListenThread final : public ObjectThread<Threads>
+  {
+  public:
+    struct Par : ObjectThread<Threads>::Par
+    {
+      Par() : 
+        ObjectThread<Threads>::Par
+          ("RServerConnectionFactory::Threads::"
+           "ListenThread")
+      {}
+
+      PAR_DEFAULT_OVERRIDE(StdThread, ListenThread);
+    };
+
+  protected:
+    REPO_OBJ_INHERITED_CONSTRUCTOR_DEF(
+      ListenThread, 
+      ObjectThread<Threads>, 
+      ObjectThread<Threads>
+    );
+
+    void run() override;
+  };
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
+  {
+    THROW_PROGRAM_ERROR;
+  }
+
+  ListeningSocket* lstn_sock;
 };
 
 //! @}

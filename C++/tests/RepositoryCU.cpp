@@ -145,6 +145,7 @@ void test_delete_object_by_id()
     CU_FAIL_FATAL("Must throw NoSuchId");
   }
   catch(const typename REP(Cont,Obj)::NoSuchId&) {}
+  catch(...) { CU_FAIL_FATAL("Improper exception"); }
 
   CU_ASSERT_EQUAL_FATAL(r.size(), 0);
 }
