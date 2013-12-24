@@ -59,7 +59,7 @@ public:
  * An object which owns one or several threads.
  */
 template<class Object>
-class RObjectWithThreads : public ConstructibleObject
+class RObjectWithThreads : public RConstructibleObject
 {
 public:
   using ThreadPar = ThreadOfObjectPar<Object>;
@@ -81,7 +81,7 @@ public:
     (const RObjectWithThreads&) = delete;
 
 protected:
-  void state_changed_impl
+  void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,

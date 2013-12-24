@@ -39,7 +39,7 @@ namespace curr {
 template<class Axis, const char* initial_state,
          class StateHook>
 void ClassWithStates<Axis, initial_state, StateHook>
-::TheClass::state_changed_impl
+::TheClass::state_changed
   (StateAxis&, 
    const StateAxis& state_ax,     
    AbstractObjectWithStates* object,

@@ -41,7 +41,6 @@ set (concurrent_SOURCES
   SSingleton.cpp
   StateAxis.cpp
   StateMap.cpp
-  StateMapRepository.cpp
   StdAfx.cpp
   TCPSocket.cpp
 )

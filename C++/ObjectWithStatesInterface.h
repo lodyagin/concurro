@@ -55,14 +55,23 @@ class AbstractObjectWithStates
 public:
   virtual ~AbstractObjectWithStates() {}
 
-#if 1
   //! the "update parent" callback on state changing in
   //! the `object' on the `state_ax' to `new_state'.
-  virtual void state_changed_impl
+  //! @param ax is used for dispatching to particular
+  //! RObjectWithStates class (used in RStateSplitter to
+  //! monitor SplitAxis changes from DerivedAxis).
+  virtual void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,
      AbstractObjectWithStates* object,
      const UniversalState& new_state) = 0;
+
+#if 0
+  //! Terminal state means 
+  //! 1) no more state activity;
+  //! 2) the object can be deleted (there are no more
+  //! dependencies on it).
+  virtual CompoundEvent is_terminal_state() const = 0;
 #endif
 
   //! Return access to a current state atomic value.
@@ -73,9 +82,32 @@ public:
   //! value.
   virtual const std::atomic<uint32_t>& 
     current_state(const StateAxis&) const = 0;
+
+#if 0
+  /**
+   * Exception: it is thrown by the default implementation
+   * of state_is_broken.
+   */
+  class BrokenState : public curr::SException
+  {
+  public:
+    BrokenState
+      (const AbstractObjectWithStates& obj,
+       const UniversalState& rb_transition_from,
+       const UniversalState& rb_transition_to);
+  };
+
+  //! Notify the object when a compound operation needs to
+  //! rollback the state change rb_transition_from ->
+  //! rb_transition_to but unable to do so.
+  virtual void state_is_broken
+    (const UniversalState& rb_transition_from,
+     const UniversalState& rb_transition_to) = 0;
+
+#endif
 };
 
-class StateListener;
+class RObjectWithStatesBase;
 
 /// An interface which should be implemented in each
 /// state-aware class.
@@ -94,14 +126,6 @@ public:
   typedef RState<Axis> State;
 
   virtual ~ObjectWithStatesInterface() {}
-
-  //! the "update parent" callback on state changing in
-  //! the `object' on the `state_ax' to `new_state'.
-  virtual void state_changed_impl
-    (StateAxis& ax, 
-     const StateAxis& state_ax,
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) = 0;
 
   //! The default implementation returns just
   //! typeid(*this).name(). 
@@ -174,7 +198,7 @@ public:
 };
 
 #define MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS        \
-void state_changed_impl( \
+void state_changed(                                     \
   curr::StateAxis& ax, \
   const curr::StateAxis& state_ax,     \
   curr::AbstractObjectWithStates* object, \

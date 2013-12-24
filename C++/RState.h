@@ -390,15 +390,15 @@ void wait_and_move
   } \
   \
   void axis::state_changed \
-    (curr::StateListener* subscriber,   \
+    (curr::AbstractObjectWithStates* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \
      const curr::StateAxis& state_ax, \
      const UniversalState& new_state)             \
   { \
-    dynamic_cast<curr::ObjectWithStatesInterface<axis>*>  \
+    return dynamic_cast<curr::RObjectWithStates<axis>*>  \
     (subscriber) \
-      -> state_changed_impl \
-          (*this, state_ax, publisher, new_state);  \
+      -> curr::RObjectWithStates<axis>::state_changed \
+      (*this, state_ax, publisher, new_state);        \
   } \
   curr::StateMapPar<axis> axis::get_state_map_par()   \
   {	\

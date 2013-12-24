@@ -51,41 +51,36 @@ REventIsUnregistered(const UniversalEvent& ue)
   const UniversalEvent event;
 };
 
-class StateListener
+//TODO allow only delegates have subscribers list
+class RObjectWithStatesBase
+: public virtual AbstractObjectWithStates
 {
 public:
-  virtual ~StateListener() {}
+  RObjectWithStatesBase();
+  RObjectWithStatesBase(RObjectWithStatesBase&&);
+  virtual ~RObjectWithStatesBase();
 
-  //! A state hook multiplexor.
-  //! @param ax is used for dispatching to particular
-  //! RObjectWithStates::state_changed_impl method.
+  RObjectWithStatesBase& operator=
+    (RObjectWithStatesBase&&);
+
+  void register_subscriber
+    (AbstractObjectWithEvents*, StateAxis*);
+
+  //! An "update parent" callback on state changing in
+  //! the `object'.
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
-     const UniversalState& new_state);
-};
-
-class StateTransmitterBase
-{
-public:
-  StateTransmitterBase();
-  StateTransmitterBase(StateTransmitterBase&&);
-  virtual ~StateTransmitterBase();
-
-  StateTransmitterBase& operator=
-    (StateTransmitterBase&&);
-
-  void register_subscriber
-    (StateListener*, StateAxis*);
+     const UniversalState& new_state) override;
 
 protected:
   //! No more changes in subscribers list
   std::atomic<bool> is_frozen;
   std::atomic<bool> is_changing;
 
-  typedef std::pair
-    <StateListener*, StateAxis*> Subscriber;
+  typedef std::pair<AbstractObjectWithEvents*, StateAxis*>
+    Subscriber;
 
   //! Registered subscribers
   std::set<Subscriber> subscribers;
@@ -93,39 +88,12 @@ protected:
   std::set<CompoundEvent> subscribers_terminals;
 };
 
-template<class Axis>
-class StateTransmitter 
-  : public StateTransmitterBase,
-    public virtual ObjectWithStatesInterface<Axis>
-{
-public:
-  //! An "update parent" callback on state changing in
-  //! the `object'.
-  void state_changed_impl
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) override;
-
-};
-
-#if 0
-template<class Axis>
-class EventTransmitter 
-  : public StateTransmitter<Axis>,
-    public virtual ObjectWithEventsInterface<Axis>
-{
-public:
-};
-#endif
-
 //! It can be used as a parent of an object which
 //! introduces new state axis.
 template<class Axis>
 class RObjectWithStates 
 : public virtual ObjectWithStatesInterface<Axis>,
-  public virtual StateListener,
-  public StateTransmitter<Axis>
+  public RObjectWithStatesBase
 {
 public:
   typedef typename ObjectWithStatesInterface<Axis>
@@ -170,7 +138,7 @@ public:
     return new MembWrap<AppObj>(memb);
   }
 
-  void state_changed_impl
+  void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
@@ -269,8 +237,7 @@ template<class DerivedAxis, class SplitAxis>
 class RStateSplitter 
 : public RObjectWithEvents<DerivedAxis>,
   public virtual ObjectWithEventsInterface<SplitAxis>,
-  public virtual ObjectWithStatesInterface<SplitAxis>,
-  public virtual StateListener
+  public virtual ObjectWithStatesInterface<SplitAxis>
 {
 public:
   typedef typename ObjectWithStatesInterface<DerivedAxis>
@@ -302,15 +269,11 @@ public:
       ::state_hook(memb);
   }
 
-  void state_changed_impl
+  virtual void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,    
      AbstractObjectWithStates* object,
-     const UniversalState& new_state) override
-  {
-    RObjectWithEvents<DerivedAxis>::state_changed_impl
-      (ax, state_ax, object, new_state);
-  }
+     const UniversalState& new_state) = 0;
 
 protected:
   //! The 2nd stage init.

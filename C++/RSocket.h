@@ -119,21 +119,6 @@ public:
     return is_terminal_state_event;
   }
 
-#if 0
-  void state_changed_impl
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) override
-  {
-    RObjectWithEvents<SocketBaseAxis>
-      ::state_changed_impl
-        (ax, state_ax, object, new_state);
-    StateTransmitter::state_changed_impl
-      (ax, state_ax, object, new_state);
-  }
-#endif
-
   Event is_construction_complete_event;
 
   RSocketRepository *const repository;
@@ -249,14 +234,14 @@ public:
     return SFORMAT("RSocket:" << this->fd);
   }
 
-  void state_changed_impl
+  void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override
   {
-    RSocketBase::state_changed_impl
-      (ax, state_ax, object, new_state);
+    ax.state_changed
+      (this, object, state_ax, new_state);
   }
   
   std::atomic<uint32_t>& 
