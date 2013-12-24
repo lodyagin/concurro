@@ -64,9 +64,7 @@ public:
 protected:
   void server_run() override
   {
-    auto* tc = dynamic_cast<TestConnection<Socket>*>(this);
-    assert(tc);
-    *tc << "+Soup2.0\n";
+    *this << "+Soup2.0\n";
   }
 };
 
