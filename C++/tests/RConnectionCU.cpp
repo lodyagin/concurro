@@ -120,6 +120,8 @@ RSocketAddressRepository TestConnection<ClientSocket>::sar;
 static void test_connection(bool do_abort)
 {
   RSocketAddressRepository sar;
+  //FIME max input packet 1, it cause no errors here
+  //(check also 0)
   RSocketRepository sr
     ("RConnectionCU::test_connection::sr", 1);
   RConnectionRepository con_rep

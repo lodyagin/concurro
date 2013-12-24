@@ -376,9 +376,12 @@ public:
 
   RThreadFactory *const thread_factory;
 
-  RConnectionRepository(const std::string& id,
-                        size_t reserved,
-                        RThreadFactory *const tf)
+  RConnectionRepository
+    (const std::string& id,
+     size_t reserved,
+     RThreadFactory *const tf = 
+       &StdThreadRepository::instance()
+    )
   : Parent(id, reserved), thread_factory(tf)
   {}
 };
