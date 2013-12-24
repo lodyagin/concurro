@@ -54,24 +54,49 @@ DEFINE_AXIS_TEMPL(
 
 template<class Connection, class Socket, class... Threads>
 const RState
-  <typename RSingleSocketConnection<Connection, Socket, Threads...>
-    ::State::axis>
+  <typename RSingleSocketConnection
+    <Connection, Socket, Threads...>::State::axis>
 RSingleSocketConnection<Connection, Socket, Threads...>
 ::abortingState("aborting");
 
 template<class Connection, class Socket, class... Threads>
 const RState
-  <typename RSingleSocketConnection<Connection, Socket, Threads...>
-    ::State::axis>
+  <typename RSingleSocketConnection
+    <Connection, Socket, Threads...>::State::axis>
 RSingleSocketConnection<Connection, Socket, Threads...>
 ::abortedState("aborted");
 
 template<class Connection, class Socket, class... Threads>
 const RState
-  <typename RSingleSocketConnection<Connection, Socket, Threads...>
-    ::State::axis>
+  <typename RSingleSocketConnection
+    <Connection, Socket, Threads...>::State::axis>
 RSingleSocketConnection<Connection, Socket, Threads...>
 ::clearly_closedState("clearly_closed");
+
+template<class Connection, class Socket, class... Threads>
+template<NetworkProtocol proto, IPVer ip_ver>
+RSocketConnection* 
+RSingleSocketConnection<Connection, Socket, Threads...>
+::InetClientPar<proto, ip_ver>
+//
+::create_derivation(const ObjectCreationInfo& oi) const
+{
+  assert(this->sock_addr);
+  this->socket_rep = //FIXME memory leak
+    new RSocketRepository(
+  SFORMAT(typeid(Connection).name() 
+          << ":" << oi.objectId
+          << ":RSocketRepository"),
+          max_input_packet,
+          dynamic_cast<RConnectionRepository*>
+            (oi.repository)->thread_factory
+          );
+  this->socket_rep->set_connect_timeout_u
+    (max_connection_timeout);
+  this->socket = this->socket_rep->create_object
+    (*this->sock_addr);
+  return new Connection(oi, *this);
+}
 
 
 template<class Connection, class Socket, class... Threads>
@@ -149,8 +174,9 @@ void RSingleSocketConnection<Connection, Socket, Threads...>
         (ClientSocket::closedState)
       && compare_and_move
          <
-          RSingleSocketConnection<Connection, Socket, Threads...>, 
-          SocketConnectionAxis<Socket>
+           RSingleSocketConnection
+             <Connection, Socket, Threads...>, 
+           SocketConnectionAxis<Socket>
          >
          (*this, abortingState, abortedState)
       )
@@ -166,7 +192,8 @@ void RSingleSocketConnection<Connection, Socket, Threads...>
 
   neg_compare_and_move
   <
-     RSingleSocketConnection<Connection, Socket, Threads...>, 
+     RSingleSocketConnection
+       <Connection, Socket, Threads...>, 
      SocketConnectionAxis<Socket>
   >
   (*this, st, st);

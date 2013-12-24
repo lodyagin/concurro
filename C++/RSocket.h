@@ -332,9 +332,9 @@ inline RSocketBase* RSocketAllocator
  const RSocketAddress& addr);
 
 
-class RSocketRepository
-: public Repository
-<RSocketBase, RSocketAddress, std::map, SOCKET>
+class RSocketRepository :
+  public Repository
+    <RSocketBase, RSocketAddress, std::map, SOCKET>
 {
 public:
   typedef Repository
@@ -352,7 +352,6 @@ public:
   //! @param tf The thread factory.
   RSocketRepository(
     const std::string& id,
-    size_t reserved,
     size_t max_input_packet,
     RThreadFactory *const tf =
       &StdThreadRepository::instance()

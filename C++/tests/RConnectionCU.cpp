@@ -82,7 +82,8 @@ public:
   {
     ClientPar(RSocketAddress* sa) : 
       RSingleSocketConnection::InetClientPar
-       <NetworkProtocol::TCP, IPVer::v4> (sa) 
+       <NetworkProtocol::TCP, IPVer::v4> 
+         (sa, 1000) 
     {}
 
     ClientPar(const std::string& host, uint16_t port) :
@@ -91,24 +92,6 @@ public:
               NetworkProtocol::TCP, 
               IPVer::v4 > (host, port) . front())
     {}
-
-    RSocketConnection* create_derivation
-      (const ObjectCreationInfo& oi) const
-    {
-      assert(sock_addr);
-      socket_rep = //FIXME memory leak
-        new RSocketRepository(
-          SFORMAT("TestConnection(client):" << oi.objectId
-                  << ":RSocketRepository"),
-          1,
-          1000,
-          dynamic_cast<RConnectionRepository*>
-            (oi.repository)->thread_factory
-          );
-      socket_rep->set_connect_timeout_u(3500000);
-      socket = socket_rep->create_object(*sock_addr);
-      return new TestConnection(oi, *this);
-    }
   };
 
   TestConnection(const ObjectCreationInfo& oi,
@@ -140,7 +123,7 @@ static void test_connection(bool do_abort)
 {
   RSocketAddressRepository sar;
   RSocketRepository sr
-    ("RConnectionCU::test_connection::sr", 10, 1);
+    ("RConnectionCU::test_connection::sr", 1);
   RConnectionRepository con_rep
     ("RConnectionCU::test_connection::sr", 10, 
      &StdThreadRepository::instance()

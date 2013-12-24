@@ -101,7 +101,7 @@ void test_listening_socket()
 {
   RSocketAddressRepository sar;
   RSocketRepository sr
-    ("RSocketCU::test_listening_socket::sr", 10, 1);
+    ("RSocketCU::test_listening_socket::sr", 1);
   ListeningSocket* srv_sock = 
     dynamic_cast<ListeningSocket*>
     (sr.create_object
@@ -124,7 +124,7 @@ void test_addrinuse()
 {
   RSocketAddressRepository sar;
   RSocketRepository sr
-    ("RSocketCU::test_listening_socket::sr", 10, 1);
+    ("RSocketCU::test_listening_socket::sr", 1);
   ListeningSocket* srv_sock = 
     dynamic_cast<ListeningSocket*>
     (sr.create_object
@@ -155,7 +155,7 @@ void test_addrinuse()
 void test_accept()
 {
   RSocketRepository sr
-    ("RSocketCU::test_accept::sr", 10, 1);
+    ("RSocketCU::test_accept::sr", 1);
   RSocketAddressRepository sar
     ("RSocketCU::test_accept::sar");
 
@@ -223,7 +223,6 @@ void test_client_socket_connection_refused()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_refused"
      "::sr",
-     10, 
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -251,7 +250,6 @@ void test_client_socket_connection_timed_out()
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connection_timed_out"
      "::sr",
-     10, 
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -278,7 +276,6 @@ void test_client_socket_destination_unreachable()
   RSocketRepository sr
     ("RSocketCU"
      "::test_client_socket_destination_unreachable::sr",
-     10, 
      1);
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
     (sr.create_object
@@ -304,7 +301,6 @@ void test_client_socket_connected()
   RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_client_socket_connected::sr",
-     10, 
      1000 //TODO it has not a sence in this case
      );
   ClientSocket* cli_sock = dynamic_cast<ClientSocket*>
@@ -336,7 +332,6 @@ void test_in_socket_new_msg()
   RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_in_socket_new_msg::sr",
-     10, 
      1000
       );
   sr.set_connect_timeout_u(3500000);
@@ -395,7 +390,6 @@ void test_out_socket_login()
   RSocketAddressRepository sar;
   RSocketRepository sr
     ("RSocketCU::test_out_socket_login::sr",
-     10, 
      1000
       );
   sr.set_connect_timeout_u(3500000);

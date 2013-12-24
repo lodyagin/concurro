@@ -158,13 +158,12 @@ SocketThreadWithPair::~SocketThreadWithPair()
 /*======= RSocketRepository =======*/
 /*=================================*/
 
-RSocketRepository::RSocketRepository(
-  const std::string& id,
-  size_t reserved,
+RSocketRepository::RSocketRepository
+ (const std::string& id,
   size_t max_input_packet,
-  RThreadFactory *const tf
-) : 
-  Parent(id, reserved),
+  RThreadFactory *const tf) 
+: 
+  Parent(id, 1),
   thread_factory(tf),
   connect_timeout{0},
   pending_connections_queue_size(128),

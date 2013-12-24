@@ -118,6 +118,7 @@ operator<< (std::ostream&, const RSocketConnection&);
 DECLARE_AXIS_TEMPL(SocketConnectionAxis, 
                    RSocketBase,
                    T::State::axis);
+
 /**
  * A connection which always uses only one socket defined
  * as a template parameter. There is an internal input
@@ -192,8 +193,19 @@ public:
     public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
-    InetClientPar(RSocketAddress* sa) :
-      RSocketConnection::InetClientPar<proto, ip_ver> (sa)
+    //! The max input packet size
+    //! (logical piece of data defined in upper protocol,
+    //! not a size of tcp/ip packet).
+    size_t max_input_packet = -1;
+
+    //! The connection timeout in usecs
+    uint64_t max_connection_timeout = 3500000;
+
+    InetClientPar
+      (RSocketAddress* sa, size_t max_packet) 
+    :
+       RSocketConnection::InetClientPar<proto, ip_ver>(sa),
+       max_input_packet(max_packet)
     {}
 
     InetClientPar(InetClientPar&& par)
@@ -202,6 +214,9 @@ public:
         Par(std::move(par)),
         RSocketConnection::InetClientPar<proto, ip_ver>
           (std::move(par)) {}
+
+    RSocketConnection* create_derivation
+      (const ObjectCreationInfo& oi) const override;
   };
 
   struct ServerPar : Par
