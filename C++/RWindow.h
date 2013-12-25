@@ -200,7 +200,7 @@ class RConnectedWindow : public RWindow, public StdIdMember
 {
   template<class ConnId>
   friend std::ostream&
-    operator<<(std::ostream&, const RConnectedWindow<ConnId>&);
+  operator<<(std::ostream&, const RConnectedWindow<ConnId>&);
 
   A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
                   ready);
@@ -222,20 +222,8 @@ public:
       { return id; }
   };
 
-#if 0
-  //! Create RConnectedWindows with connection_id (it is
-  //! used for logging).
-  RConnectedWindow(int connection_id = 0);
-#endif
-
   //! The copy constructor is deleted.
   RConnectedWindow(const RConnectedWindow&) = delete;
-
-#if 0
-  //! Construct a window which owns buf.
-  //TODO move to RWindow
-  explicit RConnectedWindow(RSingleBuffer* buf);
-#endif
 
   //! Will wait till underlaying buffer is discharged.
   virtual ~RConnectedWindow();
@@ -248,7 +236,9 @@ public:
   {
     return SFORMAT("RConnectedWindow:" << universal_id());
   }
-
+  
+  //! Create a new RConnectedWindow in
+  //! RConnectedWindowRepository
   static RConnectedWindow<ConnectionId>* create
     (const ConnectionId& connection_id);
 

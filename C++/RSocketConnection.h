@@ -31,6 +31,7 @@
 #define CONCURRO_RSOCKETCONNECTION_H_
 
 #include <iostream>
+#include <streambuf>
 #include <string>
 #include <memory>
 #include <vector>
@@ -48,7 +49,13 @@ namespace curr {
  * @addtogroup connections
  * @{
  */
-class RSocketConnection : public StdIdMember
+template<
+  class CharT = char, 
+  class Traits = std::char_traits<CharT>
+>
+class RSocketConnection :
+  public StdIdMember, 
+  public std::basic_streambuf<CharT, Traits>
 {
 public:
   struct Par 
@@ -92,11 +99,12 @@ public:
 
   virtual ~RSocketConnection() {}
 
-  virtual RSocketConnection&
+/*  virtual RSocketConnection&
     operator<< (const std::string&) = 0;
 
   virtual RSocketConnection& 
     operator<< (RSingleBuffer&&) = 0;
+*/
 
   //! Non-blocking close
   virtual void ask_close() = 0;
@@ -132,9 +140,15 @@ DECLARE_AXIS_TEMPL(SocketConnectionAxis,
  * this connection; it is mandatory for a server side of
  * the connection.
  */
-template<class Connection, class Socket, class... Threads>
+template<
+  class Connection, 
+  class Socket, 
+  class CharT = char,
+  class Traits = std::char_traits<CharT>,
+  class... Threads
+>
 class RSingleSocketConnection 
-: public RSocketConnection,
+: public RSocketConnection<CharT, Traits>,
   public RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
@@ -157,28 +171,27 @@ public:
   DECLARE_STATE_CONST(typename State, clearly_closed);
   //! @endcond
 
+  typedef typename Traits::int_type int_type;
+  typedef typename Traits::pos_type pos_type;
+  typedef typename Traits::off_type off_type;
+
   typedef RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
     typename Socket::State::axis
   > Splitter;
 
+  //! A common Par part both for client and server side
+  //! connections. 
   struct Par : public virtual RSocketConnection::Par
   {
-    mutable RSocketBase* socket;
-
-    Par() :
-      //sock_addr(0), // descendats must init it by an
-      // address
-      // from the address repository (sar)
-      socket(0) // descendant must create it in
-      // create_derivation 
+    Par(size_t max_packet) : max_input_packet(max_packet)
     {}
 
     Par(Par&& par) :
       RSocketConnection::Par(std::move(par)),
-      //sock_addr(par.sock_addr),
-      socket(par.socket) {}
+      socket(par.socket) 
+    {}
 
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
     get_window_par(RSocketBase* sock) const
@@ -186,26 +199,33 @@ public:
       return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
+
+    //! The max input packet size
+    //! (logical piece of data defined in upper protocol,
+    //! not a size of tcp/ip packet). NB it is protected
+    //! because for server side connections it is derived
+    //! from ListeningSocket.
+    const size_t max_input_packet;
+
+  protected:
+    //! A descendant must create it in create_derivation
+    mutable RSocketBase* socket = nullptr;
   };
 
+  //! A client side connection par.
   template<NetworkProtocol proto, IPVer ip_ver>
   struct InetClientPar :
     public Par,
     public RSocketConnection::InetClientPar<proto, ip_ver>
   {
-    //! The max input packet size
-    //! (logical piece of data defined in upper protocol,
-    //! not a size of tcp/ip packet).
-    size_t max_input_packet = -1;
-
     //! The connection timeout in usecs
     uint64_t max_connection_timeout = 3500000;
 
     InetClientPar
       (RSocketAddress* sa, size_t max_packet) 
     :
-       RSocketConnection::InetClientPar<proto, ip_ver>(sa),
-       max_input_packet(max_packet)
+       Par(max_packet),
+       RSocketConnection::InetClientPar<proto, ip_ver>(sa)
     {}
 
     InetClientPar(InetClientPar&& par)
@@ -219,9 +239,13 @@ public:
       (const ObjectCreationInfo& oi) const override;
   };
 
+  //! A server side connection par.
   struct ServerPar : Par
   {
-    ServerPar(RSocketBase* srv_sock)
+    ServerPar(RSocketBase* srv_sock) :
+      Par(srv_sock->repository
+          -> get_max_input_packet_size()
+         )
     {
       assert(srv_sock);
       this->socket = srv_sock;
@@ -246,12 +270,6 @@ public:
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override;
 
-  RSocketConnection& operator<< 
-    (const std::string&) override;
-  RSocketConnection& operator<< 
-    (RSingleBuffer&&) override;
-
-  // TODO move to separate (client side) class
   void ask_connect();
 
   void ask_close() override;
@@ -267,7 +285,27 @@ public:
   {
     return is_terminal_state_event;
   }
+
+  pos_type seekoff
+    ( 
+      off_type off, 
+      std::ios_base::seekdir dir,
+      std::ios_base::openmode which = std::ios_base::in
+    ) override;
   
+  pos_type seekpos
+    ( 
+      pos_type pos, 
+      std::ios_base::openmode which = 
+        std::ios_base::in || std::ios_base::out
+     ) override;
+
+  //! The max input packet size
+  //! (logical piece of data defined in upper protocol,
+  //! not a size of tcp/ip packet). Must be matched on
+  //! client and server.
+  const size_t max_packet_size;
+
 protected:
   RSingleSocketConnection
     (const ObjectCreationInfo& oi,
@@ -291,11 +329,18 @@ protected:
   // <NB> not virtual
   void run();
 
+  //! Start filling a new message.
+  void start_new_message();
+
+  //TODO can be nullptr for output only channels
   InSocket* socket;
-  //SocketThread* thread;
+
+  //! OutSocket*, can be nullptr if it is input only
+  //! channel. 
+  OutSocket* out_sock;
+
   RConnectedWindow<SOCKET>* in_win;
 
-protected:
   CompoundEvent is_terminal_state_event;
 
   DEFAULT_LOGGER(RSingleSocketConnection);

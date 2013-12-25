@@ -52,31 +52,42 @@ DEFINE_AXIS_TEMPL(
   }
 );
 
-template<class Connection, class Socket, class... Threads>
+#define CURR_RSOCKETCONNECTION_TEMPL_ template \
+< \
+  class Connection, \
+  class Socket, \
+  class CharT, \
+  class Traits, \
+  class... Threads \
+>
+#define CURR_RSOCKETCONNECTION_T_ \
+  Connection, Socket, CharT, Traits, Threads...
+
+CURR_RSOCKETCONNECTION_TEMPL_
 const RState
   <typename RSingleSocketConnection
-    <Connection, Socket, Threads...>::State::axis>
-RSingleSocketConnection<Connection, Socket, Threads...>
+    <CURR_RSOCKETCONNECTION_T_>::State::axis>
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 ::abortingState("aborting");
 
-template<class Connection, class Socket, class... Threads>
+CURR_RSOCKETCONNECTION_TEMPL_
 const RState
   <typename RSingleSocketConnection
-    <Connection, Socket, Threads...>::State::axis>
-RSingleSocketConnection<Connection, Socket, Threads...>
+    <CURR_RSOCKETCONNECTION_T_>::State::axis>
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 ::abortedState("aborted");
 
-template<class Connection, class Socket, class... Threads>
+CURR_RSOCKETCONNECTION_TEMPL_
 const RState
   <typename RSingleSocketConnection
-    <Connection, Socket, Threads...>::State::axis>
-RSingleSocketConnection<Connection, Socket, Threads...>
+    <CURR_RSOCKETCONNECTION_T_>::State::axis>
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 ::clearly_closedState("clearly_closed");
 
-template<class Connection, class Socket, class... Threads>
+CURR_RSOCKETCONNECTION_TEMPL_
 template<NetworkProtocol proto, IPVer ip_ver>
 RSocketConnection* 
-RSingleSocketConnection<Connection, Socket, Threads...>
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 ::InetClientPar<proto, ip_ver>
 //
 ::create_derivation(const ObjectCreationInfo& oi) const
@@ -99,8 +110,8 @@ RSingleSocketConnection<Connection, Socket, Threads...>
 }
 
 
-template<class Connection, class Socket, class... Threads>
-RSingleSocketConnection<Connection, Socket, Threads...>
+CURR_RSOCKETCONNECTION_TEMPL_
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
 ::RSingleSocketConnection
   (const ObjectCreationInfo& oi,
@@ -127,7 +138,9 @@ RSingleSocketConnection<Connection, Socket, Threads...>
     CONSTRUCT_EVENT(clearly_closed),
     CONSTRUCT_EVENT(io_ready),
     CONSTRUCT_EVENT(closed),
+    max_packet_size(par.max_input_packet_size),
     socket(dynamic_cast<InSocket*>(par.socket)),
+    out_sock(dynamic_cast<OutSocket*>(par.socket)),
     in_win(RConnectedWindowRepository<SOCKET>::instance()
            .create_object(*par.get_window_par(socket))),
     is_terminal_state_event { 
@@ -136,13 +149,43 @@ RSingleSocketConnection<Connection, Socket, Threads...>
       socket->is_terminal_state()
     }
 {
-  assert(socket);
+  assert(socket); // FIXME can be nullptr (output only)
+
   SCHECK(in_win);
   Splitter::init();
+  //SCHECK(RState<ConnectedWindowAxis>(*in_win) == 
+  //       RConnectedWindow::readyState);
+
+  if (this->out_sock) {
+    start_new_message();
+
+    // set the streambuf output position
+    char* pbeg = (reinterpret_cast<CharT*>
+      (this->out_sock->msg.data()));
+    this->setp(pbeg, pbeg, 
+               pbeg + this->out_sock->msg.capacity() 
+                 / sizeof(CharT));
+
+    this->setg(nullptr, nullptr, nullptr);
+  }
 }
 
-template<class Connection, class Socket, class... Threads>
-RSingleSocketConnection<Connection, Socket, Threads...>
+CURR_RSOCKETCONNECTION_TEMPL_
+void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+//
+::start_new_message()
+{
+  // Initialize an output buffer
+  if (this->out_sock) {
+    ( this->out_sock->msg.is_discharged() 
+    | this->out_sock->msg.is_dummy() ).wait();
+
+    this->out_sock->msg.reserve(max_packet_size, 0);
+  }
+}
+
+CURR_RSOCKETCONNECTION_TEMPL_
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
 ::~RSingleSocketConnection()
 {
@@ -151,8 +194,8 @@ RSingleSocketConnection<Connection, Socket, Threads...>
   socket_rep->delete_object(socket, true);
 }
 
-template<class Connection, class Socket, class... Threads>
-void RSingleSocketConnection<Connection, Socket, Threads...>
+CURR_RSOCKETCONNECTION_TEMPL_
+void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
 ::state_changed
   (StateAxis& ax, 
@@ -176,7 +219,7 @@ void RSingleSocketConnection<Connection, Socket, Threads...>
       && compare_and_move
          <
            RSingleSocketConnection
-             <Connection, Socket, Threads...>, 
+             <CURR_RSOCKETCONNECTION_T_>, 
            SocketConnectionAxis<Socket>
          >
          (*this, abortingState, abortedState)
@@ -194,7 +237,7 @@ void RSingleSocketConnection<Connection, Socket, Threads...>
   neg_compare_and_move
   <
      RSingleSocketConnection
-       <Connection, Socket, Threads...>, 
+       <CURR_RSOCKETCONNECTION_T_>, 
      SocketConnectionAxis<Socket>
   >
   (*this, st, st);
@@ -202,9 +245,10 @@ void RSingleSocketConnection<Connection, Socket, Threads...>
   LOG_TRACE(log, "moved to " << st);
 }
 
+#if 0
 template<class Connection, class Socket, class... Threads>
 RSocketConnection& 
-RSingleSocketConnection<Connection, Socket, Threads...>
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
 ::operator<< (const std::string& str)
 {
@@ -222,7 +266,7 @@ RSingleSocketConnection<Connection, Socket, Threads...>
 
 template<class Connection, class Socket, class... Threads>
 RSocketConnection& RSingleSocketConnection
-  <Connection, Socket, Threads...>
+  <CURR_RSOCKETCONNECTION_T_>
 //
 ::operator<< (RSingleBuffer&& buf)
 {
@@ -234,28 +278,31 @@ RSocketConnection& RSingleSocketConnection
   out_sock->msg.move(&buf);
   return *this;
 }
+#endif
 
-template<class Connection, class Socket, class... Threads>
+CURR_RSOCKETCONNECTION_TEMPL_
 void RSingleSocketConnection
   <Connection, Socket,Threads...>
 //
 ::ask_connect()
 {
-  dynamic_cast<ClientSocket*>(socket)->ask_connect();
+  auto* cs = dynamic_cast<ClientSocket*>(socket);
+  SCHECK(cs); // not a client side of a connection
+  cs->ask_connect();
 }
 
-template<class Connection, class Socket, class... Threads>
+CURR_RSOCKETCONNECTION_TEMPL_
 void RSingleSocketConnection
-  <Connection, Socket, Threads...>
+  <CURR_RSOCKETCONNECTION_T_>
 //
 ::ask_close()
 {
   socket->ask_close_out();
 }
 
-template<class Connection, class Socket, class... Threads>
+CURR_RSOCKETCONNECTION_TEMPL_
 void RSingleSocketConnection
-  <Connection, Socket, Threads...>
+  <CURR_RSOCKETCONNECTION_T_>
 //
 ::run()
 {
@@ -309,9 +356,8 @@ LClosed:
     socket->msg.clear();
 }
 
-template<class Connection, class Socket, class... Threads>
-void RSingleSocketConnection
-  <Connection, Socket, Threads...>
+CURR_RSOCKETCONNECTION_TEMPL_
+void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
 ::ask_abort()
 {
@@ -330,6 +376,65 @@ void RSingleSocketConnection
     is_aborted().wait();
 #endif
 }
+
+CURR_RSOCKETCONNECTION_TEMPL_
+pos_type RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+//
+::seekoff
+  ( 
+    off_type off, 
+    std::ios_base::seekdir dir,
+    std::ios_base::openmode which = std::ios_base::in
+  ) override
+{
+  // FIXME current window overflow
+  ...
+
+  using namespace std;
+  const pos_type end_pos = this->egptr() - this->eback();
+  safe<off_type> abs_pos(0);
+
+  switch((uint32_t)dir) {
+  case ios_base::beg: 
+    abs_pos = off;
+    break;
+  case ios_base::end:
+    abs_pos = end_pos + off;
+    break;
+  case ios_base::cur:
+    abs_pos = this->gptr() - this->eback() + off;
+    break;
+  }
+
+  if (!(bool) abs_pos || abs_pos < safe<off_type>(0)) 
+    // the rest will be checked in seekpos
+    return pos_type(off_type(-1));
+    
+  return seekpos((off_type) abs_pos);
+}
+
+CURR_RSOCKETCONNECTION_TEMPL_
+pos_type RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+//
+::seekpos
+  ( 
+    pos_type pos, 
+    std::ios_base::openmode which = std::ios_base::in
+  ) override
+{
+  // FIXME current window overflow
+  ...
+
+  const pos_type end_pos = this->egptr() - this->eback();
+
+  if (pos > end_pos || which & std::ios_base::out)
+    return pos_type(off_type(-1));
+
+  this->setg
+    (this->eback(), this->eback() + pos, this->egptr());
+  return pos;
+}
+
 
 template<class Connection>
 RServerConnectionFactory<Connection>

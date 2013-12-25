@@ -283,7 +283,8 @@ public:
      const UniversalState& new_state) = 0;
 
 protected:
-  //! The 2nd stage init.
+  //! The 2nd stage init. virtual calls / callbacks to
+  //! this are allowed only after the call.
   void init() const;
 
   std::atomic<uint32_t>& 

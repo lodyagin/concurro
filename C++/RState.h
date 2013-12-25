@@ -82,7 +82,10 @@ public:
   RState(const UniversalState& us)
     : RState((uint32_t) us) {}
 
+  //! Create RState as a current state of `obj'. The Axis
+  //! matching is checked in a compilation time.
   RState(const ObjectWithStatesInterface<Axis>& obj);
+
   std::string name () const;
 
   bool operator== (const RState<Axis>& st) const

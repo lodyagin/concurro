@@ -181,7 +181,9 @@ public:
   //! Return used buffer size
   size_t size() const override { return size_; }
   //! Mark the buffer as holding data. Also set filled.
-  //! \throw ResizeOverCapacity
+  //! \throw ResizeOverCapacity. With sz == 0 do
+  //! clear, set the state `discharge'. With sz != 0 set
+  //! the state `charged'. 
   void resize(size_t sz);
   void clear() override { resize(0); }
   void start_charging() override;
