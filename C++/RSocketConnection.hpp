@@ -109,7 +109,8 @@ RSingleSocketConnection<Connection, Socket, Threads...>
     RSocketConnection(oi, par),
     Splitter
       (dynamic_cast<Socket*>(par.socket), 
-       Socket::createdState),
+       RState<typename Socket::State::axis>
+         (dynamic_cast<Socket&>(*par.socket))),
     RObjectWithThreads<Connection>
     {
       new typename ObjectFunThread<Connection>::Par
