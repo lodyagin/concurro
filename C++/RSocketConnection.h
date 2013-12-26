@@ -286,6 +286,7 @@ public:
     return is_terminal_state_event;
   }
 
+#if 0
   pos_type seekoff
     ( 
       off_type off, 
@@ -299,6 +300,7 @@ public:
       std::ios_base::openmode which = 
         std::ios_base::in || std::ios_base::out
      ) override;
+#endif
 
   //! The max input packet size
   //! (logical piece of data defined in upper protocol,

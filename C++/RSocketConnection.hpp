@@ -377,6 +377,7 @@ void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 #endif
 }
 
+#if 0
 CURR_RSOCKETCONNECTION_TEMPL_
 pos_type RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
@@ -434,7 +435,7 @@ pos_type RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
     (this->eback(), this->eback() + pos, this->egptr());
   return pos;
 }
-
+#endif
 
 template<class Connection>
 RServerConnectionFactory<Connection>
