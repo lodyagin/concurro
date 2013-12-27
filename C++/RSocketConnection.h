@@ -286,22 +286,6 @@ public:
     return is_terminal_state_event;
   }
 
-#if 0
-  pos_type seekoff
-    ( 
-      off_type off, 
-      std::ios_base::seekdir dir,
-      std::ios_base::openmode which = std::ios_base::in
-    ) override;
-  
-  pos_type seekpos
-    ( 
-      pos_type pos, 
-      std::ios_base::openmode which = 
-        std::ios_base::in || std::ios_base::out
-     ) override;
-#endif
-
   //! The max input packet size
   //! (logical piece of data defined in upper protocol,
   //! not a size of tcp/ip packet). Must be matched on
@@ -328,11 +312,19 @@ protected:
 
   MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS;
 
+  int sync() override;
+
+  std::streamsize showmanyc() override;
+
+  int_type underflow() override;
+
   // <NB> not virtual
   void run();
 
+#if 0
   //! Start filling a new message.
   void start_new_message();
+#endif
 
   //TODO can be nullptr for output only channels
   InSocket* socket;
@@ -344,6 +336,12 @@ protected:
   RConnectedWindow<SOCKET>* in_win;
 
   CompoundEvent is_terminal_state_event;
+
+  //! The output buffer. We use 2-buffers scheme. After
+  //! chargin this buffer it is moved to the OutSocket and
+  //! can be filled while the previous portion is
+  //! transmitting by network.
+  RSingleBuffer out_buf;
 
   DEFAULT_LOGGER(RSingleSocketConnection);
 

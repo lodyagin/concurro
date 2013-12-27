@@ -147,7 +147,8 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
       is_clearly_closed_event,
       is_aborted_event,
       socket->is_terminal_state()
-    }
+    },
+    out_buf(max_packet_size, 0)
 {
   assert(socket); // FIXME can be nullptr (output only)
 
@@ -156,6 +157,10 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
   //SCHECK(RState<ConnectedWindowAxis>(*in_win) == 
   //       RConnectedWindow::readyState);
 
+#if 1
+  this->setp(nullptr, nullptr, nullptr);
+  this->setg(nullptr, nullptr, nullptr);
+#else
   if (this->out_sock) {
     start_new_message();
 
@@ -168,8 +173,10 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 
     this->setg(nullptr, nullptr, nullptr);
   }
+#endif
 }
 
+#if 0
 CURR_RSOCKETCONNECTION_TEMPL_
 void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
 //
@@ -183,6 +190,7 @@ void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
     this->out_sock->msg.reserve(max_packet_size, 0);
   }
 }
+#endif
 
 CURR_RSOCKETCONNECTION_TEMPL_
 RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
@@ -280,6 +288,68 @@ RSocketConnection& RSingleSocketConnection
 }
 #endif
 
+template<class Connection, class Socket, class... Threads>
+int RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+//
+::sync()
+{
+  if (this->out_sock) {
+    out_buf.resize(this->pptr() - this->pbase());
+    if (out_buf.state_is(RBuffer::chargedState)) {
+      RSingleBuffer& msg = this->out_sock->msg;
+      // wait completion of the previous out operation on
+      // socket if any
+      (msg.is_discharged() | msg.is_dummy()).wait();
+      // start a new socket output
+      this->out_sock->msg.move(&out_buf);
+    }
+
+    // reinitialize the output area
+    out_buf.reserve(max_packet_size, 0);
+    CharT* ptr = static_cast<CharT*>(out_buf.data());
+    this->setp
+      (ptr, ptr, ptr + buf.capacity() / sizeof(CharT));
+  }
+
+  return 0;
+}
+
+template<class Connection, class Socket, class... Threads>
+std::streamsize 
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+//
+::showmanyc()
+{
+  if (this->in_win) {
+    RWindow& in = *this->in_win;
+    if (state_is(in, RWindow::filledState)) {
+      return this->in_win->filled_size();
+    }
+  }
+  else
+    return 0;
+}
+
+template<class Connection, class Socket, class... Threads>
+int_type
+RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+//
+::underflow()
+{
+  if (this->in_win) {
+    RWindow& in = *this->in_win;
+    in.detach();
+    SCHECK(state_is(in, RWindow::readyState));
+    in.is_filled().wait(); // data from socket
+    CharT* ptr = const_cast<CharT*>
+      (reinterpret_cast<const CharT*>(in.cdata()));
+    this->setg
+      (ptr, ptr, ptr + in.filled_size() / size(CharT));
+    return *ptr;
+  }
+  return traits::eof();
+}
+
 CURR_RSOCKETCONNECTION_TEMPL_
 void RSingleSocketConnection
   <Connection, Socket,Threads...>
@@ -376,66 +446,6 @@ void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
     is_aborted().wait();
 #endif
 }
-
-#if 0
-CURR_RSOCKETCONNECTION_TEMPL_
-pos_type RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
-//
-::seekoff
-  ( 
-    off_type off, 
-    std::ios_base::seekdir dir,
-    std::ios_base::openmode which = std::ios_base::in
-  ) override
-{
-  // FIXME current window overflow
-  ...
-
-  using namespace std;
-  const pos_type end_pos = this->egptr() - this->eback();
-  safe<off_type> abs_pos(0);
-
-  switch((uint32_t)dir) {
-  case ios_base::beg: 
-    abs_pos = off;
-    break;
-  case ios_base::end:
-    abs_pos = end_pos + off;
-    break;
-  case ios_base::cur:
-    abs_pos = this->gptr() - this->eback() + off;
-    break;
-  }
-
-  if (!(bool) abs_pos || abs_pos < safe<off_type>(0)) 
-    // the rest will be checked in seekpos
-    return pos_type(off_type(-1));
-    
-  return seekpos((off_type) abs_pos);
-}
-
-CURR_RSOCKETCONNECTION_TEMPL_
-pos_type RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
-//
-::seekpos
-  ( 
-    pos_type pos, 
-    std::ios_base::openmode which = std::ios_base::in
-  ) override
-{
-  // FIXME current window overflow
-  ...
-
-  const pos_type end_pos = this->egptr() - this->eback();
-
-  if (pos > end_pos || which & std::ios_base::out)
-    return pos_type(off_type(-1));
-
-  this->setg
-    (this->eback(), this->eback() + pos, this->egptr());
-  return pos;
-}
-#endif
 
 template<class Connection>
 RServerConnectionFactory<Connection>

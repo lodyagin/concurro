@@ -131,7 +131,7 @@ void OutSocket::SelectThread::run()
 
       assert(written <= (ssize_t) out_sock->msg.size());
       if (written < (ssize_t) out_sock->msg.size())
-        THROW_NOT_IMPLEMENTED;
+        THROW_NOT_IMPLEMENTED; //FIXME!!!
 		
       out_sock->msg.clear();
       ( out_sock->msg.is_charged() 
