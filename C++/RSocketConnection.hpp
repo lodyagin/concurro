@@ -157,40 +157,9 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
   //SCHECK(RState<ConnectedWindowAxis>(*in_win) == 
   //       RConnectedWindow::readyState);
 
-#if 1
   this->setp(nullptr, nullptr, nullptr);
   this->setg(nullptr, nullptr, nullptr);
-#else
-  if (this->out_sock) {
-    start_new_message();
-
-    // set the streambuf output position
-    char* pbeg = (reinterpret_cast<CharT*>
-      (this->out_sock->msg.data()));
-    this->setp(pbeg, pbeg, 
-               pbeg + this->out_sock->msg.capacity() 
-                 / sizeof(CharT));
-
-    this->setg(nullptr, nullptr, nullptr);
-  }
-#endif
 }
-
-#if 0
-CURR_RSOCKETCONNECTION_TEMPL_
-void RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
-//
-::start_new_message()
-{
-  // Initialize an output buffer
-  if (this->out_sock) {
-    ( this->out_sock->msg.is_discharged() 
-    | this->out_sock->msg.is_dummy() ).wait();
-
-    this->out_sock->msg.reserve(max_packet_size, 0);
-  }
-}
-#endif
 
 CURR_RSOCKETCONNECTION_TEMPL_
 RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
@@ -325,6 +294,8 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
     if (state_is(in, RWindow::filledState)) {
       return this->in_win->filled_size();
     }
+    else
+      return -1;
   }
   else
     return 0;
