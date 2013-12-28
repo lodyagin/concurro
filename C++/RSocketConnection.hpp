@@ -156,9 +156,6 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
   Splitter::init();
   //SCHECK(RState<ConnectedWindowAxis>(*in_win) == 
   //       RConnectedWindow::readyState);
-
-  this->setp(nullptr, nullptr, nullptr);
-  this->setg(nullptr, nullptr, nullptr);
 }
 
 CURR_RSOCKETCONNECTION_TEMPL_
@@ -257,8 +254,13 @@ RSocketConnection& RSingleSocketConnection
 }
 #endif
 
-template<class Connection, class Socket, class... Threads>
-int RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+namspace connection {
+
+template<
+  class CharT,
+  class Traits = std::char_traits<CharT>
+>
+in basic_streambuf<CharT, Traits>
 //
 ::sync()
 {
@@ -319,6 +321,8 @@ RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
     return *ptr;
   }
   return traits::eof();
+}
+
 }
 
 CURR_RSOCKETCONNECTION_TEMPL_

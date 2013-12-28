@@ -49,6 +49,10 @@ class RWindow;
 
 /**
  * A data buffer interface.
+ *
+ * @image html RBuffer.png "Class Diagram"
+ * \n\n\n
+ * @image html RBuffer_states.png "State Chart"
  */
 class RBuffer 
   : public RObjectWithEvents<DataBufferStateAxis>

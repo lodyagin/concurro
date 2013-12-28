@@ -45,66 +45,54 @@
 
 namespace curr {
 
+namespace connection { 
+
 /**
  * @addtogroup connections
  * @{
  */
-template<
-  class CharT = char, 
-  class Traits = std::char_traits<CharT>
->
-class RSocketConnection :
-  public StdIdMember, 
-  public std::basic_streambuf<CharT, Traits>
+class abstract_connection : public StdIdMember
 {
 public:
   struct Par 
   {
+#if 0
     Par() {}
 
     Par(Par&& par) :
       socket_rep(std::move(par.socket_rep)) 
     {}
+#endif
 
-    virtual ~Par() {}
+    //! The connection timeout in usecs
+    uint64_t max_connection_timeout = 3500000;
 
-    virtual RSocketConnection* create_derivation
-      (const ObjectCreationInfo& oi) const = 0;
+    PAR_DEFAULT_ABSTRACT(abstract_connection);
 
-    virtual RSocketConnection* transform_object
-      (const RSocketConnection*) const
-    { THROW_NOT_IMPLEMENTED; }
-
+#if 0
     //! Must be inited from derived classes.
     //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
     mutable RSocketRepository* socket_rep;
-   //mutable std::unique_ptr<RSocketRepository> socket_rep;
+#endif
   };
 
+#if 0
   //! Parameters to create a client side of an Internet
   //! connection. 
   template<NetworkProtocol proto, IPVer ip_ver>
   struct InetClientPar : public virtual Par
   {
-    //! Available addresses for socket(s)
-    //RSocketAddressRepository* sar;
-    const RSocketAddress* sock_addr;
-
     InetClientPar(RSocketAddress* sa) : sock_addr(sa)
     {
       assert(sock_addr);
     }
   };
+#endif
 
-  virtual ~RSocketConnection() {}
+  virtual ~abstract_connection() {}
 
-/*  virtual RSocketConnection&
-    operator<< (const std::string&) = 0;
-
-  virtual RSocketConnection& 
-    operator<< (RSingleBuffer&&) = 0;
-*/
+  virtual void ask_connect() = 0;
 
   //! Non-blocking close
   virtual void ask_close() = 0;
@@ -113,7 +101,7 @@ public:
   virtual void ask_abort() = 0;
 
 protected:
-  RSocketConnection
+  abstract_connection
     (const ObjectCreationInfo& oi,
      const Par& par);
 
@@ -121,7 +109,64 @@ protected:
 };
 
 std::ostream&
-operator<< (std::ostream&, const RSocketConnection&);
+operator<< (std::ostream&, const abstract_connection&);
+
+/**
+  * A connection-based streambuf.
+  */
+template<
+  class CharT,
+  class Traits = std::char_traits<CharT>
+>
+class basic_streambuf : 
+  public std::basic_streambuf<CharT, Traits>
+{
+public:
+  basic_streambuf(abstract_connection* con) :
+    c(con)
+  {
+    assert(con);
+
+    this->setp(nullptr, nullptr, nullptr);
+    this->setg(nullptr, nullptr, nullptr);
+  }
+
+protected:
+  int sync() override;
+
+  std::streamsize showmanyc() override;
+
+  int_type underflow() override;
+
+  abstract_connection* c;
+};
+
+
+//! Allows define a server thread as a virtual method
+//! override.
+template<class Connection>
+class abstract_server
+{
+public:
+  struct Par : ObjectFunThread<Connection>::Par
+  {
+    Par(SOCKET fd) : 
+      ObjectFunThread<Connection>::Par
+        (SFORMAT
+          (typeid(abstract_server<Connection>). name() 
+           << fd),
+         [](abstract_server& obj)
+         {
+           obj.server_run();
+         }
+        )
+     {}
+  };
+
+  virtual void server_run() = 0;
+};
+
+namespace single_socket {
 
 DECLARE_AXIS_TEMPL(SocketConnectionAxis, 
                    RSocketBase,
@@ -147,8 +192,8 @@ template<
   class Traits = std::char_traits<CharT>,
   class... Threads
 >
-class RSingleSocketConnection 
-: public RSocketConnection<CharT, Traits>,
+class connection 
+: public abstract_connection<CharT, Traits>,
   public RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
@@ -183,13 +228,13 @@ public:
 
   //! A common Par part both for client and server side
   //! connections. 
-  struct Par : public virtual RSocketConnection::Par
+  struct Par : virtual abstract_connection::Par
   {
     Par(size_t max_packet) : max_input_packet(max_packet)
     {}
 
     Par(Par&& par) :
-      RSocketConnection::Par(std::move(par)),
+      abstract_connection::Par(std::move(par)),
       socket(par.socket) 
     {}
 
@@ -214,28 +259,26 @@ public:
 
   //! A client side connection par.
   template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar :
-    public Par,
-    public RSocketConnection::InetClientPar<proto, ip_ver>
+  struct InetClientPar : Par
   {
-    //! The connection timeout in usecs
-    uint64_t max_connection_timeout = 3500000;
+    //! Available addresses for socket(s)
+    const RSocketAddress* sock_addr;
 
-    InetClientPar
-      (RSocketAddress* sa, size_t max_packet) 
-    :
-       Par(max_packet),
-       RSocketConnection::InetClientPar<proto, ip_ver>(sa)
-    {}
+    InetClientPar(RSocketAddress* sa, size_t max_packet) :
+      Par(max_packet),
+      sock_addr(sa)
+    {
+      assert(sock_addr);
+    }
 
     InetClientPar(InetClientPar&& par)
-      : RSocketConnection::Par(std::move(par)),
+      : abstract_connection::Par(std::move(par)),
                             // virtual base
         Par(std::move(par)),
-        RSocketConnection::InetClientPar<proto, ip_ver>
+        abstract_connection::InetClientPar<proto, ip_ver>
           (std::move(par)) {}
 
-    RSocketConnection* create_derivation
+    abstract_connection* create_derivation
       (const ObjectCreationInfo& oi) const override;
   };
 
@@ -257,7 +300,7 @@ public:
       : Par(std::move(par))
     {}
 
-    RSocketConnection* create_derivation
+    abstract_connection* create_derivation
       (const ObjectCreationInfo& oi) const
     {
       return new Connection(oi, *this);
@@ -270,7 +313,7 @@ public:
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override;
 
-  void ask_connect();
+  void ask_connect() override;
 
   void ask_close() override;
 
@@ -293,10 +336,10 @@ public:
   const size_t max_packet_size;
 
 protected:
-  RSingleSocketConnection
+  connection
     (const ObjectCreationInfo& oi,
      const Par& par);
-  ~RSingleSocketConnection();
+  ~connection();
 
   std::atomic<uint32_t>&
   current_state(const curr::StateAxis& ax) override
@@ -311,12 +354,6 @@ protected:
   } 
 
   MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS;
-
-  int sync() override;
-
-  std::streamsize showmanyc() override;
-
-  int_type underflow() override;
 
   // <NB> not virtual
   void run();
@@ -343,46 +380,17 @@ protected:
   //! transmitting by network.
   RSingleBuffer out_buf;
 
-  DEFAULT_LOGGER(RSingleSocketConnection);
+  DEFAULT_LOGGER(connection);
 
 public:
   //! A current window
   RConnectedWindow<SOCKET>& iw() { return *in_win; }
 };
 
-namespace connection { 
-
-//! Allows define a server thread as a virtual method
-//! override.
-template<class Connection>
-class abstract_server
-{
-public:
-  struct Par : ObjectFunThread<Connection>::Par
-  {
-    Par(SOCKET fd) : 
-      ObjectFunThread<Connection>::Par
-        (SFORMAT
-          (typeid(abstract_server<Connection>). name() 
-           << fd),
-         [](abstract_server& obj)
-         {
-           obj.server_run();
-         }
-        )
-     {}
-  };
-
-  virtual void server_run() = 0;
-};
-
-namespace single_socket {
-
 //! This class defines a server thread, you can inherit
 //! from it and overwrite server_run().
 template<class Connection, class Socket, class... Threads>
-class server :
-  public RSingleSocketConnection
+class server : public connection
   <
     Connection, 
     Socket,
@@ -393,29 +401,29 @@ class server :
   public abstract_server<Connection>
 {
 protected:
-  using RSingleSocketConnection
+  using connection
   <
     Connection, 
     Socket,
     typename abstract_server<Connection>::Par,
     //!< a server thread par
     Threads...
-  >::RSingleSocketConnection;
+  >::connection;
 };
 
 }}
 
 class RConnectionRepository
 : public Repository<
-  RSocketConnection, 
-  RSocketConnection::Par,
+  abstract_connection, 
+  abstract_connection::Par,
   std::vector,
   size_t>
 {
 public:
   typedef Repository<
-    RSocketConnection, 
-    RSocketConnection::Par,
+    abstract_connection, 
+    abstract_connection::Par,
     std::vector,
     size_t> Parent;
 
