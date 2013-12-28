@@ -53,6 +53,9 @@ namespace connection {
  */
 class abstract_connection : public StdIdMember
 {
+  template<class CharT, class Traits>
+  friend class basic_streambuf;
+
 public:
   struct Par 
   {
@@ -105,7 +108,21 @@ protected:
     (const ObjectCreationInfo& oi,
      const Par& par);
 
+  //! Writes data from out_buf. Returns false if the
+  //! connection is closed. It can blocks.
+  virtual bool push_out() = 0;
+
+  //! Reads data in in_buf. Returns false if there is no
+  //! data and the connection is closed. It can blocks.
+  virtual bool pull_in() = 0;
+
   RSocketRepository* socket_rep;
+
+  //! The buffer with an input message
+  RSingleBuffer in_buf;
+
+  //! The buffer for an output message
+  RSingleBuffer out_buf;
 };
 
 std::ostream&
@@ -122,6 +139,10 @@ class basic_streambuf :
   public std::basic_streambuf<CharT, Traits>
 {
 public:
+  typedef typename Traits::int_type int_type;
+  typedef typename Traits::pos_type pos_type;
+  typedef typename Traits::off_type off_type;
+
   basic_streambuf(abstract_connection* con) :
     c(con)
   {
@@ -134,10 +155,10 @@ public:
 protected:
   int sync() override;
 
-  std::streamsize showmanyc() override;
-
   int_type underflow() override;
 
+  int_type overflow(int_type ch = traits::eof()) override;
+	
   abstract_connection* c;
 };
 
@@ -215,10 +236,6 @@ public:
   DECLARE_STATE_CONST(typename State, aborted);
   DECLARE_STATE_CONST(typename State, clearly_closed);
   //! @endcond
-
-  typedef typename Traits::int_type int_type;
-  typedef typename Traits::pos_type pos_type;
-  typedef typename Traits::off_type off_type;
 
   typedef RStateSplitter
   <

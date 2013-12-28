@@ -260,69 +260,71 @@ template<
   class CharT,
   class Traits = std::char_traits<CharT>
 >
-in basic_streambuf<CharT, Traits>
+int basic_streambuf<CharT, Traits>
 //
 ::sync()
 {
-  if (this->out_sock) {
-    out_buf.resize(this->pptr() - this->pbase());
-    if (out_buf.state_is(RBuffer::chargedState)) {
-      RSingleBuffer& msg = this->out_sock->msg;
-      // wait completion of the previous out operation on
-      // socket if any
-      (msg.is_discharged() | msg.is_dummy()).wait();
-      // start a new socket output
-      this->out_sock->msg.move(&out_buf);
-    }
+  // send the current buffer
+  c->out_buf.resize(this->pptr() - this->pbase());
+  if (!c->push_out())
+    return -1;
 
-    // reinitialize the output area
-    out_buf.reserve(max_packet_size, 0);
-    CharT* ptr = static_cast<CharT*>(out_buf.data());
-    this->setp
-      (ptr, ptr, ptr + buf.capacity() / sizeof(CharT));
-  }
+  // reinitialize the buffer
+  c->out_buf.reserve(c->max_packet_size, 0);
+
+  // start charging
+  CharT* ptr = static_cast<CharT*>(c->out_buf.data());
+  this->setp
+    (ptr, 
+     ptr, 
+     ptr + c->out_buf.capacity() / sizeof(CharT));
 
   return 0;
 }
 
-template<class Connection, class Socket, class... Threads>
-std::streamsize 
-RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
-//
-::showmanyc()
-{
-  if (this->in_win) {
-    RWindow& in = *this->in_win;
-    if (state_is(in, RWindow::filledState)) {
-      return this->in_win->filled_size();
-    }
-    else
-      return -1;
-  }
-  else
-    return 0;
-}
-
-template<class Connection, class Socket, class... Threads>
-int_type
-RSingleSocketConnection<CURR_RSOCKETCONNECTION_T_>
+template<
+  class CharT,
+  class Traits = std::char_traits<CharT>
+>
+int_type basic_streambuf<CharT, Traits>
 //
 ::underflow()
 {
-  if (this->in_win) {
-    RWindow& in = *this->in_win;
-    in.detach();
-    SCHECK(state_is(in, RWindow::readyState));
-    in.is_filled().wait(); // data from socket
-    CharT* ptr = const_cast<CharT*>
-      (reinterpret_cast<const CharT*>(in.cdata()));
-    this->setg
-      (ptr, ptr, ptr + in.filled_size() / size(CharT));
-    return *ptr;
-  }
-  return traits::eof();
+  // release the current input buffer
+  c->in_buf.clear();
+
+  // get new data
+  if (!c->pull_in())
+    return traits::eof();
+
+  // start reading
+  CharT* ptr = const_cast<CharT*>
+    (reinterpret_cast<const CharT*>(in.cdata()));
+  this->setg
+    (ptr, 
+     ptr, 
+     ptr + in.filled_size() / size(CharT));
+
+  return Traits::to_int_type(*ptr);
 }
 
+template<
+  class CharT,
+  class Traits = std::char_traits<CharT>
+>
+int_type basic_streambuf<CharT, Traits>
+//
+::overflow(int_type ch)
+{
+  if (sync() == 0) {
+    if (!Traits::eq_int_type(ch, Traits::eof())) {
+      assert(epptr() > pbase());
+      *pbase() = Traits::to_char_type(ch);
+      pbump(1);
+    }
+    return Traits::eof() + 1;
+  }
+  return Traits::eof();
 }
 
 CURR_RSOCKETCONNECTION_TEMPL_
