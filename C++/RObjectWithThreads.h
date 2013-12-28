@@ -217,9 +217,22 @@ protected:
     }
   {
   }
-    
 };
 
+//! Create a thread which runs RunProvider::run()
+template<class RunProvider>
+struct RunProviderPar : typename ObjectFunThread<RunProvider>::Par
+{
+  Par(const RunProvider& rp) : 
+    typename ObjectFunThread<RunProvider>::Par
+    ( rp.run_thread_name(),
+      [](RunProvider& obj)
+      {
+        obj.run();
+      }
+    )
+  {}
+};
 
 //! @}
 

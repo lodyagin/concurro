@@ -192,9 +192,13 @@ template<class Parent>
 class bulk 
 <
   Parent,
-  std::enable_if<!std::is_base_of<stream_marker, bulk>::value>::type,
+  std::enable_if<
+    !std::is_base_of<stream_marker, bulk>::value
+    && std::is_base_of<with_threads_marker, bulk>::value
+  >::type
 > 
-: public Parent, public bulk_marker
+: public Parent<RunProviderPar<bulk<Parent>>>,
+  public bulk_marker
 {
 public:
   //! A current window
