@@ -43,13 +43,13 @@ operator<< (std::ostream& out, const RSocketConnection& c)
   return out;
 }
 
-RSocketConnection::RSocketConnection
-(const ObjectCreationInfo& oi,
- const Par& par)
-  : StdIdMember(oi.objectId),
-    socket_rep(std::move(par.socket_rep))
+abstract_connection::abstract_connection
+  (const ObjectCreationInfo& oi,
+   const Par& par)
+: 
+  StdIdMember(oi.objectId),
+  max_packet_size(par.max_packet_size)
 {
-  assert(socket_rep);
 }
 
 DEFINE_AXIS(

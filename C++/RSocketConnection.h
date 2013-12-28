@@ -59,39 +59,20 @@ class abstract_connection : public StdIdMember
 public:
   struct Par 
   {
-#if 0
-    Par() {}
-
-    Par(Par&& par) :
-      socket_rep(std::move(par.socket_rep)) 
-    {}
-#endif
-
     //! The connection timeout in usecs
     uint64_t max_connection_timeout = 3500000;
 
+    //! The max packet size
+    //! (logical piece of data defined in the upper
+    //! protocol, not a size of tcp/ip packet).
+    size_t max_packet;
+
+    Par(size_t max_packet) :
+      max_packet_size(max_packet)
+    {}
+
     PAR_DEFAULT_ABSTRACT(abstract_connection);
-
-#if 0
-    //! Must be inited from derived classes.
-    //! A scope of a socket repository can be any: per
-    //! connection, per connection type, global etc.
-    mutable RSocketRepository* socket_rep;
-#endif
   };
-
-#if 0
-  //! Parameters to create a client side of an Internet
-  //! connection. 
-  template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar : public virtual Par
-  {
-    InetClientPar(RSocketAddress* sa) : sock_addr(sa)
-    {
-      assert(sock_addr);
-    }
-  };
-#endif
 
   virtual ~abstract_connection() {}
 
@@ -102,6 +83,13 @@ public:
 
   //! Skip all data (non-blocking)
   virtual void ask_abort() = 0;
+
+  //! The max packet size
+  //! (logical piece of data defined in the upper protocol,
+  //! not a size of tcp/ip packet). Mast be matched on
+  //! client and server. For server side
+  //! connections it is got from ListeningSocket.
+  const size_t max_packet_size;
 
 protected:
   abstract_connection
@@ -115,8 +103,6 @@ protected:
   //! Reads data in in_buf. Returns false if there is no
   //! data and the connection is closed. It can blocks.
   virtual bool pull_in() = 0;
-
-  RSocketRepository* socket_rep;
 
   //! The buffer with an input message
   RSingleBuffer in_buf;
@@ -146,7 +132,8 @@ public:
   basic_streambuf(abstract_connection* con) :
     c(con)
   {
-    assert(con);
+    assert(c);
+    assert(c->max_packet_size > 0);
 
     this->setp(nullptr, nullptr, nullptr);
     this->setg(nullptr, nullptr, nullptr);
@@ -187,7 +174,60 @@ public:
   virtual void server_run() = 0;
 };
 
-namespace single_socket {
+/**
+  * A connection for fast block reading (without copying
+  * memory). It uses RWindow for direct access to input
+  * packets.
+  */
+template<
+  class Parent,
+  class Connection, 
+  class Socket, 
+  class... Threads
+>
+class bulk : 
+  public Parent<Connection, Socket, Threads...>
+{
+public:
+  //! A current window
+  RConnectedWindow<SOCKET>& iw() { return *in_win; }
+
+protected:
+  bulk(const ObjectCreationInfo& oi, const Par& par);
+
+  RConnectedWindow<SOCKET>* in_win;
+};
+
+//! This class defines a server thread, you can inherit
+//! from it and overwrite server_run().
+template<
+  class Parent,
+  class Connection, 
+  class Socket, 
+  class... Threads
+>
+class server : public Parent
+  <
+    Connection, 
+    Socket,
+    typename abstract_server<Connection>::Par,
+    //!< a server thread par
+    Threads...
+  >,
+  public abstract_server<Connection>
+{
+protected:
+  using Parent
+  <
+    Connection, 
+    Socket,
+    typename abstract_server<Connection>::Par,
+    //!< a server thread par
+    Threads...
+  >::Parent;
+};
+
+namespace socket {
 
 DECLARE_AXIS_TEMPL(SocketConnectionAxis, 
                    RSocketBase,
@@ -206,15 +246,9 @@ DECLARE_AXIS_TEMPL(SocketConnectionAxis,
  * this connection; it is mandatory for a server side of
  * the connection.
  */
-template<
-  class Connection, 
-  class Socket, 
-  class CharT = char,
-  class Traits = std::char_traits<CharT>,
-  class... Threads
->
+template<class Connection, class Socket, class... Threads>
 class connection 
-: public abstract_connection<CharT, Traits>,
+: public abstract_connection,
   public RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
@@ -262,14 +296,12 @@ public:
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
 
-    //! The max input packet size
-    //! (logical piece of data defined in upper protocol,
-    //! not a size of tcp/ip packet). NB it is protected
-    //! because for server side connections it is derived
-    //! from ListeningSocket.
-    const size_t max_input_packet;
-
   protected:
+    //! Must be inited from derived classes.
+    //! A scope of a socket repository can be any: per
+    //! connection, per connection type, global etc.
+    mutable RSocketRepository* socket_rep = nullptr;
+
     //! A descendant must create it in create_derivation
     mutable RSocketBase* socket = nullptr;
   };
@@ -341,16 +373,10 @@ public:
     return socket;
   }
 
-  CompoundEvent is_terminal_state() const override
+  /*CompoundEvent is_terminal_state() const override
   {
     return is_terminal_state_event;
-  }
-
-  //! The max input packet size
-  //! (logical piece of data defined in upper protocol,
-  //! not a size of tcp/ip packet). Must be matched on
-  //! client and server.
-  const size_t max_packet_size;
+  }*/
 
 protected:
   connection
@@ -372,60 +398,25 @@ protected:
 
   MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS;
 
+  bool push_out() override;
+
+  bool pull_in() override;
+
   // <NB> not virtual
   void run();
 
-#if 0
-  //! Start filling a new message.
-  void start_new_message();
-#endif
+  RSocketRepository* socket_rep;
 
   //TODO can be nullptr for output only channels
-  InSocket* socket;
+  InSocket* in_sock;
 
   //! OutSocket*, can be nullptr if it is input only
   //! channel. 
   OutSocket* out_sock;
 
-  RConnectedWindow<SOCKET>* in_win;
-
   CompoundEvent is_terminal_state_event;
 
-  //! The output buffer. We use 2-buffers scheme. After
-  //! chargin this buffer it is moved to the OutSocket and
-  //! can be filled while the previous portion is
-  //! transmitting by network.
-  RSingleBuffer out_buf;
-
   DEFAULT_LOGGER(connection);
-
-public:
-  //! A current window
-  RConnectedWindow<SOCKET>& iw() { return *in_win; }
-};
-
-//! This class defines a server thread, you can inherit
-//! from it and overwrite server_run().
-template<class Connection, class Socket, class... Threads>
-class server : public connection
-  <
-    Connection, 
-    Socket,
-    typename abstract_server<Connection>::Par,
-    //!< a server thread par
-    Threads...
-  >,
-  public abstract_server<Connection>
-{
-protected:
-  using connection
-  <
-    Connection, 
-    Socket,
-    typename abstract_server<Connection>::Par,
-    //!< a server thread par
-    Threads...
-  >::connection;
 };
 
 }}

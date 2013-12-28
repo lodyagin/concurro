@@ -52,7 +52,8 @@ public:
     return RSocketBase::universal_id();
   }
 
-  //! The last received data
+  //! The last received data. It is charged by each new IP
+  //! packet.
   RSingleBuffer msg;
 
 protected:
