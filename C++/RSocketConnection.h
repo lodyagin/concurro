@@ -338,14 +338,12 @@ public:
       return new Connection(oi, *this);
     }
 
-#if 0
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
     get_window_par(RSocketBase* sock) const
     {
       return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
-#endif
 
   protected:
     //! A scope of a socket repository can be any: per

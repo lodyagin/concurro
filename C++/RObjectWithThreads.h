@@ -30,11 +30,13 @@
 #ifndef CONCURRO_ROBJECTWITHTHREADS_H_
 #define CONCURRO_ROBJECTWITHTHREADS_H_
 
-#include "RThread.h"
-#include "ConstructibleObject.h"
 #include <list>
 #include <queue>
 #include <functional>
+#include <type_traits>
+
+#include "RThread.h"
+#include "ConstructibleObject.h"
 
 namespace curr {
 
@@ -181,8 +183,8 @@ struct with_threads_marker {};
 template<
   class Parent, 
   class Final,
-  class ... Threads,
-  class Enable = void
+  class Enable = void,
+  class... Threads
 >
 class with_threads;
 
@@ -190,13 +192,19 @@ class with_threads;
 template<
   class Parent,
   class Final,
-  class ... Threads,
-  std::enable_if<!std::is_base_of<with_threads_marker, bulk>::value>::type
+  class... Threads
 >
-class with_threads :
+class with_threads<
+  Parent, Final, 
+  typename std::enable_if<
+    !std::is_base_of<with_threads_marker, Parent>::value
+  >::type,
+  Threads...
+>
+ :
   public Parent,
   public RObjectWithThreads<Final>,
-  public with_threads_mark
+  public with_threads_marker
 {
 public:
   /*struct Par 
@@ -211,7 +219,7 @@ protected:
     (const ObjectCreationInfo& oi, const Par& par)
   :
     Parent(oi, par),
-    RObjectWithThreads<Connection>
+    RObjectWithThreads<Final>
     {
       new Threads(/*par.name()*/)...
     }
