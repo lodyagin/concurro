@@ -157,6 +157,7 @@ const RState
 connection<CURR_RSOCKETCONNECTION_T_>
 ::clearly_closedState("clearly_closed");
 
+#if 0
 CURR_RSOCKETCONNECTION_TEMPL_
 template<NetworkProtocol proto, IPVer ip_ver>
 abstract_connection* 
@@ -181,9 +182,10 @@ connection<CURR_RSOCKETCONNECTION_T_>
     (*this->sock_addr);
   return new Connection(oi, *this);
 }
+#endif
 
 
- CURR_RSOCKETCONNECTION_TEMPL_
+CURR_RSOCKETCONNECTION_TEMPL_
 connection<CURR_RSOCKETCONNECTION_T_>
 //
 ::connection
@@ -195,17 +197,6 @@ connection<CURR_RSOCKETCONNECTION_T_>
       (dynamic_cast<Socket*>(par.socket), 
        RState<typename Socket::State::axis>
          (dynamic_cast<Socket&>(*par.socket))),
-    RObjectWithThreads<Connection>
-    {
-      new typename ObjectFunThread<Connection>::Par
-        ( SFORMAT(typeid(*this).name() << par.socket->fd),
-          [](connection& obj)
-          {
-            obj.run();
-          }
-        ),
-      new Threads(par.socket->fd)...
-    },
     CONSTRUCT_EVENT(aborting),
     CONSTRUCT_EVENT(aborted),
     CONSTRUCT_EVENT(clearly_closed),

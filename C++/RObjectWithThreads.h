@@ -176,6 +176,51 @@ protected:
   }
 };
 
+struct with_threads_marker {};
+
+template<
+  class Parent, 
+  class Final,
+  class ... Threads,
+  class Enable = void
+>
+class with_threads;
+
+// TODO check it is abstract
+template<
+  class Parent,
+  class Final,
+  class ... Threads,
+  std::enable_if<!std::is_base_of<with_threads_marker, bulk>::value>::type
+>
+class with_threads :
+  public Parent,
+  public RObjectWithThreads<Final>,
+  public with_threads_mark
+{
+public:
+  /*struct Par 
+  {
+    virtual std::string name() = 0;
+  };*/
+
+  using typename Parent::Par;
+
+protected:
+  with_threads
+    (const ObjectCreationInfo& oi, const Par& par)
+  :
+    Parent(oi, par),
+    RObjectWithThreads<Connection>
+    {
+      new Threads(/*par.name()*/)...
+    }
+  {
+  }
+    
+};
+
+
 //! @}
 
 }

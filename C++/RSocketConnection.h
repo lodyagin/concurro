@@ -174,6 +174,9 @@ public:
   virtual void server_run() = 0;
 };
 
+struct stream_marker {};
+struct bulk_marker {};
+
 /**
   * A connection for fast block reading (without copying
   * memory). It uses RWindow for direct access to input
@@ -181,12 +184,17 @@ public:
   */
 template<
   class Parent,
-  class Connection, 
-  class Socket, 
-  class... Threads
+  class Enable = void
 >
-class bulk : 
-  public Parent<Connection, Socket, Threads...>
+class bulk;
+
+template<class Parent>
+class bulk 
+<
+  Parent,
+  std::enable_if<!std::is_base_of<stream_marker, bulk>::value>::type,
+> 
+: public Parent, public bulk_marker
 {
 public:
   //! A current window
@@ -196,6 +204,32 @@ protected:
   bulk(const ObjectCreationInfo& oi, const Par& par);
 
   RConnectedWindow<SOCKET>* in_win;
+};
+
+template<
+  class Parent,
+  class Connection, 
+  class Socket, 
+  class CharT,
+  class Traits = std::traits<CharT>,
+  class Enable = vold,
+  class... Threads
+>
+class stream;
+
+template<
+  class Parent,
+  class Connection, 
+  class Socket, 
+  class CharT,
+  class Traits = std::traits<CharT>,
+  std::enable_if<!std::is_base_of<bulk_marker, bulk>::value>::type,
+  class... Threads
+>
+class stream :
+  public Parent<Connection, Socket, Threads...>,
+  public stream_marker
+{
 };
 
 //! This class defines a server thread, you can inherit
@@ -253,8 +287,7 @@ class connection
   <
     SocketConnectionAxis<Socket>, 
     typename Socket::State::axis
-  >,
-  public RObjectWithThreads<Connection>
+  >
 {
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborted);
@@ -279,33 +312,44 @@ public:
 
   //! A common Par part both for client and server side
   //! connections. 
-  struct Par : virtual abstract_connection::Par
+  struct Par : abstract_connection::Par
   {
-    Par(size_t max_packet) : max_input_packet(max_packet)
-    {}
+    RSocketBase* socket;
 
-    Par(Par&& par) :
-      abstract_connection::Par(std::move(par)),
-      socket(par.socket) 
-    {}
+    Par(RSocketBase* sock) 
+    : 
+      abstract_connection::Par
+        (sock->repository
+          -> get_max_input_packet_size()),
+      socket(sock),
+      socket_rep(sock->repository)
+    {
+      assert(socket);
+      assert(socket_rep);
+    }
 
+    abstract_connection* create_derivation
+      (const ObjectCreationInfo& oi) const override
+    {
+      return new Connection(oi, *this);
+    }
+
+#if 0
     virtual std::unique_ptr<RConnectedWindow<SOCKET>::Par>
     get_window_par(RSocketBase* sock) const
     {
       return std::unique_ptr<RConnectedWindow<SOCKET>::Par>
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
+#endif
 
   protected:
-    //! Must be inited from derived classes.
     //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
-    mutable RSocketRepository* socket_rep = nullptr;
-
-    //! A descendant must create it in create_derivation
-    mutable RSocketBase* socket = nullptr;
+    RSocketRepository* socket_rep;
   };
 
+#if 0
   //! A client side connection par.
   template<NetworkProtocol proto, IPVer ip_ver>
   struct InetClientPar : Par
@@ -355,6 +399,7 @@ public:
       return new Connection(oi, *this);
     }
   };
+#endif
 
   void state_changed
     (StateAxis& ax, 
