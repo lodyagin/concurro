@@ -65,7 +65,7 @@ public:
     //! The max packet size
     //! (logical piece of data defined in the upper
     //! protocol, not a size of tcp/ip packet).
-    size_t max_packet;
+    size_t max_packet_size;
 
     Par(size_t max_packet) :
       max_packet_size(max_packet)
@@ -144,12 +144,13 @@ protected:
 
   int_type underflow() override;
 
-  int_type overflow(int_type ch = traits::eof()) override;
+  int_type overflow(int_type ch = Traits::eof()) override;
 	
   abstract_connection* c;
 };
 
 
+#if 0
 //! Allows define a server thread as a virtual method
 //! override.
 template<class Connection>
@@ -173,6 +174,7 @@ public:
 
   virtual void server_run() = 0;
 };
+#endif
 
 struct stream_marker {};
 struct bulk_marker {};
@@ -183,24 +185,31 @@ struct bulk_marker {};
   * packets.
   */
 template<
-  class Parent,
-  class Enable = void
+  template<class...> class Parent,
+  class Enable = void,
+  class... Ts
 >
 class bulk;
 
-template<class Parent>
+template<template<class...> class Parent, class... Ts>
 class bulk 
 <
   Parent,
-  std::enable_if<
-    !std::is_base_of<stream_marker, bulk>::value
-    && std::is_base_of<with_threads_marker, bulk>::value
-  >::type
+  typename std::enable_if<
+    !std::is_base_of<stream_marker, Parent<Ts...>>::value
+    && std::is_base_of
+      <with_threads_marker, Parent<Ts...>>::value
+  >::type,
+  Ts...
 > 
-: public Parent<RunProviderPar<bulk<Parent>>>,
+: public Parent<Ts..., RunProviderPar<bulk<Parent>>>,
   public bulk_marker
 {
 public:
+  typedef Parent<Ts..., RunProviderPar<bulk<Parent>>>
+    ParentT;
+  typedef typename ParentT::Par Par;
+
   //! A current window
   RConnectedWindow<SOCKET>& iw() { return *in_win; }
 
@@ -211,27 +220,24 @@ protected:
 };
 
 template<
-  class Parent,
-  class Connection, 
-  class Socket, 
+  template<class...> class Parent,
   class CharT,
-  class Traits = std::traits<CharT>,
+  class Traits = std::char_traits<CharT>,
   class Enable = vold,
-  class... Threads
+  class... Ts
 >
 class stream;
 
 template<
-  class Parent,
-  class Connection, 
-  class Socket, 
+  template<class...> class Parent,
   class CharT,
-  class Traits = std::traits<CharT>,
-  std::enable_if<!std::is_base_of<bulk_marker, bulk>::value>::type,
-  class... Threads
+  class Traits = std::char_traits<CharT>,
+  std::enable_if
+    <!std::is_base_of<bulk_marker, bulk>::value>::type,
+  class... Ts
 >
 class stream :
-  public Parent<Connection, Socket, Threads...>,
+  public Parent<Ts...>,
   public stream_marker
 {
 };
@@ -240,19 +246,9 @@ class stream :
 //! from it and overwrite server_run().
 template<
   class Parent,
-  class Connection, 
-  class Socket, 
-  class... Threads
+  class... Ts
 >
-class server : public Parent
-  <
-    Connection, 
-    Socket,
-    typename abstract_server<Connection>::Par,
-    //!< a server thread par
-    Threads...
-  >,
-  public abstract_server<Connection>
+class server : public Parent<Ts...>
 {
 protected:
   using Parent
