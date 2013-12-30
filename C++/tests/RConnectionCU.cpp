@@ -81,11 +81,18 @@ protected:
 };
 
 template<>
-class TestConnection<ClientSocket> final : 
-  public connection::socket::connection
+class TestConnection<ClientSocket> final 
+: 
+  public connection::bulk
   <
-    TestConnection<ClientSocket>,
-    ClientSocket
+    with_threads,
+    // with_threads template parameters:
+    connection::socket::connection
+    <
+      TestConnection<ClientSocket>,
+      ClientSocket
+    >,
+    TestConnection<ClientSocket>
   >
 {
 public:
@@ -99,7 +106,7 @@ public:
 
   TestConnection(const ObjectCreationInfo& oi,
                  const Par& par)
-    : curr::connection::socket::connection(oi, par)
+    : Parent(oi, par)
   {
     this->complete_construction();
   }
@@ -114,7 +121,12 @@ public:
     return "TestConnection(Client)";
   }
 
-  static RSocketAddressRepository sar;
+  CompoundEvent is_terminal_state() override
+  {
+    return this->is_terminal_state_event;
+  }
+
+  //static RSocketAddressRepository sar;
 };
 
 template<class Socket>

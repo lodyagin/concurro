@@ -185,33 +185,36 @@ struct bulk_marker {};
   * memory). It uses RWindow for direct access to input
   * packets.
   */
-template<
+/*template<
   template<class...> class Parent,
   class Enable = void,
   class... Ts
 >
-class bulk;
+class bulk;*/
 
 #define CURR_CON_ENABLE_BULK_ \
   typename std::enable_if< \
     !std::is_base_of<stream_marker, Parent<Ts...>>::value\
     && std::is_base_of \
       <with_threads_marker, Parent<Ts...>>::value \
-  >::type
+  > //::type
 
 template<template<class...> class Parent, class... Ts>
 class bulk 
-<
+/*<
   Parent,
   CURR_CON_ENABLE_BULK_,
   Ts...
-> 
+> */
 : public Parent<
     Ts..., 
     RunProviderPar<bulk<Parent, std::true_type, Ts...>>
   >,
-  public bulk_marker
+  bulk_marker,
+  EnableClassIf<Parent<Ts...>(Ts...), CURR_CON_ENABLE_BULK_>
 {
+  using bulk::EnableClassIf::EnableClassIf;
+
 public:
   typedef Parent<
     Ts..., 

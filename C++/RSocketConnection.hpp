@@ -105,12 +105,12 @@ basic_streambuf<CharT, Traits>
 }
 
 template<template<class...> class Parent, class... Ts>
-bulk<Parent, CURR_CON_ENABLE_BULK_, Ts...>
+bulk<Parent, Ts...>
 //
 ::bulk
   (const ObjectCreationInfo& oi, 
    const typename bulk
-     <Parent, CURR_CON_ENABLE_BULK_, Ts...>::Par& par
+     <Parent, Ts...>::Par& par
   )
 :
   ParentT(oi, par),
@@ -121,7 +121,7 @@ bulk<Parent, CURR_CON_ENABLE_BULK_, Ts...>
 }
 
 template<template<class...> class Parent, class... Ts>
-void bulk<Parent, CURR_CON_ENABLE_BULK_, Ts...>
+void bulk<Parent, Ts...>
 //
 ::run()
 {
