@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -38,6 +38,7 @@
 
 #include "Repository.h"
 #include "RSocket.h"
+#include "OutSocket.h"
 #include "RSocketAddress.h"
 #include "ListeningSocket.h"
 #include "RWindow.h"
@@ -114,6 +115,32 @@ protected:
 std::ostream&
 operator<< (std::ostream&, const abstract_connection&);
 
+class repository
+: public Repository<
+  abstract_connection, 
+  abstract_connection::Par,
+  std::vector,
+  size_t>
+{
+public:
+  typedef Repository<
+    abstract_connection, 
+    abstract_connection::Par,
+    std::vector,
+    size_t> Parent;
+
+  RThreadFactory *const thread_factory;
+
+  repository
+    (const std::string& id,
+     size_t reserved,
+     RThreadFactory *const tf = 
+       &StdThreadRepository::instance()
+    )
+  : Parent(id, reserved), thread_factory(tf)
+  {}
+};
+
 /**
   * A connection-based streambuf.
   */
@@ -150,32 +177,6 @@ protected:
 };
 
 
-#if 0
-//! Allows define a server thread as a virtual method
-//! override.
-template<class Connection>
-class abstract_server
-{
-public:
-  struct Par : ObjectFunThread<Connection>::Par
-  {
-    Par(SOCKET fd) : 
-      ObjectFunThread<Connection>::Par
-        (SFORMAT
-          (typeid(abstract_server<Connection>). name() 
-           << fd),
-         [](abstract_server& obj)
-         {
-           obj.server_run();
-         }
-        )
-     {}
-  };
-
-  virtual void server_run() = 0;
-};
-#endif
-
 struct stream_marker {};
 struct bulk_marker {};
 
@@ -191,23 +192,31 @@ template<
 >
 class bulk;
 
+#define CURR_CON_ENABLE_BULK_ \
+  typename std::enable_if< \
+    !std::is_base_of<stream_marker, Parent<Ts...>>::value\
+    && std::is_base_of \
+      <with_threads_marker, Parent<Ts...>>::value \
+  >::type
+
 template<template<class...> class Parent, class... Ts>
 class bulk 
 <
   Parent,
-  typename std::enable_if<
-    !std::is_base_of<stream_marker, Parent<Ts...>>::value
-    && std::is_base_of
-      <with_threads_marker, Parent<Ts...>>::value
-  >::type,
+  CURR_CON_ENABLE_BULK_,
   Ts...
 > 
-: public Parent<Ts..., RunProviderPar<bulk<Parent>>>,
+: public Parent<
+    Ts..., 
+    RunProviderPar<bulk<Parent, std::true_type, Ts...>>
+  >,
   public bulk_marker
 {
 public:
-  typedef Parent<Ts..., RunProviderPar<bulk<Parent>>>
-    ParentT;
+  typedef Parent<
+    Ts..., 
+    RunProviderPar<bulk<Parent, std::true_type, Ts...>>
+  > ParentT;
   typedef typename ParentT::Par Par;
 
   //! A current window
@@ -216,6 +225,8 @@ public:
 protected:
   bulk(const ObjectCreationInfo& oi, const Par& par);
 
+  void run();
+
   RConnectedWindow<SOCKET>* in_win;
 };
 
@@ -223,7 +234,7 @@ template<
   template<class...> class Parent,
   class CharT,
   class Traits = std::char_traits<CharT>,
-  class Enable = vold,
+  class Enable = void,
   class... Ts
 >
 class stream;
@@ -231,34 +242,72 @@ class stream;
 template<
   template<class...> class Parent,
   class CharT,
-  class Traits = std::char_traits<CharT>,
-  std::enable_if
-    <!std::is_base_of<bulk_marker, bulk>::value>::type,
+  class Traits,
   class... Ts
 >
-class stream :
-  public Parent<Ts...>,
-  public stream_marker
+class stream
+<
+  Parent, CharT, Traits,
+  typename std::enable_if<
+    !std::is_base_of<bulk_marker, Parent<Ts...>>::value
+    && std::is_base_of
+      <with_threads_marker, Parent<Ts...>>::value
+  >::type,
+  Ts...
+> 
+: public Parent<
+    Ts..., 
+    RunProviderPar<stream<Parent, std::true_type, Ts...>>
+  >,
+  stream_marker
 {
+public:
+  typedef Parent<
+    Ts..., 
+    RunProviderPar<stream<Parent, std::true_type, Ts...>>
+  > ParentT;
 };
 
+struct server_marker {};
+
 //! This class defines a server thread, you can inherit
-//! from it and overwrite server_run().
+//! from it and overwrite run_server().
 template<
-  class Parent,
+  template<class...> class Parent, 
+  class Enable = void,
   class... Ts
 >
-class server : public Parent<Ts...>
+class server;
+
+template<template<class...> class Parent, class... Ts>
+class server
+<
+  Parent,
+  typename std::enable_if<
+    !std::is_base_of<server_marker, Parent<Ts...>>::value
+    && std::is_base_of
+      <with_threads_marker, Parent<Ts...>>::value
+  >::type,
+  Ts...
+> 
+: public Parent<
+    Ts..., 
+    RunProviderPar<server<Parent, std::true_type, Ts...>>
+  >,
+  server_marker
 {
+public:
+  typedef Parent<
+    Ts..., 
+    RunProviderPar<server<Parent, std::true_type, Ts...>>
+  > ParentT;
+  typedef typename ParentT::Par Par;
+
 protected:
-  using Parent
-  <
-    Connection, 
-    Socket,
-    typename abstract_server<Connection>::Par,
-    //!< a server thread par
-    Threads...
-  >::Parent;
+  server(const ObjectCreationInfo& oi, const Par& par);
+
+  virtual void run_server() = 0;
+  void run() { this-> run_server(); }
 };
 
 namespace socket {
@@ -411,10 +460,10 @@ public:
 
   void ask_abort() override;
 
-  RSocketBase* get_socket()
+  /*RSocketBase* get_socket()
   {
     return socket;
-  }
+  }*/
 
   /*CompoundEvent is_terminal_state() const override
   {
@@ -462,34 +511,6 @@ protected:
   DEFAULT_LOGGER(connection);
 };
 
-}}
-
-class RConnectionRepository
-: public Repository<
-  abstract_connection, 
-  abstract_connection::Par,
-  std::vector,
-  size_t>
-{
-public:
-  typedef Repository<
-    abstract_connection, 
-    abstract_connection::Par,
-    std::vector,
-    size_t> Parent;
-
-  RThreadFactory *const thread_factory;
-
-  RConnectionRepository
-    (const std::string& id,
-     size_t reserved,
-     RThreadFactory *const tf = 
-       &StdThreadRepository::instance()
-    )
-  : Parent(id, reserved), thread_factory(tf)
-  {}
-};
-
 DECLARE_AXIS(ServerConnectionFactoryAxis, 
              ListeningSocketAxis);
 
@@ -517,14 +538,14 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   * @enddot
   */
 template<class Connection>
-class RServerConnectionFactory final
-  : public RStateSplitter
-      <ServerConnectionFactoryAxis, ListeningSocketAxis>,
-    public RConnectionRepository
+class server_factory final :
+  public RStateSplitter
+    <ServerConnectionFactoryAxis, ListeningSocketAxis>,
+  public repository
 {
 public:
   //! Accepts ListeningSocket in the bound state.
-  RServerConnectionFactory
+  server_factory
     (ListeningSocket* l_sock, size_t reserved);
 
   CompoundEvent is_terminal_state() const override
@@ -539,7 +560,7 @@ protected:
   class Threads final : public RObjectWithThreads<Threads>
   {
   public:
-    Threads(RServerConnectionFactory* o);
+    Threads(server_factory* o);
 
     ~Threads() { this->destroy(); }
 
@@ -548,7 +569,7 @@ protected:
       return CompoundEvent();
     }
 
-    RServerConnectionFactory* obj;
+    server_factory* obj;
 
   } threads;
 
@@ -559,7 +580,7 @@ protected:
     {
       Par() : 
         ObjectThread<Threads>::Par
-          ("RServerConnectionFactory::Threads::"
+          ("curr::connection::server_factory::Threads::"
            "ListenThread")
       {}
 
@@ -587,6 +608,9 @@ protected:
 
   ListeningSocket* lstn_sock;
 };
+
+} // namespace socket
+} // namespace connection
 
 //! @}
 

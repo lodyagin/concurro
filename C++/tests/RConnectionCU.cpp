@@ -31,19 +31,31 @@ int RConnectionCUClean()
   return 0;
 }
 
+//using namespace connection;
+
 template<class Socket>
 class TestConnection final : 
-  public connection::single_socket::server
-    <TestConnection<Socket>, Socket>
+  public connection::server
+  <
+    connection::socket::connection,
+    // socket::connection template parameters:
+    TestConnection<Socket>,
+    Socket
+  >
 {
 public:
-  typedef connection::single_socket::server
-    <TestConnection<Socket>, Socket> Parent;
+  typedef connection::server
+  <
+    connection::socket::connection,
+    // socket::connection template parameters:
+    TestConnection<Socket>,
+    Socket
+  > Parent;
 
-  typedef typename Parent::ServerPar ServerPar;
+  typedef typename Parent::Par Par;
 
   TestConnection(const ObjectCreationInfo& oi,
-                 const ServerPar& par)
+                 const Par& par)
     : Parent(oi, par)
   {
     this->complete_construction();
@@ -69,32 +81,25 @@ protected:
 };
 
 template<>
-class TestConnection<ClientSocket> : 
-  public RSingleSocketConnection
-    <TestConnection<ClientSocket>, ClientSocket>
+class TestConnection<ClientSocket> final : 
+  public connection::socket::connection
+  <
+    TestConnection<ClientSocket>,
+    ClientSocket
+  >
 {
 public:
-  struct ClientPar : 
-    RSingleSocketConnection::InetClientPar
-      <NetworkProtocol::TCP, IPVer::v4>
-  {
-    ClientPar(RSocketAddress* sa) : 
-      RSingleSocketConnection::InetClientPar
-       <NetworkProtocol::TCP, IPVer::v4> 
-         (sa, 1000) 
-    {}
+  typedef curr::connection::socket::connection
+  <
+    TestConnection<ClientSocket>,
+    ClientSocket
+  > Parent;
 
-    ClientPar(const std::string& host, uint16_t port) :
-      ClientPar(sar.create_addresses
-            < SocketSide::Client, 
-              NetworkProtocol::TCP, 
-              IPVer::v4 > (host, port) . front())
-    {}
-  };
+  typedef typename Parent::Par Par;
 
   TestConnection(const ObjectCreationInfo& oi,
                  const Par& par)
-    : RSingleSocketConnection(oi, par)
+    : curr::connection::socket::connection(oi, par)
   {
     this->complete_construction();
   }

@@ -36,25 +36,36 @@
 
 namespace curr {
 
+namespace connection { 
+
 std::ostream&
-operator<< (std::ostream& out, const RSocketConnection& c)
+operator<< (std::ostream& out, const abstract_connection& c)
 {
   out << "<connection>";
   return out;
 }
 
-abstract_connection::abstract_connection
+abstract_connection
+//
+::abstract_connection
   (const ObjectCreationInfo& oi,
-   const Par& par)
-: 
+   const Par& par) 
+:
   StdIdMember(oi.objectId),
-  max_packet_size(par.max_packet_size)
+  max_packet_size(par.max_packet_size),
+  out_buf(max_packet_size, 0)
 {
+  SCHECK(max_packet_size > 0);
 }
 
-DEFINE_AXIS(
+namespace socket {
+
+DEFINE_AXIS_NS(
   ServerConnectionFactoryAxis,
   {}, {}
 );
 
 }
+}
+}
+

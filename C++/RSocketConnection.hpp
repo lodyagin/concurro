@@ -40,10 +40,7 @@ namespace curr {
 
 namespace connection {
 
-template<
-  class CharT,
-  class Traits = std::char_traits<CharT>
->
+template<class CharT, class Traits>
 int basic_streambuf<CharT, Traits>
 //
 ::sync()
@@ -66,11 +63,9 @@ int basic_streambuf<CharT, Traits>
   return 0;
 }
 
-template<
-  class CharT,
-  class Traits = std::char_traits<CharT>
->
-int_type basic_streambuf<CharT, Traits>
+template<class CharT, class Traits>
+typename basic_streambuf<CharT, Traits>::int_type 
+basic_streambuf<CharT, Traits>
 //
 ::underflow()
 {
@@ -79,37 +74,95 @@ int_type basic_streambuf<CharT, Traits>
 
   // get new data
   if (!c->pull_in())
-    return traits::eof();
+    return Traits::eof();
 
   // start reading
   CharT* ptr = const_cast<CharT*>
-    (reinterpret_cast<const CharT*>(in.cdata()));
+    (reinterpret_cast<const CharT*>(c->in_buf.cdata()));
   this->setg
     (ptr, 
      ptr, 
-     ptr + in.filled_size() / size(CharT));
+     ptr + c->in_buf.capacity() / sizeof(CharT));
 
   return Traits::to_int_type(*ptr);
 }
 
-template<
-  class CharT,
-  class Traits = std::char_traits<CharT>
->
-int_type basic_streambuf<CharT, Traits>
+template<class CharT, class Traits>
+typename basic_streambuf<CharT, Traits>::int_type 
+basic_streambuf<CharT, Traits>
 //
 ::overflow(int_type ch)
 {
   if (sync() == 0) {
     if (!Traits::eq_int_type(ch, Traits::eof())) {
-      assert(epptr() > pbase());
-      *pbase() = Traits::to_char_type(ch);
-      pbump(1);
+      assert(this->epptr() > this->pbase());
+      *this->pbase() = Traits::to_char_type(ch);
+      this->pbump(1);
     }
     return Traits::eof() + 1;
   }
   return Traits::eof();
 }
+
+template<template<class...> class Parent, class... Ts>
+bulk<Parent, CURR_CON_ENABLE_BULK_, Ts...>
+//
+::bulk
+  (const ObjectCreationInfo& oi, 
+   const typename bulk
+     <Parent, CURR_CON_ENABLE_BULK_, Ts...>::Par& par
+  )
+:
+  ParentT(oi, par),
+  in_win(RConnectedWindowRepository<SOCKET>::instance()
+    .create_object(*par.get_window_par(this->in_sock)))
+{
+  SCHECK(in_win);
+}
+
+template<template<class...> class Parent, class... Ts>
+void bulk<Parent, CURR_CON_ENABLE_BULK_, Ts...>
+//
+::run()
+{
+  typedef Logger<LOG::Connections> clog;
+
+  //<NB> it is not a thread run(), it is called from it
+  this->in_sock->is_construction_complete_event.wait();
+
+  for (;;) {
+    if (this->pull_in()) {
+      iw().is_wait_for_buffer().wait();
+      LOG_DEBUG(clog, iw() << " asked for more data");
+      iw().new_buffer(std::move(this->in_buf));
+    }
+    else {
+      if (this->is_aborting().signalled()) {
+        LOG_DEBUG(clog, "the connection is aborting");
+        goto LAborting;
+      }
+      else if (this->is_terminal_state().signalled()) {
+        LOG_DEBUG(clog, "the connection is closing");
+        goto LClosed;
+      }
+      SCHECK(false);
+    }
+  }
+
+LAborting:
+  this->is_aborting().wait();
+  this->ask_close();
+  this->in_sock->InSocket::is_terminal_state().wait();
+  // No sence to start aborting while a socket is working
+  this->iw().detach();
+
+LClosed:
+  if (!STATE_OBJ(RBuffer, state_is, this->in_sock->msg, 
+                 discharged))
+    this->in_sock->msg.clear();
+}
+
+namespace socket {
 
 DEFINE_AXIS_TEMPL(
   SocketConnectionAxis, RSocketBase,
@@ -124,8 +177,6 @@ DEFINE_AXIS_TEMPL(
     { "closed", "aborting" }
   }
 );
-
-namespace single_socket {
 
 #define CURR_RSOCKETCONNECTION_TEMPL_ template \
 < \
@@ -209,11 +260,10 @@ connection<CURR_RSOCKETCONNECTION_T_>
       is_clearly_closed_event,
       is_aborted_event,
       in_sock->is_terminal_state()
-    },
-    out_buf(max_packet_size, 0)
+    }
 {
   assert(socket_rep);
-  assert(socket); // FIXME can be nullptr (output only)
+  assert(in_sock || out_sock);
 
   Splitter::init();
   //SCHECK(RState<ConnectedWindowAxis>(*in_win) == 
@@ -227,7 +277,7 @@ connection<CURR_RSOCKETCONNECTION_T_>
 {
   SCHECK(this->destructor_delegate_is_called);
   is_terminal_state_event.wait();
-  socket_rep->delete_object(socket, true);
+  //socket_rep->delete_object(socket, true);
 }
 
 CURR_RSOCKETCONNECTION_TEMPL_
@@ -322,8 +372,8 @@ void connection
 //
 ::ask_connect()
 {
-  auto* cs = dynamic_cast<ClientSocket*>(socket);
-  SCHECK(cs); // not a client side of a connection
+  auto* cs = dynamic_cast<ClientSocket*>(in_sock);
+  SCHECK(cs); // it is a client side of a connection
   cs->ask_connect();
 }
 
@@ -392,7 +442,7 @@ bool connection<CURR_RSOCKETCONNECTION_T_>
   | this->is_terminal_state() ). wait();
 
   LOG_DEBUG
-    (clog, *in_sock << " has a new state or packet");
+    (log, *in_sock << " has a new state or packet");
 
   if (in_sock->msg.is_charged().signalled()) {
     in_buf.move(&in_sock->msg);
@@ -401,83 +451,16 @@ bool connection<CURR_RSOCKETCONNECTION_T_>
   else return false;
 }
 
-template<
-  class Parent,
-  class Connection, 
-  class Socket, 
-  class... Threads
->
-bulk<Parent, Connection, Socket, Threads...>
-//
-::bulk(const ObjectCreationInfo& oi, const Par& par)
-  :
-  Parent(oi, par),
-  in_win(RConnectedWindowRepository<SOCKET>::instance()
-    .create_object(*par.get_window_par(in_sock)))
-{
-  SCHECK(in_win);
-}
-
-template<
-  class Parent,
-  class Connection, 
-  class Socket, 
-  class... Threads
->
-void bulk<Parent, Connection, Socket, Threads...>
-//
-::run()
-{
-  typedef Logger<LOG::Connections> clog;
-
-  //<NB> it is not a thread run(), it is called from it
-  in_sock->is_construction_complete_event.wait();
-
-  for (;;) {
-    if (pull_in()) {
-      iw().is_wait_for_buffer().wait();
-      LOG_DEBUG(clog, iw() << " asked for more data");
-      iw().new_buffer(std::move(in_buf));
-    }
-    else {
-      if (is_aborting().signalled()) {
-        LOG_DEBUG(clog, "the connection is aborting");
-        goto LAborting;
-      }
-      else if (is_terminal_state().signalled()) {
-        LOG_DEBUG(clog, "the connection is closing");
-        goto LClosed;
-      }
-      SCHECK(false);
-    }
-  }
-
-LAborting:
-  is_aborting().wait();
-  ask_close();
-  in_sock->InSocket::is_terminal_state().wait();
-  // No sence to start aborting while a socket is working
-  iw().detach();
-
-LClosed:
-  if (!STATE_OBJ(RBuffer, state_is, in_sock->msg, 
-                 discharged))
-    in_sock->msg.clear();
-}
-
-} // namespace single_socket
-} // namespace connection
-
 template<class Connection>
-RServerConnectionFactory<Connection>
+server_factory<Connection>
 //
-::RServerConnectionFactory
+::server_factory
   (ListeningSocket* l_sock, size_t reserved)
 : 
   RStateSplitter
     <ServerConnectionFactoryAxis, ListeningSocketAxis>
       (l_sock, ListeningSocket::boundState),
-  RConnectionRepository
+  repository
     ( typeid(*this).name(), 
       reserved,
       &StdThreadRepository::instance()),
@@ -493,12 +476,12 @@ RServerConnectionFactory<Connection>
 }
 
 template<class Connection>
-RServerConnectionFactory<Connection>::Threads
+server_factory<Connection>::Threads
 //
-::Threads(RServerConnectionFactory* o) :
+::Threads(server_factory* o) :
   RObjectWithThreads<Threads>
   { 
-    new typename RServerConnectionFactory<Connection>
+    new typename server_factory<Connection>
       ::ListenThread::Par() 
   },
   obj(o)
@@ -506,11 +489,11 @@ RServerConnectionFactory<Connection>::Threads
 }
 
 template<class Connection>
-void RServerConnectionFactory<Connection>
+void server_factory<Connection>
 //
 ::ListenThread::run()
 {
-  RServerConnectionFactory* fact = this->object->obj;
+  server_factory* fact = this->object->obj;
   ListeningSocket* lstn_sock = fact->lstn_sock;
 
   assert(lstn_sock);
@@ -532,7 +515,9 @@ void RServerConnectionFactory<Connection>
   }
 }
 
-}
+} // namespace socket
+} // namespace connection
+} // namespace curr
 
 #endif
 
