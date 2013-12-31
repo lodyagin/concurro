@@ -197,6 +197,43 @@ public:
       uint32_t to) = 0;
 };
 
+struct state_finalizer_marker {};
+
+template<template<class...> class Parent, class... Ts>
+class state_finalizer : 
+  public Parent<Ts...>,
+  state_finalizer_marker,
+  EnableClassIf<
+    !std::is_base_of
+      <state_finalizer_marker, Parent<Ts...>>::value
+  >
+{
+public:
+  using Parent::Parent;
+
+  void state_changed(
+    curr::StateAxis& ax,
+    const curr::StateAxis& state_ax,
+    curr::AbstractObjectWithStates* object,
+    const curr::UniversalState& new_state) override
+  { \
+    ax.state_changed(this, object, state_ax, new_state); \
+  } \
+  \
+  std::atomic<uint32_t>& \
+    current_state(const curr::StateAxis& ax) override \
+  { \
+    return ax.current_state(this); \
+  } \
+  \
+  const std::atomic<uint32_t>& \
+    current_state(const curr::StateAxis& ax) const override \
+  { \
+    return ax.current_state(this); \
+  } 
+};
+
+
 #define MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS        \
 void state_changed(                                     \
   curr::StateAxis& ax, \
