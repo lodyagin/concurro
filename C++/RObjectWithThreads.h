@@ -181,30 +181,21 @@ protected:
 struct with_threads_marker {};
 
 template<
-  class Parent, 
-  class Final,
-  class Enable = void,
-  class... Threads
->
-class with_threads;
-
-// TODO check it is abstract
-template<
   class Parent,
   class Final,
   class... Threads
 >
-class with_threads<
-  Parent, Final, 
-  typename std::enable_if<
-    !std::is_base_of<with_threads_marker, Parent>::value
-  >::type,
-  Threads...
->
- :
+class with_threads 
+:
   public Parent,
   public RObjectWithThreads<Final>,
-  public with_threads_marker
+  with_threads_marker,
+  EnableClassIf<
+    Parent,
+    typename std::enable_if<
+      !std::is_base_of<with_threads_marker, Parent>::value
+    >
+  >
 {
 public:
   /*struct Par 

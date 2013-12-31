@@ -200,20 +200,16 @@ class bulk;*/
   > //::type
 
 template<template<class...> class Parent, class... Ts>
-class bulk 
-/*<
-  Parent,
-  CURR_CON_ENABLE_BULK_,
-  Ts...
-> */
-: public Parent<
+class bulk : 
+  public Parent
+  <
     Ts..., 
     RunProviderPar<bulk<Parent, std::true_type, Ts...>>
   >,
   bulk_marker,
-  EnableClassIf<Parent<Ts...>(Ts...), CURR_CON_ENABLE_BULK_>
+  EnableClassIf<Parent<Ts...>, CURR_CON_ENABLE_BULK_>
 {
-  using bulk::EnableClassIf::EnableClassIf;
+//  using bulk::EnableClassIf::EnableClassIf;
 
 public:
   typedef Parent<

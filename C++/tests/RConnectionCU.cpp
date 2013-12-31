@@ -71,7 +71,12 @@ public:
     return "TestConnection(Server)";
   }
 
-  static RSocketAddressRepository sar;
+  CompoundEvent is_terminal_state() const override
+  {
+    return this->is_terminal_state_event;
+  }
+
+  //static RSocketAddressRepository sar;
 
 protected:
   void server_run() override
@@ -83,6 +88,17 @@ protected:
 template<>
 class TestConnection<ClientSocket> final 
 : 
+#if 0
+  public with_threads
+  <
+    curr::connection::socket::connection
+    <
+      TestConnection<ClientSocket>,
+      ClientSocket
+    >,
+    TestConnection<ClientSocket>, int, int
+  > 
+#else
   public connection::bulk
   <
     with_threads,
@@ -94,12 +110,19 @@ class TestConnection<ClientSocket> final
     >,
     TestConnection<ClientSocket>
   >
+#endif
 {
 public:
-  typedef curr::connection::socket::connection
+  typedef connection::bulk
   <
-    TestConnection<ClientSocket>,
-    ClientSocket
+    with_threads,
+    // with_threads template parameters:
+    connection::socket::connection
+    <
+      TestConnection<ClientSocket>,
+      ClientSocket
+    >,
+    TestConnection<ClientSocket>
   > Parent;
 
   typedef typename Parent::Par Par;
@@ -121,7 +144,7 @@ public:
     return "TestConnection(Client)";
   }
 
-  CompoundEvent is_terminal_state() override
+  CompoundEvent is_terminal_state() const override
   {
     return this->is_terminal_state_event;
   }
