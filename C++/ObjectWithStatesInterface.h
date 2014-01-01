@@ -30,11 +30,10 @@
 #ifndef CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 #define CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 
-//#include "Logging.h"
-//#include "StateMap.h"
+#include <typeinfo>
+#include "types/meta.h"
 #include "StateAxis.h"
 #include "Event.h"
-#include <typeinfo>
 
 namespace curr {
 
@@ -203,7 +202,7 @@ template<template<class...> class Parent, class... Ts>
 class state_finalizer : 
   public Parent<Ts...>,
   state_finalizer_marker,
-  EnableClassIf<
+  types::EnableClassIf<
     !std::is_base_of
       <state_finalizer_marker, Parent<Ts...>>::value
   >
@@ -216,20 +215,20 @@ public:
     const curr::StateAxis& state_ax,
     curr::AbstractObjectWithStates* object,
     const curr::UniversalState& new_state) override
-  { \
-    ax.state_changed(this, object, state_ax, new_state); \
-  } \
-  \
-  std::atomic<uint32_t>& \
-    current_state(const curr::StateAxis& ax) override \
-  { \
-    return ax.current_state(this); \
-  } \
-  \
-  const std::atomic<uint32_t>& \
-    current_state(const curr::StateAxis& ax) const override \
-  { \
-    return ax.current_state(this); \
+  {
+    ax.state_changed(this, object, state_ax, new_state);
+  }
+
+  std::atomic<uint32_t>&
+    current_state(const curr::StateAxis& ax) override
+  {
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>&
+    current_state(const curr::StateAxis& ax) const override
+  {
+    return ax.current_state(this);
   } 
 };
 

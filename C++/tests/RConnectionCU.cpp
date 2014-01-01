@@ -88,19 +88,9 @@ protected:
 template<>
 class TestConnection<ClientSocket> final 
 : 
-#if 0
-  public with_threads
+  public state_finalizer
   <
-    curr::connection::socket::connection
-    <
-      TestConnection<ClientSocket>,
-      ClientSocket
-    >,
-    TestConnection<ClientSocket>, int, int
-  > 
-#else
-  public connection::bulk
-  <
+    connection::bulk,
     with_threads,
     // with_threads template parameters:
     connection::socket::connection
@@ -110,11 +100,11 @@ class TestConnection<ClientSocket> final
     >,
     TestConnection<ClientSocket>
   >
-#endif
 {
 public:
-  typedef connection::bulk
+  typedef state_finalizer
   <
+    connection::bulk,
     with_threads,
     // with_threads template parameters:
     connection::socket::connection
