@@ -53,10 +53,15 @@ class RSystemError : public SException
 public:
   const int error_code;
 
-  RSystemError(int err_code, 
-          const std::string& msg = std::string())
-  : SException(SFORMAT("System error : " 
-                << rErrorMsg(err_code) << ' ')),
+  RSystemError
+    (int err_code, 
+     const std::string& msg = std::string())
+  : 
+    SException
+      (SFORMAT
+        ("System error : " 
+         << (msg.empty() ? rErrorMsg(err_code) : msg)
+         << ' ')),
    error_code(err_code) {}
 };
 
@@ -66,53 +71,55 @@ class RSocketError : public RSystemError
 {
 public:
   RSocketError(int err_code, 
-          const std::string& msg = std::string())
+               const std::string& msg = std::string())
    : RSystemError(err_code, msg) {}
 };
 
+#if 0
 #ifdef _WIN32
 #define rSocketCheck(cond) \
 { \
   if (!(cond)) \
-   THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
+   THROW_EXCEPTION(RSocketError, WSAGetLastError()); \
 }
 #else
 #define rSocketCheck(cond) \
 { \
   if (!(cond)) {   \
-    THROW_EXCEPTION (RSystemError, errno); \
+    THROW_EXCEPTION (RSocketError, errno); \
   } \
 }
 #endif
+#endif
 
+inline void rSocketCheck
+  (bool cond, //!< a positive condition
 #ifdef _WIN32
-#define rSocketCheck(cond) \
-{ \
-  if (!(cond)) \
-   THROW_EXCEPTION(RSystemError, WSAGetLastError()); \
-}
+   int err_code = WSAGetLastError(),
 #else
-#define rSocketCheck(cond) \
-{ \
-  if (!(cond)) {   \
-    THROW_EXCEPTION (RSystemError, errno); \
-  } \
-}
+   int err_code = errno,
 #endif
+   const std::string& msg = std::string())
+{
+  if (!cond)
+    THROW_EXCEPTION(RSocketError, err_code, msg);
+}
 
+#if 0
 #ifdef _WIN32
 #define rSocketCheckWithMsg(cond, msg)          \
 { \
   if (!(cond)) \
-   THROW_EXCEPTION(RSystemError, WSAGetLastError(),msg);\
+   THROW_EXCEPTION(RSocketError, WSAGetLastError(),msg);\
 }
 #else
 #define rSocketCheckWithMsg(cond, msg)        \
 { \
   if (!(cond)) {   \
-    THROW_EXCEPTION (RSystemError, errno, msg);    \
+    THROW_EXCEPTION (RSocketError, errno, msg);    \
   } \
 }
+#endif
 #endif
 
 }

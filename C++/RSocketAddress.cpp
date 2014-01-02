@@ -116,12 +116,17 @@ size_t AddressRequestBase
     SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
                        node == NULL));
 
+    const int gai_res = getaddrinfo
+      (node,
+       SFORMAT(port).c_str(), 
+       &hints, &ai_);
 
-    rSocketCheck(
-      getaddrinfo(node,
-                  SFORMAT(port).c_str(), 
-                  &hints, &ai_) 
-      == 0);
+    rSocketCheck
+      (gai_res == 0, 
+       gai_res, 
+       SFORMAT(gai_strerror(gai_res) << " ([" << host
+               << "], " << port << ")")
+       );
 
     aw_ptr = std::make_shared<AddrinfoWrapper>(ai_);
   }
