@@ -35,6 +35,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <type_traits>
 
 #include "Repository.h"
 #include "RSocket.h"
@@ -190,24 +191,19 @@ class bulk :
   public Parent
   <
     Ts..., 
-    RunProviderPar<bulk<Parent, std::true_type, Ts...>>
+    RunProviderPar<bulk<Parent, Ts...>>
   >,
-  bulk_marker,
-  EnableClassIf<
-    Parent<Ts...>, 
-    std::enable_if<
-      !std::is_base_of<stream_marker, Parent<Ts...>>::value
-      && std::is_base_of 
-        <with_threads_marker, Parent<Ts...>>::value 
-    >
-  >
+  std::enable_if<
+    !std::is_base_of<stream_marker, Parent<Ts...>>::value
+    && std::is_base_of 
+      <with_threads_marker, Parent<Ts...>>::value,
+    bulk_marker
+  >::type
 {
-//  using bulk::EnableClassIf::EnableClassIf;
-
 public:
   typedef Parent<
     Ts..., 
-    RunProviderPar<bulk<Parent, std::true_type, Ts...>>
+    RunProviderPar<bulk<Parent, Ts...>>
   > ParentT;
   typedef typename ParentT::Par Par;
 
@@ -351,8 +347,8 @@ public:
     typename Socket::State::axis
   > Splitter;
 
-  //! A common Par part both for client and server side
-  //! connections. 
+  //! Client and server side connections differ by a
+  //! socket type passed to the Par constructor.
   struct Par : abstract_connection::Par
   {
     RSocketBase* socket;

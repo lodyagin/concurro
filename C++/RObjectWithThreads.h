@@ -189,13 +189,10 @@ class with_threads
 :
   public Parent,
   public RObjectWithThreads<Final>,
-  with_threads_marker,
-  EnableClassIf<
-    Parent,
-    typename std::enable_if<
-      !std::is_base_of<with_threads_marker, Parent>::value
-    >
-  >
+  std::enable_if<
+    !std::is_base_of<with_threads_marker, Parent>::value,
+    with_threads_marker
+  >::type
 {
 public:
   /*struct Par 
@@ -216,6 +213,8 @@ protected:
     }
   {
   }
+
+  MULTIPLE_INHERITANCE_DEFAULT_MEMBERS;
 };
 
 //! Create a thread which runs RunProvider::run()

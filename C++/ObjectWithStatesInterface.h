@@ -31,7 +31,7 @@
 #define CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 
 #include <typeinfo>
-#include "types/meta.h"
+#include <type_traits>
 #include "StateAxis.h"
 #include "Event.h"
 
@@ -196,19 +196,34 @@ public:
       uint32_t to) = 0;
 };
 
+#if 0
 struct state_finalizer_marker {};
 
-template<template<class...> class Parent, class... Ts>
-class state_finalizer : 
-  public Parent<Ts...>,
-  state_finalizer_marker,
-  types::EnableClassIf<
-    !std::is_base_of
-      <state_finalizer_marker, Parent<Ts...>>::value
-  >
+template<
+  template<class...> class Parent1,
+  class... Ts
+>
+class repeater : public Parent1<Ts...>
 {
 public:
-  using Parent::Parent;
+  using Parent1<Ts...>::Parent1;
+};
+
+template<
+  template<template<class...> class, class...> class Parent2,
+  template<class...> class Parent1,
+  class... Ts
+>
+class state_finalizer : 
+  public Parent2<Parent1, Ts...>,
+  std::enable_if<
+    !std::is_base_of
+      <state_finalizer_marker, Parent2<Parent1, Ts...>>::value,
+    state_finalizer_marker
+  >::type
+{
+public:
+  using Parent2<Parent1, Ts...>::Parent2;
 
   void state_changed(
     curr::StateAxis& ax,
@@ -231,7 +246,7 @@ public:
     return ax.current_state(this);
   } 
 };
-
+#endif
 
 #define MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS        \
 void state_changed(                                     \

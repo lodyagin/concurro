@@ -88,9 +88,8 @@ protected:
 template<>
 class TestConnection<ClientSocket> final 
 : 
-  public state_finalizer
+  public curr::connection::bulk
   <
-    connection::bulk,
     with_threads,
     // with_threads template parameters:
     connection::socket::connection
@@ -102,18 +101,25 @@ class TestConnection<ClientSocket> final
   >
 {
 public:
-  typedef state_finalizer
+  typedef curr::connection::bulk
   <
-    connection::bulk,
     with_threads,
     // with_threads template parameters:
-    connection::socket::connection
+    curr::connection::socket::connection
     <
       TestConnection<ClientSocket>,
       ClientSocket
     >,
     TestConnection<ClientSocket>
   > Parent;
+
+  /*struct Par : Parent::Par
+  {
+    Par(const std::string& host, uint16_t port)
+    {
+      
+    }
+  };*/
 
   typedef typename Parent::Par Par;
 
@@ -142,10 +148,10 @@ public:
   //static RSocketAddressRepository sar;
 };
 
-template<class Socket>
-RSocketAddressRepository TestConnection<Socket>::sar;
+//template<class Socket>
+//RSocketAddressRepository TestConnection<Socket>::sar;
 
-RSocketAddressRepository TestConnection<ClientSocket>::sar;
+//RSocketAddressRepository TestConnection<ClientSocket>::sar;
 
 static void test_connection(bool do_abort)
 {
@@ -154,7 +160,7 @@ static void test_connection(bool do_abort)
   //(check also 0)
   RSocketRepository sr
     ("RConnectionCU::test_connection::sr", 1);
-  RConnectionRepository con_rep
+  connection::repository con_rep
     ("RConnectionCU::test_connection::sr", 10, 
      &StdThreadRepository::instance()
       );
@@ -168,15 +174,20 @@ static void test_connection(bool do_abort)
 
   CU_ASSERT_PTR_NOT_NULL_FATAL(lstn);
 
-  RServerConnectionFactory<TestConnection<RSocketBase>> 
+  connection::socket::server_factory<TestConnection<RSocketBase>> 
     scf(lstn, 1);
 
   RWindow wc;
 
   auto* con = dynamic_cast<TestConnection<ClientSocket>*>
     (con_rep.create_object
-      (TestConnection<ClientSocket>
-        ::ClientPar("localhost", 31001)));
+      (TestConnection<ClientSocket>::Par
+        (sr.create_object
+          (*sar.create_addresses
+            < SocketSide::Client, 
+              NetworkProtocol::TCP,
+              IPVer::v4 > ("localhot", 31001) . front()
+          ))));
 
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
