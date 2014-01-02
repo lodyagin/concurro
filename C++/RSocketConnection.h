@@ -200,6 +200,8 @@ class bulk :
     bulk_marker
   >::type
 {
+  friend class RunProviderPar<bulk<Parent, Ts...>>;
+
 public:
   typedef Parent<
     Ts..., 
@@ -269,33 +271,30 @@ struct server_marker {};
 //! This class defines a server thread, you can inherit
 //! from it and overwrite run_server().
 template<
-  template<class...> class Parent, 
-  class Enable = void,
+  template<template<class...> class, class...> class Parent2,
+  template<class...> class Parent1,
   class... Ts
 >
-class server;
-
-template<template<class...> class Parent, class... Ts>
-class server
-<
-  Parent,
-  typename std::enable_if<
-    !std::is_base_of<server_marker, Parent<Ts...>>::value
-    && std::is_base_of
-      <with_threads_marker, Parent<Ts...>>::value
-  >::type,
-  Ts...
-> 
-: public Parent<
+class server :
+  public Parent2
+  <
+    Parent1,
     Ts..., 
-    RunProviderPar<server<Parent, std::true_type, Ts...>>
+    RunProviderPar<server<Parent2, Parent1, Ts...>>
   >,
-  server_marker
+  std::enable_if<
+    !std::is_base_of
+      <server_marker, Parent2<Parent1, Ts...>>::value
+    && std::is_base_of
+      <with_threads_marker, Parent2<Parent1, Ts...>>::value,
+    server_marker
+  >::type
 {
 public:
-  typedef Parent<
+  typedef Parent2<
+    Parent1,
     Ts..., 
-    RunProviderPar<server<Parent, std::true_type, Ts...>>
+    RunProviderPar<server<Parent2, Parent1, Ts...>>
   > ParentT;
   typedef typename ParentT::Par Par;
 
@@ -386,7 +385,7 @@ public:
         (new RConnectedWindow<SOCKET>::Par(sock->fd));
     }
 
-  protected:
+  //protected:
     //! A scope of a socket repository can be any: per
     //! connection, per connection type, global etc.
     RSocketRepository* socket_rep;

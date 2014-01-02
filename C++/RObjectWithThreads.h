@@ -67,7 +67,12 @@ class RObjectWithThreads
 {
 public:
   using Parent = ConstructibleObject;
+#if 0
   using ThreadPar = ThreadOfObjectPar<Object>;
+#else
+  using ThreadPar = typename StdThread::Par;
+  using ObjThreadPar = ThreadOfObjectPar<Object>;
+#endif
 
   //! Create the object and remember thread initialization
   //! pars. After the state will be changed to
@@ -75,7 +80,8 @@ public:
   //! will be created and started in
   //! RThreadRepository<RThread<std::thread>>
   //! The object takes ownership of all ThreadPar-s.
-  RObjectWithThreads(std::initializer_list<ThreadPar*>);
+  RObjectWithThreads
+    (std::initializer_list<typename StdThread::Par*>);
 
   //! A deleted copy constructor.
   RObjectWithThreads(const RObjectWithThreads&) = delete;
@@ -221,9 +227,10 @@ protected:
 template<class RunProvider>
 struct RunProviderPar : ObjectFunThread<RunProvider>::Par
 {
-  RunProviderPar(const RunProvider& rp) : 
+  RunProviderPar() : 
     ObjectFunThread<RunProvider>::Par
-    ( rp.run_thread_name(),
+    // TODO different names for different threads (add id)
+    ( SFORMAT(typeid(RunProvider).name() << "::run()*"),
       [](RunProvider& obj)
       {
         obj.run();

@@ -39,9 +39,9 @@ namespace curr {
 template<class Object>
 RObjectWithThreads<Object>
 ::RObjectWithThreads
-  (std::initializer_list<ThreadPar*> pars)
+  (std::initializer_list
+    <typename StdThread::Par*> pars)
 : destructor_delegate_is_called(false)
-
 {
   for (ThreadPar* par : pars) {
     threads_pars.push(
@@ -76,8 +76,11 @@ void RObjectWithThreads<Object>
   {
     while (!threads_pars.empty()) {
       ThreadPar* par = threads_pars.front().get();
-      par->object = dynamic_cast<Object*>(this);
-      SCHECK(par->object);
+      if (auto* opar = dynamic_cast<ObjThreadPar*>(par))
+      {
+        opar->object = dynamic_cast<Object*>(this);
+        SCHECK(opar->object);
+      }
       threads.push_back(
         StdThreadRepository
         ::instance().create_thread(*par));

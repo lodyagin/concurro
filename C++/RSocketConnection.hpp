@@ -134,7 +134,9 @@ void bulk<Parent, Ts...>
     if (this->pull_in()) {
       iw().is_wait_for_buffer().wait();
       LOG_DEBUG(clog, iw() << " asked for more data");
-      iw().new_buffer(std::move(this->in_buf));
+      iw().new_buffer
+        (std::unique_ptr<RSingleBuffer>
+          (new RSingleBuffer(&this->in_buf)));
     }
     else {
       if (this->is_aborting().signalled()) {
@@ -288,8 +290,10 @@ void connection<CURR_RSOCKETCONNECTION_T_>
    const UniversalState& new_state
    )
 {
+#if 0
   RObjectWithThreads<Connection>::state_changed
     (ax, state_ax, object, new_state);
+#endif
 
   if (!SocketConnectionAxis<Socket>::is_same(ax))
     return;
@@ -509,7 +513,7 @@ void server_factory<Connection>
 
     RSocketBase* sock = lstn_sock->get_accepted();
     this->object->obj->create_object
-      (typename Connection::ServerPar(sock));
+      (typename Connection::Par(sock));
   }
 }
 

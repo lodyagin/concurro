@@ -37,19 +37,29 @@ template<class Socket>
 class TestConnection final : 
   public connection::server
   <
-    connection::socket::connection,
-    // socket::connection template parameters:
-    TestConnection<Socket>,
-    Socket
+    connection::bulk,
+    with_threads,
+    // with_threads template parameters:
+    connection::socket::connection
+    <
+      TestConnection<ClientSocket>,
+      ClientSocket
+    >,
+    TestConnection<ClientSocket>
   >
 {
 public:
-  typedef connection::server
+  typedef curr::connection::server
   <
-    connection::socket::connection,
-    // socket::connection template parameters:
-    TestConnection<Socket>,
-    Socket
+    curr::connection::bulk,
+    with_threads,
+    // with_threads template parameters:
+    curr::connection::socket::connection
+    <
+      TestConnection<ClientSocket>,
+      ClientSocket
+    >,
+    TestConnection<ClientSocket>
   > Parent;
 
   typedef typename Parent::Par Par;
@@ -66,7 +76,7 @@ public:
     this->destroy();
   }
 
-  std::string object_name() const override
+/*  std::string object_name() const override
   {
     return "TestConnection(Server)";
   }
@@ -74,12 +84,12 @@ public:
   CompoundEvent is_terminal_state() const override
   {
     return this->is_terminal_state_event;
-  }
+  }*/
 
   //static RSocketAddressRepository sar;
 
 protected:
-  void server_run() override
+  void run_server() override
   {
     *this << "+Soup2.0\n";
   }
@@ -135,10 +145,10 @@ public:
     this->destroy();
   }
 
-  std::string object_name() const override
+  /*std::string object_name() const override
   {
     return "TestConnection(Client)";
-  }
+  }*/
 
   CompoundEvent is_terminal_state() const override
   {
