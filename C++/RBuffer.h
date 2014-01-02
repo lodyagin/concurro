@@ -160,9 +160,23 @@ public:
   //! bottom_res bytes below the buffer start 
   //! (see extend_bottom()).
   explicit RSingleBuffer(size_t res, size_t bottom_res);
+
   //! Construct a buffer by moving a content from another
   //! buffer
   explicit RSingleBuffer(RBuffer* buf);
+
+  //! Construct by a string literal
+  template<size_t N>
+  /*constexpr*/ RSingleBuffer(const char(&str)[N]) : 
+    RBuffer(chargedState),
+    CONSTRUCT_EVENT(dummy),
+    buf(const_cast<char*>(str)),
+    no_release_memory(true),
+    size_(N),
+    top_reserved_(N), bottom_reserved_(0)
+  {
+  }
+
   RSingleBuffer(const RSingleBuffer& b) = delete;
 
   //! Always will wait "discharged" state. See
@@ -202,6 +216,8 @@ public:
 protected:
   //! Start of memory (bottom part)
   char* buf;
+  //! never free buf is true
+  bool no_release_memory = false;
   size_t size_;
   //! A reserved memory size for a primary part
   size_t top_reserved_;

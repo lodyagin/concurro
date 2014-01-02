@@ -275,9 +275,7 @@ connection<CURR_RSOCKETCONNECTION_T_>
 //
 ::~connection()
 {
-  SCHECK(this->destructor_delegate_is_called);
   is_terminal_state_event.wait();
-  //socket_rep->delete_object(socket, true);
 }
 
 CURR_RSOCKETCONNECTION_TEMPL_

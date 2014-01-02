@@ -195,7 +195,9 @@ static void test_connection(bool do_abort)
   con->ask_connect();
   CURR_WAIT_L(rootLogger, con->is_io_ready(), 1000);
 
-  *con << "Labcdef12345678902H23456789         1\n";
+  con->send
+    (RSingleBuffer
+      ("Labcdef12345678902H23456789         1\n"));
   const std::string answer("+Soup2.0\n");
   con->iw().forward_top(answer.size());
   CURR_WAIT_L

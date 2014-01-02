@@ -132,7 +132,8 @@ RSingleBuffer::~RSingleBuffer()
     clear();
   else
     (is_discharged_event | is_dummy_event).wait();
-  delete[] buf;
+  if (!no_release_memory)
+    delete[] buf;
   destructor_is_called = true;
 }
 
@@ -150,8 +151,12 @@ void RSingleBuffer::move(RBuffer* from)
     State::move_to(*from, moving_sourceState);
     top_reserved_ = b->top_reserved_;
     bottom_reserved_ = b->bottom_reserved_;
-    buf = b->buf; size_ = b->size_;
-    b->buf = nullptr; b->size_ = 0;
+    buf = b->buf; 
+    no_release_memory = b->no_release_memory;
+    size_ = b->size_;
+    b->buf = nullptr; 
+    b->no_release_memory = false;
+    b->size_ = 0;
   }
   catch (const InvalidStateTransition&)
   {

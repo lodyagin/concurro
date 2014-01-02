@@ -210,6 +210,14 @@ public:
   //! A current window
   RConnectedWindow<SOCKET>& iw() { return *in_win; }
 
+  //! Send the message
+  template<class Buffer>
+  void send(Buffer&& msg)
+  {
+    this->out_buf.move(&msg);
+    this->push_out();
+  }
+
 protected:
   bulk(const ObjectCreationInfo& oi, const Par& par);
 
