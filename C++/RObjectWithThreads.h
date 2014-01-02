@@ -67,12 +67,7 @@ class RObjectWithThreads
 {
 public:
   using Parent = ConstructibleObject;
-#if 0
   using ThreadPar = ThreadOfObjectPar<Object>;
-#else
-  using ThreadPar = typename StdThread::Par;
-  using ObjThreadPar = ThreadOfObjectPar<Object>;
-#endif
 
   //! Create the object and remember thread initialization
   //! pars. After the state will be changed to
@@ -80,8 +75,7 @@ public:
   //! will be created and started in
   //! RThreadRepository<RThread<std::thread>>
   //! The object takes ownership of all ThreadPar-s.
-  RObjectWithThreads
-    (std::initializer_list<typename StdThread::Par*>);
+  RObjectWithThreads(std::initializer_list<ThreadPar*>);
 
   //! A deleted copy constructor.
   RObjectWithThreads(const RObjectWithThreads&) = delete;
@@ -188,24 +182,19 @@ struct with_threads_marker {};
 
 template<
   class Parent,
-  class Final,
   class... Threads
 >
 class with_threads 
 :
   public Parent,
-  public RObjectWithThreads<Final>,
+  public RObjectWithThreads<typename Parent::Final>,
   std::enable_if<
     !std::is_base_of<with_threads_marker, Parent>::value,
     with_threads_marker
   >::type
 {
 public:
-  /*struct Par 
-  {
-    virtual std::string name() = 0;
-  };*/
-
+  using typename Parent::Final;
   using typename Parent::Par;
 
 protected:
@@ -215,22 +204,53 @@ protected:
     Parent(oi, par),
     RObjectWithThreads<Final>
     {
-      new Threads(/*par.name()*/)...
+      new Threads()...
     }
   {
   }
 
-  MULTIPLE_INHERITANCE_DEFAULT_MEMBERS;
+  void state_changed(
+    curr::StateAxis& ax,
+    const curr::StateAxis& state_ax,
+    curr::AbstractObjectWithStates* object,
+    const curr::UniversalState& new_state) override
+  {
+    RObjectWithThreads<Final>
+      ::state_changed(ax, state_ax, object, new_state);
+    Parent
+      ::state_changed(ax, state_ax, object, new_state);
+  }
+
+  std::atomic<uint32_t>&
+    current_state(const curr::StateAxis& ax) override
+  {
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>&
+    current_state(const curr::StateAxis& ax) const override
+  {
+    return ax.current_state(this);
+  } 
+
+  MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS;
 };
 
 //! Create a thread which runs RunProvider::run()
-template<class RunProvider>
-struct RunProviderPar : ObjectFunThread<RunProvider>::Par
+//! @tparam RunProvider - class with (non-virtual) run()
+//! method
+//! @tparam Final - a final class - owner of threads
+template<class RunProvider, class Final>
+struct RunProviderPar : ObjectFunThread<Final>::Par
 {
+  static_assert(std::is_base_of<RunProvider, Final>::value,
+                "Final must be derived from RunProvider");
+
   RunProviderPar() : 
-    ObjectFunThread<RunProvider>::Par
+    ObjectFunThread<Final>::Par
     // TODO different names for different threads (add id)
-    ( SFORMAT(typeid(RunProvider).name() << "::run()*"),
+    ( 
+      SFORMAT(typeid(RunProvider).name() << "::run()*"),
       [](RunProvider& obj)
       {
         obj.run();

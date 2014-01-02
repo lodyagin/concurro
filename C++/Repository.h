@@ -184,7 +184,7 @@ public:
   virtual void delete_object_by_id 
     (const ObjId& id, bool freeMemory) = 0;
 
-  virtual Obj* get_object_by_id (const ObjId& id) const = 0;
+  virtual Obj* get_object_by_id (const ObjId& id) const= 0;
 
   //! Replace the old object by new one (and create the
   //! new). The old object is deleted.
@@ -192,7 +192,15 @@ public:
   //!   wrong with param.
   //! \exception NoSuchId
   virtual Obj* replace_object 
-    (const ObjId& id, const Par& param, bool freeMemory) = 0;
+   (const ObjId& id, const Par& param, bool freeMemory)= 0;
+
+  //! Create a possible id of a new object. It is stable
+  //! when Par has get_id method (for repositories based
+  //! on map, hash etc) or when called from other
+  //! Repository methods (when objectsM is accquired). In
+  //! other cases somebody can get the same id for
+  //! different objects by this function.
+  virtual ObjId allocate_new_object_id (const Par&) = 0;
 
   //! It calls f(Obj&) for each object in the repository
   virtual void for_each
@@ -316,6 +324,13 @@ public:
     RepositoryBase& repo;
   };
 
+  ObjId allocate_new_object_id(const Par& par) override
+  {
+    ObjectCreationInfo cinfo;
+    cinfo.repository = this;
+    return allocate_new_object_id(cinfo, par);
+  }
+
 protected:
   //! Return the element itself or pair::second
   class Value
@@ -334,9 +349,7 @@ protected:
   typename RepositoryMapType<Obj, ObjId, ObjMap>
     ::Map* objects;
 
-  //! Calculate an id for a new object, possible based on
-  //! Par (depending of the Repository type)
-  virtual ObjId get_object_id 
+  virtual ObjId allocate_new_object_id
     (ObjectCreationInfo& oi, const Par&) = 0;
 
   //! Insert new object into objects
@@ -400,8 +413,8 @@ protected:
 
   //! This specialization takes the first unused (numeric)
   //! id and ignores Par
-  ObjId get_object_id 
-    (ObjectCreationInfo&, const Par&)
+  ObjId allocate_new_object_id 
+    (ObjectCreationInfo&, const Par&) override
   {
     RLOCK(this->objectsM);
 
@@ -540,7 +553,7 @@ public:
 
 protected:
   //! This specialization takes the key value from pars.
-  ObjId get_object_id 
+  ObjId allocate_new_object_id 
     (ObjectCreationInfo& oi, const Par& param)
   {
     RLOCK(this->objectsM);
@@ -605,7 +618,7 @@ public:
 
 protected:
   //! This specialization takes the key value from pars.
-  ObjId get_object_id 
+  ObjId allocate_new_object_id 
     (ObjectCreationInfo& oi, const Par& param)
   {
     RLOCK(this->objectsM);

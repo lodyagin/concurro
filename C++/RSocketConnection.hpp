@@ -249,7 +249,7 @@ connection<CURR_RSOCKETCONNECTION_T_>
     Splitter
       (dynamic_cast<Socket*>(par.socket), 
        RState<typename Socket::State::axis>
-         (dynamic_cast<Socket&>(*par.socket))),
+         (*dynamic_cast<Socket*>(par.socket))),
     CONSTRUCT_EVENT(aborting),
     CONSTRUCT_EVENT(aborted),
     CONSTRUCT_EVENT(clearly_closed),

@@ -171,7 +171,8 @@ protected:
     Par(RSocketBase* sock) 
       : SocketThread::Par(sock) 
       {
-        thread_name = SFORMAT("ClientSocket:" << sock->fd);
+        thread_name = SFORMAT
+          ("ClientSocket(connect):" << sock->fd);
       }
 
       RThreadBase* create_derivation

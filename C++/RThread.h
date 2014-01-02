@@ -290,6 +290,9 @@ public:
     std::thread::native_handle_type get_id
       (ObjectCreationInfo& oi) const
     {
+      if (th_id)
+        return th_id;
+
       repository = dynamic_cast<RepositoryType*>
         (oi.repository);
       SCHECK(repository);

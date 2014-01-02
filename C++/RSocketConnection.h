@@ -186,12 +186,16 @@ struct bulk_marker {};
   * memory). It uses RWindow for direct access to input
   * packets.
   */
-template<template<class...> class Parent, class... Ts>
+template<
+  template<class...> class Parent, 
+  class... Ts
+>
 class bulk : 
   public Parent
   <
     Ts..., 
-    RunProviderPar<bulk<Parent, Ts...>>
+    RunProviderPar
+      <bulk<Parent, Ts...>, typename Parent<Ts...>::Final>
   >,
   std::enable_if<
     !std::is_base_of<stream_marker, Parent<Ts...>>::value
@@ -200,12 +204,21 @@ class bulk :
     bulk_marker
   >::type
 {
-  friend class RunProviderPar<bulk<Parent, Ts...>>;
+  friend class RunProviderPar
+    <bulk<Parent, Ts...>, typename Parent<Ts...>::Final>;
+
+  static_assert(
+    !std::is_base_of<stream_marker, Parent<Ts...>>::value
+    && std::is_base_of 
+      <with_threads_marker, Parent<Ts...>>::value,
+    "curr::connection::bulk inheritance error"
+  );
 
 public:
   typedef Parent<
     Ts..., 
-    RunProviderPar<bulk<Parent, Ts...>>
+    RunProviderPar
+      <bulk<Parent, Ts...>, typename Parent<Ts...>::Final>
   > ParentT;
   typedef typename ParentT::Par Par;
 
@@ -228,6 +241,7 @@ protected:
   RConnectedWindow<SOCKET>* in_win;
 };
 
+#if 0
 template<
   template<class...> class Parent,
   class CharT,
@@ -265,13 +279,15 @@ public:
     RunProviderPar<stream<Parent, std::true_type, Ts...>>
   > ParentT;
 };
+#endif
 
 struct server_marker {};
 
 //! This class defines a server thread, you can inherit
 //! from it and overwrite run_server().
 template<
-  template<template<class...> class, class...> class Parent2,
+  template<template<class...> class, class...> 
+    class Parent2,
   template<class...> class Parent1,
   class... Ts
 >
@@ -280,7 +296,10 @@ class server :
   <
     Parent1,
     Ts..., 
-    RunProviderPar<server<Parent2, Parent1, Ts...>>
+    RunProviderPar<
+      server<Parent2, Parent1, Ts...>, 
+      typename Parent2<Parent1, Ts...>::Final
+    >
   >,
   std::enable_if<
     !std::is_base_of
@@ -290,16 +309,24 @@ class server :
     server_marker
   >::type
 {
+  friend class RunProviderPar<
+    server<Parent2, Parent1, Ts...>, 
+    typename Parent2<Parent1, Ts...>::Final
+  >;
+
 public:
   typedef Parent2<
     Parent1,
     Ts..., 
-    RunProviderPar<server<Parent2, Parent1, Ts...>>
+    RunProviderPar<
+      server<Parent2, Parent1, Ts...>, 
+      typename Parent2<Parent1, Ts...>::Final
+    >
   > ParentT;
   typedef typename ParentT::Par Par;
 
 protected:
-  server(const ObjectCreationInfo& oi, const Par& par);
+  using ParentT::ParentT;
 
   virtual void run_server() = 0;
   void run() { this-> run_server(); }
@@ -348,6 +375,8 @@ public:
   DECLARE_STATE_CONST(typename State, clearly_closed);
   //! @endcond
 
+  typedef Connection Final;
+
   typedef RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
@@ -391,58 +420,6 @@ public:
     RSocketRepository* socket_rep;
   };
 
-#if 0
-  //! A client side connection par.
-  template<NetworkProtocol proto, IPVer ip_ver>
-  struct InetClientPar : Par
-  {
-    //! Available addresses for socket(s)
-    const RSocketAddress* sock_addr;
-
-    InetClientPar(RSocketAddress* sa, size_t max_packet) :
-      Par(max_packet),
-      sock_addr(sa)
-    {
-      assert(sock_addr);
-    }
-
-    InetClientPar(InetClientPar&& par)
-      : abstract_connection::Par(std::move(par)),
-                            // virtual base
-        Par(std::move(par)),
-        abstract_connection::InetClientPar<proto, ip_ver>
-          (std::move(par)) {}
-
-    abstract_connection* create_derivation
-      (const ObjectCreationInfo& oi) const override;
-  };
-
-  //! A server side connection par.
-  struct ServerPar : Par
-  {
-    ServerPar(RSocketBase* srv_sock) :
-      Par(srv_sock->repository
-          -> get_max_input_packet_size()
-         )
-    {
-      assert(srv_sock);
-      this->socket = srv_sock;
-      assert(srv_sock->repository);
-      this->socket_rep = srv_sock->repository;
-    }
-
-    ServerPar(ServerPar&& par)
-      : Par(std::move(par))
-    {}
-
-    abstract_connection* create_derivation
-      (const ObjectCreationInfo& oi) const
-    {
-      return new Connection(oi, *this);
-    }
-  };
-#endif
-
   void state_changed
     (StateAxis& ax, 
      const StateAxis& state_ax,     
@@ -460,10 +437,10 @@ public:
     return socket;
   }*/
 
-  /*CompoundEvent is_terminal_state() const override
+  CompoundEvent is_terminal_state() const override
   {
     return is_terminal_state_event;
-  }*/
+  }
 
 protected:
   connection

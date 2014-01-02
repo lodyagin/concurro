@@ -40,8 +40,8 @@ template<class Obj, class Par, class ObjId>
 const AbstractRepositoryBase::Traits 
   RepositoryInterface<Obj, Par, ObjId>::traits
   ({typeid(Obj).name(), 
-	  typeid(Par).name(), 
-	   typeid(ObjId).name()});
+     typeid(Par).name(), 
+      typeid(ObjId).name()});
 
 template<
   class Obj, 
@@ -57,8 +57,8 @@ RepositoryBase<Obj, Par, ObjMap, ObjId>
     (objects->begin (), 
      objects->end (),
      Destructor<Obj, Par, ObjMap, ObjId, 
-	  typename RepositoryMapType<Obj, ObjId, ObjMap>
-	    ::Map::value_type> (this)
+     typename RepositoryMapType<Obj, ObjId, ObjMap>
+       ::Map::value_type> (this)
      );
   delete objects;
 }
@@ -81,14 +81,16 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   { 
     RLOCK (objectsM);
 
-    const ObjId objId = get_object_id(cinfo, param);
+    const ObjId objId = allocate_new_object_id
+      (cinfo, param);
+
     toString (objId, cinfo.objectId);
 
-	 // dynamic cast for use with inherited parameters
-	 // <NB> this must be called inside the lock to allow
-	 // query repo data structures from create_derivation
+    // dynamic cast for use with inherited parameters
+    // <NB> this must be called inside the lock to allow
+    // query repo data structures from create_derivation
     obj = dynamic_cast<Obj*>
-		(param.create_derivation (cinfo));
+      (param.create_derivation (cinfo));
 
     SCHECK (obj);
     insert_object (objId, obj);
@@ -96,7 +98,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   LOG_TRACE(log, "Object " << *obj << " is created.");
 
   if (cinfo.objectCreated)
-	 cinfo.objectCreated->set(); 
+    cinfo.objectCreated->set(); 
     // <NB> after inserting into repo
     // and unlocking
 
@@ -118,17 +120,17 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 
   Obj* obj = 0;
   try {
-	 obj = objects->at (id);
+    obj = objects->at (id);
   }
   catch (const std::out_of_range&) {
-	 THROW_EXCEPTION(NoSuchId, id);
+    THROW_EXCEPTION(NoSuchId, id);
   }
 
   if (!obj) THROW_PROGRAM_ERROR;
   //obj->freeze();
 
   (*objects)[id] = dynamic_cast<Obj*>
-	 (param.transform_object (obj));
+    (param.transform_object (obj));
 
   SCHECK ((*objects)[id]);
 
@@ -148,7 +150,7 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 {
   assert (obj);
   const ObjId objId = fromString<ObjId> 
-	 (obj->universal_id());
+    (obj->universal_id());
 
   delete_object_by_id (objId, freeMemory);
 }
@@ -162,15 +164,15 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
   {
     RLOCK(objectsM);
 
-	 try {
-		ptr = objects->at (id);
-		delete_object_id(id);
-		if (ptr == 0) 
+    try {
+      ptr = objects->at (id);
+      delete_object_id(id);
+      if (ptr == 0) 
         THROW_EXCEPTION(NoSuchId, id);
-	 }
-	 catch (const std::out_of_range&) {
-		THROW_EXCEPTION(NoSuchId, id);
-	 }
+    }
+    catch (const std::out_of_range&) {
+      THROW_EXCEPTION(NoSuchId, id);
+    }
   }
   //ptr->freeze();
   if (freeMemory) delete ptr;
@@ -183,11 +185,11 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
 {
   try { 
     RLOCK(objectsM);
-	 return objects->at (id);
+    return objects->at (id);
   }
   catch (const std::out_of_range&)
   {
-	 THROW_EXCEPTION_PLACE(get_object_by_id, NoSuchId, id);
+    THROW_EXCEPTION_PLACE(get_object_by_id, NoSuchId, id);
   }
 }
 
@@ -228,7 +230,7 @@ Out RepositoryBase<Obj, Par, ObjMap, ObjId>
 {
   return get_object_ids_by_pred<Out, StateMatch<Obj,
   State>> 
-	 (res, StateMatch<Obj, State> (state));
+    (res, StateMatch<Obj, State> (state));
 }
 
 template <
@@ -301,7 +303,8 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
       for (size_t k = 0; k < n; k++)
       { 
         cinfo.objectId.clear();
-        const ObjId objId = this->get_object_id(cinfo, param);
+        const ObjId objId = 
+          this->allocate_new_object_id(cinfo, param);
         toString(objId, cinfo.objectId);
 
         // dynamic cast for use with inherited parameters
@@ -310,10 +313,10 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
         SCHECK (obj);
         this->insert_object (objId, obj);
         LOG_TRACE(log, 
-						"Object " << *obj << " is created.");
-		  
-		  if (cinfo.objectCreated)
-			 cinfo.objectCreated->set();
+                  "Object " << *obj << " is created.");
+        
+        if (cinfo.objectCreated)
+          cinfo.objectCreated->set();
 
         out.push_back(obj);
       }

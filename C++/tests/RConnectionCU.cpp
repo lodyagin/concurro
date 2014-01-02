@@ -31,8 +31,6 @@ int RConnectionCUClean()
   return 0;
 }
 
-//using namespace connection;
-
 template<class Socket>
 class TestConnection final : 
   public connection::server
@@ -42,10 +40,9 @@ class TestConnection final :
     // with_threads template parameters:
     connection::socket::connection
     <
-      TestConnection<ClientSocket>,
-      ClientSocket
-    >,
-    TestConnection<ClientSocket>
+      TestConnection<Socket>,
+      Socket
+    >
   >
 {
 public:
@@ -53,13 +50,11 @@ public:
   <
     curr::connection::bulk,
     with_threads,
-    // with_threads template parameters:
     curr::connection::socket::connection
     <
-      TestConnection<ClientSocket>,
-      ClientSocket
-    >,
-    TestConnection<ClientSocket>
+      TestConnection<Socket>,
+      Socket
+    >
   > Parent;
 
   typedef typename Parent::Par Par;
@@ -76,22 +71,15 @@ public:
     this->destroy();
   }
 
-/*  std::string object_name() const override
+  std::string object_name() const override
   {
-    return "TestConnection(Server)";
+    return "TestConnection(server)";
   }
-
-  CompoundEvent is_terminal_state() const override
-  {
-    return this->is_terminal_state_event;
-  }*/
-
-  //static RSocketAddressRepository sar;
 
 protected:
   void run_server() override
   {
-    *this << "+Soup2.0\n";
+    this->send(RSingleBuffer("+Soup2.0\n"));
   }
 };
 
@@ -101,36 +89,23 @@ class TestConnection<ClientSocket> final
   public curr::connection::bulk
   <
     with_threads,
-    // with_threads template parameters:
     connection::socket::connection
     <
       TestConnection<ClientSocket>,
       ClientSocket
-    >,
-    TestConnection<ClientSocket>
+    >
   >
 {
 public:
   typedef curr::connection::bulk
   <
     with_threads,
-    // with_threads template parameters:
     curr::connection::socket::connection
     <
       TestConnection<ClientSocket>,
       ClientSocket
-    >,
-    TestConnection<ClientSocket>
+    >
   > Parent;
-
-  /*struct Par : Parent::Par
-  {
-    Par(const std::string& host, uint16_t port)
-    {
-      
-    }
-  };*/
-
   typedef typename Parent::Par Par;
 
   TestConnection(const ObjectCreationInfo& oi,
@@ -145,23 +120,16 @@ public:
     this->destroy();
   }
 
-  /*std::string object_name() const override
-  {
-    return "TestConnection(Client)";
-  }*/
-
   CompoundEvent is_terminal_state() const override
   {
     return this->is_terminal_state_event;
   }
 
-  //static RSocketAddressRepository sar;
+  std::string object_name() const override
+  {
+    return "TestConnection(client)";
+  }
 };
-
-//template<class Socket>
-//RSocketAddressRepository TestConnection<Socket>::sar;
-
-//RSocketAddressRepository TestConnection<ClientSocket>::sar;
 
 static void test_connection(bool do_abort)
 {
@@ -196,14 +164,14 @@ static void test_connection(bool do_abort)
           (*sar.create_addresses
             < SocketSide::Client, 
               NetworkProtocol::TCP,
-              IPVer::v4 > ("localhot", 31001) . front()
+              IPVer::v4 > ("localhost", 31001) . front()
           ))));
 
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);
   
   con->ask_connect();
-  CURR_WAIT_L(rootLogger, con->is_io_ready(), 1000);
+  CURR_WAIT_L(rootLogger, con->is_io_ready(), -1);
 
   con->send
     (RSingleBuffer

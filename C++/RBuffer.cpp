@@ -206,7 +206,8 @@ void RSingleBuffer::resize(size_t sz)
   }
   else {
     State::move_to(*this, dischargedState);
-    delete[] buf;
+    if (!no_release_memory)
+      delete[] buf;
     buf = 0;
     size_ = sz;
   }

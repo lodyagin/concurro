@@ -96,18 +96,26 @@ public:
     rep->delete_object_by_id(id, freeMemory);
   }
 
-  Object* get_object_by_id (const ObjectId& id) const override
+  Object* get_object_by_id (const ObjectId& id) const 
+    override
   {
     return rep->get_object_by_id(id);
   }
 
   Object* replace_object 
-    (const ObjectId& id, const Par& param, bool freeMemory) 
+    (const ObjectId& id, 
+     const Par& param, 
+     bool freeMemory) 
     override
   {
     return rep->replace_object(id, param, freeMemory);
   }
   
+  ObjectId allocate_new_object_id (const Par& par)
+  {
+    return rep->allocate_new_object_id(par);
+  }
+
   void for_each
     (std::function<void(Object&)> f) override
   {

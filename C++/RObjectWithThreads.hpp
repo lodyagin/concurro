@@ -39,8 +39,7 @@ namespace curr {
 template<class Object>
 RObjectWithThreads<Object>
 ::RObjectWithThreads
-  (std::initializer_list
-    <typename StdThread::Par*> pars)
+  (std::initializer_list<ThreadPar*> pars)
 : destructor_delegate_is_called(false)
 {
   for (ThreadPar* par : pars) {
@@ -74,16 +73,18 @@ void RObjectWithThreads<Object>
   const RState<ConstructibleAxis> newst(new_state);
   if (newst == complete_constructionState)
   {
+    auto& threp = StdThreadRepository::instance();
     while (!threads_pars.empty()) {
       ThreadPar* par = threads_pars.front().get();
-      if (auto* opar = dynamic_cast<ObjThreadPar*>(par))
-      {
-        opar->object = dynamic_cast<Object*>(this);
-        SCHECK(opar->object);
-      }
-      threads.push_back(
-        StdThreadRepository
-        ::instance().create_thread(*par));
+
+      par->object = dynamic_cast<Object*>(this);
+      SCHECK(par->object);
+      // add a pretty thread id
+      par->thread_name = SFORMAT
+        (par->object->object_name() << ":"
+         << threp.allocate_new_object_id(*par));
+
+      threads.push_back(threp.create_thread(*par));
       threads_pars.pop();
     }
     for (RThreadBase* th : threads) {
