@@ -328,7 +328,7 @@ public:
   {
     ObjectCreationInfo cinfo;
     cinfo.repository = this;
-    return allocate_new_object_id(cinfo, par);
+    return allocate_new_object_id_internal(cinfo, par);
   }
 
 protected:
@@ -349,7 +349,7 @@ protected:
   typename RepositoryMapType<Obj, ObjId, ObjMap>
     ::Map* objects;
 
-  virtual ObjId allocate_new_object_id
+  virtual ObjId allocate_new_object_id_internal
     (ObjectCreationInfo& oi, const Par&) = 0;
 
   //! Insert new object into objects
@@ -413,7 +413,7 @@ protected:
 
   //! This specialization takes the first unused (numeric)
   //! id and ignores Par
-  ObjId allocate_new_object_id 
+  ObjId allocate_new_object_id_internal 
     (ObjectCreationInfo&, const Par&) override
   {
     RLOCK(this->objectsM);
@@ -553,7 +553,7 @@ public:
 
 protected:
   //! This specialization takes the key value from pars.
-  ObjId allocate_new_object_id 
+  ObjId allocate_new_object_id_internal 
     (ObjectCreationInfo& oi, const Par& param)
   {
     RLOCK(this->objectsM);
@@ -618,7 +618,7 @@ public:
 
 protected:
   //! This specialization takes the key value from pars.
-  ObjId allocate_new_object_id 
+  ObjId allocate_new_object_id_internal 
     (ObjectCreationInfo& oi, const Par& param)
   {
     RLOCK(this->objectsM);

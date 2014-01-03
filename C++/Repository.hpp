@@ -81,7 +81,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   { 
     RLOCK (objectsM);
 
-    const ObjId objId = allocate_new_object_id
+    const ObjId objId = allocate_new_object_id_internal
       (cinfo, param);
 
     toString (objId, cinfo.objectId);
@@ -304,7 +304,7 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
       { 
         cinfo.objectId.clear();
         const ObjId objId = 
-          this->allocate_new_object_id(cinfo, param);
+          this->allocate_new_object_id_internal(cinfo, param);
         toString(objId, cinfo.objectId);
 
         // dynamic cast for use with inherited parameters
