@@ -100,8 +100,8 @@ RThreadBase::RThreadBase
   externalTerminated (extTerminated)
 {
   LOG_DEBUG (log, "thread " << pretty_id() 
-             << ">\t created [0x" 
-             << std::hex << id << "]");
+             << "\t is created [" 
+             << id << "]");
 }
 
 RThreadBase::RThreadBase

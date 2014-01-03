@@ -31,6 +31,11 @@
 #ifndef CONCURRO_RTHREAD_H_
 #define CONCURRO_RTHREAD_H_
 
+#include <string>
+#include <atomic>
+#include <thread>
+#include <memory>
+#include <type_traits>
 #include "SNotCopyable.h"
 #include "RMutex.h"
 #include "REvent.h"
@@ -38,11 +43,6 @@
 #include "SCommon.h"
 #include "RObjectWithStates.h"
 #include "Repository.h"
-#include <string>
-#include <atomic>
-#include <thread>
-#include <memory>
-#include <type_traits>
 
 namespace curr {
 
@@ -91,15 +91,29 @@ class RThreadBase
 public:
   struct Par
   {
+    //! The type for RThreadBase::Par numeration.
+    typedef uint64_t par_num_t;
+
     Event* extTerminated;
 
-    Par(Event* ext_terminated = 0) 
-      : extTerminated(ext_terminated) {}
+    Par(Event* ext_terminated = 0) :
+      extTerminated(ext_terminated),
+      par_num([]()
+      { 
+        static std::atomic<par_num_t> cnt(0);
+        return ++cnt;
+      }())
+    {
+    }
+
     virtual ~Par() {}
     virtual RThreadBase* create_derivation
       (const ObjectCreationInfo&) const = 0;
     virtual RThreadBase* transform_object
       (const RThreadBase*) const = 0;
+
+    //! Number of this par (for better logging)
+    const par_num_t par_num;
 
     std::string thread_name;
   };
@@ -268,11 +282,11 @@ public:
     Par(Event* ext_terminated = 0)
     : RThreadBase::Par(ext_terminated),
       rthreadCreated(
-        "RThread<std::thread>::Par::rthreadCreated",
-        true, false),
+        SFORMAT("StdThread::Par::rthreadCreated:" 
+                << par_num << "par"), true, false),
       rthreadStarted(
-        "RThread<std::thread>::Par::rthreadStarted",
-        true, false),
+        SFORMAT("StdThread::Par::rthreadStarted:" 
+                << par_num << "par"), true, false),
       repository(0), th_id(0)
     {}
 
@@ -290,18 +304,21 @@ public:
     std::thread::native_handle_type get_id
       (ObjectCreationInfo& oi) const
     {
-      if (th_id)
-        return th_id;
-
       repository = dynamic_cast<RepositoryType*>
         (oi.repository);
       SCHECK(repository);
       oi.objectCreated = &rthreadCreated;
+
+      if (th_id)
+        return th_id;
+
       th = std::unique_ptr<std::thread>
         (new std::thread
          (&RThread<std::thread>::Par::run0, 
           const_cast<Par*>(this)));
       th_id = th->native_handle();
+      LOG_DEBUG(log, "thread " << th_id 
+                << " is created by " << par_num << "par");
       return th_id;
     }
 
@@ -326,9 +343,11 @@ public:
     mutable std::unique_ptr<std::thread> th;
     mutable Event rthreadCreated;
     Event rthreadStarted;
-    //mutable RThread<std::thread>* rthread;
     mutable RepositoryType* repository;
     mutable std::thread::native_handle_type th_id;
+
+  private:
+    typedef Logger<Par> log;
   };
 
   RThread(const std::string& id, Event* extTerminated = 0)

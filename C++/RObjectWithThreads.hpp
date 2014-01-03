@@ -43,6 +43,8 @@ RObjectWithThreads<Object>
 : destructor_delegate_is_called(false)
 {
   for (ThreadPar* par : pars) {
+    LOG_DEBUG(log, "push " << par->par_num << "par to " 
+              << typeid(Object).name());
     threads_pars.push(
       std::unique_ptr<ThreadPar>(par));
   }

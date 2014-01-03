@@ -103,7 +103,7 @@ class LOG
 { 
 public:
   class Root {};
-  class Thread {};
+//  class Thread {};
   class Concurrency {};
   class States {};
   class Events {};
@@ -140,12 +140,14 @@ inline LogBase* Logger<LOG::Root>::init_base
   return new LogBase ("");
 }
 
+#if 0
 template<>
 inline LogBase* Logger<LOG::Thread>::init_base 
 (const std::string& name)
 {
   return new LogBase ("Thread");
 }
+#endif
 
 template<>
 inline LogBase* Logger<LOG::Concurrency>::init_base 

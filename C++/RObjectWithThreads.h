@@ -110,6 +110,9 @@ protected:
   std::queue< std::unique_ptr<ThreadPar> > threads_pars;
   std::list<RThreadBase*> threads;
   std::list<CompoundEvent> threads_terminals;
+
+private:
+  typedef Logger<RObjectWithThreads<Object>> log;
 };
 
 template<class Object>
