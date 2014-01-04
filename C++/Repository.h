@@ -749,7 +749,7 @@ public:
   //! Form an object name as a typeid : univeral_id.
   virtual std::string object_name() const
   {
-    return SFORMAT(typeid(*this).name() << ':' 
+    return SFORMAT(curr::type<*this>::name() << ':' 
                    << universal_id()); 
   }
 };

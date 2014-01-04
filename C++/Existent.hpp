@@ -152,7 +152,7 @@ void Existent<T, StateHook>::inc_existence()
   ++obj_count;
   LOG_DEBUG
     (log, 
-     typeid(Existent<T, StateHook>).name() 
+     curr::type<Existent<T, StateHook>>::name()
      << ": ++obj_count == " << obj_count);
 
   assert (obj_count > 0);

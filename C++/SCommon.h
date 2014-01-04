@@ -30,12 +30,19 @@
 #ifndef SCOMMON_H_
 #define SCOMMON_H_
 
+#include <iostream>
+#include <sstream>
+#include <ostream>
+#include <iomanip>
+//#include <string.h>
 #include <string>
+#include <touple>
 #include <stdarg.h>
 #ifdef _WIN32
 #include <atlbase.h>
 #else
 #include <errno.h>
+#include <cxxabi.h>
 #define __declspec(x)
 #define __stdcall
 #define INVALID_SOCKET (-1)
@@ -43,11 +50,8 @@
 #define SOCKET int
 #endif
 
-#include <sstream>
-#include <ostream>
-#include <iomanip>
-#include <string.h>
 #include <boost/lexical_cast.hpp>
+#include <types/meta.h>
 
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
@@ -60,10 +64,39 @@ namespace curr {
 #  define _T
 #endif
 
+#if 0
 typedef unsigned short ushort;
 typedef unsigned long ulong;
 typedef unsigned int uint;
 typedef unsigned char uchar;
+#endif
+
+//! Return the demangled Type name
+template<class Type>
+struct type
+{
+  static std::string name() const
+  {
+#ifndef _WIN23
+    // Demangle the name by the ABI rules
+    int status;
+    const char* mangled = typeid(Type).name();
+    char* name = abi::__cxa_demangle
+      (mangled, nullptr, nullptr, status);
+    if (status == 0) {
+      std::string res(name);
+      free(name);
+      return res;
+    }
+    else {
+      assert(name == nullptr);
+      return std::string(mangled);
+    }
+#else
+    return typeid(Type).name();
+#endif
+  }
+};
 
 // cut out not more than maxCount chars that equal to passed one. If maxCount == -1 then cut out all
 std::string trimLeft(const std::string &, char = ' ', int maxCount =
@@ -129,8 +162,10 @@ strsep(char **stringp, const char *delim);
 std::wstring sWinErrMsg (DWORD errorCode);
 #endif
 
+#if 0
 // formats string a la sprintf, max 10k size
 std::wstring sFormat(std::wstring format, ...);
+#endif
 
 #define WSFORMAT(e) ((dynamic_cast<const std::wostringstream&>(std::wostringstream().flush() << e)).str())
 #ifndef UNICODE
@@ -138,6 +173,54 @@ std::wstring sFormat(std::wstring format, ...);
 #else
 #define SFORMAT WSFORMAT
 #endif
+
+namespace {
+
+#if 0
+//! A helper class for sformat()
+template<class... Args>
+struct sformat_type :: std::touple
+{
+  using std::touple::touple;
+};
+#endif
+
+template<class Stream>
+struct stream_out
+{
+  stream_out(Stream& os_) : os(os_) {}
+
+  template<class T>
+  static void out(T&& v) { os << v; }
+
+  Stream& os;
+};
+
+}
+
+template<class... Args>
+std::ostream& operator<< 
+  ( std::ostream& out,
+#if 0
+    sformat_type
+#else
+    std::touple
+#endif
+      <Args...>&& parts)
+{
+  for_each<stream_out<std::ostream>::out>
+    (std::move(parts));
+  return out;
+}
+
+template<class... Args>
+std::string sformat(Args&& args...)
+{
+  return (dynamic_cast<const std::ostringstream&>
+    (std::ostringstream().flush() 
+     << std::make_touple(args...)
+    )).str()
+}
 
 std::string AmountFormat(double amt, int precision = 2);
 std::string StripDotZeros(const std::string& s);
@@ -156,8 +239,10 @@ std::string sFormatVaA(const std::string & format, va_list list);
    (SFORMAT("When calling '" << sysFun << " (...)' the system error '" \
    << sWinErrMsg (sysErr) << "' has occured (#" << sysErr << ")."))
 
+#if 0
 // throws std::logic_error, formating string first
 __declspec(noreturn)void sThrow(const wchar_t * format, ...);
+#endif
 
 // load string with given id from resources. Maximum string length is 10k
 std::string loadResourceStr(int id);

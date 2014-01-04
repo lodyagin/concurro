@@ -127,10 +127,10 @@ public:
   virtual ~ObjectWithStatesInterface() {}
 
   //! The default implementation returns just
-  //! typeid(*this).name(). 
+  //! curr::type<*this>::name(). 
   virtual std::string object_name() const
   {
-    return typeid(*this).name();
+    return curr::type<*this>::name();
   }
 };
 

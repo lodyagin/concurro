@@ -39,7 +39,7 @@ namespace curr {
 
 template<class Thread, class T>
 RThreadRepository<Thread, T>::RThreadRepository(int w)
-  : Parent(typeid(RThreadRepository<Thread, T>).name(), 
+  : Parent(curr::type<RThreadRepository<Thread, T>>::name(), 
            100 // the value is ignored for std::map
     ), wait_m(w)
 {

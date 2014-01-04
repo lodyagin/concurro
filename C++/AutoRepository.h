@@ -67,8 +67,8 @@ public:
   AutoRepository()
     : rep(new Rep<std::map>(SFORMAT(
           "AutoRepository<" 
-          << typeid(Object).name()
-          << "[" << typeid(ObjectId).name() << "]>"),
+          << curr::type<Object>::name()
+          << "[" << curr::type<ObjectId) << "]>">::name(),
           0))
   {
     assert(rep);
@@ -137,8 +137,8 @@ public:
   {
     new AutoRepository(new Rep<Cont>(SFORMAT(
           "AutoRepository<" 
-          << typeid(Object).name()
-          << "[" << typeid(ObjectId).name() << "]>"),
+          << curr::type<Object>::name()
+          << "[" << curr::type<ObjectId) << "]>">::name(),
         initial_capacity));
   }
 

@@ -41,6 +41,7 @@
 #include <log4cxx/helpers/properties.h>
 #include <log4cxx/spi/location/locationinfo.h>
 //
+#include "SCommon.h"
 #include "ObjectWithLogging.h"
 
 namespace curr {
@@ -114,20 +115,16 @@ public:
  */
 template<class Type>
 class Logger
-//: //public LogBase,
-//   public SAutoSingleton< Logger<Type> >
 {
 public:
-  //Logger () : LogBase (typeid(Type).name ()) {}
-
   static log4cxx::LoggerPtr logger() 
   {
-    static LogBase* base = init_base (typeid(Type).name ());
+    static LogBase* base = init_base (curr::type<Type)>::name();
     return base->logger;
   }
 protected:
-  /// It is for partial specialization and use special
-  /// names for common log classes (the members of LOG).
+  //! It is for partial specialization and use special
+  //! names for common log classes (the members of LOG).
   static LogBase* init_base (const std::string& name) {
    return new LogBase(name);
   }

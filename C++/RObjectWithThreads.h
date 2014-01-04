@@ -253,7 +253,7 @@ struct RunProviderPar : ObjectFunThread<Final>::Par
     ObjectFunThread<Final>::Par
     // TODO different names for different threads (add id)
     ( 
-      SFORMAT(typeid(RunProvider).name() << "::run()*"),
+      SFORMAT(curr::type<RunProvider) << "::run()*">::name(),
       [](RunProvider& obj)
       {
         obj.run();

@@ -222,7 +222,7 @@ connection<CURR_RSOCKETCONNECTION_T_>
   assert(this->sock_addr);
   this->socket_rep = //FIXME memory leak
     new RSocketRepository(
-  SFORMAT(typeid(Connection).name() 
+  SFORMAT(curr::type<Connection>::name() 
           << ":" << oi.objectId
           << ":RSocketRepository"),
           max_input_packet,
@@ -463,7 +463,7 @@ server_factory<Connection>
     <ServerConnectionFactoryAxis, ListeningSocketAxis>
       (l_sock, ListeningSocket::boundState),
   repository
-    ( typeid(*this).name(), 
+    ( curr::type<*this>::name(), 
       reserved,
       &StdThreadRepository::instance()),
   threads(this),

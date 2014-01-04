@@ -126,8 +126,8 @@ void RMixedAxis<Axis, Axis2>
                  "thread " 
                  << RThread<std::thread>::current_pretty_id()
                  << ">\t object " << obj.object_name()
-                 << ">\t axis " << typeid(Axis).name()
-                 << "/" << typeid(Axis2).name()
+                 << ">\t axis " << curr::type<Axis>::name()
+                 << "/" << curr::type<Axis2>::name()
                  << ">\tmove_to:\t "
                  << UniversalState(from).name()
                  << std::hex << " (0x" << from
@@ -176,8 +176,8 @@ bool RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << "/" << typeid(Axis2).name()
+            << ">\t axis " << curr::type<Axis>::name()
+            << "/" << curr::type<Axis2>::name()
             << ">\tcompare_and_move:\t "
             << UniversalState(expected).name()
             << std::hex << " (0x" << (uint32_t) from
@@ -228,8 +228,8 @@ bool RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << "/" << typeid(Axis2).name()
+            << ">\t axis " << curr::type<Axis>::name()
+            << "/" << curr::type<Axis2>::name()
             << ">\tcompare_and_move:\t "
             << UniversalState(from).name()
             << std::hex << " (0x" << from
@@ -287,8 +287,8 @@ auto RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << "/" << typeid(Axis2).name()
+            << ">\t axis " << curr::type<Axis>::name()
+            << "/" << curr::type<Axis2>::name()
             << ">\tcompare_and_move:\t "
             << UniversalState(from).name()
             << std::hex << " (0x" << from
@@ -339,8 +339,8 @@ bool RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << typeid(Axis).name()
-            << "/" << typeid(Axis2).name()
+            << ">\t axis " << curr::type<Axis>::name()
+            << "/" << curr::type<Axis2>::name()
             << ">\tneg_compare_and_move:\t "
             << UniversalState(from_).name()
             << std::hex << " (0x" << from_
