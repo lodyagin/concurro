@@ -152,8 +152,10 @@ void Existent<T, StateHook>::inc_existence()
   ++obj_count;
   LOG_DEBUG
     (log, 
-     curr::type<Existent<T, StateHook>>::name()
-     << ": ++obj_count == " << obj_count);
+     std::make_touple
+       (curr::type<Existent<T, StateHook>>::name(),
+        ": ++obj_count == ",
+        obj_count));
 
   assert (obj_count > 0);
   assert ((obj_count == 1) == a); 

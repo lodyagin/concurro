@@ -185,9 +185,9 @@ class BadCast : public BadCastBase
 public:
   BadCast(const Source& src)
     : BadCastBase
-      (SFORMAT("Bad cast of a value of type " 
-         << curr::type<Source>::name()
-         << "to " << curr::type<Target))>::name(),
+        (sformat("Bad cast of a value of type ",
+                 curr::type<Source>::name(),
+                 "to ", curr::type<Target>::name())),
       source(src)
   {}
 

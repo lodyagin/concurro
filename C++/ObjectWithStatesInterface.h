@@ -130,7 +130,7 @@ public:
   //! curr::type<*this>::name(). 
   virtual std::string object_name() const
   {
-    return curr::type<*this>::name();
+    return curr::type<decltype(*this)>::name();
   }
 };
 

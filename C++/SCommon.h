@@ -34,9 +34,8 @@
 #include <sstream>
 #include <ostream>
 #include <iomanip>
-//#include <string.h>
 #include <string>
-#include <touple>
+#include <tuple>
 #include <stdarg.h>
 #ifdef _WIN32
 #include <atlbase.h>
@@ -51,7 +50,7 @@
 #endif
 
 #include <boost/lexical_cast.hpp>
-#include <types/meta.h>
+#include "types/meta.h"
 
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
@@ -75,14 +74,14 @@ typedef unsigned char uchar;
 template<class Type>
 struct type
 {
-  static std::string name() const
+  static std::string name()
   {
 #ifndef _WIN23
     // Demangle the name by the ABI rules
     int status;
     const char* mangled = typeid(Type).name();
     char* name = abi::__cxa_demangle
-      (mangled, nullptr, nullptr, status);
+      (mangled, nullptr, nullptr, &status);
     if (status == 0) {
       std::string res(name);
       free(name);
@@ -191,7 +190,7 @@ struct stream_out
   stream_out(Stream& os_) : os(os_) {}
 
   template<class T>
-  static void out(T&& v) { os << v; }
+  void out(T&& v) { os << v; }
 
   Stream& os;
 };
@@ -204,22 +203,21 @@ std::ostream& operator<<
 #if 0
     sformat_type
 #else
-    std::touple
+    std::tuple
 #endif
       <Args...>&& parts)
 {
-  for_each<stream_out<std::ostream>::out>
-    (std::move(parts));
+  types::for_each<stream_out>(std::move(parts));
   return out;
 }
 
 template<class... Args>
-std::string sformat(Args&& args...)
+std::string sformat(Args&&... args)
 {
   return (dynamic_cast<const std::ostringstream&>
     (std::ostringstream().flush() 
-     << std::make_touple(args...)
-    )).str()
+     << std::make_tuple(args...)
+    )).str();
 }
 
 std::string AmountFormat(double amt, int precision = 2);

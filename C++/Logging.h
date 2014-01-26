@@ -119,7 +119,8 @@ class Logger
 public:
   static log4cxx::LoggerPtr logger() 
   {
-    static LogBase* base = init_base (curr::type<Type)>::name();
+    static LogBase* base = init_base 
+      (curr::type<Type>::name());
     return base->logger;
   }
 protected:

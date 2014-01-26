@@ -291,7 +291,7 @@ public:
     )
     : StateMapParBase
         (states, transitions, parent_map_, 
-         curr::type<Axis)>::name() 
+         curr::type<Axis>::name())
   {}
 
   StateMapId get_id(ObjectCreationInfo& oi) const;
