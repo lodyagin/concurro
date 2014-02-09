@@ -73,7 +73,7 @@ SMAKE_THROW_FN_IMPL(sUserError, SUserError)
 
 std::ostream& operator<< (std::ostream& out, const SException& exc)
 {
-  out << curr::type<exc) << ": " << exc.what(>::name();
+  out << "SException: " << exc.what();
   return out;
 }
 

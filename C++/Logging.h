@@ -33,6 +33,7 @@
 
 #include <string>
 #include <typeinfo>
+#include "SCommon.h"
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/spi/location/locationinfo.h>
@@ -41,7 +42,6 @@
 #include <log4cxx/helpers/properties.h>
 #include <log4cxx/spi/location/locationinfo.h>
 //
-#include "SCommon.h"
 #include "ObjectWithLogging.h"
 
 namespace curr {

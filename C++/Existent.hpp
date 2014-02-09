@@ -152,7 +152,7 @@ void Existent<T, StateHook>::inc_existence()
   ++obj_count;
   LOG_DEBUG
     (log, 
-     std::make_touple
+     std::forward_as_tuple
        (curr::type<Existent<T, StateHook>>::name(),
         ": ++obj_count == ",
         obj_count));

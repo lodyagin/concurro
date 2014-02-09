@@ -44,7 +44,7 @@ RObjectWithThreads<Object>
 {
   for (ThreadPar* par : pars) {
     LOG_DEBUG(log, "push " << par->par_num << "par to " 
-              << curr::type<Object)>::name();
+              << curr::type<Object>::name());
     threads_pars.push(
       std::unique_ptr<ThreadPar>(par));
   }

@@ -41,7 +41,7 @@ const AbstractRepositoryBase::Traits
   RepositoryInterface<Obj, Par, ObjId>::traits
   ({curr::type<Obj>::name(), 
      curr::type<Par>::name(), 
-      curr::type<ObjId)}>::name();
+      curr::type<ObjId>::name()});
 
 template<
   class Obj, 

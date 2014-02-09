@@ -90,7 +90,8 @@ ClassWithEvents<Axis, initial_state, StateHook>
       get_events().insert
       (std::make_pair
        (ue.local_id(), 
-        Event(SFORMAT(curr::type<*this>::name() << ":" 
+        Event(SFORMAT(curr::type<decltype(*this)>::name() 
+                      << ":" 
                       << ue.name()), 
               true, is_initial_state))).first->second);
   }
@@ -110,7 +111,7 @@ void ClassWithEvents<Axis, initial_state, StateHook>
 
   LOG_TRACE(Logger<LOG::Root>, 
             "update_events for the axis "
-            << curr::type<ax>::name()
+            << curr::type<StateAxis>::name()
             << ", to = " << UniversalState(to).name()
             << std::hex << " (0x" << to << ")");
 

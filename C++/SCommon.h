@@ -200,24 +200,22 @@ struct stream_out
 template<class... Args>
 std::ostream& operator<< 
   ( std::ostream& out,
-#if 0
-    sformat_type
-#else
-    std::tuple
-#endif
-      <Args...>&& parts)
+    std::tuple<Args...>&& parts)
 {
-  types::for_each<stream_out>(std::move(parts));
+  types::for_each(parts);
   return out;
 }
 
 template<class... Args>
 std::string sformat(Args&&... args)
 {
-  return (dynamic_cast<const std::ostringstream&>
-    (std::ostringstream().flush() 
-     << std::make_tuple(args...)
-    )).str();
+  using ::curr::operator<<;
+  std::ostringstream oss;
+  ::curr::operator<<(oss, std::forward_as_tuple
+    (std::forward<Args>(args)...));
+  //oss << std::forward_as_tuple
+  //  (std::forward<Args>(args)...);
+  return oss.str();
 }
 
 std::string AmountFormat(double amt, int precision = 2);

@@ -463,7 +463,7 @@ server_factory<Connection>
     <ServerConnectionFactoryAxis, ListeningSocketAxis>
       (l_sock, ListeningSocket::boundState),
   repository
-    ( curr::type<*this>::name(), 
+    ( curr::type<decltype(*this)>::name(), 
       reserved,
       &StdThreadRepository::instance()),
   threads(this),
