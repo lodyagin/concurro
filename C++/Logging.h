@@ -185,6 +185,8 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 
 }
 
+}
+
 // Define a custom log macros for put streams into log
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {                    \
@@ -346,8 +348,6 @@ public: \
   } \
 private: \
   typedef curr::Logger<class_> log;
-
-}
 
 //! @}
 
