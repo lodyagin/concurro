@@ -96,6 +96,7 @@ public:
     rep->delete_object_by_id(id, freeMemory);
   }
 
+  //! \exception NoSuchId
   Object* get_object_by_id (const ObjectId& id) const 
     override
   {

@@ -184,6 +184,7 @@ public:
   virtual void delete_object_by_id 
     (const ObjId& id, bool freeMemory) = 0;
 
+  //! \exception NoSuchId
   virtual Obj* get_object_by_id (const ObjId& id) const= 0;
 
   //! Replace the old object by new one (and create the
@@ -290,6 +291,8 @@ public:
   Obj* create_object (const Par& param);
   void delete_object(Obj* obj, bool freeMemory);
   void delete_object_by_id(const ObjId& id, bool freeMemory);
+
+  //! \exception NoSuchId
   Obj* get_object_by_id (const ObjId& id) const;
 
   Obj* replace_object 
