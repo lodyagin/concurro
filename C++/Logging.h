@@ -33,6 +33,7 @@
 
 #include <string>
 #include <typeinfo>
+#include <sstream>
 #include "SCommon.h"
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
@@ -191,9 +192,9 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {                    \
     if (LOG4CXX_UNLIKELY((log) && (log)->isDebugEnabled())) {                    \
-    ::log4cxx::helpers::MessageBuffer oss_;                  \
+    std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); }} while (0)
+    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_DEBUG_LOC(log, message, loc)
 #endif
@@ -201,9 +202,9 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
 #define LOGGER_TRACE_LOC(log, stream_expr, loc) do {                    \
    if (LOG4CXX_UNLIKELY((log) && (log)->isTraceEnabled())) {            \
-    ::log4cxx::helpers::MessageBuffer oss_;                  \
+    std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(oss_), loc); }} while (0)
+    (log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_TRACE_LOC(log, message, loc)
 #endif
@@ -211,9 +212,9 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
 #define LOGGER_INFO_LOC(log, stream_expr, loc) do {                      \
    if (LOG4CXX_UNLIKELY((log) && (log)->isInfoEnabled())) {            \
-    ::log4cxx::helpers::MessageBuffer oss_;                  \
+    std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(oss_), loc); }} while (0)
+    (log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_INFO_LOC(log, message, loc)
 #endif
@@ -221,9 +222,9 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
 #define LOGGER_WARN_LOC(log, stream_expr, loc) do {                      \
    if (LOG4CXX_UNLIKELY((log) && (log)->isWarnEnabled())) {            \
-    ::log4cxx::helpers::MessageBuffer oss_;                  \
+    std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(oss_), loc); }} while (0)
+    (log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_WARN_LOC(log, message, loc)
 #endif
@@ -231,9 +232,9 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
 #define LOGGER_ERROR_LOC(log, stream_expr, loc) do {                    \
    if (LOG4CXX_UNLIKELY((log) && (log)->isErrorEnabled())) {            \
-    ::log4cxx::helpers::MessageBuffer oss_;                  \
+    std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getError(), oss_.str(oss_), loc); }} while (0)
+    (log)->forcedLog(::log4cxx::Level::getError(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_ERROR_LOC(log, message, loc)
 #endif
@@ -241,9 +242,9 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
 #define LOGGER_FATAL_LOC(log, stream_expr, loc) do {                    \
    if (LOG4CXX_UNLIKELY((log) && (log)->isFatalEnabled())) {            \
-    ::log4cxx::helpers::MessageBuffer oss_;                  \
+    std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(oss_), loc); }} while (0)
+    (log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_FATAL_LOC(logger, message, loc)
 #endif
@@ -252,17 +253,17 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 #define LOGGER_DEBUG_PLACE_LOC(log, place, stream_expr, loc) do {      \
   if (LOG4CXX_UNLIKELY((log) && this->log_params().place \
                       && (log)->isDebugEnabled())) {   \
-    ::log4cxx::helpers::MessageBuffer oss_;       \
+    std::ostringstream oss_;       \
     { oss_ << stream_expr ; }                  \
-    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); \
+    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
   } \
 } while (0)
 #define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {      \
  if (LOG4CXX_UNLIKELY(LogParams::place                  \
                && log::logger()->isDebugEnabled())) {      \
-    ::log4cxx::helpers::MessageBuffer oss_;       \
+    std::ostringstream oss_;       \
     { oss_ << stream_expr ; }                  \
-    log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(oss_), loc); \
+    log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
   } \
 } while (0)
 #else
