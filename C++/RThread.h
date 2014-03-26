@@ -476,8 +476,8 @@ protected:
 
 /**
  * A more light thread wrapper than ever LightThread.
- * Example: SharedThread([]{}(...)) th1; // already
- * started
+ * Example: SharedThread([](...){}); // already
+ * started, will ROI wait for termination.
  */
 class SharedThread
 {
