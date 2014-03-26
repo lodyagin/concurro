@@ -201,12 +201,12 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   const StateIdx n_parent_states = parent->get_n_states();
 
   if (parent) {
-    LOG_DEBUG(log, "Create a new map "
+    LOG_TRACE(log, "Create a new map "
               << universal_id() << " with the parent: "
               << *parent << "and new_states: " << par);
   }
   else {
-    LOG_DEBUG(log, 
+    LOG_TRACE(log, 
               "Create a new top-level map "
               << universal_id() << " with states: "
               << par);
@@ -232,7 +232,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
       throw BadParameters("map states repetition");
   }
 
-  LOG_DEBUG(log, 
+  LOG_TRACE(log, 
             "There are " << get_n_states() 
             << " states in the map.");
 
