@@ -36,24 +36,24 @@
 
 namespace curr {
 
-#define NReaders1WriterGuardTW_  NReaders1WriterGuard<T>
+#define NReaders1WriterGuardTW_  NReaders1WriterGuard<T,w>
 
-template<class T>
+template<class T, int w>
 DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, free);
 
-template<class T>
+template<class T, int w>
 DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
                    reader_entering);
 
-template<class T>
+template<class T, int w>
 DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
                    readers_entered);
 
-template<class T>
+template<class T, int w>
 DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
                    reader_exiting);
 
-template<class T>
+template<class T, int w>
 DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State, 
                    writer_entered);
 
@@ -64,7 +64,7 @@ DEFINE_STATE_CONST(NReaders1WriterGuardTW_, State,
 < \
   class T, \
   class Obj, \
-  template <class> class Guard, \
+  template <class, int> class Guard, \
   int wait_m \
 >
 #define CURRINT_HOLDER_T_ T,Obj,Guard,wait_m
@@ -76,11 +76,8 @@ RHolder<CURRINT_HOLDER_T_>
 //
 ::RHolder(const Par& par)
   : RObjectWithStates<HolderAxis>("charged"),
-    guarded(
-      AutoRepository<Obj,Id>::instance()
-        . template create<T>(par),
-      wait_m
-    )
+    guarded(AutoRepository<Obj,Id>::instance()
+      . template create<T>(par))
 {
 }
 
@@ -90,11 +87,8 @@ RHolder<CURRINT_HOLDER_T_>
 //
 ::RHolder(const Id& id)
   : RObjectWithStates<HolderAxis>("charged"),
-    guarded(
-      AutoRepository<Obj,Id>::instance()
-        . template get_by_id<T>(id),
-      wait_m
-    )
+    guarded(AutoRepository<Obj,Id>::instance()
+      . template get_by_id<T>(id))
 {
 }
 

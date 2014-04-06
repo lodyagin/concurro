@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute it
-  and/or modify it under the terms of the GNU Lesser
-  General Public License as published by the Free Software
+  This library is free software: you can redistribute
+  it and/or modify it under the terms of the GNU Lesser General
+  Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -47,8 +47,10 @@ DECLARE_AXIS(NReaders1WriterAxis, StateAxis);
  * operations being performed simultaneously on a guarded
  * object of type T (a several readers - single writer
  * conception).
+ * \tparam wait_m Wait time in milliseconds (-1 means
+ * infinite) 
  */
-template<class T>
+template<class T, int wait_m = 1000>
 class NReaders1WriterGuard
   : public RObjectWithEvents<NReaders1WriterAxis>
 {
@@ -111,14 +113,10 @@ public:
     NReaders1WriterGuard* guard;
   };
 
-  //! Wait time in milliseconds (-1 means infinite) 
-  const int wait_m;
-
-  NReaders1WriterGuard(T* object, int wait_m_ = 1000) 
+  NReaders1WriterGuard(T* object) 
     : RObjectWithEvents<NReaders1WriterAxis>(S(free)),
       CONSTRUCT_EVENT(free),
       CONSTRUCT_EVENT(readers_entered),
-      wait_m(wait_m_),
       readers_cnt(0),
       obj(object)
   {
@@ -212,7 +210,7 @@ template
   class T,
   class Obj = T,
 
-  template<class>
+  template<class, int>
   class Guard = NReaders1WriterGuard,
 
   int wait_m = 1000
@@ -258,14 +256,14 @@ public:
 
   //! Make a read-only object call (see
   //! NReaders1WriterGuard) 
-  const typename Guard<T>::ReadPtr operator->() const
+  const typename Guard<T,wait_m>::ReadPtr operator->() const
   {
     return guarded.operator->();
   }
 
   //! Make a read/write object call (see
   //! NReaders1WriterGuard) 
-  typename Guard<T>::WritePtr operator->()
+  typename Guard<T, wait_m>::WritePtr operator->()
   {
     return guarded.operator->();
   }
@@ -274,7 +272,7 @@ public:
 
 protected:
   // The guarded object
-  Guard<T> guarded;
+  Guard<T, wait_m> guarded;
 };
 
 #if 0
