@@ -38,7 +38,7 @@ void test_nreaders1writer()
     int w = 3;
   };
 
-  NReaders1WriterGuard<T,1000> g(new T);
+  NReaders1WriterGuard<T> g(new T, 1000);
   const auto& gr = g;
 
   gr->incr(0);
