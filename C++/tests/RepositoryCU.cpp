@@ -49,26 +49,31 @@ public:
   typedef unsigned int Id;
   struct Par 
   {
-	 Par(const std::string& str_) : str(str_) {}
-         Par(int i0) : i(i0) {}
-	 PAR_DEFAULT_MEMBERS(ObjT);
-	 Id get_id(const ObjectCreationInfo& oi) const 
-	 { 
-		return ++g_obj_id; 
-	 }
-	 const std::string str;
-         int i = 0;
+    Par(const std::string& str_) : str(str_) {}
+    Par(int i0) : i(i0) {}
+    PAR_DEFAULT_MEMBERS(ObjT);
+    Id get_id(const ObjectCreationInfo& oi) const 
+    { 
+      return ++g_obj_id; 
+    }
+    const std::string str;
+    int i = 0;
   };
+
+  typedef NoGuard<ObjT<Cont>,0> GuardType;
 
   ObjT(const ObjectCreationInfo& oi, const Par& par);
   ~ObjT() { destructor_called = true; }
 
   bool operator== (const ObjT& o) const
-  { return str == o.str 
-		&& repository == o.repository; }
+  { 
+    return str == o.str && repository == o.repository; 
+  }
 
   bool operator!= (const ObjT& o) const
-  { return ! (*this == o); }
+  { 
+    return ! (*this == o); 
+  }
 
   const std::string str;
   int i;
@@ -102,12 +107,12 @@ void test_create_object()
   g_obj_id = 0;
   CU_ASSERT_EQUAL_FATAL(r.size(), 0);
   
-  Obj* o1 = r.create_object(typename Obj::Par("o1"));
+  Obj* o1 = r.create_object(typename Obj::Par("o1")).get();
   const typename Obj::Par par2("o2");
   CU_ASSERT_PTR_NOT_NULL_FATAL(o1);
-  Obj* o2 = r.create_object(par2);
+  Obj* o2 = r.create_object(par2).get();
   CU_ASSERT_PTR_NOT_NULL_FATAL(o2);
-  Obj* o2_2 = r.create_object(par2);
+  Obj* o2_2 = r.create_object(par2).get();
   CU_ASSERT_PTR_NOT_NULL_FATAL(o2_2);
   CU_ASSERT_PTR_NOT_EQUAL_FATAL(o2, o2_2);
   CU_ASSERT_PTR_EQUAL_FATAL(o2->repository, &r);
@@ -124,24 +129,24 @@ void test_delete_object_by_id()
   REP(Cont, Obj) r("test_delete_object_by_id::r", 1);
   
   CU_ASSERT_EQUAL_FATAL(r.size(), 0);
-  Obj* o1 = r.create_object(typename Obj::Par("o1"));
+  Obj* o1 = r.create_object(typename Obj::Par("o1")).get();
   CU_ASSERT_EQUAL_FATAL(r.size(), 1);
   /*Obj* o2 =*/ r.create_object(typename Obj::Par("o2"));
   CU_ASSERT_EQUAL_FATAL(r.size(), 2);
 
   destructor_called = false;
-  r.delete_object_by_id(1, false);
-  CU_ASSERT_FALSE_FATAL(destructor_called);
+  r.delete_object_by_id(1/*, false*/);
+  CU_ASSERT_TRUE_FATAL(destructor_called);
   CU_ASSERT_EQUAL_FATAL(r.size(), 1);
   delete o1;
 
   destructor_called = false;
-  r.delete_object_by_id(2, true);
+  r.delete_object_by_id(2/*, true*/);
   CU_ASSERT_TRUE_FATAL(destructor_called);
   CU_ASSERT_EQUAL_FATAL(r.size(), 0);
 
   try {
-    r.delete_object_by_id(2, false);
+    r.delete_object_by_id(2/*, false*/);
     CU_FAIL_FATAL("Must throw NoSuchId");
   }
   catch(const typename REP(Cont,Obj)::NoSuchId&) {}
@@ -160,7 +165,7 @@ void test_for_each()
   int count = 0;
   int product = 1;
 
-  r.for_each([&count](Obj& o)
+  r.for_each([&count](typename Obj::GuardType& o)
   {
     count++;
   });
@@ -173,21 +178,21 @@ void test_for_each()
   r.create_object(Par(7));
 
   count = 0; product = 1;
-  r.for_each([&count,&product](Obj& o)
+  r.for_each([&count,&product](typename Obj::GuardType& o)
   {
     count++;
-    product *= o.i;
+    product *= o.get()->i;
   });
   CU_ASSERT_EQUAL_FATAL(count, 4);
   CU_ASSERT_EQUAL_FATAL(product, 210);
 
-  r.delete_object_by_id(3, false);
+  r.delete_object_by_id(3/*, false*/);
 
   count = 0; product = 1;
-  r.for_each([&count,&product](Obj& o)
+  r.for_each([&count,&product](typename Obj::GuardType& o)
   {
     count++;
-    product *= o.i;
+    product *= o.get()->i;
   });
   CU_ASSERT_EQUAL_FATAL(count, 3);
   CU_ASSERT_EQUAL_FATAL(product, 42);

@@ -60,10 +60,10 @@ void RThreadRepository<Thread, T>
 //
 ::stop_subthreads ()
 {
-  this->for_each([](Thread& th)
+  this->for_each([](GuardType& th)
   {
-    if (th.is_running())
-      th.stop();
+    if (th->is_running())
+      th->stop();
   });
 }
 
@@ -72,9 +72,9 @@ void RThreadRepository<Thread, T>
 //
 ::wait_subthreads ()
 {
-  this->for_each([this](Thread& th)
+  this->for_each([this](GuardType& th)
   {
-    CURR_WAIT(th.is_terminated(), wait_m);
+    CURR_WAIT(th->is_terminated(), wait_m);
   });
 }
 
@@ -83,34 +83,34 @@ void RThreadRepository<Thread, T>
 //
 ::cancel_subthreads ()
 {
-  this->for_each([](Thread& th)
+  this->for_each([](GuardType& th)
   {
-    th.cancel();
+    th->cancel();
   });
 }
 
 template<class Thread, class T>
 void RThreadRepository<Thread, T>
 //
-::delete_object(Thread* thread, bool freeMemory)
+::delete_object(Thread* thread/*, bool freeMemory*/)
 {
   assert (thread);
   const ThreadId id = fromString<ThreadId> 
     (thread->universal_id());
-  delete_object_by_id(id, freeMemory);
+  delete_object_by_id(id/*, freeMemory*/);
 }
 
 template<class Thread, class T>
 void RThreadRepository<Thread, T>
 //
-::delete_object_by_id (ThreadId id, bool freeMemory)
+::delete_object_by_id (ThreadId id/*, bool freeMemory*/)
 {
-  RThreadBase* th = this->get_object_by_id (id);
+  RThreadBase* th = this->get_object_by_id (id).get();
   if (th) 
   {
     th->stop ();
     CURR_WAIT(th->is_terminal_state(), wait_m);
-    Parent::delete_object_by_id (id, freeMemory);
+    Parent::delete_object_by_id (id/*, freeMemory*/);
   }
 }
 

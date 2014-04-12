@@ -75,10 +75,10 @@ public:
   /* overrided virtuals */
   Connection* create_object(const Par&);
 
-  void delete_object(Connection* obj, bool freeMemory);
+  void delete_object(Connection* obj/*, bool freeMemory*/);
 
   Connection* replace_object
-	 (Id, const Par&, bool freeMemory);
+	 (Id, const Par&/*, bool freeMemory*/);
 
   
   /* new methods */
@@ -99,7 +99,7 @@ Connection* ConnectionRepository<Connection, Map, Id>
 template<class Connection, class Map, class Id>
 void ConnectionRepository<Connection, Map, Id>
 //
-::delete_object(Connection* obj, bool freeMemory)
+::delete_object(Connection* obj/*, bool freeMemory*/)
 {
   // it is here but not in the Connection
   // desctructor because Repository allows delete_object
@@ -107,13 +107,13 @@ void ConnectionRepository<Connection, Map, Id>
   obj->ask_close();
 
   // TODO wait closedState
-  Parent::delete_object(obj, freeMemory);
+  Parent::delete_object(obj/*, freeMemory*/);
 }
 
 template<class Connection, class Map, class Id>
 Connection* ConnectionRepository<Connection, Map, Id>
 //
-::replace_object(Id id, const Par& par, bool freeMemory)
+::replace_object(Id id, const Par& par/*, bool freeMemory*/)
 {
   RLOCK(this->objectsM);
 
@@ -133,7 +133,7 @@ Connection* ConnectionRepository<Connection, Map, Id>
 
   // TODO wait closedState
   Connection* new_obj = dynamic_cast<Connection*>
-	 (Parent::replace_object(id, par, freeMemory));
+	 (Parent::replace_object(id, par/*, freeMemory*/));
   new_obj->ask_open();
   return new_obj;
 }

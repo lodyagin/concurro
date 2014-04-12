@@ -87,6 +87,11 @@ public:
       { THROW_PROGRAM_ERROR; }
   };
 
+  template<class T, int w>
+  using Guard = NoGuard<T,w>;
+
+  static constexpr int default_wait_m = 0;
+
 protected:
   Obj(const ObjectCreationInfo& oi, const Par& p)
     : StdIdMember(oi.objectId)

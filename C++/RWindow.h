@@ -222,6 +222,11 @@ public:
       { return id; }
   };
 
+  template<class T, int w>
+  using Guard = NoGuard<T,w>;
+
+  static constexpr int default_wait_m = 0;
+
   //! The copy constructor is deleted.
   RConnectedWindow(const RConnectedWindow&) = delete;
 

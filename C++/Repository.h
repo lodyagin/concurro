@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -30,21 +30,21 @@
 #ifndef CONCURRO_REPOSITORY_H_
 #define CONCURRO_REPOSITORY_H_
 
-#include "RMutex.h"
-#include "SNotCopyable.h"
-#include "SException.h"
-#include "Logging.h"
-#include "Event.h"
-#include "HasStringView.h"
 #include <string>
 #include <algorithm>
 #include <utility>
 #include <list>
 #include <map>
 #include <unordered_map>
+#include <stack>
 #include <assert.h>
 #include <atomic>
 #include <functional>
+#include "RMutex.h"
+#include "SException.h"
+#include "Logging.h"
+#include "Event.h"
+#include "HasStringView.h"
 
 namespace curr {
 
@@ -114,13 +114,26 @@ protected:
 /** It defines an interface for RepositoryBase but
  * is abstracted from a Container template parameter.
  */
-template<class Obj, class Par, class ObjId>
-  class RepositoryInterface 
-  : public AbstractRepositoryBase
+template<
+  class Obj, 
+  class Par, 
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
+>
+class RepositoryInterface : public AbstractRepositoryBase
 {
 public:
-
   typedef ObjId ObjIdType;
+  typedef Guard<Obj,wait_m> GuardType;
+
+#if 0
+  typedef typename Guard GuardTempl;
+#else
+  template<class T, int w>
+  using GuardTempl = Guard<T,w>;
+#endif
+
   static const Traits traits;
 
   //! Exception: No object with such id exists.
@@ -169,31 +182,36 @@ public:
   //! Par.
   //! \exception InvalidObjectParameters something is
   //! wrong with param. 
-  virtual Obj* create_object (const Par& param) = 0;
+  virtual Guard<Obj,wait_m>& 
+  create_object(const Par& param) = 0;
 
   //! Delete obj from the repository. freeMemory means
   //! to call the object desctructor after it.
-  virtual void delete_object
-    (Obj* obj, bool freeMemory) = 0;
+  virtual void 
+  delete_object(Guard<Obj,wait_m>& obj/*, bool freeMemory*/)=0;
 
   //! Delete the object with id.
   //! \param freeMemory call delete on the object itself
   //!  (destructor). false means only remove a
   //!  registration in the repository.
   //! \exception NoSuchId
-  virtual void delete_object_by_id 
-    (const ObjId& id, bool freeMemory) = 0;
+  virtual void 
+  delete_object_by_id(const ObjId& id/*, bool freeMemory*/)=0;
 
   //! \exception NoSuchId
-  virtual Obj* get_object_by_id (const ObjId& id) const= 0;
+  virtual Guard<Obj,wait_m>&
+  get_object_by_id(const ObjId& id) const= 0;
 
   //! Replace the old object by new one (and create the
   //! new). The old object is deleted.
   //! \exception InvalidObjectParameters something is
   //!   wrong with param.
   //! \exception NoSuchId
-  virtual Obj* replace_object 
-   (const ObjId& id, const Par& param, bool freeMemory)= 0;
+  virtual Guard<Obj,wait_m>& replace_object(
+    const ObjId& id, 
+    const Par& param/*, 
+    bool freeMemory*/
+  )= 0;
 
   //! Create a possible id of a new object. It is stable
   //! when Par has get_id method (for repositories based
@@ -201,15 +219,18 @@ public:
   //! Repository methods (when objectsM is accquired). In
   //! other cases somebody can get the same id for
   //! different objects by this function.
-  virtual ObjId allocate_new_object_id (const Par&) = 0;
+  virtual ObjId allocate_new_object_id(const Par&) = 0;
 
-  //! It calls f(Obj&) for each object in the repository
-  virtual void for_each
-    (std::function<void(Obj&)> f) = 0;
+  //! It calls f(Guard<Obj,waitm>&) for each object in the
+  //! repository
+  virtual void 
+  for_each(std::function<void(Guard<Obj,wait_m>&)> f) = 0;
 
-  virtual void for_each
-    (std::function<void(const Obj&)> f) const = 0;
+  virtual void for_each(
+    std::function<void(const Guard<Obj,wait_m>&)> f
+  ) const = 0;
 
+#if 0
   //! The version of create_object() with internal dynamic
   //! cast to the type T*.
   template<class T>
@@ -225,6 +246,7 @@ public:
   {
     return dynamic_cast<T*>(get_object_by_id(id));
   }
+#endif
 };
 
 //! It is used for object creation as an argument to
@@ -240,27 +262,108 @@ ObjectCreationInfo()
 };
 
 template<
-class Obj, class ObjId,
-  template<class...> class ObjMap
-  >
-  class RepositoryMapType
+  class Obj, 
+  class ObjId,
+  template<class...> class ObjMap,
+  template<class, int> class Guard,
+  int wait_m
+>
+class RepositoryMapType
 {
 public:
-  typedef ObjMap<Obj*> Map;
+  typedef ObjMap<Guard<Obj, wait_m>> Map;
 };
 
-template<class Obj, class ObjId>
-  class RepositoryMapType<Obj, ObjId, std::unordered_map>
+template<
+  class Obj, 
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
+>
+class RepositoryMapType
+  <Obj, ObjId, std::unordered_map, Guard, wait_m>
 {
 public:
-  typedef std::unordered_map<ObjId, Obj*> Map;
+  typedef std::unordered_map<ObjId, Guard<Obj,wait_m>> Map;
 };
 
-template<class Obj, class ObjId>
-  class RepositoryMapType<Obj, ObjId, std::map>
+template<
+  class Obj, 
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
+>
+class RepositoryMapType
+  <Obj, ObjId, std::map, Guard, wait_m>
 {
 public:
-  typedef std::map<ObjId, Obj*> Map;
+  typedef std::map<ObjId, Guard<Obj,wait_m>> Map;
+};
+
+//! The dummy guard - no guard at all, just guard interface
+template<class T, int>
+class NoGuard
+{
+public:
+  NoGuard() : NoGuard(nullptr) {}
+
+  NoGuard(nullptr_t object) : obj(nullptr) {}
+
+  NoGuard(T* object) : obj(object) 
+  {
+    SCHECK(obj);
+  }
+
+  NoGuard(NoGuard&& g) noexcept : obj(g.discharge()) {}
+
+  NoGuard& operator=(NoGuard&& g) noexcept
+  {
+    obj = g.discharge();
+  }
+
+  ~NoGuard() { discharge(); }
+
+  NoGuard& charge(T* object)
+  {
+    SCHECK(object);
+    obj = object;
+    return *this;
+  }
+
+  void swap(NoGuard& g) noexcept
+  {
+    std::swap(obj, g.obj);
+  }
+
+  T* discharge() noexcept
+  {
+    T* res = obj; // NB res can be nullptr
+    obj = nullptr;
+    return res;
+  }
+
+  T* get()
+  {
+    return obj;
+  }
+
+  operator bool() const
+  {
+    return obj;
+  }
+
+  T* operator->()
+  {
+    return obj;
+  }
+   
+  const T* operator->() const
+  {
+    return obj;
+  }
+
+protected:
+  T* obj;
 };
 
 /**
@@ -268,60 +371,80 @@ public:
  * Repository, i.e., methods not dependent on the ObjMap.
  */
 template<
-  class Obj, class Par, 
+  class Obj, 
+  class Par, 
   template<class...> class ObjMap, 
-  class ObjId
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
 >
-class RepositoryBase 
-  : public RepositoryInterface<Obj, Par, ObjId>
+class RepositoryBase : public RepositoryInterface
+  <Obj, Par, ObjId, Guard, wait_m>
 {
 public:
-  typedef RepositoryInterface<Obj, Par, ObjId> Parent;
+  typedef RepositoryInterface
+    <Obj, Par, ObjId, Guard, wait_m> Parent;
   using typename Parent::NoSuchId;
   using typename Parent::IdIsAlreadyUsed; 
   
-  RepositoryBase
-    (const std::string& repo_name) 
+  template<class T, int w>
+  using GuardTempl = Guard<T, w>;
+
+  RepositoryBase(const std::string& repo_name) 
     : objectsM (SFORMAT(repo_name << ".objectsM")),
-    objects(0)
-    {}
+      objects(0)
+  {}
 
   virtual ~RepositoryBase ();
 
-  Obj* create_object (const Par& param);
-  void delete_object(Obj* obj, bool freeMemory);
-  void delete_object_by_id(const ObjId& id, bool freeMemory);
+  Guard<Obj,wait_m>& 
+  create_object(const Par& param) override;
+
+  void delete_object(
+    Guard<Obj,wait_m>& obj/*, 
+    bool freeMemory*/
+  ) override;
+
+  void delete_object_by_id(
+    const ObjId& id/*, 
+    bool freeMemory*/
+  ) override;
 
   //! \exception NoSuchId
-  Obj* get_object_by_id (const ObjId& id) const;
+  Guard<Obj,wait_m>& 
+  get_object_by_id(const ObjId& id) const override;
 
-  Obj* replace_object 
-    (const ObjId& id, const Par& param, bool freeMemory);
+  Guard<Obj,wait_m>& replace_object(
+    const ObjId& id, 
+    const Par& param/*, 
+    bool freeMemory*/
+  ) override;
 
   //! return ids of objects selected by a predicate
   template<class Out, class Pred>
-  Out get_object_ids_by_pred (Out res, Pred p) const;
+  Out get_object_ids_by_pred(Out res, Pred p) const;
 
   //! return ids of objects selected by  an UniversalState
   //TODO add event on change possible result
   template<class Out, class State>
-  Out get_object_ids_by_state
-    (Out res, const State& state) const;
+  Out get_object_ids_by_state(
+    Out res, 
+    const State& state
+  ) const;
 
-  void for_each
-    (std::function<void(Obj&)> f) override;
+  void for_each(std::function<void(Guard<Obj,wait_m>&)> f) override;
 
-  void for_each
-    (std::function<void(const Obj&)> f) const override;
+  void for_each(
+    std::function<void(const Guard<Obj,wait_m>&)> f
+  ) const override;
 
-  class Destroy 
-    : public std::unary_function<int, void>
+  class Destroy : public std::unary_function<int, void>
   {
   public:
     Destroy (RepositoryBase& _repo) : repo (_repo) {}
     void operator () (int objId)
     {
-      repo.delete_object_by_id (objId, true);
+      repo.delete_object_by_id(objId, true);
     }
   protected:
     RepositoryBase& repo;
@@ -339,24 +462,41 @@ protected:
   class Value
   {
   public:
-    Value(Obj* t0) : t(t0) {}
-    Value(const std::pair<ObjId,Obj*>& p) : t(p.second) {}
-    operator Obj*() { return t; }
-    Obj* operator->() { return t; }
+    Value(Guard<Obj,wait_m>& t0) : t(t0) {}
+    Value(std::pair<const ObjId,Guard<Obj,wait_m>>& p) 
+      : t(p.second) 
+    {}
+    operator Guard<Obj,wait_m>& () { return t; }
+    Guard<Obj,wait_m>* operator->() { return &t; }
 
   protected:
-    Obj* t;
+    Guard<Obj,wait_m>& t;
+  };
+
+  class ConstValue
+  {
+  public:
+    ConstValue(const Guard<Obj,wait_m>& t0) : t(t0) {}
+    ConstValue(const std::pair<const ObjId,Guard<Obj,wait_m>>& p) 
+      : t(p.second) 
+    {}
+    operator const Guard<Obj,wait_m>& () const { return t; }
+    const Guard<Obj,wait_m>* operator->() const { return &t; }
+
+  protected:
+    const Guard<Obj,wait_m>& t;
   };
 
   RMutex objectsM;
-  typename RepositoryMapType<Obj, ObjId, ObjMap>
-    ::Map* objects;
+  typename RepositoryMapType
+    <Obj, ObjId, ObjMap, Guard, wait_m>::Map* objects;
 
   virtual ObjId allocate_new_object_id_internal
     (ObjectCreationInfo& oi, const Par&) = 0;
 
   //! Insert new object into objects
-  virtual void insert_object (const ObjId&, Obj*) = 0;
+  virtual Guard<Obj,wait_m>& insert_object(const ObjId&, Obj*) = 0;
+
   //! Free an object cell. <NB> it is empty in
   //! RepositoryBase to allow (dummy) calls from
   //! destructor.
@@ -375,14 +515,15 @@ private:
 template< 
   class Obj, class Par, 
   template<class...> class ObjMap, 
-  class ObjId 
+  class ObjId,
+  template<class, int> class Guard = NoGuard,
+  int wait_m = 0
 >
-class Repository 
-  : public RepositoryBase<Obj, Par, ObjMap, ObjId>,
-public SNotCopyable
+class Repository : public RepositoryBase
+  <Obj, Par, ObjMap, ObjId, Guard, wait_m>
 {
 public:
-  typedef RepositoryBase<Obj, Par, ObjMap, ObjId> Parent;
+  typedef RepositoryBase<Obj, Par, ObjMap, ObjId, Guard, wait_m> Parent;
 
   typedef Obj Object;
   typedef Par Parameter;
@@ -393,16 +534,23 @@ public:
 
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
-  Repository(const std::string& repository_name,
-           size_t initial_capacity)
-  : Parent (repository_name),
-    obj_count(0)
-    {
-      this->objects = new typename RepositoryMapType<Obj,
-        ObjId, ObjMap>::Map (initial_capacity);
-      this->objects->push_back (0); // id 0 is not used for
-      // real objects
-    }
+  Repository(
+    const std::string& repository_name,
+    size_t initial_capacity
+  )
+    : Parent (repository_name),
+      obj_count(0)
+  {
+    this->objects = new typename RepositoryMapType
+      <Obj, ObjId, ObjMap, Guard, wait_m>::Map 
+        (initial_capacity);
+
+    this->objects->emplace_back(nullptr); 
+    // id 0 is not used for real objects
+  }
+
+  Repository(const Repository&) = delete;
+  Repository& operator=(const Repository&) = delete;
 
   size_t size() const
   {
@@ -414,129 +562,168 @@ public:
 protected:
   std::atomic<unsigned int> obj_count;
 
+  //! ids are pushed here when objects removed (to reuse
+  //! vector cells)
+  std::stack<ObjId> unused_ids;
+
   //! This specialization takes the first unused (numeric)
   //! id and ignores Par
   ObjId allocate_new_object_id_internal 
     (ObjectCreationInfo&, const Par&) override
   {
     RLOCK(this->objectsM);
-
-    // FIXME ! change to stack
-    for (ObjId id = 1; id < this->objects->size (); id++)
+  
+    if (!unused_ids.empty())
     {
-      if (!(*this->objects)[id]) return id;
+      const ObjId id = unused_ids.top();
+      unused_ids.pop();
+      return id;
     }
 
-    if (this->objects->size () 
-        == this->objects->capacity ())
-      this->objects->reserve 
-        (this->objects->size () 
-         + this->objects->size () * 0.2);
+    if (this->objects->size()== this->objects->capacity ())
+      this->objects->reserve(this->objects->size() * 1.2);
     // TODO check the stepping
 
-    this->objects->push_back (0);
-    return this->objects->size () - 1;
+    this->objects->emplace_back(nullptr);
+    return this->objects->size() - 1;
   }
 
-  void insert_object (const ObjId& id, Obj* obj)
+  Guard<Obj,wait_m>& insert_object(const ObjId& id, Obj* obj)
   {
+    Guard<Obj,wait_m>* res = nullptr;
     {
       RLOCK(this->objectsM);
-      this->objects->at(id) = obj;
+      res = &this->objects->at(id).charge(obj);
     }
     obj_count++;
+    return *res;
   }
 
   void delete_object_id (const ObjId& id)
   {
-    {
-      RLOCK(this->objectsM);
-      Obj*& obj = this->objects->at(id);
-      if (obj) {
-        obj = 0;
-        obj_count--;
-      }
-    }
+    RLOCK(this->objectsM);
+    this->objects->at(id).discharge();
+    unused_ids.push(id);
+    obj_count--;
   }
 };
 
 template<
-  class Obj, class Par, 
+  class Obj, 
+  class Par, 
   template<class...> class ObjMap, 
-  class ObjId, class ObjMapValue>
-  class Destructor 
-  : public std::unary_function<ObjMapValue, void>
-{};
-
-template<
-  class Obj, class Par, 
-  template<class...> class ObjMap, 
-  class ObjId
+  class ObjId, 
+  template<class, int> class Guard,
+  int wait_m,
+  class ObjMapValue
 >
-class Destructor<Obj, Par, ObjMap, ObjId, Obj*> 
-  : public std::unary_function<Obj*, void>
+class Destructor 
+  : public std::unary_function<ObjMapValue&, void>
 {
 public:
-  Destructor 
-    (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
-    : repo (_repo)
+  using Rep = RepositoryBase
+    <Obj, Par, ObjMap, ObjId, Guard, wait_m>;
+
+  Destructor(const Rep* _repo) 
+    : repo (const_cast<Rep*>(_repo)) 
   {}
 
-  void operator () (Obj* obj)
+  void operator () (ObjMapValue& obj)
   { 
     if (obj) 
-      repo->delete_object (obj, true); 
+      repo->delete_object (obj/*, true*/); 
   }
 
 protected:
-  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
+  Rep* repo;
 };
+
+#if 0
+template<
+  class Obj, 
+  class Par, 
+  template<class...> class ObjMap, 
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
+>
+class Destructor<Obj, Par, ObjMap, ObjId, Guard, wait_m, Guard<Obj,wait_m>> 
+  : public std::unary_function<Guard<Obj,wait_m>&, void>
+{
+public:
+  Destructor 
+    (RepositoryBase<Obj, Par, ObjMap, ObjId, Guard, wait_m>* _repo)
+    : repo (_repo)
+  {}
+
+  void operator () (Guard<Obj,wait_m>& obj)
+  { 
+    if (obj) 
+      repo->delete_object (obj/*, true*/); 
+  }
+
+protected:
+  RepositoryBase<Obj, Par, ObjMap, ObjId, Guard, wait_m>* repo;
+};
+#endif
 
 template<
   class Obj, class Par, 
   template<class...> class ObjMap, 
-  class ObjId
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m,
+  class Value
 >
 class Destructor<
-  Obj, Par, ObjMap, ObjId, std::pair<const ObjId, Obj*>
+  Obj, Par, ObjMap, ObjId, Guard, wait_m,
+  std::pair<const ObjId, Value>
 > 
-: public std::unary_function
-  <std::pair<const ObjId, Obj*>, void>
+  : public std::unary_function
+    <std::pair<const ObjId, Value>&, void>
 {
 public:
-  Destructor 
-    (RepositoryBase<Obj, Par, ObjMap, ObjId>* _repo)
-    : repo (_repo)
+  using Rep = RepositoryBase
+    <Obj, Par, ObjMap, ObjId, Guard, wait_m>;
+
+  Destructor(const Rep* _repo)
+    : repo (const_cast<Rep*>(_repo))
   {}
 
   void operator() 
-    (const std::pair<const ObjId, Obj*>& pair)
+    (std::pair<const ObjId, Value>& pair)
   { 
     if (pair.second) 
-      repo->delete_object (pair.second, true); 
+      repo->delete_object (pair.second/*, true*/); 
   }
 
 protected:
-  RepositoryBase<Obj, Par, ObjMap, ObjId>* repo;
+  Rep* repo;
 };
 
 /**
  * This is a specialization of Repository for
  * std::unordered_map.
  */
-template<class Obj, class Par, class ObjId>
-class Repository<Obj, Par, std::unordered_map, ObjId>
+template<
+  class Obj, 
+  class Par, 
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
+>
+class Repository<Obj, Par, std::unordered_map, ObjId, Guard, wait_m>
   : public RepositoryBase
-      <Obj, Par, std::unordered_map, ObjId>,
+      <Obj, Par, std::unordered_map, ObjId, Guard, wait_m>,
     public SNotCopyable
 {
 public:
   typedef RepositoryBase<Obj, Par, std::unordered_map,
-    ObjId> Parent;
+    ObjId, Guard, wait_m> Parent;
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
-  typedef std::unordered_map<ObjId, Obj*> ObjMap;
+  typedef std::unordered_map<ObjId, Guard<Obj,wait_m>> ObjMap;
 
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
@@ -571,17 +758,18 @@ protected:
     return id;
   }
 
-  void insert_object (const ObjId& id, Obj* obj)
+  Guard<Obj,wait_m>& insert_object(const ObjId& id, Obj* obj)
   {
     RLOCK(this->objectsM);
     // will be add new element if id doesn't exists
-    (*this->objects)[id] = obj;
+    return (*this->objects)[id].charge(obj);
   }
 
   void delete_object_id(const ObjId& id)
   {
     assert(this->objects);
     RLOCK(this->objectsM);
+    this->objects->at(id).discharge();
     const size_t n = this->objects->erase(id);
     assert(n == 1);
   }
@@ -590,20 +778,27 @@ protected:
 /**
  * This is a specialization of Repository for std::map.
  */
-template<class Obj, class Par, class ObjId>
-  class Repository<Obj, Par, std::map, ObjId>
-  : public RepositoryBase<Obj, Par, std::map, ObjId>,
-  public SNotCopyable
+template<
+  class Obj, 
+  class Par, 
+  class ObjId,
+  template<class, int> class Guard,
+  int wait_m
+>
+class Repository<Obj, Par, std::map, ObjId, Guard, wait_m>
+  : public RepositoryBase
+      <Obj, Par, std::map, ObjId, Guard, wait_m>
 {
 public:
-  typedef RepositoryBase<Obj, Par, std::map,
-    ObjId> Parent;
+  typedef RepositoryBase
+    <Obj, Par, std::map, ObjId, Guard, wait_m> Parent;
   using Parent::NoSuchId;
   using Parent::IdIsAlreadyUsed;
 
-  typedef std::map<ObjId, Obj*> ObjMap;
+  typedef std::map<ObjId, Guard<Obj,wait_m>> ObjMap;
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.
+
   Repository 
     (const std::string& repository_name, 
      size_t initial_value)
@@ -611,6 +806,9 @@ public:
   {
     this->objects = new ObjMap ();
   }
+
+  Repository(const Repository&) = delete;
+  Repository& operator=(const Repository&) = delete;
 
   size_t size() const
   {
@@ -635,17 +833,18 @@ protected:
     return id;
   }
 
-  void insert_object (const ObjId& id, Obj* obj)
+  Guard<Obj,wait_m>& insert_object(const ObjId& id, Obj* obj)
   {
     RLOCK(this->objectsM);
     // will be add new element if id doesn't exists
-    (*this->objects)[id] = obj;
+    return (*this->objects)[id].charge(obj);
   }
 
   void delete_object_id(const ObjId& id)
   {
     assert(this->objects);
     RLOCK(this->objectsM);
+    this->objects->at(id).discharge();
     const size_t n = this->objects->erase(id);
     assert(n == 1);
   }
@@ -674,24 +873,32 @@ public:
 template<
   class Obj, class Par, 
   template<class...> class ObjMap, class ObjId,
-  template<class...> class List = std::list
+  template<class...> class List = std::list,
+  template<class, int> class Guard = NoGuard,
+  int wait_m = 1000
 >
-  class SparkRepository
-  : public Repository<Obj, Par, ObjMap, ObjId>
+class SparkRepository : public Repository
+  <Obj, Par, ObjMap, ObjId, Guard, wait_m>
 {
 public:
-  typedef Repository<Obj, Par, ObjMap, ObjId> Parent;
+  typedef Repository<Obj, Par, ObjMap, ObjId, Guard, wait_m> 
+    Parent;
+  typedef Guard<Obj,wait_m> GuardType;
 
-  SparkRepository
-    (const std::string& repo_name, size_t init_capacity)
-    : Repository<Obj, Par, ObjMap, ObjId>
-    (repo_name, init_capacity) {}
+  SparkRepository(
+    const std::string& repo_name, 
+    size_t init_capacity
+  )
+    : Repository<Obj, Par, ObjMap, ObjId, Guard, wait_m>
+       (repo_name, init_capacity) 
+  {}
 
-  Obj* create_object (const Par& param);
+  Guard<Obj,wait_m>& create_object (const Par& param);
 
   //! Some kind of params cause creation more than one
   //! object.
-  virtual List<Obj*> create_several_objects(Par& param);
+  virtual List<Guard<Obj,wait_m>*> create_several_objects(Par& param);
+
 private:
   typedef Logger<
     SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;

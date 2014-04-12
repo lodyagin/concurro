@@ -30,10 +30,11 @@
 #ifndef CONCURRO_ROBJECTWITHSTATES_H_
 #define CONCURRO_ROBJECTWITHSTATES_H_
 
+#include <atomic>
 #include "SCommon.h"
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
-#include <atomic>
+#include "StateMap.h"
 
 namespace curr {
 
@@ -43,10 +44,11 @@ namespace curr {
 class REventIsUnregistered : public SException
 {
 public:
-REventIsUnregistered(const UniversalEvent& ue)
-  : SException(SFORMAT("The event [" << ue 
-                       << "] is unregistered")),
-    event(ue) {}
+  REventIsUnregistered(const UniversalEvent& ue)
+    : SException(SFORMAT("The event [" << ue 
+                         << "] is unregistered")),
+      event(ue) 
+  {}
 
   const UniversalEvent event;
 };
@@ -67,6 +69,8 @@ public:
 
   RObjectWithStatesBase& operator=
     (RObjectWithStatesBase&&);
+
+//  void swap
 
   void register_subscriber
     (AbstractObjectWithEvents*, StateAxis*);

@@ -60,12 +60,12 @@ void StateMapInstance<Axis>::init_impl()
 
   try {
     stateMap = StateMapRepository::instance()
-      . get_map_for_axis(typeid(Axis));
+      . get_map_for_axis(typeid(Axis)).get();
   }
   catch(const StateMapRepository::NoSuchId&)
   {
     stateMap = StateMapRepository::instance()
-      . create_object(Axis::get_state_map_par());
+      . create_object(Axis::get_state_map_par()).get();
   }
   assert(stateMap);
   id = stateMap->numeric_id;

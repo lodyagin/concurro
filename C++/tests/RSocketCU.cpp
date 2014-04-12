@@ -105,10 +105,10 @@ void test_listening_socket()
   ListeningSocket* srv_sock = 
     dynamic_cast<ListeningSocket*>
     (sr.create_object
-     (*sar.create_addresses
+      (*sar.create_addresses
         < SocketSide::Listening, 
           NetworkProtocol::TCP,
-          IPVer::v4 > ("", 5556) . front()));
+          IPVer::v4 > ("", 5556) . front()->get()).get());
           // NB use different port than connect tests
   CU_ASSERT_TRUE_FATAL(
     RSocketBase::State::state_is
@@ -131,7 +131,7 @@ void test_addrinuse()
      (*sar.create_addresses
         < SocketSide::Listening, 
           NetworkProtocol::TCP,
-          IPVer::v4 > ("", 5557) . front()));
+          IPVer::v4 > ("", 5557) . front()->get()).get());
           // NB use different port than connect tests
 
   ListeningSocket* s2_sock = dynamic_cast<ListeningSocket*>
@@ -140,7 +140,7 @@ void test_addrinuse()
       . create_addresses
         < SocketSide::Listening, 
           NetworkProtocol::TCP,
-          IPVer::v4 > ("", 5557) . front()));
+          IPVer::v4 > ("", 5557) . front()->get()).get());
           // NB use different port than connect tests
 
   CU_ASSERT_TRUE_FATAL(
@@ -166,7 +166,7 @@ void test_accept()
           < SocketSide::Listening, 
             NetworkProtocol::TCP,
             IPVer::v4 
-          > ("", 5558) . front()));
+          > ("", 5558) . front()->get()).get());
 
   ClientSocket* cli_sock = 
     dynamic_cast<ClientSocket*>
@@ -175,7 +175,7 @@ void test_accept()
           < SocketSide::Client, 
             NetworkProtocol::TCP,
             IPVer::v4 
-          > ("localhost", 5558) . front()));
+          > ("localhost", 5558) . front()->get()).get());
 
   lstn_sock->ask_listen();
   cli_sock->ask_connect();
@@ -230,7 +230,7 @@ void test_client_socket_connection_refused()
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
-      ("localhost", 5555) . front()));
+      ("localhost", 5555) . front()->get()).get());
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
@@ -257,7 +257,7 @@ void test_client_socket_connection_timed_out()
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
-      ("google.com", 12345) . front()));
+      ("google.com", 12345) . front()->get()).get());
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
@@ -283,7 +283,7 @@ void test_client_socket_destination_unreachable()
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
-      ("dummdummdumm.kp", 80) . front()));
+      ("dummdummdumm.kp", 80) . front()->get()).get());
   CU_ASSERT_TRUE_FATAL(
     ClientSocket::State::state_is
     (*cli_sock, ClientSocket::createdState));
@@ -309,7 +309,7 @@ void test_client_socket_connected()
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
-      ("rutracker.org", 80) . front()));
+      ("rutracker.org", 80) . front()->get()).get());
   TCPSocket* tcp_sock = dynamic_cast<TCPSocket*> 
     (cli_sock);
 
@@ -342,7 +342,7 @@ void test_in_socket_new_msg()
         < SocketSide::Client, 
           NetworkProtocol::TCP, 
           IPVer::v4 >
-        ("192.168.25.240", 31001) . front()));
+        ("192.168.25.240", 31001) . front()->get()).get());
 
   auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);
   auto* cli_sock = dynamic_cast<ClientSocket*> (in_sock);
@@ -401,7 +401,7 @@ void test_out_socket_login()
           NetworkProtocol::TCP, 
           IPVer::v4
         >
-      ("192.168.25.240", 31001) . front()));
+      ("192.168.25.240", 31001) . front()->get()).get());
 
   auto* out_sock = dynamic_cast<OutSocket*> (in_sock);
   auto* tcp_sock = dynamic_cast<TCPSocket*> (in_sock);

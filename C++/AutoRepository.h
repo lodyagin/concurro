@@ -48,21 +48,48 @@ namespace curr {
  *
  * @ingroup repositories
  */
-template<class Object, class ObjectId>
+template<
+  class Object, 
+  class ObjectId
+>
 class AutoRepository final
   : public SAutoSingleton
       <AutoRepository<Object, ObjectId>>,
-    public virtual RepositoryInterface
-      <Object, typename Object::Par, ObjectId>
+    public virtual RepositoryInterface<
+      Object, 
+      typename Object::Par, 
+      ObjectId, 
+      Object::template Guard,
+      Object::default_wait_m
+    >
 {
 public:
   typedef typename Object::Par Par;
-  typedef RepositoryInterface<Object, Par, ObjectId> RepI;
   typedef SAutoSingleton<AutoRepository<Object, ObjectId>>
     AutoSingleton;
 
+//  template<class T, int w>
+//  using GuardTempl = typename Object::template GuardTempl<T,w>;
+
+  using RepI = RepositoryInterface<
+      Object, 
+      typename Object::Par, 
+      ObjectId, 
+      Object::template Guard,
+      Object::default_wait_m
+  >;
+
+  typedef typename RepI::GuardType GuardType;
+
   template<template <class...> class Cont>
-  using Rep = Repository<Object, Par, Cont, ObjectId>;
+  using Rep = Repository<
+    Object, 
+    Par, 
+    Cont, 
+    ObjectId,
+    Object::template Guard,
+    Object::default_wait_m
+  >;
 
   AutoRepository()
     : rep(new Rep<std::map>(curr::sformat(
@@ -80,36 +107,36 @@ public:
     return rep->size();
   }
 
-  Object* create_object (const Par& param) override
+  GuardType& create_object (const Par& param) override
   {
     return rep->create_object(param);
   }
   
-  void delete_object(Object* obj, bool freeMemory) override
+  void delete_object(GuardType& g/*, bool freeMemory*/) override
   {
-    rep->delete_object(obj, freeMemory);
+    rep->delete_object(g/*, freeMemory*/);
   }
 
   void delete_object_by_id
-    (const ObjectId& id, bool freeMemory) override
+    (const ObjectId& id/*, bool freeMemory*/) override
   {
-    rep->delete_object_by_id(id, freeMemory);
+    rep->delete_object_by_id(id/*, freeMemory*/);
   }
 
   //! \exception NoSuchId
-  Object* get_object_by_id (const ObjectId& id) const 
+  GuardType& get_object_by_id (const ObjectId& id) const 
     override
   {
     return rep->get_object_by_id(id);
   }
 
-  Object* replace_object 
+  GuardType& replace_object 
     (const ObjectId& id, 
-     const Par& param, 
-     bool freeMemory) 
+     const Par& param/*, 
+     bool freeMemory*/) 
     override
   {
-    return rep->replace_object(id, param, freeMemory);
+    return rep->replace_object(id, param/*, freeMemory*/);
   }
   
   ObjectId allocate_new_object_id (const Par& par)
@@ -117,14 +144,16 @@ public:
     return rep->allocate_new_object_id(par);
   }
 
-  void for_each
-    (std::function<void(Object&)> f) override
+  void for_each(
+    std::function<void(GuardType&)> f
+  ) override
   {
     return rep->for_each(f);
   }
 
-  void for_each
-    (std::function<void(const Object&)> f) const override
+  void for_each(
+    std::function<void(const GuardType&)> f
+  ) const override
   {
     return const_cast<const RepI*>(rep)->for_each(f);
   }

@@ -409,7 +409,8 @@ operator<< (std::ostream& out, const RSocketAddress& sa)
   return out;
 }
 
-std::list<RSocketAddress*> RSocketAddressRepository
+std::list<RSocketAddressRepository::GuardType*> 
+RSocketAddressRepository
 //
 ::create_addresses
   (const ListeningSocket& parent, SOCKET new_fd)

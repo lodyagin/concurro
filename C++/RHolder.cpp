@@ -34,7 +34,8 @@ namespace curr {
 DEFINE_AXIS(
   NReaders1WriterAxis,
   {
-    "free",
+    "discharged",      // references to no object
+    "charged",
     "reader_entering",
     "readers_entered", // read operations on an object in
                        // progress
@@ -43,7 +44,8 @@ DEFINE_AXIS(
                        // in progress
   },
   { 
-    { "free", "reader_entering" },
+    { "discharged", "charged" },
+    { "charged", "reader_entering" },
     { "reader_entering", "readers_entered" },
       
     // more readers
@@ -51,11 +53,14 @@ DEFINE_AXIS(
  
     { "readers_entered", "reader_exiting" },
     { "reader_exiting", "readers_entered" },
-    { "reader_exiting", "free" },
+    { "reader_exiting", "charged" },
 
     // <NB> only one writer
-    { "free", "writer_entered" },
-    { "writer_entered", "free" }
+    { "charged", "writer_entered" },
+    { "writer_entered", "charged" },
+    
+    { "charged", "discharged"    },
+    { "discharged", "discharged" }
   });
 
 DEFINE_AXIS(

@@ -115,7 +115,8 @@ bulk<Parent, Ts...>
 :
   ParentT(oi, par),
   in_win(RConnectedWindowRepository<SOCKET>::instance()
-    .create_object(*par.get_window_par(this->in_sock)))
+    .create_object
+      (*par.get_window_par(this->in_sock)).get())
 {
   SCHECK(in_win);
 }

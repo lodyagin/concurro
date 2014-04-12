@@ -57,7 +57,7 @@ public:
   //! It delegates the call to
   //! RThreadRepository::delete_object(thread, true)
   virtual void delete_thread
-    (RThreadBase* thread, bool freeMemory = true) = 0;
+    (RThreadBase* thread/*, bool freeMemory = true*/) = 0;
 };
 
 template<class Thread, class T>
@@ -83,6 +83,8 @@ public:
   typedef typename Parent::NoSuchId NoSuchId;
   typedef typename Parent::IdIsAlreadyUsed IdIsAlreadyUsed;
 
+  using typename Parent::GuardType;
+
   RThreadRepository(int w = 1000);
   //! Init with the specified operation timeout in msecs
   RThreadRepository(const RThreadRepository&) = delete;
@@ -103,26 +105,26 @@ public:
   RThreadBase* create_thread (const RThreadBase::Par& par)
   {
     return Parent::create_object
-      (dynamic_cast<const Par&>(par));
+      (dynamic_cast<const Par&>(par)).get();
   }
 
   //! It overrides RThreadFactory::delete_thread
   void delete_thread
-    (RThreadBase* thread, bool freeMemory = true)
+    (RThreadBase* thread/*, bool freeMemory = true*/)
   {
-    delete_object(dynamic_cast<Thread*>(thread), 
-                  freeMemory);
+    delete_object(dynamic_cast<Thread*>(thread)/*, 
+                  freeMemory*/);
   }
 
   // Overrides
-  void delete_object(Thread* thread, bool freeMemory);
+  void delete_object(Thread* thread/*, bool freeMemory*/);
 
   // Overrides
-  void delete_object_by_id(ThreadId id, bool freeMemory);
+  void delete_object_by_id(ThreadId id/*, bool freeMemory*/);
 
   // Overrides
-  Thread* replace_object(ThreadId id,const Par& param,
-                         bool freeMemory)
+  Thread* replace_object(ThreadId id,const Par& param/*,
+                         bool freeMemory*/)
   {
     THROW_EXCEPTION
       (SException,

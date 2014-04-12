@@ -409,6 +409,8 @@ public:
     size_t
   > Parent;
   typedef size_t Id;
+  typedef Parent::GuardType GuardType;
+  
 
   RSocketAddressRepository
     (const std::string& name = 
@@ -420,13 +422,13 @@ public:
   //~RSocketAddressRepository() ;
 
   template<SocketSide, NetworkProtocol, IPVer>
-  std::list<RSocketAddress*> create_addresses
+  std::list<GuardType*> create_addresses
     (const std::string& host, uint16_t port);
 
   //! Generate the address of the socket created as a
   //! result to accept(2) call.
   //! It returns the list with exactly 1 element.
-  std::list<RSocketAddress*> create_addresses
+  std::list<GuardType*> create_addresses
     (const ListeningSocket& parent, SOCKET new_fd);
 };
 

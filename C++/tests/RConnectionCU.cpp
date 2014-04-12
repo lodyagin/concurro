@@ -148,12 +148,14 @@ static void test_connection(bool do_abort)
       (*sar.create_addresses
         < SocketSide::Listening, 
           NetworkProtocol::TCP,
-          IPVer::v4 > ("", 31001) . front()));
+          IPVer::v4 > ("", 31001) . front() -> get())
+       .get());
 
   CU_ASSERT_PTR_NOT_NULL_FATAL(lstn);
 
-  connection::socket::server_factory<TestConnection<RSocketBase>> 
-    scf(lstn, 1);
+  connection::socket::server_factory
+    <TestConnection<RSocketBase>> 
+      scf(lstn, 1);
 
   RWindow wc;
 
@@ -165,7 +167,7 @@ static void test_connection(bool do_abort)
             < SocketSide::Client, 
               NetworkProtocol::TCP,
               IPVer::v4 > ("localhost", 31001) . front()
-          ))));
+          -> get()).get())).get());
 
   //(TestConnection::Par("localhost", 31001)));
   CU_ASSERT_PTR_NOT_NULL_FATAL(con);

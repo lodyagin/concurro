@@ -243,9 +243,9 @@ void ListeningSocket::SelectThread::run()
       
       lstn_sock->last_accepted = 
         socket->repository->create_object
-          (**socket->get_address()->repository
+          (*(*socket->get_address()->repository
             -> create_addresses(*lstn_sock, new_fd)
-              . begin());
+              . begin())->get()).get();
 
       RAxis<ListeningSocketAxis>::move_to
         (*lstn_sock, acceptedState);

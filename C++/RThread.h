@@ -273,8 +273,9 @@ public:
   class Par;
 
   //! A RepositoryType to use with this RThread
-  typedef RepositoryInterface<
-    RThread<std::thread>, Par, ThreadId > RepositoryType;
+  typedef RepositoryInterface
+    <RThread<std::thread>, Par, ThreadId, NoGuard, 0> 
+      RepositoryType;
 
   class Par : public RThreadBase::Par
   {
@@ -331,7 +332,7 @@ public:
       rthreadCreated.wait();
       assert(th_id);
       RThread<std::thread>* rthread = repository
-        -> get_object_by_id(th_id);
+        -> get_object_by_id(th_id).get();
       assert(rthread);
       rthreadStarted.set();
       // <NB> `this' can be already destroyed 
@@ -388,7 +389,7 @@ public:
   //! Destroy in the repository. 
   //! @param freeMemory Call a destructor (for using with
   //! threads created with create()) 
-  void remove(bool freeMemory = true);
+  void remove(/*bool freeMemory = true*/);
 
   //! Return ptr to the current thread or nullptr if the
   //! current thread is not registered in a global
@@ -461,7 +462,7 @@ public:
   { 
     destroy(); 
     try {
-      remove(false); 
+      remove(/*false*/); 
     } 
     catch(...) {}
   }

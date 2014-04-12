@@ -71,7 +71,7 @@ void UniversalState::init_map() const
 {
   if (!the_map)
     the_map = StateMapRepository::instance()
-      . get_object_by_id(STATE_MAP(the_state));
+      . get_object_by_id(STATE_MAP(the_state)).get();
 }
 
 std::ostream&
@@ -183,7 +183,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   universal_object_id(oi.objectId),
   numeric_id(fromString<int16_t>(oi.objectId)),
   parent(StateMapRepository::instance()
-         . get_object_by_id(par.parent_map)),
+         . get_object_by_id(par.parent_map).get()),
   n_states(par.states.size()
            + parent->get_n_states()
     ),
@@ -370,7 +370,7 @@ bool StateMap::is_compatible(uint32_t state) const
   else { // the map of `state' may be a descendant of this
     const StateMap* state_m = 
       StateMapRepository::instance()
-      . get_object_by_id(state_mid);
+      . get_object_by_id(state_mid).get();
       
     return state_m->is_same_or_descendant(this)
       && STATE_IDX(state) <= state_m->get_n_states();
@@ -428,9 +428,13 @@ void StateMap::outString (std::ostream& out) const
 #endif
 }
 
-StateMap* StateMapRepository::empty_map = nullptr;
+StateMap StateMapRepository::empty_map_obj;
 
-StateMap* StateMapRepository
+StateMapRepository::GuardType 
+StateMapRepository::empty_map
+  (&StateMapRepository::empty_map_obj);
+
+StateMapRepository::GuardType& StateMapRepository
 ::get_object_by_id(const StateMapId& id) const
 {
   if (id != 0)
@@ -442,8 +446,10 @@ StateMap* StateMapRepository
   }
 }
 
-StateMap* StateMapRepository::get_map_for_axis
-(const std::type_info& axis)
+StateMapRepository::GuardType& 
+StateMapRepository::get_map_for_axis(
+  const std::type_info& axis
+)
 {
   RLOCK(objectsM);
   return get_object_by_id(get_map_id(axis));

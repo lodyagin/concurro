@@ -46,20 +46,28 @@ class StateMapRepository
   StateMap, 
   StateMapParBase, 
   std::unordered_map,
-  StateMapId
-  >
+  StateMapId, 
+  NoGuard,
+  0
+>
 {
   friend class StateMap;
   friend class StateMapParBase;
+
 public:
   typedef Repository< 
     StateMap, 
     StateMapParBase, 
     std::unordered_map,
-    StateMapId > Parent;
+    StateMapId,
+    NoGuard,
+    0
+  > Parent;
+
+  using GuardType = NoGuard<StateMap, 0>;
 
   //! For id == 0 return empty map.
-  StateMap* get_object_by_id
+  NoGuard<StateMap,0>& get_object_by_id
     (const StateMapId& id) const override;
 
   //! Return max used transition id
@@ -67,7 +75,7 @@ public:
   { return max_trans_id; }
 
   //! Return a state map by a state axis
-  StateMap* get_map_for_axis(const std::type_info& axis);
+  NoGuard<StateMap,0>& get_map_for_axis(const std::type_info& axis);
 
   //! Return a map id by an axis type.
   //! It creates new StateMapId 
@@ -93,7 +101,8 @@ protected:
   StateMapId last_map_id;
   std::map<std::string, StateMapId> axis2map_id;
 
-  static StateMap* empty_map;
+  static StateMap empty_map_obj;
+  static GuardType empty_map;
 
 private:
   StateMapRepository() 

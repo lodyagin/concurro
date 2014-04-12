@@ -36,43 +36,62 @@
 
 namespace curr {
 
-template<class Obj, class Par, class ObjId>
-const AbstractRepositoryBase::Traits 
-  RepositoryInterface<Obj, Par, ObjId>::traits
-  ({curr::type<Obj>::name(), 
-     curr::type<Par>::name(), 
-      curr::type<ObjId>::name()});
+#define CURRINT_REPOSITORY_TEMPL_ template \
+< \
+  class Obj, \
+  class Par, \
+  template<class...> class ObjMap, \
+  class ObjId, \
+  template<class, int> class Guard, \
+  int wait_m \
+>
+#define CURRINT_REPOSITORY_T_ Obj,Par,ObjMap,ObjId,Guard,wait_m
 
 template<
   class Obj, 
   class Par, 
-  template<class...> class ObjMap, 
-  class ObjId 
+  class ObjId, 
+  template<class,int> class Guard, 
+  int wait_m
 >
-RepositoryBase<Obj, Par, ObjMap, ObjId>
+const AbstractRepositoryBase::Traits 
+RepositoryInterface<Obj, Par, ObjId, Guard, wait_m>
+::traits(
+  { curr::type<Obj>::name(), 
+    curr::type<Par>::name(), 
+    curr::type<ObjId>::name() 
+  }
+);
+
+CURRINT_REPOSITORY_TEMPL_
+RepositoryBase<CURRINT_REPOSITORY_T_>
 //
 ::~RepositoryBase ()
 {
-  std::for_each
-    (objects->begin (), 
-     objects->end (),
-     Destructor<Obj, Par, ObjMap, ObjId, 
-     typename RepositoryMapType<Obj, ObjId, ObjMap>
-       ::Map::value_type> (this)
-     );
+  std::for_each(
+    objects->begin (), 
+    objects->end (),
+    Destructor<
+      Obj, 
+      Par, 
+      ObjMap, 
+      ObjId, 
+      Guard,
+      wait_m,
+      typename RepositoryMapType
+        <Obj, ObjId, ObjMap, Guard, wait_m>
+          ::Map::value_type
+    > (this)
+  );
   delete objects;
 }
 
-template<
-  class Obj, 
-  class Par, 
-  template<class...> class ObjMap, 
-  class ObjId
->
-Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+Guard<Obj,wait_m>& RepositoryBase<CURRINT_REPOSITORY_T_>
 //
 ::create_object (const Par& param)
 {
+  Guard<Obj,wait_m>* res = nullptr;
   Obj* obj = 0;
   // <NB> cinfo.objectId is empty at the first call to
   // param
@@ -93,7 +112,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
       (param.create_derivation (cinfo));
 
     SCHECK (obj);
-    insert_object (objId, obj);
+    res = &insert_object (objId, obj);
   }
   LOG_TRACE(log, "Object " << *obj << " is created.");
 
@@ -102,25 +121,21 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     // <NB> after inserting into repo
     // and unlocking
 
-  return obj;
+  assert(res);
+  return *res;
 }
 
-template <
-  class Obj, 
-  class Par, 
-  template<class...> class ObjMap, 
-  class ObjId
->
-Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+Guard<Obj,wait_m>& RepositoryBase<CURRINT_REPOSITORY_T_>
 //
 ::replace_object 
-  (const ObjId& id, const Par& param, bool freeMemory)
+  (const ObjId& id, const Par& param/*, bool freeMemory*/)
 {
   RLOCK(objectsM);
 
   Obj* obj = 0;
   try {
-    obj = objects->at (id);
+    obj = objects->at (id).get();
   }
   catch (const std::out_of_range&) {
     THROW_EXCEPTION(NoSuchId, id);
@@ -129,43 +144,43 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   if (!obj) THROW_PROGRAM_ERROR;
   //obj->freeze();
 
-  (*objects)[id] = dynamic_cast<Obj*>
-    (param.transform_object (obj));
+  (*objects)[id].charge(
+    dynamic_cast<Obj*>(param.transform_object (obj))
+  );
 
   SCHECK ((*objects)[id]);
 
-  if ((*objects)[id] == obj)
-    return obj; // no transformation
-
-  if (freeMemory)
-    delete obj;
+  if ((*objects)[id].get() != obj)
+    if (true /*freeMemory*/)
+      delete obj;
 
   return (*objects)[id];
 }
 
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
-void RepositoryBase<Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+void RepositoryBase<CURRINT_REPOSITORY_T_>
 //
-::delete_object (Obj* obj, bool freeMemory)
+::delete_object (Guard<Obj,wait_m>& obj/*, bool freeMemory*/)
 {
   assert (obj);
   const ObjId objId = fromString<ObjId> 
     (obj->universal_id());
+//    (obj.operator->()->universal_id());
 
-  delete_object_by_id (objId, freeMemory);
+  delete_object_by_id (objId/*, freeMemory*/);
 }
 
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
-void RepositoryBase<Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+void RepositoryBase<CURRINT_REPOSITORY_T_>
 //
-::delete_object_by_id (const ObjId& id, bool freeMemory)
+::delete_object_by_id (const ObjId& id/*, bool freeMemory*/)
 {
   Obj* ptr = 0;
   {
     RLOCK(objectsM);
 
     try {
-      ptr = objects->at (id);
+      ptr = objects->at (id).get();
       delete_object_id(id);
       if (ptr == 0) 
         THROW_EXCEPTION(NoSuchId, id);
@@ -175,11 +190,11 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
     }
   }
   //ptr->freeze();
-  if (freeMemory) delete ptr;
+  if (true /*freeMemory*/) delete ptr;
 }
 
-template <class Obj, class Par, template<class...> class ObjMap, class ObjId>
-Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+Guard<Obj,wait_m>& RepositoryBase <CURRINT_REPOSITORY_T_>
 //
 ::get_object_by_id (const ObjId& id) const
 {
@@ -193,9 +208,9 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
 }
 
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
+CURRINT_REPOSITORY_TEMPL_
 template<class Out, class Pred>
-Out RepositoryBase<Obj, Par, ObjMap, ObjId>
+Out RepositoryBase<CURRINT_REPOSITORY_T_>
 //
 ::get_object_ids_by_pred (Out res, Pred p) const
 {
@@ -221,9 +236,9 @@ protected:
   State state;
 };
 
-template<class Obj, class Par, template<class...> class ObjMap, class ObjId>
+CURRINT_REPOSITORY_TEMPL_
 template<class Out, class State>
-Out RepositoryBase<Obj, Par, ObjMap, ObjId>
+Out RepositoryBase<CURRINT_REPOSITORY_T_>
 //
 ::get_object_ids_by_state 
   (Out res, const State& state) const
@@ -233,47 +248,57 @@ Out RepositoryBase<Obj, Par, ObjMap, ObjId>
     (res, StateMatch<Obj, State> (state));
 }
 
-template <
-  class Obj, class Par, template<class...> class ObjMap, 
-  class ObjId
->
-void RepositoryBase<Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+void RepositoryBase<CURRINT_REPOSITORY_T_>
 //
-::for_each(std::function<void(Obj&)> f)
+::for_each(std::function<void(Guard<Obj,wait_m>&)> f)
 {
   RLOCK(objectsM);
 
-  Obj* ptr;
-  for (const auto& v : *objects)
-    if ((ptr = Value(v)))
-      f (*ptr);
+  for (auto& v : *objects)
+  {
+    Value vv(v);
+    Guard<Obj,wait_m>& g = vv;
+    if (g)
+      f(g);
+  }
 }
 
-template <
-  class Obj, class Par, template<class...> class ObjMap, 
-  class ObjId
->
-void RepositoryBase<Obj, Par, ObjMap, ObjId>
+CURRINT_REPOSITORY_TEMPL_
+void RepositoryBase<CURRINT_REPOSITORY_T_>
 //
-::for_each(std::function<void(const Obj&)> f) const
+::for_each(std::function<void(const Guard<Obj,wait_m>&)> f) const
 {
   RLOCK(objectsM);
 
-  Obj* ptr;
   for (const auto& v : *objects)
-    if ((ptr = Value(v)))
-      f (const_cast<const Obj&>(*ptr));
+  {
+    const Guard<Obj,wait_m>& g = ConstValue(v);
+    if (g)
+      f(g);
+      //f (const_cast<const Guard<Obj,wait_m>&>(*ptr));
+  }
 }
 
 /*=====================================*/
 /*========== SparkRepository ==========*/
 /*=====================================*/
 
-template<
-  class Obj, class Par, template<class...> class ObjMap, class ObjId,
-  template<class...> class List
+#define CURRINT_SPARK_REPOSITORY_TEMPL_ template \
+< \
+  class Obj, \
+  class Par, \
+  template<class...> class ObjMap, \
+  class ObjId, \
+  template<class...> class List, \
+  template<class, int> class Guard, \
+  int wait_m \
 >
-Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
+#define CURRINT_SPARK_REPOSITORY_T_ \
+  Obj,Par,ObjMap,ObjId,List,Guard,wait_m
+
+CURRINT_SPARK_REPOSITORY_TEMPL_
+Guard<Obj,wait_m>& SparkRepository<CURRINT_SPARK_REPOSITORY_T_>
 //
 ::create_object (const Par& param)
 {
@@ -281,15 +306,12 @@ Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
   throw SeveralObjects();
 }
 
-template<
-  class Obj, class Par, template<class...> class ObjMap, class ObjId,
-  template<class...> class List
->
-List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
+CURRINT_SPARK_REPOSITORY_TEMPL_
+List<Guard<Obj,wait_m>*> SparkRepository<CURRINT_SPARK_REPOSITORY_T_>
 //
 ::create_several_objects(Par& param)
 {
-  List<Obj*> out;
+  List<Guard<Obj,wait_m>*> out;
   Obj* obj = 0;
 
   ObjectCreationInfo cinfo;
@@ -311,14 +333,12 @@ List<Obj*> SparkRepository<Obj, Par, ObjMap, ObjId, List>
         obj = dynamic_cast<Obj*>
           (param.create_next_derivation (cinfo));
         SCHECK (obj);
-        this->insert_object (objId, obj);
+        out.push_back(&this->insert_object(objId, obj));
         LOG_TRACE(log, 
                   "Object " << *obj << " is created.");
         
         if (cinfo.objectCreated)
           cinfo.objectCreated->set();
-
-        out.push_back(obj);
       }
   }
   return out;

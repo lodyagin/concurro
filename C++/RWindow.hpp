@@ -64,7 +64,7 @@ RConnectedWindow<ObjectId>* RConnectedWindow<ObjectId>
 {
   return RConnectedWindowRepository<ObjectId>::instance()
     . create_object(RConnectedWindow<ObjectId>
-                    ::Par(connection_id));
+                    ::Par(connection_id)).get();
 }
 
 template<class ObjectId>

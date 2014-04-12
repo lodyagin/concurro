@@ -807,7 +807,13 @@ void test_state_change()
     CU_ASSERT_EQUAL_FATAL(d2hs_cnt, 1);
     //CU_ASSERT_EQUAL_FATAL(dd_cnt, );
   }
-  
+}
+
+void test_assignment()
+{
+  C1 dd;
+
+  C1 ddd(std::move(dd));
 }
 
 }
