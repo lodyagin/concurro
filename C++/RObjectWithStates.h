@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -59,18 +59,20 @@ public:
 //! @{
 
 //TODO allow only delegates have subscribers list
+template<size_t max_subscribers = 0>
 class RObjectWithStatesBase
-: public virtual AbstractObjectWithStates
+  : public virtual AbstractObjectWithStates
 {
 public:
-  RObjectWithStatesBase();
-  RObjectWithStatesBase(RObjectWithStatesBase&&);
+  RObjectWithStatesBase() : n_subs(0) {}
+
+  RObjectWithStatesBase(RObjectWithStatesBase&) = delete;
+
+  RObjectWithStatesBase& operator=(
+    RObjectWithStatesBase&
+  ) = delete;
+
   virtual ~RObjectWithStatesBase();
-
-  RObjectWithStatesBase& operator=
-    (RObjectWithStatesBase&&);
-
-//  void swap
 
   void register_subscriber
     (AbstractObjectWithEvents*, StateAxis*);
@@ -84,27 +86,44 @@ public:
      const UniversalState& new_state) override;
 
 protected:
-  // No more changes in subscribers list
-  //std::atomic<bool> is_frozen;
-  //std::atomic<bool> is_changing;
-  RMutex subscribe_mt
-    { "RObjectWithStatesBase::subscribe_mt" };
+  struct Subscriber 
+  {
+    std::atomic<bool> ready;
+    AbstractObjectWithEvents* object;
+    StateAxis* axis;
+    CompoundEvent terminal;
 
-  typedef std::pair<AbstractObjectWithEvents*, StateAxis*>
-    Subscriber;
+    Subscriber() : ready(false) {}
+  };
 
-  //! Registered subscribers
-  std::set<Subscriber> subscribers;
-  //! All subscribers terminal states.
-  std::set<CompoundEvent> subscribers_terminals;
+  std::array<Subscriber, max_subscribers> subscribers;
+  std::atomic<size_t> n_subs;
+};
+
+template<>
+class RObjectWithStatesBase<0>
+  : public virtual AbstractObjectWithStates
+{
+public:
+#if 0
+  RObjectWithStatesBase(RObjectWithStatesBase&&);
+
+  RObjectWithStatesBase& operator=(
+    RObjectWithStatesBase&&
+  );
+
+  void swap(RObjectWithStatesBase& o);
+#endif
+
+  virtual ~RObjectWithStatesBase() {}
 };
 
 //! It can be used as a parent of an object which
 //! introduces new state axis.
-template<class Axis>
+template<class Axis, size_t max_subscribers = 0>
 class RObjectWithStates 
-: public virtual ObjectWithStatesInterface<Axis>,
-  public RObjectWithStatesBase
+  : public virtual ObjectWithStatesInterface<Axis>,
+    public RObjectWithStatesBase<max_subscribers>
 {
 public:
   typedef typename ObjectWithStatesInterface<Axis>
@@ -130,13 +149,13 @@ public:
     : currentState(initial_state), mcw(amcw)
   {}
 
+#if 0
   RObjectWithStates(const RObjectWithStates&);
   RObjectWithStates(RObjectWithStates&&);
 
-  virtual ~RObjectWithStates() {}
-
   RObjectWithStates& operator=(const RObjectWithStates&);
   RObjectWithStates& operator=(RObjectWithStates&&);
+#endif
 
   template<class AppObj>
     static typename RObjectWithStates<Axis>
@@ -177,42 +196,44 @@ class UniversalEvent;
 template<class Axis>
 using REvent = RMixedEvent<Axis, Axis>;
 
-template<class Axis>
+template<class Axis, size_t max_subscribers = 0>
 class RObjectWithEvents
-: public RObjectWithStates<Axis>,
-  public virtual ObjectWithEventsInterface<Axis>
+  : public RObjectWithStates<Axis, max_subscribers>,
+    public virtual ObjectWithEventsInterface<Axis>
 {
   template<class Axis1, class Axis2> 
     friend class RMixedEvent;
   friend class RState<Axis>;
   template<class Axis1, class Axis2> 
     friend class RMixedAxis;
-  template<class Axis1, class Axis2> 
+  template<class Axis1, class Axis2, size_t, size_t> 
     friend class RStateSplitter;
 public:
-  typedef RObjectWithStates<Axis> Parent;
+  typedef RObjectWithStates<Axis, max_subscribers> Parent;
   typedef typename Parent::State State;
-  typedef typename RObjectWithStates<Axis>::AMembWrap
+  typedef typename RObjectWithStates<Axis, max_subscribers>::AMembWrap
     AMembWrap;
 
   RObjectWithEvents
-    (const typename RObjectWithStates<Axis>::State& 
+    (const typename RObjectWithStates<Axis, max_subscribers>::State& 
      initial_state,
      AMembWrap* mcw = nullptr);
 
+#if 0
   RObjectWithEvents(RObjectWithEvents&&);
 
   RObjectWithEvents& operator= (RObjectWithEvents&&);
+#endif
 
   template<class AppObj>
-  static typename RObjectWithStates<Axis>
+  static typename RObjectWithStates<Axis, max_subscribers>
   ::template MembWrap<AppObj>*
   state_hook(void (AppObj::*memb) 
              (AbstractObjectWithStates*,
               const StateAxis&,
               const UniversalState&))
   {
-    return RObjectWithStates<Axis>::state_hook(memb);
+    return RObjectWithStates<Axis, max_subscribers>::state_hook(memb);
   }
 
   //! Update events due to trans_id to
@@ -244,24 +265,29 @@ protected:
 //! not intersected sets of events. It is also possible to
 //! have 2 events set on different axes on the same time.
 
-template<class DerivedAxis, class SplitAxis>
+template<
+  class DerivedAxis, 
+  class SplitAxis,
+  size_t maxs = 0,
+  size_t maxs_delegate = 0>
 class RStateSplitter 
-: public RObjectWithEvents<DerivedAxis>,
+: public RObjectWithEvents<DerivedAxis, maxs>,
   public virtual ObjectWithEventsInterface<SplitAxis>,
   public virtual ObjectWithStatesInterface<SplitAxis>
 {
 public:
   typedef typename ObjectWithStatesInterface<DerivedAxis>
     ::State State;
-  typedef typename RObjectWithEvents<DerivedAxis>
+  typedef typename RObjectWithEvents<DerivedAxis, maxs>
     ::AMembWrap AMembWrap;
 
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
-  RStateSplitter
-    (RObjectWithEvents<SplitAxis>* a_delegate,
-     const State& initial_state,
-     AMembWrap* mcw = nullptr);
+  RStateSplitter(
+    RObjectWithEvents<SplitAxis, maxs_delegate>*a_delegate,
+    const State& initial_state,
+    AMembWrap* mcw = nullptr
+  );
 
   RStateSplitter(const RStateSplitter&) = delete;
 
@@ -269,12 +295,13 @@ public:
     (const RStateSplitter&) = delete;
 
   template<class AppObj>
-    static typename RObjectWithStates<DerivedAxis>
-    ::template MembWrap<AppObj>*
-    state_hook(void (AppObj::*memb) 
-               (AbstractObjectWithStates*,
-                const StateAxis&,
-                const UniversalState& new_state))
+  static typename 
+    RObjectWithStates<DerivedAxis, maxs>
+  ::template MembWrap<AppObj>*
+  state_hook(void (AppObj::*memb) 
+             (AbstractObjectWithStates*,
+              const StateAxis&,
+              const UniversalState& new_state))
   {
     return RObjectWithEvents<DerivedAxis>
       ::state_hook(memb);

@@ -811,9 +811,11 @@ void test_state_change()
 
 void test_assignment()
 {
+  RMutex mm("abc");
   C1 dd;
 
   C1 ddd(std::move(dd));
+  RMutex mmm(std::move(mm));
 }
 
 }

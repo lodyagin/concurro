@@ -31,22 +31,12 @@
 
 namespace curr {
 
-RObjectWithStatesBase::RObjectWithStatesBase() //:
-  //is_frozen(false), 
-  //is_changing(false)
-{}
-
+#if 0
 RObjectWithStatesBase
 ::RObjectWithStatesBase(RObjectWithStatesBase&& o)
 {
   //<NB> no parent
   *this = std::move(o);
-}
-
-RObjectWithStatesBase::~RObjectWithStatesBase()
-{
-  for (auto ce : subscribers_terminals)
-	 ce.wait();
 }
 
 RObjectWithStatesBase& RObjectWithStatesBase
@@ -60,36 +50,6 @@ RObjectWithStatesBase& RObjectWithStatesBase
     std::move(o.subscribers_terminals);
   return *this;
 }
-
-void RObjectWithStatesBase
-::register_subscriber
-  (AbstractObjectWithEvents* sub,
-   StateAxis* ax
-  )
-{
-  RLOCK(subscribe_mt);
-
-  assert(sub);
-  subscribers.insert(std::make_pair(sub, ax));
-  subscribers_terminals.insert
-	 (std::move(sub->is_terminal_state()));
-  assert(subscribers_terminals.size() <= 
-			subscribers.size());
-}
-
-void RObjectWithStatesBase
-::state_changed
-  (StateAxis& ax, 
-   const StateAxis& state_ax,     
-   AbstractObjectWithStates* object,
-   const UniversalState& new_state)
-{
-  RLOCK(subscribe_mt);
-
-  for (auto sub : subscribers) 
-    dynamic_cast<AbstractObjectWithStates*>
-      (sub.first)->state_changed
-        (*sub.second, state_ax, object, new_state);
-}
+#endif
 
 }

@@ -48,7 +48,7 @@ template<class Axis1, class Axis2> class RMixedEvent;
 
 class AbstractObjectWithStates
 {
-  template<class Axis>
+  template<class Axis, size_t max_subscribers>
   friend class RObjectWithStates;
 
 public:
@@ -106,6 +106,7 @@ public:
 #endif
 };
 
+template<size_t max_subscribers>
 class RObjectWithStatesBase;
 
 /// An interface which should be implemented in each
@@ -136,8 +137,8 @@ public:
 
 class AbstractObjectWithEvents
 {
-  template<class Axis1, class Axis2> 
-	 friend class RStateSplitter;
+  template<class Axis1, class Axis2, size_t, size_t> 
+  friend class RStateSplitter;
 public:
   virtual ~AbstractObjectWithEvents() {}
 
