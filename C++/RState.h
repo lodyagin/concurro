@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -64,8 +64,9 @@ typedef int16_t StateMapId;
  *  control state transitions. Also, we can extend state
  *  and transitions sets in descendants (see ... and ...).
  *
- *  And we always use a notion of state space axis because the
- *  space can be multidirectional. See RAxis and RMixedAxis. 
+ *  And we always use a notion of state space axis because
+ *  the space can be multidirectional. See RAxis and
+ *  RMixedAxis.
  *
  * @{
  */
@@ -169,10 +170,13 @@ public:
     (const ObjectWithStatesInterface<Axis2>& obj, 
      const RState<Axis>& to);
 
-  //! Atomic move obj to a new state
-  static void move_to
-    (ObjectWithStatesInterface<Axis2>& obj, 
-     const RState<Axis>& to);
+  //! Atomic move obj to the new state. If old != nullptr
+  //! then return the old state.
+  static void move_to(
+    ObjectWithStatesInterface<Axis2>& obj, 
+    const RState<Axis>& to,
+    uint32_t* old_state = nullptr
+  );
 
   //! Atomic compare-and-change the state
   //! \return false if the object was not in `from' state,
@@ -297,12 +301,14 @@ bool state_is
 
 //! RMixedAxis<Axis,Axis2>::move_to adapter
 template<class T, class Axis2 = typename T::axis>
-void move_to
-  (T& obj, 
-   const curr::RState<typename T::State::axis>& to)
+void move_to(
+  T& obj, 
+  const curr::RState<typename T::State::axis>& to,
+  uint32_t* old_state = nullptr
+)
 {
   curr::RMixedAxis<typename T::State::axis, Axis2>
-    :: move_to(obj, to);
+    :: move_to(obj, to, old_state);
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
@@ -327,6 +333,15 @@ bool compare_and_move
   return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: compare_and_move(obj, from_set, to);
 }
+
+template<class T>
+void compare_and_move(
+  T& obj, 
+  const std::map <
+    RState<typename T::State::axis>, 
+    RState<typename T::State::axis>
+  >& trs
+);
 
 //! RMixedAxis<Axis,Axis2>::neg_compare_and_move adapter
 template<class T, class Axis2 = typename T::axis>
@@ -380,8 +395,8 @@ void wait_and_move
     (const curr::AbstractObjectWithStates* obj) const \
   { \
     return dynamic_cast<const \
-      curr::RObjectWithStates<axis>*>(obj) \
-        -> curr::RObjectWithStates<axis>::current_state \
+      curr::ObjectWithStatesInterface<axis>*>(obj) \
+        -> curr::ObjectWithStatesInterface<axis>::current_state \
           (*this);  \
   } \
   \
@@ -389,8 +404,8 @@ void wait_and_move
   std::atomic<uint32_t>& axis::current_state \
     (curr::AbstractObjectWithStates* obj) const \
   { \
-    return dynamic_cast<curr::RObjectWithStates<axis>*> \
-      (obj) -> curr::RObjectWithStates<axis> \
+    return dynamic_cast<curr::ObjectWithStatesInterface<axis>*> \
+      (obj) -> curr::ObjectWithStatesInterface<axis> \
         ::current_state(*this);  \
   } \
   \
@@ -413,9 +428,9 @@ void wait_and_move
      const curr::StateAxis& state_ax, \
      const UniversalState& new_state)             \
   { \
-    return dynamic_cast<curr::RObjectWithStates<axis>*>  \
+    return dynamic_cast<curr::ObjectWithStatesInterface<axis>*>  \
     (subscriber) \
-      -> curr::RObjectWithStates<axis>::state_changed \
+      -> curr::ObjectWithStatesInterface<axis>::state_changed \
       (*this, state_ax, publisher, new_state);        \
   } \
   templ \

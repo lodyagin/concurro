@@ -59,11 +59,12 @@ template
 
   int wait_m = 1000
 >
-class RHolder : public RObjectWithStates<HolderAxis>
+class RHolder 
+  : public RObjectWithStates<MoveableAxis, HolderAxis, 0>
 {
 public:
-  //typedef typename Rep::Object Obj;
-  //typedef typename Rep::ObjectId Id;
+  typedef RObjectWithStates<MoveableAxis, HolderAxis, 0> 
+    Parent;
   typedef typename Obj::Par Par;
 
   //! Create a new object in the repository Rep and create

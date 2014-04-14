@@ -71,10 +71,9 @@ ClientSocket::ClientSocket
  const RSocketAddress& par)
    : 
    RSocketBase(oi, par),
-   RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+   ParentSplitter
      (this, createdState,
-      RStateSplitter<ClientSocketAxis, SocketBaseAxis>
-      ::state_hook(&ClientSocket::state_hook)
+      ParentSplitter::state_hook(&ClientSocket::state_hook)
      ),
    CONSTRUCT_EVENT(pre_connecting),
    CONSTRUCT_EVENT(connecting),
@@ -89,8 +88,7 @@ ClientSocket::ClientSocket
            -> create_thread(Thread::Par(this))))
 {
    SCHECK(thread);
-   RStateSplitter<ClientSocketAxis, SocketBaseAxis>
-     ::init();
+   ParentSplitter::init();
    this->RSocketBase::threads_terminals.push_back
       (thread->is_terminal_state());
 }

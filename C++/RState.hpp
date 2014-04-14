@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -100,8 +100,11 @@ void RMixedAxis<Axis, Axis2>
 template<class Axis, class Axis2>
 void RMixedAxis<Axis, Axis2>
 //
-::move_to(ObjectWithStatesInterface<Axis2>& obj, 
-          const RState<Axis>& to)
+::move_to(
+  ObjectWithStatesInterface<Axis2>& obj, 
+  const RState<Axis>& to,
+  uint32_t* old_state
+)
 {
   static_assert(is_ancestor<Axis2, Axis>(), 
                 "This state mixing is invalid.");
@@ -122,9 +125,10 @@ void RMixedAxis<Axis, Axis2>
   if (!std::is_same<Axis, ConstructibleAxis>::value) 
     // prevent a deadlock
   {
-    LOGGER_DEBUG(obj.logger(), 
+    LOGGER_DEBUG(
+      obj.logger(), 
                  "thread " 
-                 << RThread<std::thread>::current_pretty_id()
+                << RThread<std::thread>::current_pretty_id()
                  << ">\t object " << obj.object_name()
                  << ">\t axis " << curr::type<Axis>::name()
                  << "/" << curr::type<Axis2>::name()
@@ -140,13 +144,14 @@ void RMixedAxis<Axis, Axis2>
       (&obj)) 
   {
     assert(trans_id > 0);
-    /*LOGGER_DEBUG(logger, "update_events(" << trans_id 
-      << ", " << to << ");");*/
     p->update_events(Axis2::self(), trans_id, to);
   }
 
   obj.state_changed
     (Axis2::self(), Axis2::self(), &obj, to);
+
+  if (old_state)
+    *old_state = from;
 }
 
 template<class Axis, class Axis2>

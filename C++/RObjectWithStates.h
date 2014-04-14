@@ -35,6 +35,8 @@
 #include "Event.h"
 #include "ObjectWithStatesInterface.h"
 #include "StateMap.h"
+#include "StateAxis.h"
+#include "RState.h"
 
 namespace curr {
 
@@ -105,32 +107,26 @@ class RObjectWithStatesBase<0>
   : public virtual AbstractObjectWithStates
 {
 public:
-#if 0
-  RObjectWithStatesBase(RObjectWithStatesBase&&);
-
-  RObjectWithStatesBase& operator=(
-    RObjectWithStatesBase&&
-  );
-
-  void swap(RObjectWithStatesBase& o);
-#endif
-
   virtual ~RObjectWithStatesBase() {}
 };
 
 //! It can be used as a parent of an object which
 //! introduces new state axis.
-template<class Axis, size_t max_subscribers = 0>
+template<
+  class Axis, 
+  class FinalAxis,
+  size_t max_subscribers
+>
 class RObjectWithStates 
   : public virtual ObjectWithStatesInterface<Axis>,
     public RObjectWithStatesBase<max_subscribers>
 {
 public:
-  typedef typename ObjectWithStatesInterface<Axis>
+  typedef typename ObjectWithStatesInterface<FinalAxis>
     ::State State;
 
   typedef AbstractMethodCallWrapper<
-    RObjectWithStates<Axis>, 
+    RObjectWithStates<Axis, FinalAxis, max_subscribers>, 
     AbstractObjectWithStates*,
     const StateAxis&,
     const UniversalState&
@@ -138,7 +134,8 @@ public:
 
   template<class AppObj>
   using MembWrap = MethodCallWrapper<
-    AppObj, RObjectWithStates<Axis>, 
+    AppObj, 
+    RObjectWithStates<Axis, FinalAxis, max_subscribers>, 
     AbstractObjectWithStates*,
     const StateAxis&,
     const UniversalState&
@@ -149,16 +146,9 @@ public:
     : currentState(initial_state), mcw(amcw)
   {}
 
-#if 0
-  RObjectWithStates(const RObjectWithStates&);
-  RObjectWithStates(RObjectWithStates&&);
-
-  RObjectWithStates& operator=(const RObjectWithStates&);
-  RObjectWithStates& operator=(RObjectWithStates&&);
-#endif
-
   template<class AppObj>
-    static typename RObjectWithStates<Axis>
+    static typename RObjectWithStates
+      <Axis, FinalAxis, max_subscribers>
     ::template MembWrap<AppObj>*
     state_hook(void (AppObj::*memb) 
                (AbstractObjectWithStates*, 
@@ -191,14 +181,121 @@ protected:
   std::shared_ptr<AMembWrap> mcw;
 };
 
+template<class Axis, class FinalAxis>
+class RObjectWithStates<Axis, FinalAxis, 0>
+  : public virtual ObjectWithStatesInterface<Axis>,
+    public RObjectWithStatesBase<0>
+{
+public:
+  typedef void AMembWrap;
+
+  typedef typename ObjectWithStatesInterface<FinalAxis>
+    ::State State;
+
+  RObjectWithStates(const State& initial_state)
+    : currentState(initial_state)
+  {}
+
+  RObjectWithStates(const RObjectWithStates&) = delete;
+
+  RObjectWithStates& operator=(
+    const RObjectWithStates&
+  ) = delete;
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
+  {}
+
+  std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) override
+  {
+    return currentState;
+  }
+
+  const std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) const override
+  {
+    return currentState;
+  }
+
+protected:
+  std::atomic<uint32_t> currentState;
+};
+
+DECLARE_AXIS(MoveableAxis, StateAxis);
+
+template<class FinalAxis>
+class RObjectWithStates<MoveableAxis, FinalAxis, 0>
+  : public virtual ObjectWithStatesInterface<MoveableAxis>,
+    public RObjectWithStatesBase<0>
+{
+public:
+  static_assert(is_ancestor<FinalAxis, MoveableAxis>(), 
+     "FinalAxis must be derived from MoveableAxis.");
+
+  typedef void AMembWrap;
+
+  //! @cond
+  DECLARE_STATES(MoveableAxis, State);
+  DECLARE_STATE_CONST(State, moving_from);
+  DECLARE_STATE_CONST(State, moved_from);
+  //! @endcond
+
+  RObjectWithStates(
+    const RState<FinalAxis>& initial_state
+  )
+    : currentState(initial_state)
+  {}
+
+  RObjectWithStates(const RObjectWithStates& o) = default;
+  RObjectWithStates(RObjectWithStates&& o);
+
+  RObjectWithStates& operator=(const RObjectWithStates& o)
+    = default;
+  RObjectWithStates& operator=(RObjectWithStates&& o);
+
+//  void swap(RObjectWithStates&);
+
+#if 0
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override;
+#endif
+
+  std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) override
+  {
+    return currentState;
+  }
+
+  const std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) const override
+  {
+    return currentState;
+  }
+
+protected:
+  std::atomic<uint32_t> currentState;
+};
+
 class UniversalEvent;
 
 template<class Axis>
 using REvent = RMixedEvent<Axis, Axis>;
 
-template<class Axis, size_t max_subscribers = 0>
+template<
+  class Axis, 
+  class FinalAxis = Axis,
+  size_t max_subscribers = 0
+>
 class RObjectWithEvents
-  : public RObjectWithStates<Axis, max_subscribers>,
+  : public RObjectWithStates
+      <Axis, FinalAxis, max_subscribers>,
     public virtual ObjectWithEventsInterface<Axis>
 {
   template<class Axis1, class Axis2> 
@@ -209,32 +306,32 @@ class RObjectWithEvents
   template<class Axis1, class Axis2, size_t, size_t> 
     friend class RStateSplitter;
 public:
-  typedef RObjectWithStates<Axis, max_subscribers> Parent;
+  typedef RObjectWithStates
+    <Axis, FinalAxis, max_subscribers> Parent;
   typedef typename Parent::State State;
-  typedef typename RObjectWithStates<Axis, max_subscribers>::AMembWrap
-    AMembWrap;
+  typedef typename Parent::AMembWrap AMembWrap;
 
-  RObjectWithEvents
-    (const typename RObjectWithStates<Axis, max_subscribers>::State& 
-     initial_state,
-     AMembWrap* mcw = nullptr);
+  using Parent::Parent;
 
 #if 0
-  RObjectWithEvents(RObjectWithEvents&&);
-
-  RObjectWithEvents& operator= (RObjectWithEvents&&);
-#endif
+  RObjectWithEvents(
+    const State& initial_state, 
+    AMembWrap* mcw = nullptr
+  );
 
   template<class AppObj>
-  static typename RObjectWithStates<Axis, max_subscribers>
-  ::template MembWrap<AppObj>*
-  state_hook(void (AppObj::*memb) 
-             (AbstractObjectWithStates*,
-              const StateAxis&,
-              const UniversalState&))
+  static typename Parent::template MembWrap<AppObj>*
+  state_hook(
+    void (AppObj::*memb)(
+      AbstractObjectWithStates*,
+      const StateAxis&,
+      const UniversalState&
+    )
+  )
   {
-    return RObjectWithStates<Axis, max_subscribers>::state_hook(memb);
+    return Parent::state_hook(memb);
   }
+#endif
 
   //! Update events due to trans_id to
   void update_events
@@ -254,6 +351,49 @@ protected:
   mutable EventMap events;
 };
 
+#if 0
+template<
+  class Axis, 
+  class FinalAxis = Axis,
+  size_t max_subscribers = 0
+>
+class RObjectWithEvents<Axis, FinalAxis, 0>
+  : public RObjectWithStates<Axis, FinalAxis, 0>,
+    public virtual ObjectWithEventsInterface<Axis>
+{
+  template<class Axis1, class Axis2> 
+    friend class RMixedEvent;
+  friend class RState<Axis>;
+  template<class Axis1, class Axis2> 
+    friend class RMixedAxis;
+  template<class Axis1, class Axis2, size_t, size_t> 
+    friend class RStateSplitter;
+public:
+  typedef RObjectWithStates<Axis, FinalAxis, 0> Parent;
+  typedef typename Parent::State State;
+  typedef typename Parent::AMembWrap AMembWrap;
+
+  using Parent::Parent;
+
+  //! Update events due to trans_id to
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to);
+
+protected:
+  //! Register a new event in the map if it doesn't
+  //! exists. In any case return the event.
+  CompoundEvent create_event
+    (const UniversalEvent&) const override;
+
+  typedef std::map<uint32_t, Event> EventMap;
+
+  //! It maps a local event id to an Event object
+  mutable EventMap events;
+};
+#endif
+
 //! It can maintain two states or delegate a "parent"
 //! part of states and events to another class ("parent"
 //! states are states from DerivedAxis). SplitAxis changes
@@ -271,20 +411,24 @@ template<
   size_t maxs = 0,
   size_t maxs_delegate = 0>
 class RStateSplitter 
-: public RObjectWithEvents<DerivedAxis, maxs>,
+: public RObjectWithEvents<DerivedAxis, DerivedAxis, maxs>,
   public virtual ObjectWithEventsInterface<SplitAxis>,
   public virtual ObjectWithStatesInterface<SplitAxis>
 {
 public:
   typedef typename ObjectWithStatesInterface<DerivedAxis>
     ::State State;
-  typedef typename RObjectWithEvents<DerivedAxis, maxs>
-    ::AMembWrap AMembWrap;
+  typedef RObjectWithEvents<DerivedAxis, DerivedAxis, maxs>
+    Parent;
+  typedef typename Parent::AMembWrap AMembWrap;
+  typedef RObjectWithEvents
+    <SplitAxis, SplitAxis, maxs_delegate> Delegate;
 
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
   RStateSplitter(
-    RObjectWithEvents<SplitAxis, maxs_delegate>*a_delegate,
+    RObjectWithEvents
+      <SplitAxis, SplitAxis, maxs_delegate>* a_delegate,
     const State& initial_state,
     AMembWrap* mcw = nullptr
   );
@@ -294,9 +438,10 @@ public:
   RStateSplitter* operator=
     (const RStateSplitter&) = delete;
 
+#if 0
   template<class AppObj>
   static typename 
-    RObjectWithStates<DerivedAxis, maxs>
+    RObjectWithStates<DerivedAxis, DerivedAxis, maxs>
   ::template MembWrap<AppObj>*
   state_hook(void (AppObj::*memb) 
              (AbstractObjectWithStates*,
@@ -306,6 +451,7 @@ public:
     return RObjectWithEvents<DerivedAxis>
       ::state_hook(memb);
   }
+#endif
 
   virtual void state_changed
     (StateAxis& ax, 
@@ -319,12 +465,11 @@ protected:
   void init() const;
 
   std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override
+  current_state(const StateAxis& ax) override
   {
     assert(is_same_axis<DerivedAxis>(ax)
            || is_same_axis<SplitAxis>(ax));
-    return RObjectWithEvents<DerivedAxis>
-      ::current_state(ax);
+    return Parent::current_state(ax);
   }
 
   const std::atomic<uint32_t>& 
@@ -332,8 +477,7 @@ protected:
   {
     assert(is_same_axis<DerivedAxis>(ax)
            || is_same_axis<SplitAxis>(ax));
-    return RObjectWithEvents<DerivedAxis>
-      ::current_state(ax);
+    return Parent::current_state(ax);
   }
 
   CompoundEvent create_event
@@ -349,7 +493,7 @@ protected:
   bool is_this_event_store
     (const UniversalEvent& ue) const;
 
-  RObjectWithEvents<SplitAxis>* delegate;
+  Delegate* delegate;
   const uint16_t split_state_id;
   const TransitionId split_transition_id;
   mutable bool inited;

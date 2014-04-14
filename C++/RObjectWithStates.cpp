@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -27,29 +27,30 @@
  * @author Sergei Lodyagin
  */
 
-#include "RObjectWithStates.h"
+#include "RObjectWithStates.hpp"
+#include "RState.hpp"
 
 namespace curr {
 
-#if 0
-RObjectWithStatesBase
-::RObjectWithStatesBase(RObjectWithStatesBase&& o)
-{
-  //<NB> no parent
-  *this = std::move(o);
-}
-
-RObjectWithStatesBase& RObjectWithStatesBase
-::operator=(RObjectWithStatesBase&& o)
-{
-  //SCHECK(o.is_frozen);
-  //is_frozen = true;
-  //is_changing = false;
-  subscribers = std::move(o.subscribers);
-  subscribers_terminals =
-    std::move(o.subscribers_terminals);
-  return *this;
-}
-#endif
+DEFINE_AXIS(
+  MoveableAxis,
+  {
+//    "stable",
+    "moving_from",
+    "moving_to",
+    "copying_from",
+//    "copying_to",
+    "moved_from",// state of the object after the content
+                 // is moved from it
+    "swapping"
+  },
+  {
+//    { "stable", "moving_from" },
+//    { "moving", "stable" },
+    { "moving_from", "moved_from" },
+//    { "stable", "copying" },
+//    { "copying
+  }
+);
 
 }

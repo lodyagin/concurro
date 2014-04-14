@@ -70,9 +70,9 @@ ListeningSocket::ListeningSocket
    const RSocketAddress& par)
  : 
   RSocketBase(oi, par),
-  RStateSplitter<ListeningSocketAxis, SocketBaseAxis>
+  RStateSplitter<ListeningSocketAxis, SocketBaseAxis, 1, 1>
   (this, createdState,
-    RStateSplitter<ListeningSocketAxis, SocketBaseAxis>
+    RStateSplitter<ListeningSocketAxis, SocketBaseAxis, 1, 1>
      ::state_hook(&ListeningSocket::state_hook)
   ),
   CONSTRUCT_EVENT(pre_listen),
@@ -93,8 +93,7 @@ ListeningSocket::ListeningSocket
 {
   SCHECK(select_thread);
   SCHECK(wait_thread);
-  RStateSplitter<ListeningSocketAxis, SocketBaseAxis>
-    ::init();
+  ParentSplitter::init();
   this->RSocketBase::threads_terminals.push_back
     (select_thread->is_terminal_state());
   this->RSocketBase::threads_terminals.push_back

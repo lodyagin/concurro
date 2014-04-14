@@ -36,6 +36,28 @@
 
 namespace curr {
 
+namespace {
+
+template<class FinalAxis>
+using RObjectWithStates0 = 
+  RObjectWithStates<MoveableAxis, FinalAxis, 0>;
+
+}
+
+template<class FinalAxis>
+DEFINE_STATE_CONST(
+  RObjectWithStates0<FinalAxis>,
+  State,
+  moving_from
+);
+
+template<class FinalAxis>
+DEFINE_STATE_CONST(
+  RObjectWithStates0<FinalAxis>,
+  State,
+  moved_from
+);
+
 template<size_t maxs>
 RObjectWithStatesBase<maxs>::~RObjectWithStatesBase()
 {
@@ -81,54 +103,52 @@ void RObjectWithStatesBase<maxs>
   }
 }
 
-#if 0
-template<class Axis, size_t max_subscribers>
-RObjectWithStates<Axis, max_subscribers>
+template<class FinalAxis>
+RObjectWithStates<MoveableAxis, FinalAxis, 0>
 //
-::RObjectWithStates(const RObjectWithStates& obj)
-  : RObjectWithStatesBase<max_subscribers>(obj),
-    currentState(obj.currentState.load())
-{}
-
-template<class Axis, size_t max_subscribers>
-RObjectWithStates<Axis, max_subscribers>
-//
-::RObjectWithStates(RObjectWithStates&& obj)
-  : RObjectWithStatesBase<max_subscribers>(std::move(obj)),
-    currentState(obj.currentState.load())
-{}
-
-template<class Axis, size_t max_subscribers>
-RObjectWithStates<Axis, max_subscribers>& 
-RObjectWithStates<Axis, max_subscribers>
-//
-::operator=(const RObjectWithStates& obj)
+::RObjectWithStates(RObjectWithStates&& o)
+  : currentState(-1)
 {
-  RObjectWithStatesBase<max_subscribers>::operator=(
-    static_cast
-      <const RObjectWithStatesBase<max_subscribers>&>(obj)
-  );
-  currentState = obj.currentState.load();
+  uint32_t o_old;
+  move_to(o, moving_fromState, &o_old);
+  currentState.store(o_old);
+  move_to(o, moved_fromState);
+}
+
+template<class FinalAxis>
+RObjectWithStates<MoveableAxis, FinalAxis, 0>&
+RObjectWithStates<MoveableAxis, FinalAxis, 0>
+//
+::operator=(RObjectWithStates&& o)
+{
+  uint32_t o_old;
+//  move_to(*this, movingState);
+  move_to(o, moving_fromState, &o_old);
+  move_to(*this, RState<FinalAxis>(o_old));
+  move_to(o, moved_fromState);
   return *this;
 }
 
-template<class Axis, size_t max_subscribers>
-RObjectWithStates<Axis, max_subscribers>& 
-RObjectWithStates<Axis, max_subscribers>
+#if 0
+template<class FinalAxis>
+void RObjectWithStates<MoveableAxis, FinalAxis, 0>
 //
-::operator=(RObjectWithStates&& obj)
+::swap(RObjectWithStates& o)
 {
-  RObjectWithStatesBase<max_subscribers>::operator=(
-    static_cast<RObjectWithStatesBase<max_subscribers>&&>
-      (std::move(obj))
-  );
-  currentState = obj.currentState.load();
-  return *this;
+  uint32_t this_old, o_old, tmp;
+  move_to(*this, swappingState, &this_old);
+  move_to(o, swappingState, &o_old);
+  move_to(o, RState<FinalAxis>(o_old));
+  move_to(*this, RState<FinalAxis>(this_old));
 }
 #endif
 
-template<class Axis, size_t max_subscribers>
-void RObjectWithStates<Axis, max_subscribers>
+template<
+  class Axis, 
+  class FinalAxis, 
+  size_t max_subscribers
+>
+void RObjectWithStates<Axis, FinalAxis, max_subscribers>
 //
 ::state_changed
   (StateAxis& ax, 
@@ -145,37 +165,29 @@ void RObjectWithStates<Axis, max_subscribers>
   }
 }
 
-template<class Axis, size_t max_subscribers>
-RObjectWithEvents<Axis, max_subscribers>
+#if 0
+template<
+  class Axis, 
+  class FinalAxis, 
+  size_t max_subscribers
+>
+RObjectWithEvents<Axis, FinalAxis, max_subscribers>
+//
 ::RObjectWithEvents(
-  const typename RObjectWithStates<Axis, max_subscribers>
-    ::State& initial_state,
+  const State& initial_state,
   AMembWrap* mcw
 )
   : Parent(initial_state, mcw)
 {}
-
-#if 0
-template<class Axis, size_t max_subscribers>
-RObjectWithEvents<Axis, max_subscribers>
-::RObjectWithEvents(RObjectWithEvents&& o)
-  : Parent(std::move(o)), events(std::move(o.events))
-{}
-
-template<class Axis, size_t max_subscribers>
-RObjectWithEvents<Axis, max_subscribers>& 
-RObjectWithEvents<Axis, max_subscribers>
-//
-::operator= (RObjectWithEvents&& o)
-{
-  Parent::operator= (static_cast<Parent&&>(std::move(o)));
-  events = std::move(o.events);
-  return *this;
-}
 #endif
 
-template<class Axis, size_t max_subscribers>
-CompoundEvent RObjectWithEvents<Axis, max_subscribers>
+template<
+  class Axis, 
+  class FinalAxis, 
+  size_t max_subscribers
+>
+CompoundEvent RObjectWithEvents
+  <Axis, FinalAxis, max_subscribers>
 //
 ::create_event(const UniversalEvent& ue) const
 {
@@ -209,8 +221,12 @@ CompoundEvent RObjectWithEvents<Axis, max_subscribers>
 #endif
 }
 
-template<class Axis, size_t max_subscribers>
-void RObjectWithEvents<Axis, max_subscribers>
+template<
+  class Axis, 
+  class FinalAxis, 
+  size_t max_subscribers
+>
+void RObjectWithEvents<Axis, FinalAxis, max_subscribers>
 //
 ::update_events(StateAxis& ax, 
                 TransitionId trans_id, 
@@ -242,13 +258,21 @@ void RObjectWithEvents<Axis, max_subscribers>
   }
 }
 
-template<class DerivedAxis, class SplitAxis, size_t maxs, size_t maxs_delegate>
-RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>::RStateSplitter
-  (RObjectWithEvents<SplitAxis, maxs_delegate>* a_delegate,
-   const State& initial_state,
-    AMembWrap* mcw)
-    : 
-    RObjectWithEvents<DerivedAxis>(initial_state, mcw),
+template<
+  class DerivedAxis, 
+  class SplitAxis, 
+  size_t maxs, 
+  size_t maxs_delegate
+>
+RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>
+//
+::RStateSplitter(
+  RObjectWithEvents<SplitAxis, SplitAxis, maxs_delegate>* 
+    a_delegate,
+  const State& initial_state,
+  AMembWrap* mcw
+)
+  : Parent(initial_state, mcw),
     delegate(a_delegate),
     split_state_id(StateMapInstance<SplitAxis>
                    ::get_map() -> get_n_states()),
@@ -259,14 +283,19 @@ RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>::RStateSplitter
 {
 }
 
-template<class DerivedAxis, class SplitAxis, size_t maxs, size_t maxs_delegate>
-CompoundEvent RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>
+template<
+  class DerivedAxis, 
+  class SplitAxis, 
+  size_t maxs, 
+  size_t maxs_delegate
+>
+CompoundEvent 
+RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>
+//
 ::create_event (const UniversalEvent& ue) const
 {
   if (!is_this_event_store(ue)) {
-    CompoundEvent ce(
-      delegate->RObjectWithEvents<SplitAxis>
-      ::create_event(ue));
+    CompoundEvent ce(delegate->Delegate::create_event(ue));
 
     // Create event in DerivedAxis if it is a part of
     // DerivedAxis transition.
@@ -275,14 +304,12 @@ CompoundEvent RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>
         -> is_local_transition_arrival
         (ue.as_state_of_arrival())) 
     {
-      ce |= this->RObjectWithEvents<DerivedAxis>
-        ::create_event(ue);
+      ce |= this->Parent::create_event(ue);
     }
     return ce;
   }
   else
-    return this->RObjectWithEvents<DerivedAxis>
-      ::create_event(ue);
+    return this->Parent::create_event(ue);
 }
 
 template<class DerivedAxis, class SplitAxis, size_t maxs, size_t maxs_delegate>
@@ -296,8 +323,9 @@ void RStateSplitter<DerivedAxis, SplitAxis, maxs, maxs_delegate>
   LOG_TRACE(Logger<LOG::Root>, "update_events");
   //<NB> always in DerivedAxis (stat is splitted in this
   //case, derived has another events states)
-  this->RObjectWithEvents<DerivedAxis>
-    ::update_events(DerivedAxis::self(), trans_id, to);
+  this->Parent::update_events(
+    DerivedAxis::self(), trans_id, to
+  );
 }
 
 template<class DerivedAxis, class SplitAxis, size_t maxs, size_t maxs_delegate>

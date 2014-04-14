@@ -70,13 +70,16 @@ DECLARE_AXIS(ListeningSocketAxis, SocketBaseAxis);
 class ListeningSocket 
   : virtual public RSocketBase,
     public RStateSplitter
-      <ListeningSocketAxis, SocketBaseAxis>
+      <ListeningSocketAxis, SocketBaseAxis, 1, 1>
 {
   DECLARE_EVENT(ListeningSocketAxis, pre_listen);
   DECLARE_EVENT(ListeningSocketAxis, listen);
   DECLARE_EVENT(ListeningSocketAxis, accepted);
 
 public:
+  using ParentSplitter = RStateSplitter
+    <ListeningSocketAxis, SocketBaseAxis, 1, 1>;
+
   //! @cond
   DECLARE_STATES(ListeningSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
@@ -113,27 +116,21 @@ public:
      const UniversalState& new_state);
 
   std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) override
+  current_state(const StateAxis& ax) override
   { 
-    return RStateSplitter
-      <ListeningSocketAxis,SocketBaseAxis>
-        ::current_state(ax);
-    }
+    return ParentSplitter::current_state(ax);
+  }
 
   const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override
+  current_state(const StateAxis& ax) const override
   { 
-    return RStateSplitter
-      <ListeningSocketAxis,SocketBaseAxis>
-        ::current_state(ax);
+    return ParentSplitter::current_state(ax);
   }
 
   CompoundEvent create_event
     (const UniversalEvent& ue) const override
   {
-    return RStateSplitter
-      <ListeningSocketAxis,SocketBaseAxis>
-        ::create_event(ue);
+    return ParentSplitter::create_event(ue);
   }
 
   void update_events

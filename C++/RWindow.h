@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -77,13 +77,17 @@ DECLARE_AXIS(WindowAxis, StateAxis);
  * temporary, see methods). 
  *
  */
-class RWindow : public RObjectWithEvents<WindowAxis>
+class RWindow 
+  : public RObjectWithEvents<MoveableAxis, WindowAxis>
 {
   friend class RSingleBuffer;
 
   DECLARE_EVENT(WindowAxis, filled);
 
 public:
+  using Parent = RObjectWithEvents
+    <MoveableAxis, WindowAxis>;
+
   //! @cond
   DECLARE_STATES(WindowAxis, State);
   DECLARE_STATE_CONST(State, ready);
@@ -105,13 +109,15 @@ public:
   //! A move constructor takes a buffer ownership from w.
   RWindow(RWindow&& w);
 
-  virtual ~RWindow();
-
   //! A deleted assignment.
   RWindow& operator=(const RWindow&) = delete;
 
   //! A move assignment.
   RWindow& operator=(RWindow&& w);
+
+  virtual ~RWindow() {}
+
+  void swap(RWindow& o) = delete;
 
   std::string object_name() const override
   {
@@ -134,9 +140,11 @@ public:
   RWindow& attach_to(RWindow& w, 
           ssize_t shift_bottom, ssize_t shift_top);
 
+#if 0
   //! Move a buffer from w to this window. Old buffer will
   //! be detached.
-  RWindow& move(RWindow& w);
+  RWindow& partial_move(RWindow& w);
+#endif
 
   CompoundEvent is_terminal_state() const override
   {
@@ -306,7 +314,7 @@ public:
 
   WindowStreambuf(RWindow&& w) 
   {
-    RWindow::move(w);
+    RWindow::operator=(std::move(w));
     assert(state_is(*this, S(filled)));
 
     char* gbeg = const_cast<CharT*>

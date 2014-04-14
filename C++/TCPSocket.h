@@ -70,8 +70,9 @@ DECLARE_AXIS(TCPAxis, ListeningSocketAxis);
   * }
   * @enddot
   */
-class TCPSocket : virtual public RSocketBase
-, public RStateSplitter<TCPAxis, SocketBaseAxis>
+class TCPSocket 
+  : virtual public RSocketBase,
+    public RStateSplitter<TCPAxis, SocketBaseAxis, 1, 1>
 {
   DECLARE_EVENT(TCPAxis, io_ready);
   DECLARE_EVENT(TCPAxis, closed);
@@ -79,6 +80,9 @@ class TCPSocket : virtual public RSocketBase
   DECLARE_EVENT(TCPAxis, out_closed);
 
 public:
+  using ParentSplitter = RStateSplitter
+    <TCPAxis, SocketBaseAxis, 1, 1>;
+
   DECLARE_STATES(TCPAxis, State);
   DECLARE_STATE_CONST(State, created);
   DECLARE_STATE_CONST(State, closed);
@@ -115,36 +119,19 @@ public:
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override
   { 
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::current_state(ax);
+    return ParentSplitter::current_state(ax);
   }
 
   const std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) const override
   { 
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::current_state(ax);
+    return ParentSplitter::current_state(ax);
   }
-
-#if 0
-  Event get_event (const UniversalEvent& ue) override
-  {
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::get_event(ue);
-  }
-
-  Event get_event (const UniversalEvent& ue) const override
-  {
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::get_event(ue);
-  }
-#endif
 
   CompoundEvent create_event
     (const UniversalEvent& ue) const override
   {
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::create_event(ue);
+    return ParentSplitter::create_event(ue);
   }
 
   void update_events
@@ -152,13 +139,7 @@ public:
      TransitionId trans_id, 
      uint32_t to) override
   {
-#if 1
     ax.update_events(this, trans_id, to);
-#else
-    LOG_TRACE(log, "update_events");
-    return RStateSplitter<TCPAxis,SocketBaseAxis>
-      ::update_events(ax, trans_id, to);
-#endif
 }
 
 protected:

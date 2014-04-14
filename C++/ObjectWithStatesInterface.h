@@ -48,7 +48,7 @@ template<class Axis1, class Axis2> class RMixedEvent;
 
 class AbstractObjectWithStates
 {
-  template<class Axis, size_t max_subscribers>
+  template<class Axis, class FinalAxis, size_t>
   friend class RObjectWithStates;
 
 public:

@@ -80,7 +80,7 @@ template<class Id>
 RHolder<CURRINT_HOLDER_T_>
 //
 ::RHolder(const Par& par)
-  : RObjectWithStates<HolderAxis>("charged"),
+  : Parent("charged"),
     guarded(AutoRepository<Obj,Id>::instance()
       . template create<T>(par))
 {
@@ -91,7 +91,7 @@ template<class Id>
 RHolder<CURRINT_HOLDER_T_>
 //
 ::RHolder(const Id& id)
-  : RObjectWithStates<HolderAxis>("charged"),
+  : Parent("charged"),
     guarded(AutoRepository<Obj,Id>::instance()
       . template get_by_id<T>(id))
 {

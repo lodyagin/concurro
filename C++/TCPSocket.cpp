@@ -73,10 +73,9 @@ TCPSocket::TCPSocket
  const RSocketAddress& par)
   : 
   RSocketBase(oi, par),
-  RStateSplitter<TCPAxis, SocketBaseAxis>
+  ParentSplitter
     (this, createdState,
-     RStateSplitter<TCPAxis, SocketBaseAxis>
-     ::state_hook(&TCPSocket::state_hook)
+     ParentSplitter::state_hook(&TCPSocket::state_hook)
     ),
   CONSTRUCT_EVENT(io_ready),
   CONSTRUCT_EVENT(closed),
@@ -96,7 +95,7 @@ TCPSocket::TCPSocket
        select_thread->get_notify_fd()))))
 {
   SCHECK(select_thread && wait_thread);
-  RStateSplitter<TCPAxis, SocketBaseAxis>::init();
+  ParentSplitter::init();
   /*this->RSocketBase::ancestor_terminals.push_back
     (is_terminal_state());*/
   this->RSocketBase::threads_terminals.push_back

@@ -66,8 +66,10 @@ DECLARE_AXIS(ClientSocketAxis, SocketBaseAxis);
  * @enddot
  *
  */
-class ClientSocket : virtual public RSocketBase,
-  public RStateSplitter<ClientSocketAxis, SocketBaseAxis>
+class ClientSocket 
+  : virtual public RSocketBase,
+    public RStateSplitter
+      <ClientSocketAxis, SocketBaseAxis, 1, 1>
 {
   DECLARE_EVENT(ClientSocketAxis, pre_connecting);
   DECLARE_EVENT(ClientSocketAxis, connecting);
@@ -78,6 +80,9 @@ class ClientSocket : virtual public RSocketBase,
   DECLARE_EVENT(ClientSocketAxis, closed);
 
 public:
+  using ParentSplitter = RStateSplitter
+    <ClientSocketAxis, SocketBaseAxis, 1, 1>;
+
   //! @cond
   DECLARE_STATES(ClientSocketAxis, State);
   DECLARE_STATE_CONST(State, created);
@@ -132,22 +137,19 @@ public:
   std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) override
   { 
-    return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-      ::current_state(ax);
+    return ParentSplitter::current_state(ax);
   }
 
   const std::atomic<uint32_t>& 
     current_state(const StateAxis& ax) const override
   { 
-    return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-      ::current_state(ax);
+    return ParentSplitter::current_state(ax);
   }
 
   CompoundEvent create_event
     (const UniversalEvent& ue) const override
   {
-    return RStateSplitter<ClientSocketAxis,SocketBaseAxis>
-      ::create_event(ue);
+    return ParentSplitter::create_event(ue);
   }
 
   void update_events
@@ -168,8 +170,7 @@ protected:
   public:
     struct Par : public SocketThread::Par
     { 
-    Par(RSocketBase* sock) 
-      : SocketThread::Par(sock) 
+      Par(RSocketBase* sock) : SocketThread::Par(sock) 
       {
         thread_name = SFORMAT
           ("ClientSocket(connect):" << sock->fd);
