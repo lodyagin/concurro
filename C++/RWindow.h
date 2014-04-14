@@ -49,32 +49,18 @@ using namespace types;
  * @{
  */
 
-DECLARE_AXIS(WindowAxis, StateAxis);
+DECLARE_AXIS(WindowAxis, MoveableAxis);
 
 /**
  * A "view" to a part of RBuffer. One RBuffer can be
- * attached to several RWindow (see attach_to()).
+ * attached to several RWindow (see the copy assignment
+ * and copy constructor).
  *
- * @dot
- * digraph {
- *    start [shape = point]; 
- *    stop [shape = point];
- *    start -> ready;
- *    ready -> stop;
- *    ready -> filling [label = "attach_to()"];
- *    filling -> filled [label = "attach_to()"];
- *    filled -> welded;
- *    welded -> filled;
- *    welded -> ready [label = "detach()"];
- * }
- * @enddot
  *
  * - ready - not attached to RBuffer;
  * - filling - attached but data is updating (e.g., reading
  * from a socket);
  * - filled - attached and can manipulate data;
- * - welded - share window with another buffer (usually
- * temporary, see methods). 
  *
  */
 class RWindow 
@@ -82,7 +68,8 @@ class RWindow
 {
   friend class RSingleBuffer;
 
-  DECLARE_EVENT(WindowAxis, filled);
+  A_DECLARE_EVENT(WindowAxis, MoveableAxis, ready);
+  A_DECLARE_EVENT(WindowAxis, MoveableAxis, filled);
 
 public:
   using Parent = RObjectWithEvents
@@ -93,13 +80,14 @@ public:
   DECLARE_STATE_CONST(State, ready);
   DECLARE_STATE_CONST(State, filling);
   DECLARE_STATE_CONST(State, filled);
-  DECLARE_STATE_CONST(State, welded);
+  DECLARE_STATE_CONST(State, moving_from_ready);
   //! @endcond
 
-  //! Create RWindow in "ready" state. 
+  //! Creates RWindow in "ready" state. 
   RWindow();
 
-  //! Clone a view to w's buffer.
+  //! Waits when w will be in "filled" state and connect to
+  //! the same buffer.
   RWindow(RWindow& w);
 
   //! Clone w view to buffer with bottom and top shifts.
@@ -107,12 +95,15 @@ public:
           ssize_t shift_bottom, ssize_t shift_top);
 
   //! A move constructor takes a buffer ownership from w.
+  //! Waits when w will be in "filled" or "ready" state
   RWindow(RWindow&& w);
 
-  //! A deleted assignment.
-  RWindow& operator=(const RWindow&) = delete;
+  //! Waits when w will be in "filled" state and connect to
+  //! the same buffer.
+  RWindow& operator=(RWindow& w);
 
   //! A move assignment.
+  //! Waits when w will be in "filled" or "ready" state.
   RWindow& operator=(RWindow&& w);
 
   virtual ~RWindow() {}
@@ -128,6 +119,7 @@ public:
   //! nothing in other states.
   void detach();
 
+#if 0
   //! Wait when w will be in "filled" state and connect to
   //! the same buffer.
   RWindow& attach_to(RWindow& w);
@@ -139,6 +131,7 @@ public:
   //! be shifted only inside filled region.
   RWindow& attach_to(RWindow& w, 
           ssize_t shift_bottom, ssize_t shift_top);
+#endif
 
 #if 0
   //! Move a buffer from w to this window. Old buffer will
@@ -172,6 +165,10 @@ protected:
   ssize_t top;
   size_t sz;
 
+  CompoundEvent is_ready_or_filled_event = { 
+    is_ready_event, is_filled_event
+  };
+
   DEFAULT_LOGGER(RWindow);
 };
 
@@ -186,22 +183,6 @@ DECLARE_AXIS(ConnectedWindowAxis, WindowAxis);
  * RConnectedWindow is a passive entity and
  * RSocketConnection is an active one.
  *
- * @dot
- * digraph {
- *    start [shape = point]; 
- *    stop [shape = point];
- *    ready [label = "ready"];
- *    start -> ready;
- *    ready -> stop;
- *    ready -> filling [label = "forward_top(sz)"];
- *    filling -> wait_for_buffer;
- *    wait_for_buffer -> filling [label="new_buffer()"];
- *    filling -> filled;
- *    filled -> welded;
- *    welded -> filled;
- *    welded -> ready;
- * }
- * @enddot
  */
 template<class ConnectionId>
 class RConnectedWindow : public RWindow, public StdIdMember
@@ -210,11 +191,11 @@ class RConnectedWindow : public RWindow, public StdIdMember
   friend std::ostream&
   operator<<(std::ostream&, const RConnectedWindow<ConnId>&);
 
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
+  A_DECLARE_EVENT(ConnectedWindowAxis, MoveableAxis, 
                   ready);
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis, 
+  A_DECLARE_EVENT(ConnectedWindowAxis, MoveableAxis, 
                   filling);
-  A_DECLARE_EVENT(ConnectedWindowAxis, WindowAxis,
+  A_DECLARE_EVENT(ConnectedWindowAxis, MoveableAxis,
                   wait_for_buffer);
 public:
   //! @cond

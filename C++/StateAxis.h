@@ -107,10 +107,12 @@ inline bool is_same_axis(const StateAxis& ax)
     return &axis::self(); \
   } \
   \
+  template<class base_axis, size_t maxs> \
   const std::atomic<uint32_t>& current_state \
     (const curr::AbstractObjectWithStates* obj) \
       const override; \
   \
+  template<class base_axis, size_t maxs> \
   std::atomic<uint32_t>& current_state \
     (curr::AbstractObjectWithStates* obj) const override;\
   \
@@ -119,6 +121,7 @@ inline bool is_same_axis(const StateAxis& ax)
      curr::TransitionId trans_id,               \
      uint32_t to) override;                     \
   \
+  template<class base_axis, size_t maxs> \
   void state_changed \
     (curr::AbstractObjectWithStates* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \

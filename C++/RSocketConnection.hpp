@@ -460,9 +460,7 @@ server_factory<Connection>
 ::server_factory
   (ListeningSocket* l_sock, size_t reserved)
 : 
-  RStateSplitter
-    <ServerConnectionFactoryAxis, ListeningSocketAxis>
-      (l_sock, ListeningSocket::boundState),
+  RStateSplitter(l_sock, ListeningSocket::boundState),
   repository
     ( curr::type<decltype(*this)>::name(), 
       reserved,

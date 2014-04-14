@@ -228,12 +228,14 @@ public:
   //! \return The constant interator to performed
   //! transition from trs or trs.end() if no transition
   //! was performed.
-  static auto compare_and_move
-    (ObjectWithStatesInterface<Axis2>& obj, 
-     const std::map<const RState<Axis>, 
-     const RState<Axis>>& trs
-     ) -> typename std::remove_reference
-            <decltype(trs)>::type::const_iterator;
+  static auto compare_and_move(
+    ObjectWithStatesInterface<Axis2>& obj, 
+    const std::map<
+      const RState<Axis>, 
+       const RState<Axis>
+    >& trs
+  ) -> typename std::remove_reference
+       <decltype(trs)>::type::const_iterator;
 
   //! Atomic compare-and-change the state
   //! \return false if the object was in `not_from' state,
@@ -334,14 +336,19 @@ bool compare_and_move
     :: compare_and_move(obj, from_set, to);
 }
 
-template<class T>
-void compare_and_move(
+template<class T, class Axis2 = typename T::axis>
+bool compare_and_move(
   T& obj, 
   const std::map <
     RState<typename T::State::axis>, 
     RState<typename T::State::axis>
   >& trs
-);
+)
+{
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
+    :: compare_and_move(obj, trs) != trs.end();
+}
+
 
 //! RMixedAxis<Axis,Axis2>::neg_compare_and_move adapter
 template<class T, class Axis2 = typename T::axis>
@@ -379,33 +386,35 @@ void wait_and_move
    const RState<typename T::State::axis>& to,
    int wait_m = -1);
 
-template<class T>
+template<class T, class Axis2 = typename T::axis>
 void wait_and_move
   (T& obj, 
    const std::map <
-     RState<typename T::State::axis>, 
-     RState<typename T::State::axis>
+     const RState<typename T::State::axis>, 
+     const RState<typename T::State::axis>
    >& trs,
    const CompoundEvent& is_from_event,
    int wait_m = -1);
 
 #define DEFINE_AXIS_NS_TEMPL0(axis, templ, pars...)	\
   templ \
+  template<class base_axis, size_t maxs> \
   const std::atomic<uint32_t>& axis::current_state    \
     (const curr::AbstractObjectWithStates* obj) const \
   { \
     return dynamic_cast<const \
-      curr::ObjectWithStatesInterface<axis>*>(obj) \
-        -> curr::ObjectWithStatesInterface<axis>::current_state \
+      curr::RObjectWithStates<axis, base_axis, maxs>*>(obj) \
+        -> curr::RObjectWithStates<axis, base_axis, maxs>::current_state \
           (*this);  \
   } \
   \
   templ \
+  template<class base_axis, size_t maxs> \
   std::atomic<uint32_t>& axis::current_state \
     (curr::AbstractObjectWithStates* obj) const \
   { \
-    return dynamic_cast<curr::ObjectWithStatesInterface<axis>*> \
-      (obj) -> curr::ObjectWithStatesInterface<axis> \
+    return dynamic_cast<curr::RObjectWithStates<axis, base_axis, maxs>*> \
+      (obj) -> curr::RObjectWithStates<axis, base_axis, maxs> \
         ::current_state(*this);  \
   } \
   \
@@ -422,15 +431,16 @@ void wait_and_move
   } \
   \
   templ \
+  template<class base_axis, size_t maxs> \
   void axis::state_changed \
     (curr::AbstractObjectWithStates* subscriber,   \
      curr::AbstractObjectWithStates* publisher,    \
      const curr::StateAxis& state_ax, \
      const UniversalState& new_state)             \
   { \
-    return dynamic_cast<curr::ObjectWithStatesInterface<axis>*>  \
+    return dynamic_cast<curr::RObjectWithStates<axis, base_axis, maxs>*>  \
     (subscriber) \
-      -> curr::ObjectWithStatesInterface<axis>::state_changed \
+      -> curr::RObjectWithStates<axis, base_axis, maxs>::state_changed \
       (*this, state_ax, publisher, new_state);        \
   } \
   templ \

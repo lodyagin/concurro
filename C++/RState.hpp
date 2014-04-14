@@ -569,5 +569,25 @@ void wait_and_move
   while (!compare_and_move(obj, from_set, to));
 }
 
+template<class T, class Axis2 = typename T::axis>
+void wait_and_move
+  (T& obj, 
+   const std::map <
+     const RState<typename T::State::axis>, 
+     const RState<typename T::State::axis>
+   >& trs,
+   const CompoundEvent& is_from_event,
+   int wait_m = -1)
+{
+  do { 
+    CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
+  } 
+  while (
+    RMixedAxis<typename T::State::axis, Axis2>
+      :: compare_and_move(obj, trs) 
+    != trs.end()
+  );
+}
+
 }
 #endif

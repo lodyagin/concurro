@@ -5,11 +5,14 @@ using namespace curr;
 
 DECLARE_AXIS(TestAxis, StateAxis);
 
-class TestObject : public RObjectWithEvents<TestAxis>
+class TestObject 
+  : public RObjectWithEvents<TestAxis, TestAxis, 1>
 {
   DECLARE_EVENT(TestAxis, s3);
 
 public:
+  using Parent = RObjectWithEvents<TestAxis, TestAxis, 1>;
+
   DECLARE_STATES(TestAxis, State);
   DECLARE_STATE_CONST(State, s1);
   DECLARE_STATE_CONST(State, s2);
@@ -18,7 +21,7 @@ public:
   DECLARE_STATE_CONST(State, s5);
 
   TestObject() 
-  : RObjectWithEvents<TestAxis>(s1State),
+  : Parent(s1State),
     CONSTRUCT_EVENT(s3)
     {}
 
@@ -52,26 +55,29 @@ DerivedObject()
 };
 
 class SplittedStateObject : 
-public RStateSplitter<DerivedAxis, TestAxis>
+public RStateSplitter<DerivedAxis, TestAxis, 1, 1>
 {
   A_DECLARE_EVENT(DerivedAxis, TestAxis, s1);
   A_DECLARE_EVENT(DerivedAxis, TestAxis, s2);
   A_DECLARE_EVENT(DerivedAxis, TestAxis, s3);
   A_DECLARE_EVENT(DerivedAxis, TestAxis, q1);
+
 public:
+  using Parent = RStateSplitter
+    <DerivedAxis, TestAxis, 1, 1>;
+
   DECLARE_STATES(DerivedAxis, State);
   DECLARE_STATE_CONST(State, s1);
   DECLARE_STATE_CONST(State, q1);
 
-SplittedStateObject(TestObject* orig)
-  : RStateSplitter<DerivedAxis, TestAxis>
-    (orig, s1State),
+  SplittedStateObject(TestObject* orig)
+  : Parent(orig, s1State),
     CONSTRUCT_EVENT(s1),
     CONSTRUCT_EVENT(s2),
     CONSTRUCT_EVENT(s3),
     CONSTRUCT_EVENT(q1)
     {
-      RStateSplitter<DerivedAxis, TestAxis>::init();
+      Parent::init();
     }
 
   // sync a state delegate -> this

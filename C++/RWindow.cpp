@@ -41,7 +41,8 @@ DEFINE_AXIS(
     "ready",
     "filling",
     "filled",
-    "moving_from_ready"
+    "moving_from_ready",
+//    "detaching", // state of the object inside detach()
   },
   {
     {"ready", "filling"},
@@ -52,6 +53,8 @@ DEFINE_AXIS(
 
     {"ready", "moving_from_ready"},
     {"filled", "moving_from"},
+
+    {"moving_from_ready", "moved_from"},
 
     {"moving_to", "ready"},
     {"moving_to", "filled"},
@@ -72,20 +75,26 @@ DEFINE_AXIS(
 
 DEFINE_STATES(WindowAxis);
 
+DEFINE_STATE_CONST(RWindow, State, ready);
 DEFINE_STATE_CONST(RWindow, State, filling);
 DEFINE_STATE_CONST(RWindow, State, filled);
+DEFINE_STATE_CONST(RWindow, State, moving_from_ready);
 
 DEFINE_STATES(ConnectedWindowAxis);
 
 
 RWindow::RWindow()
 : Parent(readyState),
+  CONSTRUCT_EVENT(ready),
   CONSTRUCT_EVENT(filled),
   bottom(0), top(0), sz(0)
 {}
 
 RWindow::RWindow(RWindow& w) : RWindow()
 {
+#if 1
+  operator=(w);
+#else
   w.is_filled().wait();
   move_to(*this, fillingState);
   move_to(w, copying_fromState);
@@ -95,6 +104,7 @@ RWindow::RWindow(RWindow& w) : RWindow()
   sz = w.sz;
   move_to(w, filledState);
   move_to(*this, filledState);
+#endif
 }
 	
 RWindow::RWindow(
@@ -132,13 +142,15 @@ RWindow::RWindow(
 	
 RWindow::RWindow(RWindow&& w) 
   : Parent(moving_toState), // NB not Parent(std::move(w))
+    CONSTRUCT_EVENT(ready),
     CONSTRUCT_EVENT(filled)
 {
-  compare_and_move(
+  wait_and_move(
     w,
     { { readyState, moving_from_readyState },
       { filledState, moving_fromState }
-    }
+    },
+    is_ready_or_filled_event
   );
 
   buf = std::move(w.buf);
@@ -154,15 +166,31 @@ RWindow::RWindow(RWindow&& w)
   move_to(w, moved_fromState);
 }
 
+RWindow& RWindow::operator=(RWindow& w)
+{
+  w.is_filled().wait();
+  move_to(*this, fillingState);
+  move_to(w, copying_fromState);
+  buf = w.buf;
+  bottom = w.bottom;
+  top = w.top;
+  sz = w.sz;
+  move_to(w, filledState);
+  move_to(*this, filledState);
+
+  return *this;
+}
+
 RWindow& RWindow::operator=(RWindow&& w)
 {
-  move_to(*this, moving_toState);
-  compare_and_move(
+  wait_and_move(
     w,
     { { readyState, moving_from_readyState },
       { filledState, moving_fromState }
-    }
+    },
+    is_ready_or_filled_event
   );
+  move_to(*this, moving_toState);
 
   buf = std::move(w.buf);
   bottom = w.bottom;
@@ -179,9 +207,14 @@ RWindow& RWindow::operator=(RWindow&& w)
   return *this;
 }
 
-#if 0
 void RWindow::detach() 
 {
+#if 1
+  {
+    RWindow dummy = std::move(*this);
+  }
+  *this = RWindow();
+#else
   if (RWindow::State::compare_and_move
       (*this, RWindow::filledState, 
        RWindow::weldedState)) 
@@ -191,11 +224,15 @@ void RWindow::detach()
     bottom = top = sz = 0;
     STATE(RWindow, move_to, ready);
   }
+#endif
 }
 
-
+#if 0
 RWindow& RWindow::attach_to(RWindow& w) 
 {
+#if 1
+  *this = w;
+#else
   w.is_filled().wait();
   STATE(RWindow, move_to, filling);
   STATE_OBJ(RWindow, move_to, w, welded);
@@ -205,6 +242,7 @@ RWindow& RWindow::attach_to(RWindow& w)
   sz = w.sz;
   STATE_OBJ(RWindow, move_to, w, filled);
   STATE(RWindow, move_to, filled);
+#endif
   return *this;
 }
 	

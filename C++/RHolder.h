@@ -41,7 +41,7 @@ namespace curr {
 //! @addtogroup repositories
 //! @{
 
-DECLARE_AXIS(HolderAxis, StateAxis);
+DECLARE_AXIS(HolderAxis, MoveableAxis);
 
 /**
  * It is a "view" of an object T in a repository.

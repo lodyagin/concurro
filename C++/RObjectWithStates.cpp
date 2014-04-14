@@ -42,7 +42,7 @@ DEFINE_AXIS(
 //    "copying_to",
     "moved_from",// state of the object after the content
                  // is moved from it
-    "swapping"
+//    "swapping"
   },
   {
 //    { "stable", "moving_from" },

@@ -359,14 +359,14 @@ static int d2hs_cnt = 0;
 static int dd_cnt = 0;
 
 // TODO also should work with RObjectWithStates
-class C1 : public RObjectWithEvents<A1> 
+class C1 : public RObjectWithEvents<A1, A1, 1> 
 {
 public:
   DECLARE_STATES(A1, S1);
   DECLARE_STATE_CONST(S1, a);
   DECLARE_STATE_CONST(S1, b);
 
-  C1() : RObjectWithEvents<A1>(aState) {}
+  C1() : RObjectWithEvents(aState) {}
 
   void state_changed
   (StateAxis& ax, 
@@ -374,7 +374,7 @@ public:
    AbstractObjectWithStates* object,
    const UniversalState& new_state) override
     {
-      RObjectWithEvents<A1>::state_changed
+      RObjectWithEvents::state_changed
         (ax, state_ax, object, new_state);
       c1_cnt++;
     }
@@ -389,8 +389,8 @@ DEFINE_STATE_CONST(C1, S1, a);
 DEFINE_STATE_CONST(C1, S1, b);
 
 class C2 
-  : public RObjectWithEvents<A1>,
-    public RObjectWithEvents<A2>
+  : public RObjectWithEvents<A1, A1, 1>,
+    public RObjectWithEvents<A2, A2, 1>
 {
 public:
   DECLARE_STATES(A1, S1);
@@ -402,8 +402,8 @@ public:
   static const RState<A2> b2;
 
   C2() 
-    : RObjectWithEvents<A1>(a1),
-      RObjectWithEvents<A2>(a2) 
+    : RObjectWithEvents<A1, A1, 1>(a1),
+      RObjectWithEvents<A2, A2, 1>(a2) 
   {}
 
   void state_changed
@@ -412,9 +412,9 @@ public:
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override
   {
-    RObjectWithEvents<A1>::state_changed
+    RObjectWithEvents<A1, A1, 1>::state_changed
       (ax, state_ax, object, new_state);
-    RObjectWithEvents<A2>::state_changed
+    RObjectWithEvents<A2, A2, 1>::state_changed
       (ax, state_ax, object, new_state);
     c2_cnt++;
     if (is_same_axis<A1>(ax))
@@ -460,14 +460,14 @@ const RState<A1> C2::b1("b");
 const RState<A2> C2::a2("a");
 const RState<A2> C2::b2("b");
 
-class C3 : public RStateSplitter<A3, A1>
+class C3 : public RStateSplitter<A3, A1, 1, 1>
 {
 public:
   DECLARE_STATES(A3, S3);
   DECLARE_STATE_CONST(S3, a);
   DECLARE_STATE_CONST(S3, b);
 
-  C3(RObjectWithEvents<A1>* orig) 
+  C3(RObjectWithEvents<A1, A1, 1>* orig) 
     : RStateSplitter(orig, aState) 
   {
     // TODO remove the direct call
@@ -509,18 +509,20 @@ public:
 
 class D1 
   : public virtual C1,
-    public RStateSplitter<AD1, A1>
+    public RStateSplitter<AD1, A1, 1, 1>
 {
 public:
+  using ParentSplitter = RStateSplitter<AD1, A1, 1, 1>;
+
   DECLARE_STATES(AD1, S);
   DECLARE_STATE_CONST(S, c);
 
   D1() 
-    : RStateSplitter
+    : ParentSplitter
       (this, C1::aState,
-       RStateSplitter::state_hook(&D1::state_hook))
+       ParentSplitter::state_hook(&D1::state_hook))
   {
-    RStateSplitter::init();
+    ParentSplitter::init();
   }
 
   void state_changed
@@ -584,7 +586,7 @@ DEFINE_STATE_CONST(D1, S, c);
 
 class D2 
   : public virtual C1,
-    public RStateSplitter<AD2, A1>
+    public RStateSplitter<AD2, A1, 1, 1>
 {
 public:
   DECLARE_STATES(AD2, S);
@@ -809,6 +811,7 @@ void test_state_change()
   }
 }
 
+#if 0
 void test_assignment()
 {
   RMutex mm("abc");
@@ -817,6 +820,7 @@ void test_assignment()
   C1 ddd(std::move(dd));
   RMutex mmm(std::move(mm));
 }
+#endif
 
 }
 }

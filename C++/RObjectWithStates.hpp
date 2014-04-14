@@ -55,6 +55,20 @@ template<class FinalAxis>
 DEFINE_STATE_CONST(
   RObjectWithStates0<FinalAxis>,
   State,
+  moving_to
+);
+
+template<class FinalAxis>
+DEFINE_STATE_CONST(
+  RObjectWithStates0<FinalAxis>,
+  State,
+  copying_from
+);
+
+template<class FinalAxis>
+DEFINE_STATE_CONST(
+  RObjectWithStates0<FinalAxis>,
+  State,
   moved_from
 );
 

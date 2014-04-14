@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -72,9 +72,19 @@ void RConnectedWindow<ObjectId>::forward_top(size_t s)
 {
   typedef Logger<LOG::Connections> clog;
 
-  do { is_ready().wait(); }
-  while(!RAxis<WindowAxis>::compare_and_move
-        (*this, readyState, fillingState));
+#if 0
+  wait_and_move<RConnectedWindow, MoveableAxis>(
+    *this, is_ready_event, fillingState, -1
+  );
+#else
+  do { 
+    is_ready().wait(); 
+  }
+  while(
+    !RMixedAxis<ConnectedWindowAxis, MoveableAxis>
+      ::compare_and_move(*this, readyState, fillingState)
+  );
+#endif
 
   sz = s;
   bottom = top;
@@ -123,7 +133,7 @@ void RConnectedWindow<ObjectId>::new_buffer
   typedef Logger<LOG::Connections> clog;
   assert(new_buf);
 
-  RMixedAxis<ConnectedWindowAxis, WindowAxis>
+  RMixedAxis<ConnectedWindowAxis, MoveableAxis>
     ::ensure_state(*this, wait_for_bufferState);
 
   STATE_OBJ(RSingleBuffer, ensure_state, *new_buf, 
@@ -161,7 +171,7 @@ operator<< (std::ostream& out,
   else
     out << "unallocated";
 
-  out << ", state=" << RState<WindowAxis>(win) << ")";
+  out << ", state=" << RState<MoveableAxis>(win) << ")";
   return out;
 }
 

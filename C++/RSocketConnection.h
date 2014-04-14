@@ -357,7 +357,8 @@ class connection
   public RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
-    typename Socket::State::axis
+    typename Socket::State::axis,
+    1, 1
   >
 {
   DECLARE_EVENT(SocketConnectionAxis<Socket>, aborting);
@@ -380,7 +381,7 @@ public:
   typedef RStateSplitter
   <
     SocketConnectionAxis<Socket>, 
-    typename Socket::State::axis
+    typename Socket::State::axis, 1, 1
   > Splitter;
 
   //! Client and server side connections differ by a
@@ -510,10 +511,12 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   * @enddot
   */
 template<class Connection>
-class server_factory final :
-  public RStateSplitter
-    <ServerConnectionFactoryAxis, ListeningSocketAxis>,
-  public repository
+class server_factory final
+  : public RStateSplitter<
+      ServerConnectionFactoryAxis, 
+      ListeningSocketAxis, 1, 1
+    >,
+    public repository
 {
 public:
   //! Accepts ListeningSocket in the bound state.

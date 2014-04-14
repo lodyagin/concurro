@@ -191,7 +191,7 @@ static void test_connection(bool do_abort)
   CU_ASSERT_EQUAL_FATAL(answer, a);
 
   // just take a copy
-  wc.attach_to(con->iw());
+  wc = con->iw(); // attach
   const std::string a2(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a2);
   CU_ASSERT_TRUE_FATAL(
@@ -201,7 +201,11 @@ static void test_connection(bool do_abort)
     STATE_OBJ(RWindow, state_is, wc, filled));
 
   // move whole content
+#if 0
   wc.move(con->iw());
+#else
+  wc = std::move(con->iw());
+#endif
   const std::string a3(&wc[0], wc.size());
   CU_ASSERT_EQUAL_FATAL(answer, a3);
   CU_ASSERT_TRUE_FATAL(

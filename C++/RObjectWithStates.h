@@ -108,6 +108,13 @@ class RObjectWithStatesBase<0>
 {
 public:
   virtual ~RObjectWithStatesBase() {}
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
+  {}
 };
 
 //! It can be used as a parent of an object which
@@ -233,7 +240,7 @@ class RObjectWithStates<MoveableAxis, FinalAxis, 0>
     public RObjectWithStatesBase<0>
 {
 public:
-  static_assert(is_ancestor<FinalAxis, MoveableAxis>(), 
+  static_assert(is_ancestor<MoveableAxis, FinalAxis>(), 
      "FinalAxis must be derived from MoveableAxis.");
 
   typedef void AMembWrap;
@@ -241,6 +248,8 @@ public:
   //! @cond
   DECLARE_STATES(MoveableAxis, State);
   DECLARE_STATE_CONST(State, moving_from);
+  DECLARE_STATE_CONST(State, moving_to);
+  DECLARE_STATE_CONST(State, copying_from);
   DECLARE_STATE_CONST(State, moved_from);
   //! @endcond
 
