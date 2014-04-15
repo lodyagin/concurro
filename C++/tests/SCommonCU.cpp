@@ -4,11 +4,12 @@
 
 void test_from_string();
 void test_cast_exception();
+void test_sformat();
+
 CU_TestInfo SCommonTests[] = {
-  {"a cast test",
-   test_from_string},
-  {"a cast exception test",
-   test_cast_exception},
+  {"a cast test", test_from_string},
+  {"a cast exception test", test_cast_exception},
+  {"sformat test", test_sformat},
   CU_TEST_INFO_NULL
 };
 
@@ -58,4 +59,12 @@ void test_cast_exception(){
     goal = true;
   }
   CU_ASSERT_TRUE_FATAL(goal);
+}
+
+void test_sformat()
+{
+  CU_ASSERT_EQUAL_FATAL(
+    sformat("ab", 4, 'd', "g", "c1"),
+    "ab4dgc1"
+  );
 }
