@@ -368,8 +368,16 @@ Out copy_if(In first, In last, Out res, Pred p) {
  */
 char* string2char_ptr(const std::string& str);
 
+#if 0
 //! Calculate the logic implication: a -> b
 #define IMPLICATION(a, b) ((b) || (!(a)))
+#else
+//! Calculate the logic implication: a -> b
+inline bool implication(bool a, bool b)
+{
+  return b || !a;
+}
+#endif
 
 /**
  * Abstract wrapper for a class method pointer. It allows

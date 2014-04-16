@@ -113,7 +113,7 @@ size_t AddressRequestBase
 
     // AI_PASSIVE will be ignored if node != NULL
     // see getaddrinfo(3)
-    SCHECK(IMPLICATION(hints.ai_flags & AI_PASSIVE, 
+    SCHECK(implication(hints.ai_flags & AI_PASSIVE, 
                        node == NULL));
 
     const int gai_res = getaddrinfo
