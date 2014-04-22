@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -63,13 +63,6 @@ namespace curr {
 #  define _T
 #endif
 
-#if 0
-typedef unsigned short ushort;
-typedef unsigned long ulong;
-typedef unsigned int uint;
-typedef unsigned char uchar;
-#endif
-
 //! Return the demangled Type name
 template<class Type>
 struct type
@@ -108,26 +101,29 @@ std::string trimBoth(const std::string &, char = ' ', int maxCount =
 const char * strnchr(const char * str, int chr, size_t maxLen);
 //int strnlen( const char * str, size_t maxLen );  // returns -1 if len > maxLen
 
-/* Copy string src to buffer dest (of buffer size dest_size).  At most
- * dest_size-1 characters will be copied.  Always NUL terminates
- * (unless dest_size == 0).  This function does NOT allocate memory.
- * Unlike strncpy, this function doesn't pad dest (so it's often faster).
- * Returns size of attempted result, strlen(src),
- * so if retval >= dest_size, truncation occurred.
+/* Copy string src to buffer dest (of buffer size
+ * dest_size).  At most dest_size-1 characters will be
+ * copied.  Always NUL terminates (unless dest_size == 0).
+ * This function does NOT allocate memory.  Unlike
+ * strncpy, this function doesn't pad dest (so it's often
+ * faster).  Returns size of attempted result,
+ * strlen(src), so if retval >= dest_size, truncation
+ * occurred.
  */
 size_t strlcpy(char *dest, const char *src, size_t dest_size);
 
 /* It is got from glib 2.0.
  *
- * Appends string src to buffer dest (of buffer size dest_size).
- * At most dest_size-1 characters will be copied.
- * Unlike strncat, dest_size is the full size of dest, not the space left over.
- * This function does NOT allocate memory.
- * This always NUL terminates (unless siz == 0 or there were no NUL characters
- * in the dest_size characters of dest to start with).
- * Returns size of attempted result, which is
- * MIN (dest_size, strlen (original dest)) + strlen (src),
- * so if retval >= dest_size, truncation occurred.
+ * Appends string src to buffer dest (of buffer size
+ * dest_size).  At most dest_size-1 characters will be
+ * copied.  Unlike strncat, dest_size is the full size of
+ * dest, not the space left over.  This function does NOT
+ * allocate memory.  This always NUL terminates (unless
+ * siz == 0 or there were no NUL characters in the
+ * dest_size characters of dest to start with).  Returns
+ * size of attempted result, which is MIN (dest_size,
+ * strlen (original dest)) + strlen (src), so if retval >=
+ * dest_size, truncation occurred.
  */
 size_t
 strlcat(char *dest, const char *src, size_t dest_size);
@@ -206,6 +202,7 @@ std::ostream& operator<<
   return out;
 }
 
+#if 0
 template<class... Args>
 std::string sformat(Args&&... args)
 {
@@ -217,6 +214,28 @@ std::string sformat(Args&&... args)
   //  (std::forward<Args>(args)...);
   return oss.str();
 }
+#else
+inline std::ostream& output(std::ostream& out)
+{
+  return out;
+}
+
+template<class Arg0, class... Args>
+std::ostream&
+output(std::ostream& out, Arg0&& arg0, Args&&... args)
+{
+  out << std::forward<Arg0>(arg0);
+  return output(out, std::forward<Args>(args)...);
+}
+
+template<class... Args>
+std::string sformat(Args&&... args)
+{
+  std::ostringstream oss;
+  output(oss, std::forward<Args>(args)...);
+  return oss.str();
+}
+#endif
 
 std::string AmountFormat(double amt, int precision = 2);
 std::string StripDotZeros(const std::string& s);
