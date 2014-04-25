@@ -44,9 +44,8 @@ namespace curr {
 DECLARE_AXIS(ListeningSocketAxis, SocketBaseAxis);
 
 /**
-  * Just a marker class for a socket which use accept()
-  * system call for generating new ServerSocket -s. Really
-  * all its functionality is implemented in TCPSocket.
+  * A class for a socket which uses accept()
+  * system call for generating new ServerSocket -s. 
   *
   * @dot
   * digraph {
