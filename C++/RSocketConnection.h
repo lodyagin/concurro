@@ -505,7 +505,6 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   *   accepted -> listen;
   *   listen -> closed;
   *   bound -> closed;
-  *   closed -> closed;
   * }
   * @enddot
   */

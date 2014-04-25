@@ -66,7 +66,6 @@ DECLARE_AXIS(TCPAxis, ListeningSocketAxis);
   *   closing -> closed;
   *   in_closed -> closed;
   *   out_closed -> closed;
-  *   closed -> closed;
   * }
   * @enddot
   */
