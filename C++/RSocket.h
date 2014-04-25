@@ -76,7 +76,6 @@ class SocketThread;
  *   created  -> address_already_in_use;
  *   bound    -> closed;
  *   io_ready -> closed;
- *   closed   -> closed;
  * }
  * @enddot
  *
@@ -108,7 +107,11 @@ public:
   DECLARE_STATE_CONST(State, destination_unreachable);
   DECLARE_STATE_CONST(State, address_already_in_use);
 
-  virtual ~RSocketBase () {}
+  virtual ~RSocketBase () 
+  {
+    LOG_DEBUG(log, "Close fd " << fd);
+    ::close(fd);
+  }
 
   //! A socket file descriptor.
   const SOCKET fd;

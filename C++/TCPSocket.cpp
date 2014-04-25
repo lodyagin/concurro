@@ -127,11 +127,6 @@ void TCPSocket::state_hook
       wait_thread->start();
     }
   }
-  else {
-    if (st == closedState) {
-      ::close(fd);
-    }
-  }
 }
 
 void TCPSocket::ask_close_out()

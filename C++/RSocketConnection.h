@@ -509,7 +509,7 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   * }
   * @enddot
   */
-template<class Connection, int wait_m = 10000>
+template<class Connection, int wait_m = 5000>
 class server_factory final :
   public RStateSplitter
     <ServerConnectionFactoryAxis, ListeningSocketAxis>,
