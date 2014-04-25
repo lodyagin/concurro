@@ -53,7 +53,7 @@ DEFINE_AXIS(
     {"closing", "closed"},
     {"in_closed", "closed"},
     {"out_closed", "closed"},
-    {"closed", "closed"}
+//    {"closed", "closed"}
   }
   );
 

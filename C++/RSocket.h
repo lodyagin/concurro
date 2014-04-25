@@ -76,6 +76,7 @@ class SocketThread;
  *   created  -> address_already_in_use;
  *   bound    -> closed;
  *   io_ready -> closed;
+ *   closed   -> closed;
  * }
  * @enddot
  *
