@@ -261,13 +261,16 @@ void RThreadBase::_run()
   {
     // TODO make an additional state
     // "terminated_by_exception", store the exception.
-    LOG_WARN(log, "Exception in thread: " 
-             << x.what ());
+    LOG_WARN(log, "Exception in thread " 
+      << pretty_id() << " : "
+      << x.what ());
   }
   catch ( ... )
   {
     LOG_WARN(log, 
-             "Unknown type of exception in the thread.");
+      "Unknown type of exception in thread "
+      << pretty_id()
+    );
   }
 
   LOG_DEBUG (log, "thread " << pretty_id() << ">\t finished");
