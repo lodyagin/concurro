@@ -74,6 +74,7 @@ class SocketThread;
  *   created  -> connection_refused;
  *   created  -> destination_unreachable;
  *   created  -> address_already_in_use;
+ *   created  -> closed;
  *   bound    -> closed;
  *   io_ready -> closed;
  *   closed   -> closed;
@@ -123,6 +124,9 @@ public:
   //! Closes an outbound part
   virtual void ask_close_out() = 0;
 
+  //! Asks to close everything
+  void ask_close();
+
   virtual std::string universal_id() const
   {
     return StdIdMember::universal_id();
@@ -143,7 +147,13 @@ public:
   RSocketRepository *const repository;
 
 protected:
-  const CompoundEvent is_terminal_state_event;
+  const CompoundEvent is_terminal_state_event = {
+    is_connection_timed_out_event,
+    is_connection_refused_event,
+    is_destination_unreachable_event,
+    is_address_already_in_use_event,
+    is_closed_event  
+  };
 
   //! A socket address.
   const RSocketAddress* address = nullptr;

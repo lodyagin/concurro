@@ -37,6 +37,7 @@
 #include "ListeningSocket.h"
 #include "InSocket.h"
 #include "OutSocket.h"
+#include "RState.hpp"
 
 namespace curr {
 
@@ -57,13 +58,7 @@ RSocket<Bases...>
 //
 ::~RSocket()
 {
-  RSocketBase::State::compare_and_move
-    (*this, 
-     { RSocketBase::createdState,
-       RSocketBase::boundState, // includes ListeningSocket::listen
-       RSocketBase::io_readyState
-     },
-     RSocketBase::closedState);
+  RSocketBase::ask_close();
 
   // wait all parts termination
   /*for (auto& te : this->ancestor_terminals)

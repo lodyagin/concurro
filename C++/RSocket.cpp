@@ -100,13 +100,8 @@ RSocketBase::RSocketBase
     ("RSocketBase::construction_complete", true),
    repository(dynamic_cast<RSocketRepository*>
           (oi.repository)),
-   is_terminal_state_event {
-    is_connection_timed_out_event,
-    is_connection_refused_event,
-    is_destination_unreachable_event,
-    is_address_already_in_use_event,
-    is_closed_event  
-   },
+   /*is_terminal_state_event {
+   },*/
    address(&addr)
 {
   assert(fd >= 0);
@@ -115,6 +110,21 @@ RSocketBase::RSocketBase
   assert(address->get_aw_ptr()->begin()->ai_addr);
 
   set_blocking(false);
+}
+
+void RSocketBase::ask_close()
+{
+  // all possible not error states are here
+  // alwais will set `closed' (which causes termination of
+  // parents) except already is in closed or in any error
+  // state. 
+  RSocketBase::State::compare_and_move
+    (*this, 
+     { RSocketBase::createdState,
+       RSocketBase::boundState, // includes ListeningSocket::listen
+       RSocketBase::io_readyState
+     },
+     RSocketBase::closedState);
 }
 
 void RSocketBase::set_blocking (bool blocking)
