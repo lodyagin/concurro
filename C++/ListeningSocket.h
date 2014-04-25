@@ -75,6 +75,7 @@ class ListeningSocket
   DECLARE_EVENT(ListeningSocketAxis, pre_listen);
   DECLARE_EVENT(ListeningSocketAxis, listen);
   DECLARE_EVENT(ListeningSocketAxis, accepted);
+  DECLARE_EVENT(ListeningSocketAxis, bound);
 
 public:
   //! @cond

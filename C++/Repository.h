@@ -128,9 +128,14 @@ public:
   {
   public:
     NoSuchId (const ObjId& the_id) 
-      : SException (SFORMAT("No object with id [" 
-                            << the_id 
-                            << "] exists")),
+      : SException (
+          sformat(
+            "No object with id [",
+            the_id,
+            "] exists in ",
+            type<RepositoryInterface>::name()
+          )
+        ),
       id (the_id) {}
 
     ~NoSuchId () throw () {}

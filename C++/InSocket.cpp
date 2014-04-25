@@ -122,7 +122,8 @@ void InSocket::SelectThread::run()
       + 1;
     rSocketCheck(
       ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
-    LOG_DEBUG(InSocket::log, "InSocket>\t ::select");
+    LOG_DEBUG(InSocket::log, "thread " << pretty_id() 
+      << ">\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
       const ssize_t red = ::read(fd, in_sock->msg.data(),
@@ -130,7 +131,8 @@ void InSocket::SelectThread::run()
       if (red < 0) {
         if (errno == EAGAIN) continue;
         const int err = errno;
-        LOG_ERROR(InSocket::log, "Error " << rErrorMsg(err));
+        LOG_ERROR(InSocket::log, "thread " << pretty_id() 
+          << "> Error " << rErrorMsg(err));
         break;
       }
 

@@ -11,10 +11,10 @@ void test_connection_aborted();
 void test_connection_clearly_closed();
 
 CU_TestInfo RConnectionTests[] = {
-  {"test RConnection (aborted)", 
-    test_connection_aborted},
   {"test RConnection (clearly closed)", 
    test_connection_clearly_closed},
+  {"test RConnection (aborted)", 
+    test_connection_aborted},
   CU_TEST_INFO_NULL
 };
 
@@ -205,8 +205,10 @@ static void test_connection(bool do_abort)
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RWindow, state_is, wc, filled));
 
-  if (do_abort)
+  if (do_abort) {
     con->ask_abort();
+    con->iw().detach();
+  }
   else {
     con->ask_close();
     con->iw().detach();

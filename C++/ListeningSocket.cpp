@@ -78,6 +78,7 @@ ListeningSocket::ListeningSocket
   CONSTRUCT_EVENT(pre_listen),
   CONSTRUCT_EVENT(listen),
   CONSTRUCT_EVENT(accepted),
+  CONSTRUCT_EVENT(bound),
 
   select_thread(
     dynamic_cast<SelectThread*>

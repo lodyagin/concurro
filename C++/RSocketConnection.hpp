@@ -126,12 +126,16 @@ void bulk<Parent, Ts...>
 ::run()
 {
   typedef Logger<LOG::Connections> clog;
+  LOG_TRACE(clog, "bulk::run(),1");
 
   //<NB> it is not a thread run(), it is called from it
   this->in_sock->is_construction_complete_event.wait();
 
+  LOG_TRACE(clog, "bulk::run(),2");
   for (;;) {
+    LOG_TRACE(clog, "bulk::run(),3");
     if (this->pull_in()) {
+      LOG_TRACE(clog, "bulk::run(),4");
       iw().is_wait_for_buffer().wait();
       LOG_DEBUG(clog, iw() << " asked for more data");
       iw().new_buffer
@@ -453,8 +457,8 @@ bool connection<CURR_RSOCKETCONNECTION_T_>
   else return false;
 }
 
-template<class Connection>
-server_factory<Connection>
+template<class Connection, int wait_m>
+server_factory<Connection, wait_m>
 //
 ::server_factory
   (ListeningSocket* l_sock, size_t reserved)
@@ -470,15 +474,12 @@ server_factory<Connection>
   lstn_sock(l_sock)
 {
   assert(lstn_sock);
-  const bool isBound = state_is
-    <ListeningSocket, ListeningSocketAxis>
-      (*lstn_sock, RSocketBase::boundState);
-  SCHECK(isBound);
+  CURR_WAIT(lstn_sock->is_bound(), wait_m);
   threads.complete_construction();
 }
 
-template<class Connection>
-server_factory<Connection>::Threads
+template<class Connection, int wait_m>
+server_factory<Connection, wait_m>::Threads
 //
 ::Threads(server_factory* o) :
   RObjectWithThreads<Threads>
@@ -490,8 +491,8 @@ server_factory<Connection>::Threads
 {
 }
 
-template<class Connection>
-void server_factory<Connection>
+template<class Connection, int wait_m>
+void server_factory<Connection, wait_m>
 //
 ::ListenThread::run()
 {

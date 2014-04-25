@@ -509,7 +509,7 @@ DECLARE_AXIS(ServerConnectionFactoryAxis,
   * }
   * @enddot
   */
-template<class Connection>
+template<class Connection, int wait_m = 10000>
 class server_factory final :
   public RStateSplitter
     <ServerConnectionFactoryAxis, ListeningSocketAxis>,
@@ -579,6 +579,9 @@ protected:
   }
 
   ListeningSocket* lstn_sock;
+
+private:
+  using log = Logger<server_factory>;
 };
 
 } // namespace socket

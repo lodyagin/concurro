@@ -1,3 +1,5 @@
+// -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+
 #include "SSingleton.hpp"
 #include "RThread.hpp"
 #include "CUnit.h"
@@ -62,17 +64,20 @@ void test_ssingleton()
   // tests for not-existing singleton
   try {
     S::instance();
-    CU_FAIL_FATAL("an exception must be raised");
+    CU_FAIL_FATAL("an exception must be raised(1)");
   }
   catch (const NotExistingSingleton&) {}
 
+  //FIXME this test is failed now because of
+  // SSingleton::~SSingleton has commented out
+  // is_complete().reset()
   {
     S s1;
     CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 133);
   }
   try {
     S::instance();
-    CU_FAIL_FATAL("an exception must be raised");
+    CU_FAIL_FATAL("an exception must be raised(2)");
   }
   catch (const NotExistingSingleton&) {}
 
@@ -80,7 +85,7 @@ void test_ssingleton()
     S s1;
     try {
       S s2;
-      CU_FAIL_FATAL("an exception must be raised");
+      CU_FAIL_FATAL("an exception must be raised(3)");
     }
     catch (const MustBeSingleton&) {}
 
@@ -88,7 +93,7 @@ void test_ssingleton()
   }
   try {
     S::instance();
-    CU_FAIL_FATAL("an exception must be raised");
+    CU_FAIL_FATAL("an exception must be raised(4)");
   }
   catch (const NotExistingSingleton&) {}
 }
