@@ -53,6 +53,7 @@ DECLARE_AXIS(ClientSocketAxis, SocketBaseAxis);
  *   created -> connection_refused;
  *   created -> destination_unreachable;
  *   io_ready -> closed;
+ *   closed -> closed;
  *   created -> closed;
  *   created -> pre_connecting;
  *   pre_connecting -> connecting;
