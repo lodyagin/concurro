@@ -80,7 +80,14 @@ protected:
   void run_server() override
   {
     this->send(RSingleBuffer("+Soup2.0\n"));
+    this->iw().forward_top(39);
+    CURR_WAIT(this->iw().is_filled(), 3000);
+    std::string recv(&(this->iw()[0]), 38);
+    LOG_DEBUG(log, "Server received [" << recv << ']');
   }
+
+private:
+  using log = Logger<TestConnection>;
 };
 
 template<>
@@ -172,12 +179,11 @@ static void test_connection(bool do_abort)
   
   con->ask_connect();
   CURR_WAIT_L(rootLogger, con->is_io_ready(), -1);
-
   con->send
     (RSingleBuffer
       ("Labcdef12345678902H23456789         1\n"));
   const std::string answer("+Soup2.0\n");
-  con->iw().forward_top(answer.size());
+  con->iw().forward_top(answer.size() + 1);
   CURR_WAIT_L
     (rootLogger, 
      con->iw().is_filled() | con->is_terminal_state(),
@@ -185,12 +191,13 @@ static void test_connection(bool do_abort)
 
   if (con->is_terminal_state().signalled())
     CU_FAIL_FATAL("The connection is closed unexpectedly.");
-  const std::string a(&con->iw()[0], con->iw().size());
+  const std::string a(&con->iw()[0], con->iw().size() - 1);
   CU_ASSERT_EQUAL_FATAL(answer, a);
 
+#if 0
   // just take a copy
   wc.attach_to(con->iw());
-  const std::string a2(&wc[0], wc.size());
+  const std::string a2(&wc[0], wc.size() - 1);
   CU_ASSERT_EQUAL_FATAL(answer, a2);
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RConnectedWindow<int>, state_is, con->iw(),
@@ -200,18 +207,20 @@ static void test_connection(bool do_abort)
 
   // move whole content
   wc.move(con->iw());
-  const std::string a3(&wc[0], wc.size());
+  const std::string a3(&wc[0], wc.size() - 1);
   CU_ASSERT_EQUAL_FATAL(answer, a3);
   CU_ASSERT_TRUE_FATAL(
     STATE_OBJ(RWindow, state_is, wc, filled));
 
+#endif
+  lstn->ask_close();
   if (do_abort) {
     con->ask_abort();
-    con->iw().detach();
+//    con->iw().detach();
   }
   else {
     con->ask_close();
-    con->iw().detach();
+//    con->iw().detach();
   }
 }
 

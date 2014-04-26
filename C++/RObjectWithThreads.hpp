@@ -43,8 +43,10 @@ RObjectWithThreads<Object>
 : destructor_delegate_is_called(false)
 {
   for (ThreadPar* par : pars) {
-    LOG_DEBUG(log, "push " << par->par_num << "par to " 
-              << curr::type<Object>::name());
+    LOG_DEBUG(log, "push " << par->par_num 
+      << '(' << par->thread_name << ')'
+      << " par to " 
+      << curr::type<Object>::name());
     threads_pars.push(
       std::unique_ptr<ThreadPar>(par));
   }
@@ -81,12 +83,18 @@ void RObjectWithThreads<Object>
 
       par->object = dynamic_cast<Object*>(this);
       SCHECK(par->object);
-      // add a pretty thread id
+      
+      const std::string real_name = par->thread_name;
       par->thread_name = SFORMAT
         (par->object->object_name() << ":"
          << threp.allocate_new_object_id(*par));
 
       threads.push_back(threp.create_thread(*par));
+      LOG_DEBUG(log, "the real thread " 
+        << par->thread_name << " name is "
+        << real_name
+      );
+        
       threads_pars.pop();
     }
     for (RThreadBase* th : threads) {
@@ -108,9 +116,25 @@ void RObjectWithThreads<Object>
   for (RThreadBase* th : threads)
     th->stop();
 
+  auto th_it = threads.cbegin();
   for (auto& teh : threads_terminals)
   {
-    teh.wait();
+    assert(th_it != threads.cend());
+    while(true) {
+      try {
+        CURR_WAIT(teh, 10000);
+        break;
+      }
+      catch(const EventWaitingTimedOut&) {
+        LOG_WARN(log, 
+          type<RObjectWithThreads>::name()
+          << ": still waiting thread " 
+          << (*th_it)->pretty_id() 
+          << " terminal state"
+        );
+      }
+    }
+    ++th_it;
   }
   for (RThreadBase* th : threads)
     StdThreadRepository

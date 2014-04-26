@@ -118,7 +118,8 @@ void OutSocket::SelectThread::run()
       + 1;
     rSocketCheck(
       ::select(maxfd, &rfds, &wfds, NULL, NULL) > 0);
-    LOG_DEBUG(OutSocket::log, "OutSocket>\t ::select");
+    LOG_DEBUG(OutSocket::log, "thread " << pretty_id() 
+      << ">\t ::select");
 
     if (FD_ISSET(fd, &wfds)) {
       const ssize_t written = 

@@ -197,8 +197,8 @@ void ClientSocket::Thread::run()
    }
    else rSocketCheck(res > 0);
    
-   LOG_DEBUG(ClientSocket::log, 
-             "ClientSocket>\t ::select");
+   LOG_DEBUG(ClientSocket::log, "thread " << pretty_id() 
+      << ">\t ::select");
 
    int error = 0;
    socklen_t error_len = sizeof(error);

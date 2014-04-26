@@ -127,6 +127,12 @@ void TCPSocket::state_hook
       wait_thread->start();
     }
   }
+  else {
+    if (st == closedState) {
+      LOG_DEBUG(log, "shutdown(" << fd << ", SHUT_RDWR)");
+      ::shutdown(fd, SHUT_RDWR);
+    }
+  }
 }
 
 void TCPSocket::ask_close_out()
@@ -135,7 +141,7 @@ void TCPSocket::ask_close_out()
   LOG_DEBUG(log, "shutdown(" << fd << ", SHUT_WR)");
   int res = ::shutdown(fd, SHUT_WR);
   if (res < 0) {
-    if (! errno == ENOTCONN) {
+    if (! (errno == ENOTCONN)) {
       rSocketCheck(false);
     }
     else {
@@ -195,7 +201,8 @@ void TCPSocket::SelectThread::run()
 
     rSocketCheck(
       ::select(maxfd, &rfds, NULL, NULL, NULL) > 0);
-    LOG_DEBUG(TCPSocket::log, "TCPSocket>\t ::select");
+    LOG_DEBUG(TCPSocket::log, "thread " << pretty_id() 
+      << ">\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
       // peek the message size
@@ -204,7 +211,8 @@ void TCPSocket::SelectThread::run()
       static char dummy_buf[1];
       const ssize_t res = ::recv
         (fd, &dummy_buf, 1, MSG_PEEK);
-      LOG_DEBUG(TCPSocket::log, "TCPSocket>\t ::recv");
+      LOG_DEBUG(TCPSocket::log, "thread " << pretty_id() 
+        << ">\t ::recv");
       if (res < 0 && errno == EAGAIN) 
         continue; // no data available
       rSocketCheck(res >=0);

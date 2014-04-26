@@ -231,8 +231,8 @@ void ListeningSocket::SelectThread::run()
     const int res = ::select
       (maxfd, &rfds, NULL, NULL, NULL);
     rSocketCheck(res > 0);
-    LOG_DEBUG
-      (ListeningSocket::log,"ListeningSocket>\t ::select");
+    LOG_DEBUG(ListeningSocket::log, "thread " << pretty_id() 
+      << ">\t ::select");
 
     if (FD_ISSET(fd, &rfds)) {
       move_to<ListeningSocket, ListeningSocketAxis>
