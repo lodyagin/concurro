@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -23,6 +23,7 @@
 
 /**
  * @file
+ * Event primitives.
  *
  * @author Sergei Lodyagin
  */
@@ -30,19 +31,21 @@
 #ifndef CONCURRO_EVENT_H
 #define CONCURRO_EVENT_H
 
-#include "SCheck.h"
-#include "Logging.h"
-#ifndef _WIN32
-#define WFMO
-#include "pevents.h"
-typedef neosmart::neosmart_event_t HANDLE;
-#endif
 #include <atomic>
 #include <ostream>
 #include <vector>
 #include <set>
 #include <memory>
 #include <assert.h>
+#include "types/meta.h"
+#include "SCheck.h"
+#include "SException.h"
+#include "Logging.h"
+#ifndef _WIN32
+#define WFMO
+#include "pevents.h"
+typedef neosmart::neosmart_event_t HANDLE;
+#endif
 
 namespace curr {
 
@@ -71,7 +74,7 @@ public:
  */
 
 #define CURR_WAIT_L(logger, evt, time) \
-  do { (evt).wait((time), curr::ThrowSException \
+  do { event::wait((evt), (time), curr::ThrowSException \
        (logger, LOG4CXX_LOCATION)); } while(false)
 
 //! Call a timed event waiting which can throw
@@ -497,6 +500,17 @@ inline CompoundEvent operator|
 {
   a |= b; return a;
 }
+
+namespace event {
+
+using disjunction = curr::CompoundEvent;
+
+//! An event expression in a conjunctive normal form
+struct cnf : std::vector<disjunction>
+{
+};
+
+} // event
 
 //! @}
 
