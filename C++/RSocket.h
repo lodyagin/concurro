@@ -327,12 +327,8 @@ inline RSocketBase* RSocketAllocator0
  const ObjectCreationInfo& oi,
  const RSocketAddress& addr);
     
-template<class Side, class... Others>
-inline RSocketBase* RSocketAllocator1
-(NetworkProtocol protocol,
- IPVer ver,
- const ObjectCreationInfo& oi,
- const RSocketAddress& addr);
+//template<class Side, class... Others>
+//struct RSocketBase* RSocketAllocator1;
 
 template<class Side, class Protocol, class... Others>
   inline RSocketBase* RSocketAllocator2

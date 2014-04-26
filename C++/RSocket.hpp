@@ -93,6 +93,45 @@ void RSocket<Bases...>
 }
 */
 
+template<class Side, class... Others>
+struct RSocketAllocator1
+{
+  RSocketBase* operator()(
+    NetworkProtocol protocol,
+    IPVer ver,
+    const ObjectCreationInfo& oi,
+    const RSocketAddress& addr
+  )
+  {
+    switch(protocol)
+    {
+    case NetworkProtocol::TCP:
+      return RSocketAllocator2
+        <Side, TCPSocket, Others...>
+          (ver, oi, addr);
+
+    default: 
+      THROW_NOT_IMPLEMENTED;
+    }
+  }
+};
+
+//! No TCPSocket parent in this specialization
+template<class... Others>
+struct RSocketAllocator1<ListeningSocket, Others...>
+{
+  RSocketBase* operator()(
+    NetworkProtocol protocol,
+    IPVer ver,
+    const ObjectCreationInfo& oi,
+    const RSocketAddress& addr
+  )
+  {
+    return RSocketAllocator2<ListeningSocket, Others...>
+      (ver, oi, addr);
+  }
+};
+
 inline RSocketBase* RSocketAllocator0
   (SocketSide side,
    NetworkProtocol protocol,
@@ -104,37 +143,20 @@ inline RSocketBase* RSocketAllocator0
   {
   case SocketSide::Client:
     return RSocketAllocator1
-      <ClientSocket, InSocket, OutSocket> 
+      <ClientSocket, InSocket, OutSocket>() 
         (protocol, ver, oi, addr);
   case SocketSide::Listening:
     return RSocketAllocator1
-      <ListeningSocket, InSocket, OutSocket> 
+      <ListeningSocket, InSocket, OutSocket>()
         (protocol, ver, oi, addr);
   case SocketSide::Server:
-    return RSocketAllocator1<InSocket, OutSocket>
+    return RSocketAllocator1<InSocket, OutSocket>()
       (protocol, ver, oi, addr);
   default: 
     THROW_NOT_IMPLEMENTED;
   }
 }
     
-template<class Side, class... Others>
-inline RSocketBase* RSocketAllocator1
- (NetworkProtocol protocol,
-  IPVer ver,
-  const ObjectCreationInfo& oi,
-  const RSocketAddress& addr)
-{
-  switch(protocol)
-  {
-  case NetworkProtocol::TCP:
-    return RSocketAllocator2<Side, TCPSocket, Others...>
-      (ver, oi, addr);
-  default: 
-    THROW_NOT_IMPLEMENTED;
-  }
-}
-
 template<class Side, class Protocol, class... Others>
 inline RSocketBase* RSocketAllocator2
   (IPVer ver, 

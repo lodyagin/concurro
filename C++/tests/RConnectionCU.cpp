@@ -216,7 +216,7 @@ static void test_connection(bool do_abort)
   lstn->ask_close();
   if (do_abort) {
     con->ask_abort();
-//    con->iw().detach();
+    con->iw().detach();
   }
   else {
     con->ask_close();
