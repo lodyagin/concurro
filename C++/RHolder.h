@@ -42,6 +42,7 @@ namespace curr {
 
 DECLARE_AXIS(NReaders1WriterAxis, StateAxis);
 
+//FIXME may be inconsistent with RHolder copy/move
 /**
  * An object guard which do not allow several "write"
  * operations being performed simultaneously on a guarded
@@ -192,6 +193,75 @@ protected:
   T* obj;
 };
 
+//! The dummy guard - no guard at all, just guard interface
+template<class T, int>
+class NoGuard
+{
+public:
+  using WritePtr = T*;
+  using ReadPtr = const T*;
+
+  NoGuard() : NoGuard(nullptr) {}
+
+  NoGuard(nullptr_t object) : obj(nullptr) {}
+
+  NoGuard(T* object) : obj(object) 
+  {
+    SCHECK(obj);
+  }
+
+  NoGuard(NoGuard&& g) noexcept : obj(g.discharge()) {}
+
+  NoGuard& operator=(NoGuard&& g) noexcept
+  {
+    obj = g.discharge();
+  }
+
+  ~NoGuard() { discharge(); }
+
+  NoGuard& charge(T* object)
+  {
+    SCHECK(object);
+    obj = object;
+    return *this;
+  }
+
+  void swap(NoGuard& g) noexcept
+  {
+    std::swap(obj, g.obj);
+  }
+
+  T* discharge() noexcept
+  {
+    T* res = obj; // NB res can be nullptr
+    obj = nullptr;
+    return res;
+  }
+
+  T* get()
+  {
+    return obj;
+  }
+
+  operator bool() const
+  {
+    return obj;
+  }
+
+  T* operator->()
+  {
+    return obj;
+  }
+   
+  const T* operator->() const
+  {
+    return obj;
+  }
+
+protected:
+  T* obj;
+};
+
 enum class HolderType { 
   Singular, //<! a view of one object
   Plural    //<! a view of an array of objects
@@ -211,7 +281,7 @@ template
   class Obj = T,
 
   template<class, int>
-  class Guard = NReaders1WriterGuard,
+  class Guard = NoGuard,
 
   int wait_m = 1000
 >
