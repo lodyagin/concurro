@@ -196,6 +196,28 @@ public:
       uint32_t to) = 0;
 };
 
+// a new naming schema
+
+namespace state {
+
+template<class T>
+using interface = ObjectWithStatesInterface<T>;
+
+}
+
+namespace event {
+
+template<class T>
+using interface = ObjectWithEventsInterface<T>;
+
+template<class Axis>
+class interface_with_states
+  : public state::interface<Axis>,
+    public interface<Axis>
+{};
+
+}
+
 #if 0
 struct state_finalizer_marker {};
 

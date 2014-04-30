@@ -40,242 +40,15 @@ namespace curr {
 //! @addtogroup repositories
 //! @{
 
-DECLARE_AXIS(NReaders1WriterAxis, StateAxis);
-
-//FIXME may be inconsistent with RHolder copy/move
-/**
- * An object guard which do not allow several "write"
- * operations being performed simultaneously on a guarded
- * object of type T (a several readers - single writer
- * conception).
- * \tparam wait_m Wait time in milliseconds (-1 means
- * infinite) 
- */
-template<class T, int wait_m = 1000>
-class NReaders1WriterGuard
-  : public RObjectWithEvents<NReaders1WriterAxis>
-{
-  DECLARE_EVENT(NReaders1WriterAxis, free);
-  DECLARE_EVENT(NReaders1WriterAxis, readers_entered);
-
-public:
-  //! @cond
-  DECLARE_STATES(NReaders1WriterAxis, State);
-  DECLARE_STATE_CONST(State, free);
-  DECLARE_STATE_CONST(State, reader_entering);
-  DECLARE_STATE_CONST(State, readers_entered);
-  DECLARE_STATE_CONST(State, reader_exiting);
-  DECLARE_STATE_CONST(State, writer_entered);
-  //! @endcond
-
-  class ReadPtr
-  {
-  public:
-    ReadPtr(const NReaders1WriterGuard* g) : guard(g)
-    {
-      const_cast<NReaders1WriterGuard*>(guard)
-        -> start_read_op();
-    }
-
-    ~ReadPtr()
-    {
-      const_cast<NReaders1WriterGuard*>(guard)
-        -> stop_read_op();
-    }
-
-    const T* operator->() const
-    {
-      return guard->obj;
-    }
-
-  private:
-    const NReaders1WriterGuard* guard;
-  };
-
-  class WritePtr
-  {
-  public:
-    WritePtr(NReaders1WriterGuard* g) : guard(g)
-    {
-      guard->start_write_op();
-    }
-
-    ~WritePtr()
-    {
-      guard->stop_write_op();
-    }
-
-    T* operator->()
-    {
-      return guard->obj;
-    }
-
-  private:
-    NReaders1WriterGuard* guard;
-  };
-
-  NReaders1WriterGuard(T* object) 
-    : RObjectWithEvents<NReaders1WriterAxis>(S(free)),
-      CONSTRUCT_EVENT(free),
-      CONSTRUCT_EVENT(readers_entered),
-      readers_cnt(0),
-      obj(object)
-  {
-    assert(obj);
-  }
-
-  CompoundEvent is_terminal_state() const override
-  {
-    return E(terminal_state);
-  }
-
-  //! Read access to the guarded object
-  const ReadPtr operator->() const
-  {
-    return ReadPtr(this);
-  }
-
-  //! Write access to the guarded object
-  WritePtr operator->()
-  {
-    return WritePtr(this);
-  }
-
-protected:
-
-  CompoundEvent E(ready_to_new_reader) = 
-    { E(free), E(readers_entered) };
-
-  void start_read_op()
-  {
-    static const std::set<RState<NReaders1WriterAxis>> 
-      from_set { S(free), S(readers_entered) };
-
-    wait_and_move
-      (*this, from_set, 
-       E(ready_to_new_reader), S(reader_entering),
-       wait_m);
-
-    ++readers_cnt;
-
-    move_to(*this, S(readers_entered));
-  }
-
-  void stop_read_op()
-  {
-    move_to(*this, S(reader_exiting));
-    if (--readers_cnt)
-      move_to(*this, S(readers_entered));
-    else
-      move_to(*this, S(free));
-  }
-
-  void start_write_op()
-  {
-    wait_and_move(*this, E(free), S(writer_entered), 
-                  wait_m);
-    assert(0 == readers_cnt);
-  }
-
-  void stop_write_op()
-  {
-    move_to(*this, S(free));
-  }
-
-  size_t get_readers_cnt() const
-  {
-    return readers_cnt;
-  }
-
-  CompoundEvent E(terminal_state) = { E(free) };
-
-  std::atomic<size_t> readers_cnt;
-  T* obj;
-};
-
-//! The dummy guard - no guard at all, just guard interface
-template<class T, int>
-class NoGuard
-{
-public:
-  using WritePtr = T*;
-  using ReadPtr = const T*;
-
-  NoGuard() : NoGuard(nullptr) {}
-
-  NoGuard(nullptr_t object) : obj(nullptr) {}
-
-  NoGuard(T* object) : obj(object) 
-  {
-    SCHECK(obj);
-  }
-
-#if 0 // FIXME review with newest repository design
-
-  NoGuard(const NoGuard& g) = default;
-  NoGuard& operator=(const NoGuard& g) = default;
-
-#endif 
-
-  NoGuard(NoGuard&& g) noexcept : obj(g.discharge()) {}
-
-  NoGuard& operator=(NoGuard&& g) noexcept
-  {
-    obj = g.discharge();
-  }
-
-  ~NoGuard() { discharge(); }
-
-  NoGuard& charge(T* object)
-  {
-    SCHECK(object);
-    obj = object;
-    return *this;
-  }
-
-  void swap(NoGuard& g) noexcept
-  {
-    std::swap(obj, g.obj);
-  }
-
-  T* discharge() noexcept
-  {
-    T* res = obj; // NB res can be nullptr
-    obj = nullptr;
-    return res;
-  }
-
-  T* get()
-  {
-    return obj;
-  }
-
-  operator bool() const
-  {
-    return obj;
-  }
-
-  T* operator->()
-  {
-    return obj;
-  }
-   
-  const T* operator->() const
-  {
-    return obj;
-  }
-
-protected:
-  T* obj;
-};
-
 enum class HolderType { 
   Singular, //<! a view of one object
   Plural    //<! a view of an array of objects
 };
 
-DECLARE_AXIS(HolderAxis, StateAxis);
+//DECLARE_AXIS(HolderAxis, StateAxis);
 
+// TODO RObjectWithStatesInterface and without states
+// specializations 
 /**
  * It is a "view" of an object T in a repository.
  *
@@ -288,16 +61,25 @@ template
   class Obj = T,
 
   template<class, int>
-  class Guard = NoGuard,
+  class Guard = T::template guard_templ,
 
   int wait_m = 1000
 >
-class RHolder : public RObjectWithStates<HolderAxis>
+class RHolder 
+  : //public RObjectWithStates<HolderAxis>,
+    public T::states_interface,
+    public RHolderBase
 {
+  template<class O, class>
+  friend auto compare_and_move(
+    O& obj, 
+    const RState<typename O::State::axis>& from,
+    const RState<typename O::State::axis>& to
+  )-> enable_fun_if<std::is_base_of<RHolderBase, O>, bool>;
+
 public:
-  //typedef typename Rep::Object Obj;
-  //typedef typename Rep::ObjectId Id;
   typedef typename Obj::Par Par;
+//  typedef HolderAxis axis;
 
   //! Create a new object in the repository Rep and create
   //! the first holder to it.
@@ -333,7 +115,8 @@ public:
 
   //! Make a read-only object call (see
   //! NReaders1WriterGuard) 
-  const typename Guard<T,wait_m>::ReadPtr operator->() const
+  const typename Guard<T,wait_m>::ReadPtr operator->() 
+    const
   {
     return guarded.operator->();
   }
@@ -347,7 +130,51 @@ public:
 
   RHolder* operator&() = delete;
 
+  CompoundEvent is_terminal_state() const override
+  {
+    return guarded.get()->is_terminal_state();
+  }
+
 protected:
+  void state_changed(
+    curr::StateAxis& ax,
+    const curr::StateAxis& state_ax,
+    curr::AbstractObjectWithStates* object,
+    const curr::UniversalState& new_state
+  ) override
+  {
+    guarded->state_changed(ax,state_ax, object, new_state);
+    /*RObjectWithStates<HolderAxis>
+      ::state_changed(ax, state_ax, object, new_state);*/
+  }
+
+  std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) override
+  { 
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) const override
+  { 
+    return ax.current_state(this);
+  }
+
+  CompoundEvent create_event(
+    const UniversalEvent& ue
+  ) const override
+  {
+    THROW_PROGRAM_ERROR;
+  }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
+  {
+    THROW_PROGRAM_ERROR;
+  }
+
   // The guarded object
   Guard<T, wait_m> guarded;
 };

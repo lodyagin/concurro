@@ -285,6 +285,9 @@ private:
   typedef Logger<RAxis<Axis>> log;
 };
 
+//! Just a marker
+class RHolderBase {};
+
 //! RMixedAxis<Axis,Axis2>::state_is adapter
 template<class T, class Axis2 = typename T::axis>
 bool state_is
@@ -307,13 +310,29 @@ void move_to
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
 template<class T, class Axis2 = typename T::axis>
-bool compare_and_move
-  (T& obj, 
-   const curr::RState<typename T::State::axis>& from,
-   const curr::RState<typename T::State::axis>& to)
+auto compare_and_move(
+  T& obj, 
+  const curr::RState<typename T::State::axis>& from,
+  const curr::RState<typename T::State::axis>& to
+) ->
+  enable_fun_if_not<std::is_base_of<RHolderBase, T>, bool>
 {
   return curr::RMixedAxis<typename T::State::axis, Axis2>
     :: compare_and_move(obj, from, to);
+}
+
+//! RMixedAxis<Axis,Axis2>::compare_and_move adapter for
+//! RHolder 
+template<class T, class Axis2 = typename T::axis>
+auto compare_and_move(
+  T& obj, 
+  const curr::RState<typename T::State::axis>& from,
+  const curr::RState<typename T::State::axis>& to
+) ->
+  enable_fun_if<std::is_base_of<RHolderBase, T>, bool>
+{
+  return curr::RMixedAxis<typename T::State::axis, Axis2>
+    :: compare_and_move(*obj.guarded.get(), from, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter

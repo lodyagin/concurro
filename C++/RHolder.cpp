@@ -31,33 +31,7 @@
 
 namespace curr {
 
-DEFINE_AXIS(
-  NReaders1WriterAxis,
-  {
-    "free",
-    "reader_entering",
-    "readers_entered", // read operations on an object in
-                       // progress
-    "reader_exiting",
-    "writer_entered"   // write operation on an object
-                       // in progress
-  },
-  { 
-    { "free", "reader_entering" },
-    { "reader_entering", "readers_entered" },
-      
-    // more readers
-    { "readers_entered", "reader_entering" }, 
- 
-    { "readers_entered", "reader_exiting" },
-    { "reader_exiting", "readers_entered" },
-    { "reader_exiting", "free" },
-
-    // <NB> only one writer
-    { "free", "writer_entered" },
-    { "writer_entered", "free" }
-  });
-
+#if 0
 DEFINE_AXIS(
   HolderAxis,
   {
@@ -80,4 +54,6 @@ DEFINE_AXIS(
 //    { "charged", "holey_array" },
 //    { "holey_array", "discharged" }
   });
+#endif
+
 }

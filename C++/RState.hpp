@@ -156,19 +156,26 @@ bool RMixedAxis<Axis, Axis2>
                    const RState<Axis>& from,
                    const RState<Axis>& to)
 {
+  LOGGER_TRACE(obj.logger(), "1");
   static_assert(is_ancestor<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
   
+  LOGGER_TRACE(obj.logger(), "2");
   uint32_t expected = current;
   if (STATE_IDX(expected) != STATE_IDX(from))
+  {
+  LOGGER_TRACE(obj.logger(), "2,5");
     return false;
+  }
 
+  LOGGER_TRACE(obj.logger(), "3");
   if (!(trans_id= StateMapInstance<Axis>::get_map()
         -> get_transition_id(from, to)))
     throw InvalidStateTransition(from, to);
 
+  LOGGER_TRACE(obj.logger(), "4");
   if (!current.compare_exchange_strong(expected, to))
     return false;
 

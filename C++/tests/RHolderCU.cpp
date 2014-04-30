@@ -9,10 +9,8 @@ void test_nreaders1writer();
 void test_rholder();
 
 CU_TestInfo RHolderTests[] = {
-  {"test NReaders1WriterGuard", 
-   test_nreaders1writer },
-  {"test RHolder",
-   test_rholder},
+//  {"test NReaders1WriterGuard", test_nreaders1writer },
+  {"test RHolder", test_rholder},
   CU_TEST_INFO_NULL
 };
 
@@ -28,6 +26,7 @@ int RHolderCUClean()
   return 0;
 }
 
+#if 0
 void test_nreaders1writer()
 {
   struct T
@@ -75,6 +74,7 @@ void test_nreaders1writer()
 
   CU_ASSERT_TRUE_FATAL(locked3);
 }
+#endif
 
 class Obj : public StdIdMember
 {

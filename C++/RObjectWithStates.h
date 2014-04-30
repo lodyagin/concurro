@@ -191,6 +191,9 @@ public:
   typedef typename RObjectWithStates<Axis>::AMembWrap
     AMembWrap;
 
+  using states_interface = 
+    curr::event::interface_with_states<Axis>;
+
   RObjectWithEvents
     (const typename RObjectWithStates<Axis>::State& 
      initial_state,
