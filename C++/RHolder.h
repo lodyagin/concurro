@@ -210,6 +210,13 @@ public:
     SCHECK(obj);
   }
 
+#if 0 // FIXME review with newest repository design
+
+  NoGuard(const NoGuard& g) = default;
+  NoGuard& operator=(const NoGuard& g) = default;
+
+#endif 
+
   NoGuard(NoGuard&& g) noexcept : obj(g.discharge()) {}
 
   NoGuard& operator=(NoGuard&& g) noexcept
