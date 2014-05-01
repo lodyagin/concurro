@@ -66,8 +66,7 @@ template
   int wait_m = 1000
 >
 class RHolder 
-  : //public RObjectWithStates<HolderAxis>,
-    public T::states_interface,
+  : public T::states_interface,
     public RHolderBase
 {
   template<class O, class>
@@ -79,7 +78,6 @@ class RHolder
 
 public:
   typedef typename Obj::Par Par;
-//  typedef HolderAxis axis;
 
   //! Create a new object in the repository Rep and create
   //! the first holder to it.
