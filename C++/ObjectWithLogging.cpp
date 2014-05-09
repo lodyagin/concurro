@@ -34,7 +34,7 @@ namespace curr {
 
 log4cxx::LoggerPtr ObjectWithLogging::logger() const
 {
-  return Logger<LOG::Root>::static_logger();
+  return Logger<LOG::Root>::s_logger();
 }
 
 }

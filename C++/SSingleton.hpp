@@ -149,6 +149,7 @@ void SSingleton<T, wait_m>::complete_construction()
   { // wait the call from T::T
     ObjParent::complete_construction();
     is_complete().set();
+    Parent::complete_construction();
   }
 }
 

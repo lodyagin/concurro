@@ -550,6 +550,15 @@ void wait_and_move
 
 //! @}
 
+//! The class to connect class creation state (Existent)
+//! and object creation state (ConstructibleObject).
+class CompleteConstruction
+{
+public:
+  virtual ~CompleteConstruction() {}
+  virtual void complete_construction() = 0;
+};
+
 }
 
 #endif

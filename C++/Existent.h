@@ -62,11 +62,11 @@ using ExistentEmptyStateHook = EmptyStateHook
  *   not_exist -> preinc_exist_one
  *     [label="inc_existence()"];
  *   preinc_exist_one -> exist_one
- *     [label="inc_existence()"];
+ *     [label="complete_construction()"];
  *   exist_one -> preinc_exist_several
  *     [label="inc_existence()"];
  *   preinc_exist_several -> exist_several
- *     [label="inc_existence()"];
+ *     [label="complete_construction()"];
  *   exist_several -> preinc_exist_several
  *     [label="inc_existence()"];
  *   exist_several -> predec_exist_several
@@ -98,11 +98,12 @@ template<
   class StateHook = ExistentEmptyStateHook<T>
 >
 class Existent 
-: public ClassWithEvents
-  < ExistenceAxis, 
-    existent_class_initial_state,
-    StateHook
-  >
+  : public ClassWithEvents
+    < ExistenceAxis, 
+      existent_class_initial_state,
+      StateHook
+    >,
+    public virtual CompleteConstruction
 {
 public:
   using Parent = ClassWithEvents
@@ -190,6 +191,8 @@ public:
   {
     return s_the_class();
   }
+
+  void complete_construction() override;
 
 protected:
   static std::atomic<int> obj_count;

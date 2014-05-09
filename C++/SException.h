@@ -99,7 +99,7 @@ template<class Log /*= curr::Logger<curr::LOG::Root>*/>
 void log_and_throw [[ noreturn ]]
   (std::exception_ptr excp,
    log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION,
-   log4cxx::LoggerPtr l = Log::static_logger())
+   log4cxx::LoggerPtr l = Log::s_logger())
 {
   try {
     std::rethrow_exception(excp);

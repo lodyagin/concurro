@@ -51,7 +51,8 @@ DECLARE_AXIS(ConstructibleAxis, StateAxis);
 //! be moved to the
 //! "complete_construction" state in the final descendant.
 class ConstructibleObject
-  : public RObjectWithEvents<ConstructibleAxis>
+  : public RObjectWithEvents<ConstructibleAxis>,
+    public virtual CompleteConstruction
 {
   DECLARE_EVENT(ConstructibleAxis, complete_construction);
 
@@ -66,7 +67,7 @@ public:
   //! Report complete construction from a
   //! descendant. Change the state to
   //! complete_construction.
-  virtual void complete_construction();
+  void complete_construction() override;
 };
 
 //! @}

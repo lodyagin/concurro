@@ -63,7 +63,7 @@ namespace curr {
 //! EventWaitingTimedOut with the location equal to the
 //! macro substitution line.
 #define CURR_WAIT(evt, time) \
-  CURR_WAIT_L(log::static_logger(), evt, time)
+  CURR_WAIT_L(log::s_logger(), evt, time)
 
 class ThrowSException;
 

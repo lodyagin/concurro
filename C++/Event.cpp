@@ -84,7 +84,7 @@ EvtBase::~EvtBase()
 
 log4cxx::LoggerPtr EvtBase::logger() const 
 {
-  return Logger<LOG::Events>::static_logger();
+  return Logger<LOG::Events>::s_logger();
 }
 
 std::ostream&

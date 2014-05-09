@@ -162,13 +162,6 @@ void Existent<T, StateHook>::inc_existence()
   assert (obj_count > 0);
   assert ((obj_count == 1) == a); 
   assert ((obj_count > 1) == b);
-
-  if (a) 
-    move_to(
-      this->the_class(), TheClass::exist_oneFun());
-  else if (b) 
-    move_to(
-      this->the_class(), TheClass::exist_severalFun());
 }
 
 template<class T, class StateHook>
@@ -203,6 +196,24 @@ void Existent<T, StateHook>::dec_existence()
   else if (b)
     move_to(
       this->the_class(), TheClass::not_existFun());
+}
+
+template<class T, class StateHook>
+void Existent<T, StateHook>::complete_construction()
+{
+  assert (obj_count > 0);
+
+  bool done = compare_and_move(
+    this->the_class(),
+    TheClass::preinc_exist_oneFun(),
+    TheClass::exist_oneFun()
+  ) ||
+  compare_and_move(
+    this->the_class(),
+    TheClass::preinc_exist_severalFun(),
+    TheClass::exist_severalFun()
+  );
+  assert(done);
 }
 
 }

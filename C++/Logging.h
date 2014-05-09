@@ -49,6 +49,168 @@
 //
 #include "ObjectWithLogging.h"
 
+// Define a custom log macros for put streams into log
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
+#define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {                    \
+    if (LOG4CXX_UNLIKELY((log) && (log)->isDebugEnabled())) {                    \
+    std::ostringstream oss_;                  \
+    { oss_ << stream_expr ; }                                  \
+    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); }} while (0)
+#else
+#define LOGGER_DEBUG_LOC(log, message, loc)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
+#define LOGGER_TRACE_LOC(log, stream_expr, loc) do {                    \
+   if (LOG4CXX_UNLIKELY((log) && (log)->isTraceEnabled())) {            \
+    std::ostringstream oss_;                  \
+    { oss_ << stream_expr ; }                                  \
+    (log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(), loc); }} while (0)
+#else
+#define LOGGER_TRACE_LOC(log, message, loc)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
+#define LOGGER_INFO_LOC(log, stream_expr, loc) do {                      \
+   if (LOG4CXX_UNLIKELY((log) && (log)->isInfoEnabled())) {            \
+    std::ostringstream oss_;                  \
+    { oss_ << stream_expr ; }                                  \
+    (log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(), loc); }} while (0)
+#else
+#define LOGGER_INFO_LOC(log, message, loc)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
+#define LOGGER_WARN_LOC(log, stream_expr, loc) do {                      \
+   if (LOG4CXX_UNLIKELY((log) && (log)->isWarnEnabled())) {            \
+    std::ostringstream oss_;                  \
+    { oss_ << stream_expr ; }                                  \
+    (log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(), loc); }} while (0)
+#else
+#define LOGGER_WARN_LOC(log, message, loc)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
+#define LOGGER_ERROR_LOC(log, stream_expr, loc) do {                    \
+   if (LOG4CXX_UNLIKELY((log) && (log)->isErrorEnabled())) {            \
+    std::ostringstream oss_;                  \
+    { oss_ << stream_expr ; }                                  \
+    (log)->forcedLog(::log4cxx::Level::getError(), oss_.str(), loc); }} while (0)
+#else
+#define LOGGER_ERROR_LOC(log, message, loc)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
+#define LOGGER_FATAL_LOC(log, stream_expr, loc) do {                    \
+   if (LOG4CXX_UNLIKELY((log) && (log)->isFatalEnabled())) {            \
+    std::ostringstream oss_;                  \
+    { oss_ << stream_expr ; }                                  \
+    (log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(), loc); }} while (0)
+#else
+#define LOGGER_FATAL_LOC(logger, message, loc)
+#endif
+
+#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
+#define LOGGER_DEBUG_PLACE_LOC(log, place, stream_expr, loc) do {      \
+  if (LOG4CXX_UNLIKELY((log) && this->log_params().place \
+                      && (log)->isDebugEnabled())) {   \
+    std::ostringstream oss_;       \
+    { oss_ << stream_expr ; }                  \
+    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
+  } \
+} while (0)
+#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {      \
+ if (LOG4CXX_UNLIKELY(LogParams::place                  \
+               && log::isDebugEnabled())) {      \
+    std::ostringstream oss_;       \
+    { oss_ << stream_expr ; }                  \
+    log::s_logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
+  } \
+} while (0)
+#else
+#define LOGGER_DEBUG_PLACE_LOC(log, place, message, loc)
+#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)
+#endif
+
+#define LOG_DEBUG_PLACE_LOC(log, place, message, loc)  \
+  LOGGER_DEBUG_PLACE_LOC(log::s_logger(), place, message, loc)
+//#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)      LOGGER_DEBUG_STATIC_PLACE_LOC(log::s_logger(), place, message, loc)
+
+#define LOG_DEBUG_PLACE(log, place, message)          \
+  LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+#define LOG_DEBUG_STATIC_PLACE(log, place, message)          \
+  LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+#define LOGGER_DEBUG_PLACE(log, place, message)          \
+  LOGGER_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
+
+#define LOG_TRACE_LOC(log, message, loc)     \
+  LOGGER_TRACE_LOC(log::s_logger(), message, loc)
+#define LOG_DEBUG_LOC(log, message, loc)     \
+  LOGGER_DEBUG_LOC(log::s_logger(), message, loc)
+#define LOG_INFO_LOC(log, message, loc)      \
+  LOGGER_INFO_LOC(log::s_logger(), message, loc)
+#define LOG_WARN_LOC(log, message, loc)      \
+  LOGGER_WARN_LOC(log::s_logger(), message, loc)
+#define LOG_ERROR_LOC(log, message, loc)     \
+  LOGGER_ERROR_LOC(log::s_logger(), message, loc)
+#define LOG_FATAL_LOC(log, message, loc)     \
+  LOGGER_FATAL_LOC(log::s_logger(), message, loc)
+
+#define LOGGER_TRACE(log, message) \
+  LOGGER_TRACE_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_DEBUG(log, message) \
+  LOGGER_DEBUG_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_INFO(log, message) \
+  LOGGER_INFO_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_WARN(log, message) \
+  LOGGER_WARN_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_ERROR(log, message) \
+  LOGGER_ERROR_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+#define LOGGER_FATAL(log, message) \
+  LOGGER_FATAL_LOC(log, message, \
+                   LOG4CXX_LOCATION)
+
+#define LOG_TRACE(log, message) \
+  LOGGER_TRACE_LOC(log::s_logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_DEBUG(log, message) \
+  LOGGER_DEBUG_LOC(log::s_logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_INFO(log, message) \
+  LOGGER_INFO_LOC(log::s_logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_WARN(log, message) \
+  LOGGER_WARN_LOC(log::s_logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_ERROR(log, message) \
+  LOGGER_ERROR_LOC(log::s_logger(), message, \
+                   LOG4CXX_LOCATION)
+#define LOG_FATAL(log, message) \
+  LOGGER_FATAL_LOC(log::s_logger(), message, \
+                   LOG4CXX_LOCATION)
+
+// the aliases
+#define LOGGER_WARNING LOGGER_WARN
+#define LOGGER_WARNING_LOC LOGGER_WARN
+#define LOG_WARNING LOG_WARN
+#define LOG_WARNING_LOC LOG_WARN
+
+//! Add this to a class declaration for implement logging
+//! in the class
+#define DEFAULT_LOGGER(class_) \
+public: \
+  log4cxx::LoggerPtr logger() const override \
+  { \
+   return log::s_logger(); \
+  } \
+private: \
+  typedef curr::Logger<class_> log;
+
 namespace curr {
 
 /**
@@ -166,6 +328,10 @@ public:
   {
     this->complete_construction();
     initialized = true;
+    LOG_TRACE(
+      Logger, 
+      "New logger [" << log_base->GetName() << "] is created"
+    );
   }
 
   log4cxx::LoggerPtr logger() const override
@@ -173,23 +339,40 @@ public:
     return log_base->logger;
   }
 
-  static log4cxx::LoggerPtr static_logger()
+  static log4cxx::LoggerPtr s_logger()
   {
-    // These checks are for prevent recursive logging from
-    // log system initialization
-    if (is_initialized())
-      return SAutoSingleton<Logger<Type>>::instance()
-        . logger();
-    else if (Logger<LOG::Root>::is_initialized())
-      return SAutoSingleton<Logger<LOG::Root>>::instance()
-        . logger();
+    // These checks are for prevent recursive logging when
+    // the log system initialize itself. NB we use an atomic
+    // flag, not a state of Existent because its states are
+    // functions that call StateMap->Repository->Logging
+    // (recursion). But after the root logger
+    // initialization all Existent states are definitely
+    // constructed. 
+    if (Logger<LOG::Root>::is_initialized())
+    {
+      // this is a recursive call protector, it no guards
+      // access from different threads (instance() is
+      // reenterable), so this check is no need to be atomic.
+      if (state_is(
+            Logger::s_the_class(), 
+            Logger::TheClass::preinc_exist_oneFun()
+          )
+      )
+        // it is constructing, return the root logger till
+        // exist_one state
+        return Logger<LOG::Root>::instance().logger();
+      else
+        // asks construct the new entity or uses the
+        // existing one
+        return SAutoSingleton<Logger>::instance().logger();
+    }
     else
       return nullptr;
   }
 
   static bool isDebugEnabled()
   {
-    const auto logger_ptr = static_logger();
+    const auto logger_ptr = s_logger();
     return logger_ptr != nullptr 
       && logger_ptr->isDebugEnabled();
   }
@@ -198,7 +381,7 @@ public:
   {
     return initialized;
   }
-  
+
 private:
   std::unique_ptr<LogBase> log_base;
   static std::atomic<bool> initialized;
@@ -222,7 +405,7 @@ public:
     return nullptr;
   }
 
-  static log4cxx::LoggerPtr static_logger()
+  static log4cxx::LoggerPtr s_logger()
   {
     return nullptr;
   }
@@ -245,168 +428,6 @@ log4cxx::LoggerPtr rootLogger =
 }
 
 }
-
-// Define a custom log macros for put streams into log
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOGGER_DEBUG_LOC(log, stream_expr, loc) do {                    \
-    if (LOG4CXX_UNLIKELY((log) && (log)->isDebugEnabled())) {                    \
-    std::ostringstream oss_;                  \
-    { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); }} while (0)
-#else
-#define LOGGER_DEBUG_LOC(log, message, loc)
-#endif
-
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 5000 
-#define LOGGER_TRACE_LOC(log, stream_expr, loc) do {                    \
-   if (LOG4CXX_UNLIKELY((log) && (log)->isTraceEnabled())) {            \
-    std::ostringstream oss_;                  \
-    { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(), loc); }} while (0)
-#else
-#define LOGGER_TRACE_LOC(log, message, loc)
-#endif
-
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 20000 
-#define LOGGER_INFO_LOC(log, stream_expr, loc) do {                      \
-   if (LOG4CXX_UNLIKELY((log) && (log)->isInfoEnabled())) {            \
-    std::ostringstream oss_;                  \
-    { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(), loc); }} while (0)
-#else
-#define LOGGER_INFO_LOC(log, message, loc)
-#endif
-
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 30000 
-#define LOGGER_WARN_LOC(log, stream_expr, loc) do {                      \
-   if (LOG4CXX_UNLIKELY((log) && (log)->isWarnEnabled())) {            \
-    std::ostringstream oss_;                  \
-    { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(), loc); }} while (0)
-#else
-#define LOGGER_WARN_LOC(log, message, loc)
-#endif
-
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 40000 
-#define LOGGER_ERROR_LOC(log, stream_expr, loc) do {                    \
-   if (LOG4CXX_UNLIKELY((log) && (log)->isErrorEnabled())) {            \
-    std::ostringstream oss_;                  \
-    { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getError(), oss_.str(), loc); }} while (0)
-#else
-#define LOGGER_ERROR_LOC(log, message, loc)
-#endif
-
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 50000 
-#define LOGGER_FATAL_LOC(log, stream_expr, loc) do {                    \
-   if (LOG4CXX_UNLIKELY((log) && (log)->isFatalEnabled())) {            \
-    std::ostringstream oss_;                  \
-    { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(), loc); }} while (0)
-#else
-#define LOGGER_FATAL_LOC(logger, message, loc)
-#endif
-
-#if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
-#define LOGGER_DEBUG_PLACE_LOC(log, place, stream_expr, loc) do {      \
-  if (LOG4CXX_UNLIKELY((log) && this->log_params().place \
-                      && (log)->isDebugEnabled())) {   \
-    std::ostringstream oss_;       \
-    { oss_ << stream_expr ; }                  \
-    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
-  } \
-} while (0)
-#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {      \
- if (LOG4CXX_UNLIKELY(LogParams::place                  \
-               && log::isDebugEnabled())) {      \
-    std::ostringstream oss_;       \
-    { oss_ << stream_expr ; }                  \
-    log::static_logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
-  } \
-} while (0)
-#else
-#define LOGGER_DEBUG_PLACE_LOC(log, place, message, loc)
-#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)
-#endif
-
-#define LOG_DEBUG_PLACE_LOC(log, place, message, loc)  \
-  LOGGER_DEBUG_PLACE_LOC(log::static_logger(), place, message, loc)
-//#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)      LOGGER_DEBUG_STATIC_PLACE_LOC(log::static_logger(), place, message, loc)
-
-#define LOG_DEBUG_PLACE(log, place, message)          \
-  LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
-#define LOG_DEBUG_STATIC_PLACE(log, place, message)          \
-  LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
-#define LOGGER_DEBUG_PLACE(log, place, message)          \
-  LOGGER_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
-
-#define LOG_TRACE_LOC(log, message, loc)     \
-  LOGGER_TRACE_LOC(log::static_logger(), message, loc)
-#define LOG_DEBUG_LOC(log, message, loc)     \
-  LOGGER_DEBUG_LOC(log::static_logger(), message, loc)
-#define LOG_INFO_LOC(log, message, loc)      \
-  LOGGER_INFO_LOC(log::static_logger(), message, loc)
-#define LOG_WARN_LOC(log, message, loc)      \
-  LOGGER_WARN_LOC(log::static_logger(), message, loc)
-#define LOG_ERROR_LOC(log, message, loc)     \
-  LOGGER_ERROR_LOC(log::static_logger(), message, loc)
-#define LOG_FATAL_LOC(log, message, loc)     \
-  LOGGER_FATAL_LOC(log::static_logger(), message, loc)
-
-#define LOGGER_TRACE(log, message) \
-  LOGGER_TRACE_LOC(log, message, \
-                   LOG4CXX_LOCATION)
-#define LOGGER_DEBUG(log, message) \
-  LOGGER_DEBUG_LOC(log, message, \
-                   LOG4CXX_LOCATION)
-#define LOGGER_INFO(log, message) \
-  LOGGER_INFO_LOC(log, message, \
-                   LOG4CXX_LOCATION)
-#define LOGGER_WARN(log, message) \
-  LOGGER_WARN_LOC(log, message, \
-                   LOG4CXX_LOCATION)
-#define LOGGER_ERROR(log, message) \
-  LOGGER_ERROR_LOC(log, message, \
-                   LOG4CXX_LOCATION)
-#define LOGGER_FATAL(log, message) \
-  LOGGER_FATAL_LOC(log, message, \
-                   LOG4CXX_LOCATION)
-
-#define LOG_TRACE(log, message) \
-  LOGGER_TRACE_LOC(log::static_logger(), message, \
-                   LOG4CXX_LOCATION)
-#define LOG_DEBUG(log, message) \
-  LOGGER_DEBUG_LOC(log::static_logger(), message, \
-                   LOG4CXX_LOCATION)
-#define LOG_INFO(log, message) \
-  LOGGER_INFO_LOC(log::static_logger(), message, \
-                   LOG4CXX_LOCATION)
-#define LOG_WARN(log, message) \
-  LOGGER_WARN_LOC(log::static_logger(), message, \
-                   LOG4CXX_LOCATION)
-#define LOG_ERROR(log, message) \
-  LOGGER_ERROR_LOC(log::static_logger(), message, \
-                   LOG4CXX_LOCATION)
-#define LOG_FATAL(log, message) \
-  LOGGER_FATAL_LOC(log::static_logger(), message, \
-                   LOG4CXX_LOCATION)
-
-// the aliases
-#define LOGGER_WARNING LOGGER_WARN
-#define LOGGER_WARNING_LOC LOGGER_WARN
-#define LOG_WARNING LOG_WARN
-#define LOG_WARNING_LOC LOG_WARN
-
-//! Add this to a class declaration for implement logging
-//! in the class
-#define DEFAULT_LOGGER(class_) \
-public: \
-  log4cxx::LoggerPtr logger() const override \
-  { \
-   return log::static_logger(); \
-  } \
-private: \
-  typedef curr::Logger<class_> log;
 
 //! @}
 
