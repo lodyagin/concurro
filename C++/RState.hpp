@@ -30,13 +30,13 @@
 #ifndef CONCURRO_RSTATE_HPP_
 #define CONCURRO_RSTATE_HPP_
 
+#include <atomic>
+#include "StateMapRepository.h"
 #include "RState.h"
 #include "RThread.hpp"
 #include "Repository.hpp"
 #include "RObjectWithStates.hpp"
-#include "StateMapRepository.h"
 #include "Event.h"
-#include <atomic>
 
 namespace curr {
 

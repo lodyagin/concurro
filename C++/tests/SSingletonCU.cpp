@@ -189,10 +189,10 @@ void test_concurrent_creation()
   }
   CU_ASSERT_FALSE_FATAL(exception_in_thread);
 
+#if 0
   StdThreadRepository& tr =
     StdThreadRepository::instance();
 
-#if 0
   // Delete threads
   tr.for_each([](StdThread& t)
   { 

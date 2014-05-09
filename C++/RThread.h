@@ -301,26 +301,9 @@ public:
       THROW_NOT_IMPLEMENTED; 
     }
 
-    std::thread::native_handle_type get_id
-      (ObjectCreationInfo& oi) const
-    {
-      repository = dynamic_cast<RepositoryType*>
-        (oi.repository);
-      SCHECK(repository);
-      oi.objectCreated = &rthreadCreated;
-
-      if (th_id)
-        return th_id;
-
-      th = std::unique_ptr<std::thread>
-        (new std::thread
-         (&RThread<std::thread>::Par::run0, 
-          const_cast<Par*>(this)));
-      th_id = th->native_handle();
-      LOG_DEBUG(log, "thread " << th_id 
-                << " is created by " << par_num << "par");
-      return th_id;
-    }
+    std::thread::native_handle_type get_id(
+      ObjectCreationInfo& oi
+    ) const;
 
     std::unique_ptr<std::thread>&& move_thread()
     { return std::move(th); }

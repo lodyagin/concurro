@@ -94,6 +94,22 @@ struct ThrowSException
   const log4cxx::LoggerPtr logger;
 };
 
+//! Throw the stored exception and log the occurence place.
+template<class Log /*= curr::Logger<curr::LOG::Root>*/>
+void log_and_throw [[ noreturn ]]
+  (std::exception_ptr excp,
+   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION,
+   log4cxx::LoggerPtr l = Log::static_logger())
+{
+  try {
+    std::rethrow_exception(excp);
+  }
+  catch (const SException& e2) {
+    LOGGER_DEBUG_LOC(l, "Throw exception " << e2, loc);
+    throw;
+  }
+}
+
 //! Exception: Program Error (means general logic error)
 class ProgramError : public SException
 {
@@ -107,6 +123,26 @@ class NotImplemented : public SException
 public:
   NotImplemented() : SException("Not implemented") {}
 };
+
+#define THROW_EXCEPTION(exception_class, par...) \
+do { \
+  curr::log_and_throw<curr::Logger<curr::LOG::Root>>( \
+     std::make_exception_ptr(exception_class{par}), \
+       LOG4CXX_LOCATION);  \
+} while (0)
+
+#define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
+	 exception_class exc_{par};			 \
+  LOG_DEBUG_PLACE(curr::Logger<curr::LOG::Root>, place,   \
+    "Throw exception " << exc_); \
+  throw exc_; \
+  } while (0)
+
+#define THROW_PROGRAM_ERROR \
+  THROW_EXCEPTION(curr::ProgramError)
+
+#define THROW_NOT_IMPLEMENTED \
+  THROW_EXCEPTION(curr::NotImplemented)
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException

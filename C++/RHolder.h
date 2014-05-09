@@ -30,10 +30,11 @@
 #ifndef CONCURRO_RHOLDER_H_
 #define CONCURRO_RHOLDER_H_
 
+#include <atomic>
 #include "RObjectWithStates.h"
 #include "RState.h"
 #include "REvent.h"
-#include <atomic>
+#include "SException.h"
 
 namespace curr {
 

@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "RSocket.hpp"
 #include "REvent.hpp"
 #include "RState.hpp"

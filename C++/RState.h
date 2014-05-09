@@ -545,8 +545,6 @@ void wait_and_move
 #define A_STATE(class_, axis_, action, state)			\
   A_STATE_OBJ(class_, axis_, action, *this, state)
 
-#define S(state) (state ## State)
-
 #define CURR_STATE_DEF(axis, state) \
   const curr::RState<axis> S(state)(# state);
 

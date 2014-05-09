@@ -117,9 +117,9 @@ protected:
     (const ObjectCreationInfo& oi, 
      const RSocketAddress& par);
 
-//  void process_error(int error);
-
-  DEFAULT_LOGGER(ServerSocket);
+//  DEFAULT_LOGGER(ServerSocket);
+private:
+  using log = Logger<ServerSocket>;
 };
 
 //! @}

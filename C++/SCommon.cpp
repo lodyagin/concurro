@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "SCommon.h"
 #ifdef _WIN32
 #include <atlstr.h>

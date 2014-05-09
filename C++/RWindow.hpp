@@ -99,7 +99,7 @@ void RConnectedWindow<ObjectId>::move_forward()
   else
     STATE(RConnectedWindow, move_to, filled);
 
-  if (LOG4CXX_UNLIKELY(clog::logger()->isDebugEnabled())) {
+  if (LOG4CXX_UNLIKELY(clog::isDebugEnabled())) {
     if (buf) {
       const std::string red_part(
         (const char*)buf->cdata() + bottom, 

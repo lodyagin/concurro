@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "StateMap.h"
 #include "RState.h"
 #include "Repository.hpp"

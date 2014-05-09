@@ -30,6 +30,7 @@
 #ifndef CONCURRO_STATEMAPREPOSITORY_H_
 #define CONCURRO_STATEMAPREPOSITORY_H_
 
+#include "StateMap.h"
 #include "SSingleton.h"
 
 namespace curr {

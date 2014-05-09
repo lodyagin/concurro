@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "SException.h"
 #include "SCommon.h"
 #include <typeinfo>

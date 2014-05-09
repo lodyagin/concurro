@@ -30,12 +30,9 @@
 #ifndef __RMutex_H
 #define __RMutex_H
 
-//#include "Logging.h"
 #include <assert.h>
 #include "SNotCopyable.h"
-//#include "Logging.h"
 #include <log4cxx/spi/location/locationinfo.h>
-//#include <atomic>
 #ifndef _WIN32
 #include <boost/thread/recursive_mutex.hpp>
 #endif

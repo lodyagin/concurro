@@ -35,6 +35,7 @@
 #include <string>
 #include <typeinfo>
 #include <algorithm>
+#include <atomic>
 #include "SCommon.h"
 #include "SSingleton.h"
 #include <log4cxx/logger.h>
@@ -106,19 +107,23 @@ inline log4cxx::LoggerPtr GetLogger
 class LOG 
 { 
 public:
+  class Empty {}; // the special val means "no log"
   class Root {}; 
   class Concurrency {};
   class States {};
   class Events {};
   class Connections {};
+  class Singletons {};
 };
 
-namespace logging_ {
+namespace logging {
+
+static std::atomic<bool> root_logger_is_initialized(false);
 
 template<class Type>
 struct logger_name
 {
-  std::string name() const
+  static std::string name()
   {
     using namespace std;
     string s = type<Type>::name();
@@ -131,7 +136,7 @@ struct logger_name
 template<>
 struct logger_name<LOG::Root>
 {
-  std::string name() const
+  static std::string name()
   {
     return std::string();
   }
@@ -147,22 +152,69 @@ class Logger final : public SAutoSingleton<Logger<Type>>
 public:
   Logger() 
     : log_base(
-        new LogBase(logging_::logger_name<Type>::name())
+        new LogBase(logging::logger_name<Type>::name())
       )
   {
     this->complete_construction();
+
+    if (logger() == Logger<LOG::Root>::static_logger())
+      logging::root_logger_is_initialized = true;
   }
 
   log4cxx::LoggerPtr logger() const override
   {
     return log_base->logger;
   }
+
+  static log4cxx::LoggerPtr static_logger()
+  {
+    if (logging::root_logger_is_initialized)
+      return SAutoSingleton<Logger<Type>>::instance()
+        . logger();
+    else
+      // For prevent recursive logging from log system
+      // initialization
+      return nullptr;
+  }
+
+  static bool isDebugEnabled()
+  {
+    const auto logger_ptr = static_logger();
+    return logger_ptr != nullptr 
+      && logger_ptr->isDebugEnabled();
+  }
   
 private:
   std::unique_ptr<LogBase> log_base;
 };
 
-namespace logging_ {
+template<>
+class Logger<LOG::Empty> final 
+  : public SAutoSingleton<Logger<LOG::Empty>>
+{
+public:
+  Logger() 
+  {
+    this->complete_construction();
+  }
+
+  log4cxx::LoggerPtr logger() const override
+  {
+    return nullptr;
+  }
+
+  static log4cxx::LoggerPtr static_logger()
+  {
+    return nullptr;
+  }
+
+  static bool isDebugEnabled()
+  {
+    return false;
+  }
+};
+
+namespace {
 
 //! The logging system initializer. If this header is
 //! encluded before other the logging system will be
@@ -247,10 +299,10 @@ log4cxx::LoggerPtr rootLogger =
 } while (0)
 #define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {      \
  if (LOG4CXX_UNLIKELY(LogParams::place                  \
-               && log::logger()->isDebugEnabled())) {      \
+               && log::isDebugEnabled())) {      \
     std::ostringstream oss_;       \
     { oss_ << stream_expr ; }                  \
-    log::logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
+    log::static_logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
   } \
 } while (0)
 #else
@@ -259,8 +311,8 @@ log4cxx::LoggerPtr rootLogger =
 #endif
 
 #define LOG_DEBUG_PLACE_LOC(log, place, message, loc)  \
-  LOGGER_DEBUG_PLACE_LOC(log::logger(), place, message, loc)
-//#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)      LOGGER_DEBUG_STATIC_PLACE_LOC(log::logger(), place, message, loc)
+  LOGGER_DEBUG_PLACE_LOC(log::static_logger(), place, message, loc)
+//#define LOG_DEBUG_STATIC_PLACE_LOC(log, place, message, loc)      LOGGER_DEBUG_STATIC_PLACE_LOC(log::static_logger(), place, message, loc)
 
 #define LOG_DEBUG_PLACE(log, place, message)          \
   LOG_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
@@ -270,17 +322,17 @@ log4cxx::LoggerPtr rootLogger =
   LOGGER_DEBUG_PLACE_LOC(log, place, message, LOG4CXX_LOCATION)
 
 #define LOG_TRACE_LOC(log, message, loc)     \
-  LOGGER_TRACE_LOC(log::logger(), message, loc)
+  LOGGER_TRACE_LOC(log::static_logger(), message, loc)
 #define LOG_DEBUG_LOC(log, message, loc)     \
-  LOGGER_DEBUG_LOC(log::logger(), message, loc)
+  LOGGER_DEBUG_LOC(log::static_logger(), message, loc)
 #define LOG_INFO_LOC(log, message, loc)      \
-  LOGGER_INFO_LOC(log::logger(), message, loc)
+  LOGGER_INFO_LOC(log::static_logger(), message, loc)
 #define LOG_WARN_LOC(log, message, loc)      \
-  LOGGER_WARN_LOC(log::logger(), message, loc)
+  LOGGER_WARN_LOC(log::static_logger(), message, loc)
 #define LOG_ERROR_LOC(log, message, loc)     \
-  LOGGER_ERROR_LOC(log::logger(), message, loc)
+  LOGGER_ERROR_LOC(log::static_logger(), message, loc)
 #define LOG_FATAL_LOC(log, message, loc)     \
-  LOGGER_FATAL_LOC(log::logger(), message, loc)
+  LOGGER_FATAL_LOC(log::static_logger(), message, loc)
 
 #define LOGGER_TRACE(log, message) \
   LOGGER_TRACE_LOC(log, message, \
@@ -302,22 +354,22 @@ log4cxx::LoggerPtr rootLogger =
                    LOG4CXX_LOCATION)
 
 #define LOG_TRACE(log, message) \
-  LOGGER_TRACE_LOC(log::logger(), message, \
+  LOGGER_TRACE_LOC(log::static_logger(), message, \
                    LOG4CXX_LOCATION)
 #define LOG_DEBUG(log, message) \
-  LOGGER_DEBUG_LOC(log::logger(), message, \
+  LOGGER_DEBUG_LOC(log::static_logger(), message, \
                    LOG4CXX_LOCATION)
 #define LOG_INFO(log, message) \
-  LOGGER_INFO_LOC(log::logger(), message, \
+  LOGGER_INFO_LOC(log::static_logger(), message, \
                    LOG4CXX_LOCATION)
 #define LOG_WARN(log, message) \
-  LOGGER_WARN_LOC(log::logger(), message, \
+  LOGGER_WARN_LOC(log::static_logger(), message, \
                    LOG4CXX_LOCATION)
 #define LOG_ERROR(log, message) \
-  LOGGER_ERROR_LOC(log::logger(), message, \
+  LOGGER_ERROR_LOC(log::static_logger(), message, \
                    LOG4CXX_LOCATION)
 #define LOG_FATAL(log, message) \
-  LOGGER_FATAL_LOC(log::logger(), message, \
+  LOGGER_FATAL_LOC(log::static_logger(), message, \
                    LOG4CXX_LOCATION)
 
 // the aliases
@@ -332,7 +384,7 @@ log4cxx::LoggerPtr rootLogger =
 public: \
   log4cxx::LoggerPtr logger() const override \
   { \
-   return log::instance().logger(); \
+   return log::static_logger(); \
   } \
 private: \
   typedef curr::Logger<class_> log;

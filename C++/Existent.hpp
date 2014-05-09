@@ -174,6 +174,8 @@ void Existent<T, StateHook>::inc_existence()
 template<class T, class StateHook>
 void Existent<T, StateHook>::dec_existence()
 {
+  using log = Logger<LOG::Singletons>;
+
   bool b = false, a;
 
   while (

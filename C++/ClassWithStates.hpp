@@ -30,6 +30,7 @@
 #ifndef CONCURRO_CLASSWITHSTATES_HPP_
 #define CONCURRO_CLASSWITHSTATES_HPP_
 
+#include "Logging.h"
 #include "ClassWithStates.h"
 
 namespace curr {

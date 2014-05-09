@@ -33,7 +33,7 @@
 #include <set>
 #include "Repository.h"
 #include "RState.hpp"
-#include "SException.hpp"
+#include "SException.h"
 
 namespace curr {
 

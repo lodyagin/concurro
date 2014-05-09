@@ -1,11 +1,10 @@
 // -*-coding: mule-utf-8-unix; fill-column: 58 -*-
 
-//#include "RSignal.h"
-#include "tests.h"
-#include "Logging.h"
-#include "RCheck.h"
 #include <thread>
 #include <signal.h>
+#include "Logging.h"
+#include "RCheck.h"
+#include "tests.h"
 
 void test_sigpipe();
 

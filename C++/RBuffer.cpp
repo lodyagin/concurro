@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "RBuffer.h"
 #include "RWindow.hpp"
 #include "REvent.hpp"

@@ -28,14 +28,11 @@
  */
 
 #include "ServerSocket.h"
+#include "SSingleton.hpp"
 
 namespace curr {
 
-/*DEFINE_AXIS(
-  ServerSocketAxis,
-  {},
-  {}
-);*/
+template class Logger<ServerSocket>;
 
 ServerSocket::ServerSocket
   (const ObjectCreationInfo& oi, 

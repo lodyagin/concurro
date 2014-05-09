@@ -30,11 +30,10 @@
 #ifndef CONCURRO_EXISTENT_H_
 #define CONCURRO_EXISTENT_H_
 
+#include <functional>
 #include "ClassWithStates.h"
 #include "RState.h"
-#include "Logging.h"
 #include "REvent.h"
-#include <functional>
 
 namespace curr {
 

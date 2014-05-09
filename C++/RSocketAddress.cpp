@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "RSocketAddress.hpp"
 #include "RSocket.hpp"
 #ifdef _WIN32

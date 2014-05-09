@@ -49,7 +49,7 @@ DECLARE_AXIS(ConstructibleAxis, StateAxis);
 //! completely. It is used, for example, in
 //! RObjectWithThreads. It must
 //! be moved to the
-//! "complete_construction" state in the last derivative.
+//! "complete_construction" state in the final descendant.
 class ConstructibleObject
   : public RObjectWithEvents<ConstructibleAxis>
 {
@@ -57,9 +57,9 @@ class ConstructibleObject
 
 public:
   DECLARE_STATES(ConstructibleAxis, ConstructibleState);
-  DECLARE_STATE_CONST(ConstructibleState, in_construction);
-  DECLARE_STATE_CONST(ConstructibleState, 
-                      complete_construction);
+  DECLARE_STATE_FUN(ConstructibleState, in_construction);
+  DECLARE_STATE_FUN(ConstructibleState, 
+                    complete_construction);
 
   ConstructibleObject();
 

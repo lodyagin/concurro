@@ -32,9 +32,9 @@
 
 #include <list>
 #include <boost/lockfree/stack.hpp>
+#include "Logging.h"
 #include "SSingleton.h"
 #include "RMutex.h"
-#include "Logging.h"
 #include "SCheck.h"
 #include "Existent.hpp"
 
@@ -152,20 +152,14 @@ void SSingleton<T, wait_m>::complete_construction()
   }
 }
 
+// No logging here (recursion is possible)
 template<class T, int wait_m>
 inline T & SSingleton<T, wait_m>::instance()
 {
-  using log = Logger<LOG::Root>;
-
   // If another thread starts creating T we must wait the
   // completion of the creation
-  try {
-    CURR_WAIT(This::is_complete(), wait_m);
-  }
-  catch (const EventWaitingTimedOut&)
-  {
-    THROW_EXCEPTION(NotExistingSingleton);
-  }
+  if (!This::is_complete().wait(wait_m))
+    throw NotExistingSingleton();
 
   //FIXME need redesign (singleton existence during the
   //method call).
@@ -176,7 +170,7 @@ inline T & SSingleton<T, wait_m>::instance()
 template<class T, int wait_m>
 bool SSingleton<T, wait_m>::isConstructed()
 {
-  return !state_is(*this, S(in_construction));
+  return !state_is(*this, in_constructionFun());
 }
 
 // SAutoSingleton

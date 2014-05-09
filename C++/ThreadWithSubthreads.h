@@ -30,10 +30,10 @@
 #ifndef CONCURRO_THREADWITHSUBTHREADS_H_
 #define CONCURRO_THREADWITHSUBTHREADS_H_
 
+#include <algorithm>
+#include "Logging.h"
 #include "RThread.h"
 #include "ThreadRepository.h"
-#include "Logging.h"
-#include <algorithm>
 
 namespace curr {
 

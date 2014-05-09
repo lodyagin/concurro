@@ -30,17 +30,15 @@
 #ifndef CONCURRO_STATEMAP_H_
 #define CONCURRO_STATEMAP_H_
 
-//#include "SSingleton.h"
-#include "HasStringView.h"
-#include "Logging.h"
-#include "SException.h"
-#include "SCheck.h"
-#include "Repository.h"
 #include <assert.h>
 #include <unordered_map>
 #include <vector>
 #include <initializer_list>
 #include <boost/multi_array.hpp>
+#include "HasStringView.h"
+#include "SException.h"
+#include "SCheck.h"
+#include "Repository.h"
 
 namespace curr {
 

@@ -27,14 +27,13 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
+#include <assert.h>
+#include "Logging.h"
 #include "RThread.hpp"
 #include "RThreadRepository.hpp"
 #include "SShutdown.h"
-#include "Logging.h"
 #include "REvent.hpp"
 #include "RState.hpp"
-#include <assert.h>
 
 namespace curr {
 
@@ -127,8 +126,31 @@ void RThreadBase::stop()
 bool RThreadBase::cancel()
 {
   return compare_and_move
-    (*this, {S(ready), S(cancelled)}, S(cancelled));
+    (*this, {readyState, cancelledState}, cancelledState);
 }
+
+std::thread::native_handle_type RThread<std::thread>::Par
+//
+::get_id(ObjectCreationInfo& oi) const
+{
+  repository = dynamic_cast<RepositoryType*>
+    (oi.repository);
+  SCHECK(repository);
+  oi.objectCreated = &rthreadCreated;
+
+  if (th_id)
+    return th_id;
+
+  th = std::unique_ptr<std::thread>
+    (new std::thread
+     (&RThread<std::thread>::Par::run0, 
+      const_cast<Par*>(this)));
+  th_id = th->native_handle();
+  LOG_DEBUG(log, "thread " << th_id 
+            << " is created by " << par_num << "par");
+  return th_id;
+}
+
 
 std::thread::id RThread<std::thread>::main_thread_id; 
 // the default value not represents a thread

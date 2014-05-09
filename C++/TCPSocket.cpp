@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "TCPSocket.h"
 #include "ClientSocket.h"
 #include "REvent.hpp"

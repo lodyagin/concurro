@@ -35,6 +35,7 @@
 #include "RObjectWithThreads.hpp"
 #include "OutSocket.h"
 #include "ClientSocket.h"
+#include "SCheck.h"
 
 namespace curr {
 

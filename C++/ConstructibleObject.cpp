@@ -39,6 +39,7 @@ DEFINE_AXIS(
   { { "in_construction", "complete_construction" }
   });
 
+#if 0
 DEFINE_STATES(ConstructibleAxis);
 DEFINE_STATE_CONST(ConstructibleObject, 
                    ConstructibleState, 
@@ -46,17 +47,18 @@ DEFINE_STATE_CONST(ConstructibleObject,
 DEFINE_STATE_CONST(ConstructibleObject, 
                    ConstructibleState, 
                    in_construction);
+#endif
 
 ConstructibleObject::ConstructibleObject()
   : RObjectWithEvents<ConstructibleAxis>
-    (in_constructionState),
+      (in_constructionFun()),
     CONSTRUCT_EVENT(complete_construction)
 {
 }
 
 void ConstructibleObject::complete_construction()
 {
-  move_to(*this, S(complete_construction));
+  move_to(*this, complete_constructionFun());
 }
 
 }

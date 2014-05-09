@@ -30,12 +30,6 @@
 #ifndef CONCURRO_REPOSITORY_H_
 #define CONCURRO_REPOSITORY_H_
 
-#include "RMutex.h"
-#include "SNotCopyable.h"
-#include "SException.h"
-#include "Logging.h"
-#include "Event.h"
-#include "HasStringView.h"
 #include <string>
 #include <algorithm>
 #include <utility>
@@ -45,6 +39,12 @@
 #include <assert.h>
 #include <atomic>
 #include <functional>
+#include "Logging.h"
+#include "RMutex.h"
+#include "SNotCopyable.h"
+#include "SException.h"
+#include "Event.h"
+#include "HasStringView.h"
 
 namespace curr {
 

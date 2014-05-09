@@ -31,6 +31,7 @@
 #define CONCURRO_RCHECK_H_
 
 #include "SCommon.h"
+#include "SException.h"
 
 namespace curr {
 

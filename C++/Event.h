@@ -31,7 +31,6 @@
 #define CONCURRO_EVENT_H
 
 //#include "SCheck.h"
-//#include "Logging.h"
 #include "ObjectWithLogging.h"
 #ifndef _WIN32
 #define WFMO
@@ -44,6 +43,8 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <set>
 #include <memory>
 #include <assert.h>
+
+#define SHUTDOWN_UNIMPL
 
 namespace curr {
 
@@ -62,7 +63,7 @@ namespace curr {
 //! EventWaitingTimedOut with the location equal to the
 //! macro substitution line.
 #define CURR_WAIT(evt, time) \
-  CURR_WAIT_L(log::logger(), evt, time)
+  CURR_WAIT_L(log::static_logger(), evt, time)
 
 class ThrowSException;
 

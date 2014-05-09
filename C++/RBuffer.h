@@ -30,10 +30,11 @@
 #ifndef CONCURRO_RBUFFER_H_
 #define CONCURRO_RBUFFER_H_
 
+#include <list>
 #include "RState.h"
 #include "REvent.h"
 #include "RObjectWithStates.h"
-#include <list>
+#include "SException.h"
 
 namespace curr {
 

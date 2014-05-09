@@ -30,9 +30,10 @@
 #ifndef CONCURRO_ROBJECTWITHTHREADS_HPP_
 #define CONCURRO_ROBJECTWITHTHREADS_HPP_
 
+#include <memory>
 #include "RObjectWithThreads.h"
 #include "RThreadRepository.h"
-#include <memory>
+#include "SCheck.h"
 
 namespace curr {
 
@@ -75,7 +76,7 @@ void RObjectWithThreads<Object>
     return;
 
   const RState<ConstructibleAxis> newst(new_state);
-  if (newst == complete_constructionState)
+  if (newst == complete_constructionFun())
   {
     auto& threp = StdThreadRepository::instance();
     while (!threads_pars.empty()) {

@@ -302,7 +302,7 @@ public:
   WindowStreambuf(RWindow&& w) 
   {
     RWindow::move(w);
-    assert(state_is(*this, S(filled)));
+    assert(state_is(*this, filledState));
 
     char* gbeg = const_cast<CharT*>
       (reinterpret_cast<const CharT*>(cdata()));

@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "RThreadRepository.hpp"
 #include "Repository.hpp"
 #include <thread>

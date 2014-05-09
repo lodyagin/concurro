@@ -27,15 +27,16 @@
  * @author Sergei Lodyagin
  */
 
+#include "Logging.h"
 #include "Event.h"
 #include "SCheck.h"
-#include "Logging.h"
 #include "RThread.h"
 #ifdef _WIN32
 #include "SShutdown.h"
 #else
 using namespace neosmart;
 #endif
+#include "SSingleton.hpp"
 
 namespace curr {
 
@@ -83,7 +84,7 @@ EvtBase::~EvtBase()
 
 log4cxx::LoggerPtr EvtBase::logger() const 
 {
-  return Logger<LOG::Events>::logger();
+  return Logger<LOG::Events>::static_logger();
 }
 
 std::ostream&
@@ -192,7 +193,7 @@ void EvtBase::wait(int time, const ThrowSException& te)
 void EvtBase::wait(
   int time, 
   const ThrowSException& te
-) const override
+) const 
 { 
   if (!wait(time))
     te.raise(EventWaitingTimedOut(time));
@@ -206,6 +207,17 @@ bool EvtBase::wait(int time) const
   return returnValue;
 }
 
+bool EvtBase::wait_shadow(int time)
+{
+  return shadow || wait_impl(time);
+}
+
+bool EvtBase::wait_shadow(int time) const
+{
+  SCHECK(is_manual);
+  return shadow || wait_impl(time);
+}
+
 CompoundEvent::CompoundEvent()
   : vector_need_update(false) //<NB>
 {}
@@ -215,6 +227,7 @@ CompoundEvent::CompoundEvent(CompoundEvent&& e)
     handle_vec(std::move(e.handle_vec)),
     vector_need_update(e.vector_need_update)
 {
+  using log = Logger<LOG::Events>;
   LOG_TRACE(log, "CompoundEvent::move constructor");
 }
 
@@ -224,12 +237,14 @@ CompoundEvent::CompoundEvent(const CompoundEvent& e)
     handle_vec(e.handle_vec),
     vector_need_update(e.vector_need_update)
 {
+  using log = Logger<LOG::Events>;
   LOG_TRACE(log, "CompoundEvent::copy constructor");
 }
 #else
   : handle_vec(e.handle_vec),
     vector_need_update(e.vector_need_update)
 {
+  using log = Logger<LOG::Events>;
   handle_set = e.handle_set;
   LOG_TRACE(log, "CompoundEvent::copy constructor");
 }
@@ -265,6 +280,7 @@ CompoundEvent::CompoundEvent
 CompoundEvent& CompoundEvent
 ::operator= (CompoundEvent&& e)
 {
+  using log = Logger<LOG::Events>;
   LOG_TRACE(log, "CompoundEvent::operator=(move)");
   handle_set = std::move(e.handle_set);
   handle_vec = std::move(e.handle_vec);
@@ -276,6 +292,7 @@ CompoundEvent& CompoundEvent
 CompoundEvent& CompoundEvent
 ::operator= (const CompoundEvent& e)
 {
+  using log = Logger<LOG::Events>;
   LOG_TRACE(log, "CompoundEvent::operator=(copy)");
   handle_set = e.handle_set;
   vector_need_update = true; // <NB>
@@ -394,18 +411,6 @@ bool CompoundEvent::wait_impl(int time) const
   }
   return true;
 }
-
-bool CompoundEvent::wait_shadow(int time)
-{
-  return shadow || wait_impl(time);
-}
-
-bool CompoundEvent::wait_shadow(int time) const
-{
-  SCHECK(is_manual);
-  return shadow || wait_impl(time);
-}
-
 
 void CompoundEvent::update_vector() const
 {

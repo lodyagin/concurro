@@ -32,12 +32,10 @@
 #ifndef CONCURRO_SSINGLETON_H_
 #define CONCURRO_SSINGLETON_H_
 
-//#include "Logging.h"
+#include <thread>
 #include "Existent.h"
-//#include "SException.h"
 #include "ConstructibleObject.h"
 #include "Event.h"
-#include <thread>
 
 namespace curr {
 
