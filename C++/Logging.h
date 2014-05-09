@@ -286,7 +286,12 @@ struct logger_name
   {
     using namespace std;
     string s = type<Type>::name();
-    replace(s.begin(), s.end(), ':', '_');
+    size_t start = 0;
+    while((start = s.find("::", start)) != string::npos) 
+    {
+      s.replace(start, 2, ".");
+      ++start;
+    }
     return s;
   }
 };
