@@ -36,6 +36,7 @@
 #include <typeinfo>
 #include <algorithm>
 #include <atomic>
+#include <utility>
 #include "SCommon.h"
 #include "SSingleton.h"
 #include <log4cxx/logger.h>
@@ -68,8 +69,6 @@ public:
   virtual ~LogBase () {}
 
   std::string GetName() const { return m_sName; }
-
-  //log4cxx::LoggerPtr GetLogger () { return logger; }
 
   /// Pointer to a log4cxx logger
   log4cxx::LoggerPtr logger;
@@ -118,8 +117,6 @@ public:
 
 namespace logging {
 
-static std::atomic<bool> root_logger_is_initialized(false);
-
 template<class Type>
 struct logger_name
 {
@@ -142,6 +139,18 @@ struct logger_name<LOG::Root>
   }
 };
 
+template<class Type>
+struct is_root
+{
+  static constexpr bool value = false;
+};
+
+template<>
+struct is_root<LOG::Root>
+{
+  static constexpr bool value = true;
+};
+
 }
 
 /**
@@ -156,9 +165,7 @@ public:
       )
   {
     this->complete_construction();
-
-    if (logger() == Logger<LOG::Root>::static_logger())
-      logging::root_logger_is_initialized = true;
+    initialized = true;
   }
 
   log4cxx::LoggerPtr logger() const override
@@ -168,12 +175,15 @@ public:
 
   static log4cxx::LoggerPtr static_logger()
   {
-    if (logging::root_logger_is_initialized)
+    // These checks are for prevent recursive logging from
+    // log system initialization
+    if (is_initialized())
       return SAutoSingleton<Logger<Type>>::instance()
         . logger();
+    else if (Logger<LOG::Root>::is_initialized())
+      return SAutoSingleton<Logger<LOG::Root>>::instance()
+        . logger();
     else
-      // For prevent recursive logging from log system
-      // initialization
       return nullptr;
   }
 
@@ -183,10 +193,19 @@ public:
     return logger_ptr != nullptr 
       && logger_ptr->isDebugEnabled();
   }
+
+  static bool is_initialized()
+  {
+    return initialized;
+  }
   
 private:
   std::unique_ptr<LogBase> log_base;
+  static std::atomic<bool> initialized;
 };
+
+template<class Type>
+std::atomic<bool> Logger<Type>::initialized(false);
 
 template<>
 class Logger<LOG::Empty> final 
