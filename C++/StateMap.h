@@ -54,40 +54,6 @@ typedef uint16_t TransitionId;
 class StateMap;
 class UniversalEvent;
 
-class UniversalState
-{
-  friend class UniversalEvent;
-  friend std::ostream& 
-  operator<< (std::ostream& out, const UniversalState& st);
-
-public:
-  UniversalState() : the_state(0), the_map(nullptr) {}
-  UniversalState(uint32_t st) 
-    : the_state(st), the_map(nullptr) {}
-  //! Change a map
-  UniversalState(const StateMap* new_map, uint32_t st);
-  operator uint32_t() const { return the_state; }
-
-  //! It is a time-consuming comparison, use only if you
-  //! understand what you do. In other cases use
-  //! RState<Axis>::operator==.
-  bool operator== (const UniversalState&) const;
-  bool operator!= (const UniversalState&) const;
-
-  //! Never use it if you already know a map (it makes a
-  //! map-lookup). StateMap::get_state_name suit for most
-  //! cases. 
-  std::string name() const; 
-
-protected:
-  void init_map() const;
-  uint32_t the_state;
-  mutable const StateMap* the_map;
-};
-
-std::ostream&
-operator<< (std::ostream& out, const UniversalState& st);
-
 class AbstractObjectWithStates;
 class AbstractObjectWithEvents;
 
@@ -101,85 +67,6 @@ template<class Axis, class DerivedAxis>
 {
   return std::is_base_of<Axis, DerivedAxis>::value;
 }
-
-#define STATE_MAP_MASK 0x7fff0000
-#define STATE_MAP_SHIFT 16
-#define STATE_IDX_MASK 0x7fff
-#define EVENT_IDX_MASK 0xffff
-//! Return a state map id by a state.
-#define STATE_MAP(state)                                \
-  (((state) & STATE_MAP_MASK) >> STATE_MAP_SHIFT)
-#define STATE_IDX(state) ((state) & STATE_IDX_MASK)
-#define EVENT_IDX(state) ((state) & EVENT_IDX_MASK)
-
-class UniversalEvent
-{
-public:
-  //! arrival events have this bit set
-  enum { Mask = 0x8000 };
-
-  //! Exception: Need an arrival event type here
-  class NeedArrivalType: public SException
-  {
-  public:
-  NeedArrivalType()
-    : SException
-      ("Need an arrival event type here") {}
-  };
-
-  //! Whether this event is of an 'arrival' and not
-  //! 'transitional' type.
-  bool is_arrival_event() const { return (id & Mask); }
-
-  //! Transform arrival events to a state. Can throw
-  //! NeedArrivalType. 
-  operator UniversalState() const;
-
-  bool operator==(UniversalEvent b) const
-  {
-    return id == b.id;
-  }
-
-  bool operator!=(UniversalEvent b) const
-  {
-    return id != b.id;
-  }
-
-  //! Construct a `transitional' type of an event
-  UniversalEvent(TransitionId trans_id) : id(trans_id) {}
-  //! Construct an `arrival' type of an event
-  UniversalEvent(uint32_t state, bool) : id(state|Mask) 
-  {
-    assert(STATE_MAP(id)); //must contain a state_map part
-  }
-
-  //! Both transition and arrival ids without a map.
-  uint16_t local_id() const { return EVENT_IDX(id); }
-
-  //! Both transition and arrival ids with a map.
-  uint32_t global_id() const { return id; }
-
-  //! A name as "<state>" or "<state>-><state>"
-  std::string name() const; 
-
-  uint32_t as_state_of_arrival() const
-  { 
-    assert (is_arrival_event());
-    return id & ~Mask; 
-  }
-
-  TransitionId as_transition_id() const
-  {
-    assert(!is_arrival_event());
-    return id;
-  }
-
-protected:
-  uint32_t   id;
-};
-
-std::ostream&
-operator<< (std::ostream& out, const UniversalEvent& ue);
 
 //! @}
 

@@ -32,26 +32,11 @@
 
 #include "SCommon.h"
 #include "Event.h"
+#include "RMutex.h" // FIXME
 #include "ObjectWithStatesInterface.h"
 #include <atomic>
 
 namespace curr {
-
-//! @addtogroup exceptions
-//! @{
-
-class REventIsUnregistered : public SException
-{
-public:
-REventIsUnregistered(const UniversalEvent& ue)
-  : SException(SFORMAT("The event [" << ue 
-                       << "] is unregistered")),
-    event(ue) {}
-
-  const UniversalEvent event;
-};
-
-//! @}
 
 //! @addtogroup states
 //! @{

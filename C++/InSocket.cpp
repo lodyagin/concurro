@@ -27,7 +27,6 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
 #include "InSocket.h"
 #include "RState.hpp"
 #include <sys/types.h>

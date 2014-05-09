@@ -30,15 +30,88 @@
 #ifndef CONCURRO_REVENT_H_
 #define CONCURRO_REVENT_H_
 
+#include <set>
 //#include "StateMap.h"
 #include "RObjectWithStates.h"
 #include "Event.h"
-#include <set>
 
 namespace curr {
 
 //! @addtogroup events
 //! @{
+
+#define STATE_MAP_MASK 0x7fff0000
+#define STATE_MAP_SHIFT 16
+#define STATE_IDX_MASK 0x7fff
+#define EVENT_IDX_MASK 0xffff
+//! Return a state map id by a state.
+#define STATE_MAP(state)                                \
+  (((state) & STATE_MAP_MASK) >> STATE_MAP_SHIFT)
+#define STATE_IDX(state) ((state) & STATE_IDX_MASK)
+#define EVENT_IDX(state) ((state) & EVENT_IDX_MASK)
+
+class UniversalEvent
+{
+public:
+  //! arrival events have this bit set
+  enum { Mask = 0x8000 };
+
+  //! Exception: Need an arrival event type here
+  class NeedArrivalType;
+
+  //! Whether this event is of an 'arrival' and not
+  //! 'transitional' type.
+  bool is_arrival_event() const { return (id & Mask); }
+
+  //! Transform arrival events to a state. Can throw
+  //! NeedArrivalType. 
+  operator UniversalState() const;
+
+  bool operator==(UniversalEvent b) const
+  {
+    return id == b.id;
+  }
+
+  bool operator!=(UniversalEvent b) const
+  {
+    return id != b.id;
+  }
+
+  //! Construct a `transitional' type of an event
+  UniversalEvent(TransitionId trans_id) : id(trans_id) {}
+  //! Construct an `arrival' type of an event
+  UniversalEvent(uint32_t state, bool) : id(state|Mask) 
+  {
+    assert(STATE_MAP(id)); //must contain a state_map part
+  }
+
+  //! Both transition and arrival ids without a map.
+  uint16_t local_id() const { return EVENT_IDX(id); }
+
+  //! Both transition and arrival ids with a map.
+  uint32_t global_id() const { return id; }
+
+  //! A name as "<state>" or "<state>-><state>"
+  std::string name() const; 
+
+  uint32_t as_state_of_arrival() const
+  { 
+    assert (is_arrival_event());
+    return id & ~Mask; 
+  }
+
+  TransitionId as_transition_id() const
+  {
+    assert(!is_arrival_event());
+    return id;
+  }
+
+protected:
+  uint32_t   id;
+};
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalEvent& ue);
 
 template<class Axis, class Axis2>
 class RMixedEvent
@@ -68,7 +141,7 @@ public:
   const RState<Axis> to_state;
 
 private:
-  typedef Logger<LOG::Events> log;
+//  typedef Logger<LOG::Events> log;
 };
 
 template<class Axis>

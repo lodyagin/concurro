@@ -155,6 +155,8 @@ void SSingleton<T, wait_m>::complete_construction()
 template<class T, int wait_m>
 inline T & SSingleton<T, wait_m>::instance()
 {
+  using log = Logger<LOG::Root>;
+
   // If another thread starts creating T we must wait the
   // completion of the creation
   try {

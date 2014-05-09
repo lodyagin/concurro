@@ -561,20 +561,10 @@ public:
 
 protected:
   //! This specialization takes the key value from pars.
-  ObjId allocate_new_object_id_internal 
-    (ObjectCreationInfo& oi, const Par& param)
-  {
-    RLOCK(this->objectsM);
-
-    ObjId id = param.get_id(oi);
-
-    if (this->objects->find(id) != this->objects->end()) {
-      THROW_EXCEPTION(
-        typename Parent::IdIsAlreadyUsed, id);
-    }
-	 
-    return id;
-  }
+  ObjId allocate_new_object_id_internal(
+    ObjectCreationInfo& oi, 
+    const Par& param
+  );
 
   void insert_object (const ObjId& id, Obj* obj)
   {

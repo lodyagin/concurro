@@ -32,9 +32,9 @@
 #ifndef CONCURRO_SSINGLETON_H_
 #define CONCURRO_SSINGLETON_H_
 
-#include "Logging.h"
+//#include "Logging.h"
 #include "Existent.h"
-#include "SException.h"
+//#include "SException.h"
 #include "ConstructibleObject.h"
 #include "Event.h"
 #include <thread>
@@ -188,7 +188,7 @@ protected:
   }
 
 private:
-  typedef Logger<SSingleton<T, wait_m>> log;
+//  typedef Logger<SSingleton<T, wait_m>> log;
 
   //! The actual singleton instance. It is updated from
   //! instance0 in instance() call.
@@ -247,7 +247,7 @@ protected:
   static void construct_once();
 
 private:
-  typedef Logger<SAutoSingleton<T, wait_m>> log;
+//  typedef Logger<SAutoSingleton<T, wait_m>> log;
 };
 
 //! @}

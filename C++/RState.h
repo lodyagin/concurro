@@ -34,13 +34,18 @@
 #include <mutex>
 
 #include "types/meta.h"
-#include "StateMap.h"
+//#include "StateMap.h"
 #include "ObjectWithStatesInterface.h"
 #include "StateAxis.h"
 
 namespace curr {
 
 typedef int16_t StateMapId;
+
+class StateMap;
+
+template<class Axis>
+class StateMapPar;
 
 /**
  * @defgroup states
@@ -69,6 +74,40 @@ typedef int16_t StateMapId;
  *
  * @{
  */
+
+class UniversalState
+{
+  friend class UniversalEvent;
+  friend std::ostream& 
+  operator<< (std::ostream& out, const UniversalState& st);
+
+public:
+  UniversalState() : the_state(0), the_map(nullptr) {}
+  UniversalState(uint32_t st) 
+    : the_state(st), the_map(nullptr) {}
+  //! Change a map
+  UniversalState(const StateMap* new_map, uint32_t st);
+  operator uint32_t() const { return the_state; }
+
+  //! It is a time-consuming comparison, use only if you
+  //! understand what you do. In other cases use
+  //! RState<Axis>::operator==.
+  bool operator== (const UniversalState&) const;
+  bool operator!= (const UniversalState&) const;
+
+  //! Never use it if you already know a map (it makes a
+  //! map-lookup). StateMap::get_state_name suit for most
+  //! cases. 
+  std::string name() const; 
+
+protected:
+  void init_map() const;
+  uint32_t the_state;
+  mutable const StateMap* the_map;
+};
+
+std::ostream&
+operator<< (std::ostream& out, const UniversalState& st);
 
 template<class Axis>
 class RState : public UniversalState
@@ -282,7 +321,7 @@ private:
   //~RMixedAxis() = delete;
   RMixedAxis& operator=(const RMixedAxis&) = delete;
 
-  typedef Logger<RAxis<Axis>> log;
+//  typedef Logger<RAxis<Axis>> log;
 };
 
 //! Just a marker

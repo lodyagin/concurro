@@ -30,9 +30,10 @@
 #ifndef CONCURRO_REPOSITORY_HPP_
 #define CONCURRO_REPOSITORY_HPP_
 
+#include <set>
 #include "Repository.h"
 #include "RState.hpp"
-#include <set>
+#include "SException.hpp"
 
 namespace curr {
 
@@ -264,6 +265,28 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
     if ((ptr = Value(v)))
       f (const_cast<const Obj&>(*ptr));
 }
+
+// Repository
+
+template<class Obj, class Par, class ObjId>
+ObjId Repository<Obj, Par, std::unordered_map, ObjId>
+//
+::allocate_new_object_id_internal(
+  ObjectCreationInfo& oi, 
+  const Par& param
+)
+{
+  RLOCK(this->objectsM);
+
+  ObjId id = param.get_id(oi);
+
+  if (this->objects->find(id) != this->objects->end())
+    THROW_EXCEPTION(
+      typename Parent::IdIsAlreadyUsed, id
+    );
+  return id;
+}
+
 
 /*=====================================*/
 /*========== SparkRepository ==========*/

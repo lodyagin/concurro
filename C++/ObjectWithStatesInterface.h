@@ -32,6 +32,7 @@
 
 #include <typeinfo>
 #include <type_traits>
+#include "SCommon.h"
 #include "StateAxis.h"
 #include "Event.h"
 

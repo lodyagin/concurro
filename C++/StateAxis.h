@@ -35,7 +35,7 @@
 #include <mutex> // for axis singleton
 
 #include "types/meta.h"
-#include "StateMap.h"
+//#include "StateMap.h"
 
 namespace curr {
 

@@ -27,8 +27,8 @@
  * @author Sergei Lodyagin
  */
 
-#include "StdAfx.h"
-//#include "REvent.h"
+#include "Event.h"
+#include "SCheck.h"
 #include "Logging.h"
 #include "RThread.h"
 #ifdef _WIN32
@@ -183,6 +183,29 @@ bool EvtBase::wait_impl(int time) const
   return true;
 }
 
+void EvtBase::wait(int time, const ThrowSException& te)
+{ 
+  if (!wait(time))
+    te.raise(EventWaitingTimedOut(time));
+}
+
+void EvtBase::wait(
+  int time, 
+  const ThrowSException& te
+) const override
+{ 
+  if (!wait(time))
+    te.raise(EventWaitingTimedOut(time));
+}
+
+bool EvtBase::wait(int time) const
+{
+  SCHECK(is_manual);
+  bool returnValue = wait_impl(time);
+  isSignaled = is_manual ? isSignaled.load() : false;
+  return returnValue;
+}
+
 CompoundEvent::CompoundEvent()
   : vector_need_update(false) //<NB>
 {}
@@ -307,6 +330,24 @@ bool CompoundEvent::signalled() const
   return false;
 }
 
+void CompoundEvent::wait(
+  int time, 
+  const ThrowSException& te
+)
+{
+  if (!wait(time))
+    te.raise(EventWaitingTimedOut(time));
+}
+
+void CompoundEvent::wait(
+  int time, 
+  const ThrowSException& te
+) const
+{
+  if (!wait(time))
+    te.raise(EventWaitingTimedOut(time));
+}
+
 bool CompoundEvent::wait_impl(int time) const
 {
   if (log_params().wait) {
@@ -353,6 +394,18 @@ bool CompoundEvent::wait_impl(int time) const
   }
   return true;
 }
+
+bool CompoundEvent::wait_shadow(int time)
+{
+  return shadow || wait_impl(time);
+}
+
+bool CompoundEvent::wait_shadow(int time) const
+{
+  SCHECK(is_manual);
+  return shadow || wait_impl(time);
+}
+
 
 void CompoundEvent::update_vector() const
 {

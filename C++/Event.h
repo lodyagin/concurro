@@ -30,8 +30,9 @@
 #ifndef CONCURRO_EVENT_H
 #define CONCURRO_EVENT_H
 
-#include "SCheck.h"
-#include "Logging.h"
+//#include "SCheck.h"
+//#include "Logging.h"
+#include "ObjectWithLogging.h"
 #ifndef _WIN32
 #define WFMO
 #include "pevents.h"
@@ -45,23 +46,6 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <assert.h>
 
 namespace curr {
-
-//! @addtogroup exceptions
-//! @{
-
-//! Exception: event waiting time out 
-class EventWaitingTimedOut : public SException
-{
-public:
-  const int msecs;
-
-  EventWaitingTimedOut(int ms) : SException(
-    SFORMAT("Event waiting timed out after " << ms 
-            << " milliseconds")), 
-    msecs(ms) {}
-};
-
-//! @}
 
 /**
  * @defgroup events
@@ -79,6 +63,8 @@ public:
 //! macro substitution line.
 #define CURR_WAIT(evt, time) \
   CURR_WAIT_L(log::logger(), evt, time)
+
+class ThrowSException;
 
 class EventInterface : public ObjectWithLogging
 {
@@ -137,29 +123,15 @@ public:
     return wait_impl(time); 
   }
 
-  void wait(int time, const ThrowSException& te) override
-  { 
-    if (!wait(time))
-      te.raise(EventWaitingTimedOut(time));
-  }
+  void wait(int time, const ThrowSException& te) override;
 
   //! Wait for event or time in msecs. This is a const
   //! version  - for manual-reset events only.
   //! \return false on timeout.
-  bool wait(int time = -1) const
-  {
-    SCHECK(is_manual);
-    bool returnValue = wait_impl(time);
-    isSignaled = is_manual ? isSignaled.load() : false;
-    return returnValue;
-  }
+  bool wait(int time = -1) const;
 
   void wait(int time, const ThrowSException& te) const 
-    override
-  { 
-    if (!wait(time))
-      te.raise(EventWaitingTimedOut(time));
-  }
+    override;
 
   void set();
   void reset();
@@ -176,18 +148,9 @@ public:
 
   //! It is like wait(int) but return true if shadow is
   //! true (i.e., the event "was")
-  bool wait_shadow(int time = -1)
-  {
-    //LOG_DEBUG(log, "shadow = " << shadow);
-    return shadow || wait_impl(time);
-  }
+  bool wait_shadow(int time = -1);
 
-  bool wait_shadow(int time = -1) const
-  {
-    SCHECK(is_manual);
-    //LOG_DEBUG(log, "shadow = " << shadow);
-    return shadow || wait_impl(time);
-  }
+  bool wait_shadow(int time = -1) const;
 
   const std::string universal_object_id;
 
@@ -323,20 +286,7 @@ protected:
   std::shared_ptr<EvtBase> evt_ptr;
 
 private:
-  typedef Logger<LOG::Events> log;
-};
-
-/**
- * Exception: unable to have an autoreset event 
- * as a member of CompoundEvent.
- */
-class AutoresetInCompound : public curr::SException
-{
-public:
-  AutoresetInCompound()
-    : curr::SException("Unable to have an autoreset event "
-                       "as a member of CompoundEvent")
-  {}
+//  typedef Logger<LOG::Events> log;
 };
 
 #define STL_BUG 1
@@ -380,23 +330,15 @@ public:
     return wait_impl(time);
   }
 
-  void wait(int time, const ThrowSException& te) override
-  {
-    if (!wait(time))
-      te.raise(EventWaitingTimedOut(time));
-  }
-
   bool wait(int time = -1) const
   {
     return wait_impl(time);
   }
 
+  void wait(int time, const ThrowSException& te) override;
+
   void wait(int time, const ThrowSException& te) const
-    override
-  {
-    if (!wait(time))
-      te.raise(EventWaitingTimedOut(time));
-  }
+    override;
 
   bool signalled() const override;
 
@@ -444,7 +386,7 @@ protected:
   void update_vector() const;
 
 private:
-  typedef Logger<LOG::Events> log;
+//  typedef Logger<LOG::Events> log;
 };
 
 std::ostream&

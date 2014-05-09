@@ -32,6 +32,7 @@
 
 #include <exception>
 #include <ostream>
+#include <log4cxx/logger.h>
 #include <log4cxx/spi/location/locationinfo.h>
 #include "Logging.h"
 #include "SCommon.h"
@@ -93,22 +94,6 @@ struct ThrowSException
   const log4cxx::LoggerPtr logger;
 };
 
-//! Throw the stored exception and log the occurence place.
-template<class Log = curr::Logger<curr::LOG::Root>>
-void log_and_throw [[ noreturn ]]
-  (std::exception_ptr excp,
-   log4cxx::spi::LocationInfo&& loc =  LOG4CXX_LOCATION,
-   log4cxx::LoggerPtr l = Log::logger())
-{
-  try {
-    std::rethrow_exception(excp);
-  }
-  catch (const SException& e2) {
-    LOGGER_DEBUG_LOC(l, "Throw exception " << e2, loc);
-    throw;
-  }
-}
-
 //! Exception: Program Error (means general logic error)
 class ProgramError : public SException
 {
@@ -122,28 +107,6 @@ class NotImplemented : public SException
 public:
   NotImplemented() : SException("Not implemented") {}
 };
-
-//! @deprecated Use log_and_throw() instead
-#define THROW_EXCEPTION(exception_class, par...) \
-do { \
-  curr::log_and_throw( \
-     std::make_exception_ptr(exception_class{par}), \
-       LOG4CXX_LOCATION);  \
-} while (0)
-
-//! @deprecated Use log_and_throw() instead
-#define THROW_EXCEPTION_PLACE(place, exception_class, par...) do { \
-	 exception_class exc_{par};			 \
-  LOG_DEBUG_PLACE(curr::Logger<curr::LOG::Root>, place,   \
-    "Throw exception " << exc_); \
-  throw exc_; \
-  } while (0)
-
-#define THROW_PROGRAM_ERROR \
-  THROW_EXCEPTION(curr::ProgramError)
-
-#define THROW_NOT_IMPLEMENTED \
-  THROW_EXCEPTION(curr::NotImplemented)
 
 // user mistake - wrong action, invalid configuration etc
 class SUserError : public SException
@@ -193,6 +156,47 @@ public:
 
   //! A source value
   const Source source;
+};
+
+//! Exception: event waiting time out 
+class EventWaitingTimedOut : public SException
+{
+public:
+  const int msecs;
+
+  EventWaitingTimedOut(int ms) 
+    : SException(
+        sformat(
+          "Event waiting timed out after ", ms,
+           " milliseconds"
+        )
+      ), 
+      msecs(ms) 
+  {}
+};
+
+/**
+ * Exception: unable to have an autoreset event 
+ * as a member of CompoundEvent.
+ */
+class AutoresetInCompound : public SException
+{
+public:
+  AutoresetInCompound()
+    : SException("Unable to have an autoreset event "
+                 "as a member of CompoundEvent")
+  {}
+};
+
+class REventIsUnregistered : public SException
+{
+public:
+REventIsUnregistered(const UniversalEvent& ue)
+  : SException(SFORMAT("The event [" << ue 
+                       << "] is unregistered")),
+    event(ue) {}
+
+  const UniversalEvent event;
 };
 
 //! @}

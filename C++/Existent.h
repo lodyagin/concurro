@@ -199,7 +199,7 @@ protected:
   void dec_existence();
 
 private:
-  typedef Logger<Existent> log;
+//  typedef Logger<Existent> log;
 };
 
 //! @}

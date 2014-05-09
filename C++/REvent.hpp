@@ -30,11 +30,22 @@
 #ifndef CONCURRO_REVENT_HPP_
 #define CONCURRO_REVENT_HPP_
 
+#include <algorithm>
 #include "REvent.h"
 #include "RState.h"
-#include <algorithm>
+#include "SException.h"
 
 namespace curr {
+
+  //! Exception: Need an arrival event type here
+class UniversalEvent::NeedArrivalType: public SException
+{
+public:
+  NeedArrivalType()
+    : SException
+      ("Need an arrival event type here") {}
+};
+
 
 template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>

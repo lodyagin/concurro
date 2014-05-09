@@ -31,10 +31,12 @@
 #define CONCURRO_LOGGING_H_
 //#pragma warning(disable: 4250 4251)
 
+#include <sstream>
 #include <string>
 #include <typeinfo>
-#include <sstream>
+#include <algorithm>
 #include "SCommon.h"
+#include "SSingleton.h"
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/spi/location/locationinfo.h>
@@ -104,85 +106,70 @@ inline log4cxx::LoggerPtr GetLogger
 class LOG 
 { 
 public:
-  class Root {};
-//  class Thread {};
+  class Root {}; 
   class Concurrency {};
   class States {};
   class Events {};
   class Connections {};
 };
 
-/**
- */
+namespace logging_ {
+
 template<class Type>
-class Logger
+struct logger_name
 {
-public:
-  static log4cxx::LoggerPtr logger() 
+  std::string name() const
   {
-    static LogBase* base = init_base 
-      (curr::type<Type>::name());
-    return base->logger;
-  }
-protected:
-  //! It is for partial specialization and use special
-  //! names for common log classes (the members of LOG).
-  static LogBase* init_base (const std::string& name) {
-   return new LogBase(name);
+    using namespace std;
+    string s = type<Type>::name();
+    replace(s.begin(), s.end(), ':', '_');
+    return s;
   }
 };
 
+// a special logger name "" is used
 template<>
-inline LogBase* Logger<LOG::Root>::init_base 
-(const std::string& name)
+struct logger_name<LOG::Root>
 {
-  return new LogBase ("");
+  std::string name() const
+  {
+    return std::string();
+  }
+};
+
 }
 
-#if 0
-template<>
-inline LogBase* Logger<LOG::Thread>::init_base 
-(const std::string& name)
+/**
+ */
+template<class Type>
+class Logger final : public SAutoSingleton<Logger<Type>>
 {
-  return new LogBase ("Thread");
-}
-#endif
+public:
+  Logger() 
+    : log_base(
+        new LogBase(logging_::logger_name<Type>::name())
+      )
+  {
+    this->complete_construction();
+  }
 
-template<>
-inline LogBase* Logger<LOG::Concurrency>::init_base 
-(const std::string& name)
-{
-  return new LogBase ("Concurrency");
-}
+  log4cxx::LoggerPtr logger() const override
+  {
+    return log_base->logger;
+  }
+  
+private:
+  std::unique_ptr<LogBase> log_base;
+};
 
-template<>
-inline LogBase* Logger<LOG::States>::init_base 
-(const std::string& name)
-{
-  return new LogBase ("States");
-}
-
-template<>
-inline LogBase* Logger<LOG::Events>::init_base 
-(const std::string& name)
-{
-  return new LogBase ("Events");
-}
-
-template<>
-inline LogBase* Logger<LOG::Connections>::init_base 
-(const std::string& name)
-{
-  return new LogBase ("Connections");
-}
-
-namespace {
+namespace logging_ {
 
 //! The logging system initializer. If this header is
 //! encluded before other the logging system will be
 //! initialized before other systems (and deinitialized
 //! after all).
-log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
+log4cxx::LoggerPtr rootLogger = 
+  Logger<LOG::Root>::instance().logger();
 
 }
 
@@ -345,7 +332,7 @@ log4cxx::LoggerPtr rootLogger = Logger<LOG::Root>::logger();
 public: \
   log4cxx::LoggerPtr logger() const override \
   { \
-   return log::logger(); \
+   return log::instance().logger(); \
   } \
 private: \
   typedef curr::Logger<class_> log;
