@@ -27,6 +27,7 @@ set (concurrent_SOURCES
   Logging.cpp
   ObjectWithLogging.cpp
   OutSocket.cpp
+  Process.cpp
   RBuffer.cpp
   RHolder.cpp
   RMutex.cpp

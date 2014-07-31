@@ -6,6 +6,7 @@
 
 extern CU_TestInfo ClassWithStatesTests[];
 extern CU_TestInfo ExistentTests[];
+extern CU_TestInfo ProcessTests[];
 extern CU_TestInfo RepositoryTests[];
 extern CU_TestInfo EventTests[];
 extern CU_TestInfo RStateTests[];
@@ -25,10 +26,14 @@ int ClassWithStatesCUInit(void);
 int ClassWithStatesCUClean(void);
 int ExistentCUInit(void);
 int ExistentCUClean(void);
+int ProcessCUInit(void);
+int ProcessCUClean(void);
 int RepositoryCUInit(void);
 int RepositoryCUClean(void);
 int EventCUInit(void);
 int EventCUClean(void);
+int ProcessCUInit(void);
+int ProcessCUClean(void);
 int RStateCUInit(void);
 int RStateCUClean(void);
 int RThreadCUInit(void);
@@ -90,6 +95,8 @@ CU_SuiteInfo suites[] = {
 	  RSocketTests },
   { "RConnection", RConnectionCUInit, RConnectionCUClean, 0, 0,
 	  RConnectionTests },
+  { "Process", ProcessCUInit, ProcessCUClean, 0, 0, 
+          ProcessTests },
 	CU_SUITE_INFO_NULL
 };
 
