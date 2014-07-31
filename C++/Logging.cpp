@@ -120,8 +120,7 @@ void LogBase::Init()
    p.setProperty(_T"log4j.rootLogger", _T"INFO, A1");
    p.setProperty(_T"log4j.appender.A1", _T"org.apache.log4j.RollingFileAppender");
    p.setProperty(_T"log4j.appender.A1.Append", _T"True");
-   p.setProperty(_T"log4j.appender.A1.File", 
-            APPCONFIG_PKG_NAME ".log");
+   p.setProperty(_T"log4j.appender.A1.File", "log4j.log");
    p.setProperty(_T"log4j.appender.A1.MaxFileSize", _T"1048576");
    p.setProperty(_T"log4j.appender.A1.MaxBackupIndex", _T"12");
    p.setProperty(_T"log4j.appender.A1.layout", _T"org.apache.log4j.PatternLayout");
