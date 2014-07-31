@@ -12,6 +12,7 @@ set(TestsSrc
   ClassWithStatesCU.cpp
   EventCU.cpp
   ExistentCU.cpp
+  ProcessCU.cpp
   RBufferCU.cpp
   RConnectionCU.cpp
   REventCU.cpp
