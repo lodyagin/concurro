@@ -131,7 +131,7 @@ CompoundEvent RObjectWithEvents<Axis>
   return *events.emplace
     (std::make_pair
      (ue.local_id(),
-      Event(SFORMAT(curr::type<*this>::name() << ":" 
+      Event(SFORMAT(::types::type<*this>::name() << ":" 
                     << ue.name()), 
             true, initial_state) // <NB> manual reset
        )).first;
@@ -142,7 +142,7 @@ CompoundEvent RObjectWithEvents<Axis>
       events.insert
       (std::make_pair
        (ue.local_id(), 
-        Event(SFORMAT(curr::type<decltype(*this)>::name() 
+        Event(SFORMAT(::types::type<decltype(*this)>::name() 
                       << ":" 
                       << ue.name()), 
               true, initial_state))).first->second);
@@ -163,7 +163,7 @@ void RObjectWithEvents<Axis>
 
   LOG_TRACE(Logger<LOG::Root>, 
             "update_events for the axis "
-            << curr::type<StateAxis>::name()
+            << ::types::type<StateAxis>::name()
             << ", to = " << UniversalState(to).name()
             << std::hex << " (0x" << to << ")");
 

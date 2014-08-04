@@ -75,7 +75,8 @@ public:
 
     Process* transform_object(const Process*) const
     {
-      THROW_NOT_IMPLEMENTED;
+      throw ::types::exception
+        <TransformObjectIsNotImplemented>();
     }
   };
 
@@ -138,9 +139,13 @@ class ChildProcessRepository final
      Process, Process::Par, std::map, pid_t
    >
 {
+  using Rep = Repository <
+    Process, Process::Par, std::map, pid_t
+  >;
+
 public:
   ChildProcessRepository()
-    : Repository("ChildProcessRepository", 0)
+    : Rep("ChildProcessRepository", 0)
   {
     complete_construction();
   }

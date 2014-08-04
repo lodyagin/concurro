@@ -39,7 +39,7 @@ namespace curr {
 
 template<class Thread, class T>
 RThreadRepository<Thread, T>::RThreadRepository(int w)
-  : Parent(curr::type<RThreadRepository<Thread, T>>::name(), 
+  : Parent(::types::type<RThreadRepository<Thread, T>>::name(), 
            100 // the value is ignored for std::map
     ), wait_m(w)
 {
@@ -103,7 +103,7 @@ void RThreadRepository<Thread, T>
 template<class Thread, class T>
 void RThreadRepository<Thread, T>
 //
-::delete_object_by_id (ThreadId id, bool freeMemory)
+::delete_object_by_id (const ThreadId& id, bool freeMemory)
 {
   RThreadBase* th = this->get_object_by_id (id);
   if (th) 

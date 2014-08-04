@@ -69,24 +69,21 @@ public:
     return create_object (pars);
   }
 
-  // Overrides
   // Wait termination of all subthreads
-  void wait () 
+  void wait () override
   { 
     this->wait_subthreads(); 
     Thread::wait (); 
   }
 
-  // Overrides
   // Request stop all subthreads and this thread
-  void stop () 
+  void stop () override
   { 
     this->stop_subthreads(); 
     Thread::stop (); 
   }
 
-  // Overrides
-  void outString (std::ostream& out) const;
+  void outString (std::ostream& out) const override;
 
 protected:
   ThreadWithSubthreads 

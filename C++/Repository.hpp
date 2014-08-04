@@ -1,25 +1,25 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
-  You should have received a copy of the GNU Lesser General
-  Public License along with this program.  If not, see
-  <http://www.gnu.org/licenses/>.
-*/
+  You should have received a copy of the GNU Lesser
+  General Public License along with this program.  If not,
+  see <http://www.gnu.org/licenses/>.  */
 
 /**
  * @file
@@ -31,18 +31,18 @@
 #define CONCURRO_REPOSITORY_HPP_
 
 #include <set>
+#include "types/typeinfo.h"
 #include "Repository.h"
 #include "RState.hpp"
-#include "SException.h"
 
 namespace curr {
 
 template<class Obj, class Par, class ObjId>
 const AbstractRepositoryBase::Traits 
   RepositoryInterface<Obj, Par, ObjId>::traits
-  ({curr::type<Obj>::name(), 
-     curr::type<Par>::name(), 
-      curr::type<ObjId>::name()});
+  ({::types::type<Obj>::name(), 
+     ::types::type<Par>::name(), 
+      ::types::type<ObjId>::name()});
 
 template<
   class Obj, 
@@ -124,11 +124,15 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     obj = objects->at (id);
   }
   catch (const std::out_of_range&) {
-    THROW_EXCEPTION(NoSuchId, id);
+    throw ::types::exception<NoSuchId>(
+      "No object with id [", id, "] exists in ",
+      ::types::type<RepositoryBase>()
+    );
   }
 
-  if (!obj) THROW_PROGRAM_ERROR;
-  //obj->freeze();
+  if (!obj)
+    throw ::types::exception<RepositoryException>
+     ("Program error");
 
   (*objects)[id] = dynamic_cast<Obj*>
     (param.transform_object (obj));
@@ -169,10 +173,16 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
       ptr = objects->at (id);
       delete_object_id(id);
       if (ptr == 0) 
-        THROW_EXCEPTION(NoSuchId, id);
+        throw ::types::exception<NoSuchId>(
+          "No object with id [", id, "] exists in ",
+          ::types::type<RepositoryBase>()
+        );
     }
     catch (const std::out_of_range&) {
-      THROW_EXCEPTION(NoSuchId, id);
+      throw ::types::exception<NoSuchId>(
+        "No object with id [", id, "] exists in ",
+        ::types::type<RepositoryBase>()
+      );
     }
   }
   //ptr->freeze();
@@ -190,7 +200,10 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
   }
   catch (const std::out_of_range&)
   {
-    THROW_EXCEPTION_PLACE(get_object_by_id, NoSuchId, id);
+    throw ::types::exception<NoSuchId>(
+      "No object with id [", id, "] exists in ",
+      ::types::type<RepositoryBase>()
+    );
   }
 }
 
@@ -281,9 +294,9 @@ ObjId Repository<Obj, Par, std::unordered_map, ObjId>
   ObjId id = param.get_id(oi);
 
   if (this->objects->find(id) != this->objects->end())
-    THROW_EXCEPTION(
-      typename Parent::IdIsAlreadyUsed, id
-    );
+    throw ::types::exception<typename Parent::IdIsAlreadyUsed>
+      ("The object id [", id, "] is used already.");
+
   return id;
 }
 
@@ -300,8 +313,10 @@ Obj* SparkRepository<Obj, Par, ObjMap, ObjId, List>
 //
 ::create_object (const Par& param)
 {
-  //THROW_EXCEPTION(SeveralObjects, void);
-  throw SeveralObjects();
+  throw ::types::exception<SeveralObjects>(
+    "The param leads to several objects creation, "
+    "you should use create_several_objects."
+  );
 }
 
 template<

@@ -342,7 +342,7 @@ protected:
   {
     using namespace std;
     const pos_type end_pos = this->egptr() - this->eback();
-    safe<off_type> abs_pos(0);
+    ::types::safe<off_type> abs_pos(0);
 
     switch((uint32_t)dir) {
       case ios_base::beg: 
@@ -356,7 +356,7 @@ protected:
         break;
     }
 
-    if (!(bool) abs_pos || abs_pos < safe<off_type>(0)) 
+    if (!(bool) abs_pos || abs_pos < ::types::safe<off_type>(0)) 
       // the rest will be checked in seekpos
       return pos_type(off_type(-1));
     

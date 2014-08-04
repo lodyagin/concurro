@@ -1,4 +1,5 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
@@ -39,24 +40,27 @@
 #include <assert.h>
 #include <atomic>
 #include <functional>
+#include "types/exception.h"
 #include "Logging.h"
 #include "RMutex.h"
 #include "SNotCopyable.h"
-#include "SException.h"
 #include "Event.h"
 #include "HasStringView.h"
 
 namespace curr {
 
 /**
- * @defgroup repositories
- * A repository is just a collection with a concurrency.
+ * @addtogroup exceptions
  * @{
  */
 
+//! Exception: repository operation
+struct RepositoryException : virtual std::exception {};
+
 //! Exception: invalid parameters were defined for
 //! creation of a repository object.
-class InvalidObjectParameters : public curr::SException
+struct InvalidObjectParameters : RepositoryException {};
+/*
 {
 public:
   InvalidObjectParameters()
@@ -64,6 +68,28 @@ public:
       "Invalid parameters were defined for creation "
       "of a repository object") {}
 };
+*/
+
+//! Exception: No object with such id exists.
+struct NoSuchId : RepositoryException {};
+
+//! It can be raised, for example, when the repository
+//! is based on Par when calculating the new Id (i.e.,
+//! unordered_map).
+struct IdIsAlreadyUsed : RepositoryException {};
+
+//! Exception: Par::transform_object is not implemented
+struct TransformObjectIsNotImplemented
+  : RepositoryException {};
+
+//! @}
+ 
+
+/**
+ * @defgroup repositories
+ * A repository is just a collection with a concurrency.
+ * @{
+ */
 
 //! Tune a logging
 struct RepositoryLogParams
@@ -123,6 +149,7 @@ public:
   typedef ObjId ObjIdType;
   static const Traits traits;
 
+#if 0
   //! Exception: No object with such id exists.
   class NoSuchId : public SException
   {
@@ -142,22 +169,15 @@ public:
 
     const ObjId id;
   };
+#else
+  //! Exception: curr::NoSuchId descendant for specific
+  //! repository. 
+  struct NoSuchId : curr::NoSuchId {};
+#endif
 
-  //! It can be raised, for example, when the repository
-  //! is based on Par when calculating the new Id (i.e.,
-  //! unordered_map).
-  class IdIsAlreadyUsed : public SException
-  {
-  public:
-    IdIsAlreadyUsed (const ObjId& the_id) 
-      : SException (SFORMAT("The object id [" 
-                     << the_id << "] is used already.")),
-      id (the_id)	 {}
-
-    ~IdIsAlreadyUsed () throw () {}
-
-    const ObjId id;
-  };
+  //! Exception: curr::IdIsAlreadyUsed descendant for
+  //! specific repository. 
+  struct IdIsAlreadyUsed : curr::IdIsAlreadyUsed {};
 
   //! A method for debug dynamic_cast issues
   static bool is_compatible
@@ -538,8 +558,8 @@ class Repository<Obj, Par, std::unordered_map, ObjId>
 public:
   typedef RepositoryBase<Obj, Par, std::unordered_map,
     ObjId> Parent;
-  using Parent::NoSuchId;
-  using Parent::IdIsAlreadyUsed;
+  using typename Parent::NoSuchId;
+  using typename Parent::IdIsAlreadyUsed;
 
   typedef std::unordered_map<ObjId, Obj*> ObjMap;
 
@@ -593,8 +613,8 @@ template<class Obj, class Par, class ObjId>
 public:
   typedef RepositoryBase<Obj, Par, std::map,
     ObjId> Parent;
-  using Parent::NoSuchId;
-  using Parent::IdIsAlreadyUsed;
+  using typename Parent::NoSuchId;
+  using typename Parent::IdIsAlreadyUsed;
 
   typedef std::map<ObjId, Obj*> ObjMap;
   //! Create the repo. initial_value means initial size
@@ -624,7 +644,9 @@ protected:
     ObjId id = param.get_id (oi);
 
     if (this->objects->find(id) != this->objects->end()) {
-      throw typename Parent::IdIsAlreadyUsed (id);
+      throw ::types::exception <
+        typename Parent::IdIsAlreadyUsed
+      > ("The object id [", id, "] is used already.");
     }
 	 
     return id;
@@ -651,9 +673,13 @@ protected:
 /*========== SparkRepository ==========*/
 /*=====================================*/
 
+//! Exception: in SparkRepository
+struct SparkRepositoryException : RepositoryException {};
+
 //! Exception: the param leads to several objects
 //! creation, you should use create_several_objects.
-class SeveralObjects : public curr::SException
+struct SeveralObjects : SparkRepositoryException {};
+#if 0
 {
 public:
   SeveralObjects() 
@@ -661,6 +687,7 @@ public:
       "The param leads to several objects creation, "
       "you should use create_several_objects.") {}
 };
+#endif
 
 /**
  * A repository which replase create_object with
@@ -698,25 +725,7 @@ private:
 /*========= helper templates ==========*/
 /*=====================================*/
 
-#if 0
-/**
- * A repository parameter general template.
- */
-template<class Par, class Object>
-  class GeneralizedPar
-{
-public:
-  virtual Object* create_derivation
-    (const ObjectCreationInfo& oi) const;
-
-  virtual Object* transform_object
-    (const Object*) const
-  { THROW_NOT_IMPLEMENTED; }
-
-};
-#else
 #define STD_DERIVATION(Object)
-#endif
 
 /**
  * A repository member with default universal id
@@ -749,7 +758,7 @@ public:
   virtual std::string object_name() const
   {
     return sformat
-      (curr::type<decltype(*this)>::name(), ':',
+      (::types::type<decltype(*this)>::name(), ':',
        universal_id()); 
   }
 };
@@ -784,7 +793,11 @@ public:
                                                 \
   object* transform_object                      \
   (const object*) const                         \
-  { THROW_NOT_IMPLEMENTED; }
+  {                                             \
+    throw ::types::exception                    \
+      <TransformObjectIsNotImplemented>         \
+        (#object ":transform_object is not implemented"); \
+  }
 
 #define PAR_DEFAULT_VIRTUAL_MEMBERS(object)     \
   virtual ~Par() {}                             \
@@ -795,7 +808,11 @@ public:
                                                 \
   virtual object* transform_object              \
   (const object*) const                         \
-  { THROW_NOT_IMPLEMENTED; }
+  {                                             \
+    throw ::types::exception                    \
+      <TransformObjectIsNotImplemented>         \
+        (#object ":transform_object is not implemented"); \
+  }
 
 #define PAR_DEFAULT_ABSTRACT(object)            \
   virtual ~Par() {}                             \
@@ -805,7 +822,11 @@ public:
                                                 \
   virtual object* transform_object              \
   (const object*) const                         \
-  { THROW_NOT_IMPLEMENTED; }
+  {                                             \
+    throw ::types::exception                    \
+      <TransformObjectIsNotImplemented>         \
+        (#object ":transform_object is not implemented"); \
+  }
 
 #define PAR_DEFAULT_OVERRIDE(ret, object)              \
   virtual ret* create_derivation                       \

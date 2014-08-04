@@ -67,8 +67,8 @@ public:
   AutoRepository()
     : rep(new Rep<std::map>(curr::sformat(
           "AutoRepository<",
-          curr::type<Object>::name(),
-          "[", curr::type<ObjectId>::name(), "]>"),
+          ::types::type<Object>::name(),
+          "[", ::types::type<ObjectId>::name(), "]>"),
           0))
   {
     assert(rep);
@@ -138,8 +138,8 @@ public:
   {
     new AutoRepository(new Rep<Cont>(sformat(
           "AutoRepository<",
-          curr::type<Object>::name(),
-          "[", curr::type<ObjectId>::name(), "]"),
+          ::types::type<Object>::name(),
+          "[", ::types::type<ObjectId>::name(), "]"),
         initial_capacity));
   }
 

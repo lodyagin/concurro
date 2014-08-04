@@ -45,6 +45,8 @@ namespace curr {
  * @{
  */
 
+#ifdef USE_LOG4CXX
+
 #define MUTEX_ACQUIRE(mutex) \
   do { (mutex).acquire(LOG4CXX_LOCATION); } while(0)
 
@@ -59,6 +61,24 @@ namespace curr {
 #define RUNLOCK(mutex) \
   curr::RMutex::Unlock _unlock(mutex, LOG4CXX_LOCATION)
 
+#else
+
+#define MUTEX_ACQUIRE(mutex) \
+  do { (mutex).acquire(); } while(0)
+
+#define MUTEX_RELEASE(mutex) \
+  do { (mutex).release(); } while(0)
+
+/// RAII version of MUTEX_ACQUIRE
+#define RLOCK(mutex) \
+  curr::RMutex::Lock _lock(mutex)
+
+/// RAII version of MUTEX_RELEASE (will acquire the mutex back on destruction)
+#define RUNLOCK(mutex) \
+  curr::RMutex::Unlock _unlock(mutex)
+
+#endif
+
 class RMutex : public SNotCopyable
 {
   friend class RMutexArray;
@@ -70,8 +90,16 @@ public:
   RMutex(const std::string& the_name);
   ~RMutex();
 
-  void acquire(const log4cxx::spi::LocationInfo& debug_location);
-  void release(const log4cxx::spi::LocationInfo& debug_location);
+  void acquire(
+#ifdef USE_LOG4CXX
+    const log4cxx::spi::LocationInfo& debug_location
+#endif
+  );
+  void release(
+#ifdef USE_LOG4CXX
+    const log4cxx::spi::LocationInfo& debug_location
+#endif
+  );
   bool is_locked();
 
   const std::string get_name () const { return name; }
@@ -109,21 +137,25 @@ class RMutex::Lock : public SNotCopyable
 {
 public:
 
-  Lock(const RMutex &,
-//       bool lock = true,
-       const log4cxx::spi::LocationInfo& debug_location = 
-       LOG4CXX_LOCATION);
+  Lock(
+      const RMutex &
+#ifdef USE_LOG4CXX
+    , const log4cxx::spi::LocationInfo& debug_location = 
+        LOG4CXX_LOCATION
+#endif
+  );
   ~Lock();
 
   void acquire();
   void release();
 
 protected:
+#ifdef USE_LOG4CXX
   const log4cxx::spi::LocationInfo location;
+#endif
 
 private:
   RMutex & mutex;
-  //std::atomic<bool> locked;
 };
 
 /// Like RMutex::Lock but do release in the constructor
@@ -132,10 +164,9 @@ class RMutex::Unlock : public SNotCopyable
 {
 public:
 
-  Unlock(const RMutex &, 
-//      bool, ///< dummy parameter to be compatible with RMutex::Lock::Lock
+  Unlock(const RMutex &/*, 
       const log4cxx::spi::LocationInfo& debug_location = 
-          LOG4CXX_LOCATION);
+          LOG4CXX_LOCATION*/);
   ~Unlock();
 
 protected:
@@ -167,29 +198,22 @@ inline RMutex::~RMutex()
   //DeleteCriticalSection(&cs);
 }
 
-inline void RMutex::acquire(const log4cxx::spi::LocationInfo& debug_location)
+inline void RMutex::acquire(
+#ifdef USE_LOG4CXX
+  const log4cxx::spi::LocationInfo& debug_location
+#endif
+)
 {
-  /*  LOG_DEBUG_LOC(log, "try " << get_name() 
-           << ".acquire {",
-           debug_location);
-  */
   mx.lock();
-  /*  LOG_DEBUG_LOC(log, 
-           "} " << get_name() << ".acquire done",
-           debug_location);
-  */
 }
 
-inline void RMutex::release(const log4cxx::spi::LocationInfo& debug_location)
+inline void RMutex::release(
+#ifdef USE_LOG4CXX
+  const log4cxx::spi::LocationInfo& debug_location
+#endif
+)
 {
-  /*  LOG_DEBUG_LOC(log, "try " << get_name() 
-           << ".release {",
-           debug_location);
-  */
   mx.unlock();
-  /*  LOG_DEBUG_LOC(log, "} " << get_name() << ".release done",
-           debug_location);
-  */
 }
 
 inline bool RMutex::is_locked()
@@ -200,58 +224,80 @@ inline bool RMutex::is_locked()
 // RMutex::Lock  =====================================================
 
 inline RMutex::Lock::Lock 
-(const RMutex & m,
-// bool lock,
- const log4cxx::spi::LocationInfo& debug_location
+(const RMutex & m
+#ifdef USE_LOG4CXX
+,const log4cxx::spi::LocationInfo& debug_location
+#endif
 ) 
-:   location (debug_location),
+:   
+#ifdef USE_LOG4CXX
+    location (debug_location),
+#endif
     mutex(const_cast<RMutex &>(m))
 {
-//  if ( lock ) {
-   /*if (wait)
-    mutex.wait ();
-    else*/
-   mutex.acquire(location);
-//  }
+   mutex.acquire(
+#ifdef USE_LOG4CXX
+     location
+#endif
+   );
 }
 
 inline RMutex::Lock::~Lock()
 {
-//  if ( locked ) { 
-   mutex.release(location); 
-//  }
+   mutex.release(
+#ifdef USE_LOG4CXX
+     location
+#endif
+   ); 
 }
 
 inline void RMutex::Lock::acquire()
 {
-//  assert(!locked); // precondition
-  mutex.acquire(location);
-//  locked = true;
+  mutex.acquire(
+#ifdef USE_LOG4CXX
+    location
+#endif
+  );
 }
 
 inline void RMutex::Lock::release()
 {
-//  assert(locked); // precondition
-  mutex.release(location);
-//  locked = false;
+  mutex.release(
+#ifdef USE_LOG4CXX
+    location
+#endif
+  );
 }
 
 
-// RMutex::Unlock  ===================================================
+// RMutex::Unlock  ========================================
 
-inline RMutex::Unlock::Unlock
-(const RMutex & m, //bool,
- const log4cxx::spi::LocationInfo& debug_location
+inline RMutex::Unlock::Unlock(
+    const RMutex & m
+#ifdef USE_LOG4CXX
+  , const log4cxx::spi::LocationInfo& debug_location
+#endif
   ) 
-: location(debug_location),
+: 
+#ifdef USE_LOG4CXX
+  location(debug_location),
+#endif
   mutex(const_cast<RMutex &>(m))
 {
-  mutex.release(location);
+  mutex.release(
+#ifdef USE_LOG4CXX
+    location
+#endif
+  );
 }
 
 inline RMutex::Unlock::~Unlock()
 {
-  mutex.acquire(location);
+  mutex.acquire(
+#ifdef USE_LOG4CXX
+    location
+#endif
+  );
 }
 
 //! @}

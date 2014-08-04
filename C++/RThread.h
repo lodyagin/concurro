@@ -1,4 +1,5 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
@@ -47,12 +48,22 @@
 namespace curr {
 
 /**
+ * @addtogroup exceptions
+ * @{
+ */
+
+struct RThreadException : std::exception {};
+
+//! @}
+
+
+/**
  * @defgroup threads
  * Threads.
  * @{
  */
 
-class ThreadAxis;
+struct ThreadAxis;
 
 //! An ancestor of all states of a thread.
 DECLARE_AXIS(ThreadAxis, StateAxis);
@@ -82,7 +93,7 @@ class RThreadBase
   public HasStringView,
   public RObjectWithEvents<ThreadAxis>
 {
-  friend class ThreadAxis;
+  friend struct ThreadAxis;
 
   DECLARE_EVENT(ThreadAxis, starting);
   DECLARE_EVENT(ThreadAxis, terminated);
@@ -184,8 +195,7 @@ public:
   }
 
 
-  // Overrides
-  void outString (std::ostream& out) const;
+  void outString (std::ostream& out) const override;
   
   //! @cond
   DECLARE_STATES(ThreadAxis, ThreadState);
@@ -196,7 +206,7 @@ public:
   DECLARE_STATE_CONST(ThreadState, cancelled);
   //! @endcond
 
-  void state (ThreadState& state) const /* overrides */;
+  //void state(ThreadState& state) const;
 
   //! @cond
   DEFAULT_LOGGER(RThreadBase);
@@ -223,8 +233,7 @@ protected:
   //! critical objects prior to _run() exit).
   void destroy();
 
-  /* overrides */
-  void set_state_internal (const ThreadState& state);
+  //void set_state_internal(const ThreadState& state);
 
   void log_from_constructor ();
 
@@ -252,7 +261,7 @@ typedef RThreadBase::ThreadState RThreadState;
 
 /*
   It can be started and stoped only once, like Java
-  thread.  SException will be raised if we try to start
+  thread. An exception will be raised if we try to start
   several times.  */
 
 /**
@@ -298,7 +307,8 @@ public:
     RThreadBase* transform_object
       (const RThreadBase*) const
     { 
-      THROW_NOT_IMPLEMENTED; 
+      throw ::types::exception
+        <TransformObjectIsNotImplemented>();
     }
 
     std::thread::native_handle_type get_id(
@@ -340,10 +350,11 @@ public:
 
   ~RThread() 
   { 
-    // every descendant must call destroy() in its
-    // destructor. 
     if (!destructor_delegate_is_called)
-      THROW_PROGRAM_ERROR;
+      LOG_FATAL(log,
+        "Eevery descendant "
+        "must call destroy() in its destructor"
+      );
 
     th->join(); 
   }
@@ -389,7 +400,9 @@ public:
     if (!(main_thread_id == std::thread::id()
           || main_thread_id == std::this_thread::get_id()
           ))
-      THROW_PROGRAM_ERROR; // already set
+      throw ::types::exception<RThreadException>
+        ("this_is_main_thread() was called already");
+
     main_thread_id = std::this_thread::get_id();
   }
 

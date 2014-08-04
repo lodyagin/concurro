@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -30,9 +30,10 @@
 #ifndef CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 #define CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 
-#include <typeinfo>
-#include <type_traits>
-#include "SCommon.h"
+//#include <typeinfo>
+//#include <type_traits>
+#include "types/typeinfo.h"
+//#include "SCommon.h"
 #include "StateAxis.h"
 #include "Event.h"
 
@@ -128,10 +129,10 @@ public:
   virtual ~ObjectWithStatesInterface() {}
 
   //! The default implementation returns just
-  //! curr::type<*this>::name(). 
+  //! ::types::type<*this>::name(). 
   virtual std::string object_name() const
   {
-    return curr::type<decltype(*this)>::name();
+    return ::types::type<decltype(*this)>::name();
   }
 };
 

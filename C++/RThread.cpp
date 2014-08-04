@@ -31,7 +31,7 @@
 #include "Logging.h"
 #include "RThread.hpp"
 #include "RThreadRepository.hpp"
-#include "SShutdown.h"
+//#include "SShutdown.h"
 #include "REvent.hpp"
 #include "RState.hpp"
 
@@ -238,10 +238,11 @@ RThreadBase::~RThreadBase()
             << RThread<std::thread>::current_pretty_id()
             << ">\t ~RThreadBase");
   if (!destructor_delegate_is_called)
-    THROW_PROGRAM_ERROR;
-  // must be called from desc. destructors
+    LOG_FATAL(
+      log, 
+      "destroy() must be called from desc. destructor"
+    );
 }
-
 
 void RThreadBase::destroy()
 {
@@ -275,10 +276,12 @@ void RThreadBase::_run()
   {
     run();
   }
+#if 0
   catch ( XShuttingDown & )
   {
     // Do nothing - execution is finished
   }
+#endif
   catch ( std::exception & x )
   {
     // TODO make an additional state

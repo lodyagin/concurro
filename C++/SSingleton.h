@@ -33,6 +33,7 @@
 #define CONCURRO_SSINGLETON_H_
 
 #include <thread>
+#include "types/typeinfo.h"
 #include "Existent.h"
 #include "ConstructibleObject.h"
 #include "Event.h"
@@ -53,14 +54,14 @@ DECLARE_AXIS(SingletonAxis, ExistenceAxis);
  * tries get an SSingleton instance when no one copy of
  * SSingleton<T> exists.
  */ 
-class NotExistingSingleton;
+struct NotExistingSingleton;
 
 /** 
  * @class MustBeSingleton
  * An exception raised when somebody tries create more
  * than once instance of SSingleton.
  */ 
-class MustBeSingleton;
+struct MustBeSingleton;
 
 template<class T, int wait_m>
 class SSingleton;
@@ -175,7 +176,7 @@ protected:
   static Event is_complete()
   {
     static Event* is_complete_event = new Event
-      (sformat(type<SSingleton<T, wait_m>>::name(),
+     (sformat(::types::type<SSingleton<T, wait_m>>::name(),
                ":is_complete()::is_complete_event"), 
        true, false);
     // prevent infinit loop in RThreadRepository::current

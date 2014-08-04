@@ -126,8 +126,8 @@ void RMixedAxis<Axis, Axis2>
                  "thread " 
                  << RThread<std::thread>::current_pretty_id()
                  << ">\t object " << obj.object_name()
-                 << ">\t axis " << curr::type<Axis>::name()
-                 << "/" << curr::type<Axis2>::name()
+                 << ">\t axis " << ::types::type<Axis>::name()
+                 << "/" << ::types::type<Axis2>::name()
                  << ">\tmove_to:\t "
                  << UniversalState(from).name()
                  << std::hex << " (0x" << from
@@ -183,8 +183,8 @@ bool RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << curr::type<Axis>::name()
-            << "/" << curr::type<Axis2>::name()
+            << ">\t axis " << ::types::type<Axis>::name()
+            << "/" << ::types::type<Axis2>::name()
             << ">\tcompare_and_move:\t "
             << UniversalState(expected).name()
             << std::hex << " (0x" << (uint32_t) from
@@ -235,8 +235,8 @@ bool RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << curr::type<Axis>::name()
-            << "/" << curr::type<Axis2>::name()
+            << ">\t axis " << ::types::type<Axis>::name()
+            << "/" << ::types::type<Axis2>::name()
             << ">\tcompare_and_move:\t "
             << UniversalState(from).name()
             << std::hex << " (0x" << from
@@ -294,8 +294,8 @@ auto RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << curr::type<Axis>::name()
-            << "/" << curr::type<Axis2>::name()
+            << ">\t axis " << ::types::type<Axis>::name()
+            << "/" << ::types::type<Axis2>::name()
             << ">\tcompare_and_move:\t "
             << UniversalState(from).name()
             << std::hex << " (0x" << from
@@ -346,8 +346,8 @@ bool RMixedAxis<Axis, Axis2>
             "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t object " << obj.object_name()
-            << ">\t axis " << curr::type<Axis>::name()
-            << "/" << curr::type<Axis2>::name()
+            << ">\t axis " << ::types::type<Axis>::name()
+            << "/" << ::types::type<Axis2>::name()
             << ">\tneg_compare_and_move:\t "
             << UniversalState(from_).name()
             << std::hex << " (0x" << from_
@@ -449,7 +449,7 @@ void RMixedAxis<Axis, Axis2>
       const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
       . current_state(Axis2::self()) . load();
 
-    throw InvalidState(current, expected);
+    throw_invalid_state(current, expected);
   }
 }
 
@@ -467,8 +467,10 @@ void RMixedAxis<Axis, Axis2>
       const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
       . current_state(Axis2::self()) . load();
 
-    throw InvalidState(current, 
-                       "expected a state from a set");
+    throw ::types::exception(
+      InvalidState(current),
+      "expected a state from a set"
+    );
   }
 }
 
@@ -539,7 +541,7 @@ std::atomic<StateMapId>StateMapInstance<Axis>:: id;
 
 //! Wait is_from_event then perform 
 //! RMixedAxis<Axis,Axis2>::compare_and_move 
-template<class T, class Axis2 = typename T::axis>
+template<class T, class Axis2/* = typename T::axis*/>
 void wait_and_move
   (T& obj, 
    const REvent<typename T::State::axis>& is_from_event,
@@ -563,7 +565,7 @@ void wait_and_move
      <RState<typename T::State::axis>>& from_set,
    const CompoundEvent& is_from_event,
    const RState<typename T::State::axis>& to,
-   int wait_m = -1)
+   int wait_m/* = -1*/)
 {
   do { 
     CURR_WAIT_L(obj.logger(), is_from_event, wait_m);

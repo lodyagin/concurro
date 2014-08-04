@@ -27,6 +27,7 @@
  * @author Sergei Lodyagin
  */
 
+#include "types/exception.h"
 #include "Logging.h"
 #include "Event.h"
 #include "SCheck.h"
@@ -39,6 +40,22 @@ using namespace neosmart;
 #include "SSingleton.hpp"
 
 namespace curr {
+
+[[noreturn]] void EventWaitingTimedOut::raise()
+{
+  throw ::types::exception(
+    *this,
+    "Event waiting timed out after ", msecs," milliseconds"
+  );
+}
+
+[[noreturn]] void AutoresetInCompound::raise()
+{
+  throw ::types::exception<AutoresetInCompound>(
+    "Unable to have an autoreset event "
+    "as a member of a CompoundEvent"
+  );
+}
 
 // EvtBase  ===============================================
 
@@ -184,19 +201,22 @@ bool EvtBase::wait_impl(int time) const
   return true;
 }
 
-void EvtBase::wait(int time, const ThrowSException& te)
+void EvtBase::wait(
+  int time, 
+  const EventWaitingTimedOut&
+)
 { 
   if (!wait(time))
-    te.raise(EventWaitingTimedOut(time));
+    EventWaitingTimedOut(time).raise();
 }
 
 void EvtBase::wait(
   int time, 
-  const ThrowSException& te
+  const EventWaitingTimedOut&
 ) const 
 { 
   if (!wait(time))
-    te.raise(EventWaitingTimedOut(time));
+    EventWaitingTimedOut(time).raise();
 }
 
 bool EvtBase::wait(int time) const
@@ -252,19 +272,20 @@ CompoundEvent::CompoundEvent(const CompoundEvent& e)
 
 CompoundEvent::CompoundEvent(const Event& e)
   : handle_set{e}, vector_need_update(true)
-  {
-    if (!e.is_manual())
-      THROW_EXCEPTION(AutoresetInCompound);
-  }
+{
+  if (!e.is_manual())
+    AutoresetInCompound().raise();
+}
 
-CompoundEvent::CompoundEvent
-(std::initializer_list<Event> evs)
+CompoundEvent::CompoundEvent(
+  std::initializer_list<Event> evs
+)
   : vector_need_update(evs.size() > 0)
 {
   for (const Event& e : evs) {
     handle_set.insert(e);
     if (!e.is_manual())
-      THROW_EXCEPTION(AutoresetInCompound);
+      AutoresetInCompound().raise();
   }
 }
 
@@ -306,7 +327,7 @@ const CompoundEvent& CompoundEvent
   handle_set.insert(e);
   vector_need_update = true;
   if (!e.is_manual())
-    THROW_EXCEPTION(AutoresetInCompound);
+    AutoresetInCompound().raise();
   return *this;
 }
 
@@ -349,20 +370,20 @@ bool CompoundEvent::signalled() const
 
 void CompoundEvent::wait(
   int time, 
-  const ThrowSException& te
+  const EventWaitingTimedOut&
 )
 {
   if (!wait(time))
-    te.raise(EventWaitingTimedOut(time));
+    EventWaitingTimedOut(time).raise();
 }
 
 void CompoundEvent::wait(
   int time, 
-  const ThrowSException& te
+  const EventWaitingTimedOut&
 ) const
 {
   if (!wait(time))
-    te.raise(EventWaitingTimedOut(time));
+    EventWaitingTimedOut(time).raise();
 }
 
 bool CompoundEvent::wait_impl(int time) const

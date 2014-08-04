@@ -13,16 +13,16 @@ set(TestsSrc
   EventCU.cpp
   ExistentCU.cpp
   ProcessCU.cpp
-  RBufferCU.cpp
-  RConnectionCU.cpp
+#  RBufferCU.cpp
+#  RConnectionCU.cpp
   REventCU.cpp
-  RHolderCU.cpp
-  RMutexCU.cpp
-  RSignalCU.cpp
-  RSocketCU.cpp
+#  RHolderCU.cpp
+#  RMutexCU.cpp
+#  RSignalCU.cpp
+#  RSocketCU.cpp
   RStateCU.cpp
   RThreadCU.cpp
-  RWindowCU.cpp
+#  RWindowCU.cpp
   RepositoryCU.cpp
   SCommonCU.cpp
   SSingletonCU.cpp

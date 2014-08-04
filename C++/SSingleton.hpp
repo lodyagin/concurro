@@ -32,6 +32,7 @@
 
 #include <list>
 #include <boost/lockfree/stack.hpp>
+#include "types/exception.h"
 #include "Logging.h"
 #include "SSingleton.h"
 #include "RMutex.h"
@@ -40,27 +41,40 @@
 
 namespace curr {
 
+/**
+ * @addtogroup exceptions
+ * @{
+ */
+
+struct SingletonException : std::exception {};
+
 //! Exception: somebody tries to get an
 //! SSingleton::instance() when no one is available
-class NotExistingSingleton : public curr::SException
+struct NotExistingSingleton : SingletonException
 {
+#if 0
 public:
   NotExistingSingleton()
     : curr::SException("Somebody tries to get "
                        "an SSingleton::instance() when "
                        "no one is available") {}
+#endif
 };
 
 //! Exception: somebody tries to create more than one
 //! SSingleton instance
-class MustBeSingleton : public curr::SException
+struct MustBeSingleton : SingletonException
 {
+#if 0
 public:
   MustBeSingleton()
     : curr::SException(
       "Somebody tries to create more than one "
       "SSingleton instance") {}
+#endif
 };
+
+//! @}
 
 // SingletonStateHook
 
@@ -94,9 +108,13 @@ void SingletonStateHook<T, wait_m>::operator()
         SSingleton<T, wait_m>::TheClass::exist_oneFun()
         // <NB> the singleton constructor will be failed
         ))
-      THROW_EXCEPTION(MustBeSingleton);
+      throw ::types::exception<MustBeSingleton>(
+        "Somebody tries to create more than one "
+        "SSingleton instance"
+      );
     else
-      THROW_PROGRAM_ERROR; // check the state design if
+      throw ::types::exception<SingletonException>
+        ("Program error"); // check the state design if
                            // you get it
   }
 }

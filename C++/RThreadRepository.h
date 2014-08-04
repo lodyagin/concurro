@@ -99,34 +99,38 @@ public:
   virtual void wait_subthreads ();
   virtual void cancel_subthreads ();
 
-  //! It overrides RThreadFactory::create_thread
-  RThreadBase* create_thread (const RThreadBase::Par& par)
+  RThreadBase* create_thread(const RThreadBase::Par& par) 
+    override
   {
     return Parent::create_object
       (dynamic_cast<const Par&>(par));
   }
 
-  //! It overrides RThreadFactory::delete_thread
-  void delete_thread
-    (RThreadBase* thread, bool freeMemory = true)
+  void delete_thread(
+    RThreadBase* thread, 
+    bool freeMemory = true
+  ) override
   {
     delete_object(dynamic_cast<Thread*>(thread), 
                   freeMemory);
   }
 
-  // Overrides
-  void delete_object(Thread* thread, bool freeMemory);
+  void delete_object(Thread* thread, bool freeMemory) 
+    override;
 
-  // Overrides
-  void delete_object_by_id(ThreadId id, bool freeMemory);
+  void delete_object_by_id(
+    const ThreadId& id, 
+    bool freeMemory
+  ) override;
 
-  // Overrides
-  Thread* replace_object(ThreadId id,const Par& param,
-                         bool freeMemory)
+  Thread* replace_object(
+    const ThreadId& id,
+    const Par& param,
+    bool freeMemory
+  ) override
   {
-    THROW_EXCEPTION
-      (SException,
-       "replace_object is not implemented for threads.");
+    throw ::types::exception<RThreadException>
+      ("replace_object is not implemented for threads.");
   }
 
 protected:

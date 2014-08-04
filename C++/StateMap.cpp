@@ -102,6 +102,7 @@ operator<< (std::ostream& out, const UniversalEvent& ue)
   return out;
 }
 
+#if 0
 InvalidState::InvalidState(UniversalState current,
                            UniversalState expected)
   : SException
@@ -115,6 +116,7 @@ InvalidState::InvalidState(UniversalState st,
   : SException(msg),
     state(st)
 {}
+#endif
 
 NoStateWithTheName::NoStateWithTheName
 (const std::string& name, 

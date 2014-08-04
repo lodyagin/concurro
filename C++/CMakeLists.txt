@@ -16,36 +16,36 @@ add_subdirectory(tests)
 
 #project (concurrent)
 set (concurrent_SOURCES 
-  ClientSocket.cpp
-  ConstructibleObject.cpp
-  Enum.cpp
+#  ClientSocket.cpp
+#  ConstructibleObject.cpp
+#  Enum.cpp
   Event.cpp
   Existent.cpp
   HasStringView.cpp
-  InSocket.cpp
-  ListeningSocket.cpp
+#  InSocket.cpp
+#  ListeningSocket.cpp
   Logging.cpp
-  ObjectWithLogging.cpp
-  OutSocket.cpp
+#  ObjectWithLogging.cpp
+#  OutSocket.cpp
   Process.cpp
-  RBuffer.cpp
-  RHolder.cpp
-  RMutex.cpp
+#  RBuffer.cpp
+#  RHolder.cpp
+#  RMutex.cpp
   RObjectWithStates.cpp
-  RSocket.cpp
-  RSocketAddress.cpp
-  RSocketConnection.cpp
+#  RSocket.cpp
+#  RSocketAddress.cpp
+#  RSocketConnection.cpp
   RThread.cpp
   RThreadRepository.cpp
-  RWindow.cpp
+#  RWindow.cpp
   SCommon.cpp
-  ServerSocket.cpp
-  SException.cpp
-  SShutdown.cpp
+#  ServerSocket.cpp
+#  SException.cpp
+#  SShutdown.cpp
   SSingleton.cpp
   StateAxis.cpp
   StateMap.cpp
-  TCPSocket.cpp
+#  TCPSocket.cpp
 )
 
 #include_directories(/usr/local/lib/boost_1_53_0)

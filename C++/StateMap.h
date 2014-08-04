@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -35,8 +36,8 @@
 #include <vector>
 #include <initializer_list>
 #include <boost/multi_array.hpp>
+#include "types/exception.h"
 #include "HasStringView.h"
-#include "SException.h"
 #include "SCheck.h"
 #include "Repository.h"
 
@@ -72,49 +73,65 @@ template<class Axis, class DerivedAxis>
 //! @addtogroup exceptions
 //! @{
 
-class InvalidState : public SException
+struct StateMapException : std::exception {};
+
+struct InvalidState : StateMapException
 {
-public:
-  InvalidState(UniversalState current,
-               UniversalState expected);
-  InvalidState(UniversalState st,
-               const std::string& msg);
+  InvalidState(UniversalState st) : state(st) {}
   const UniversalState state;
 };
 
-class InvalidStateTransition 
-: public InvalidState
+[[noreturn]] inline void throw_invalid_state(
+  UniversalState current,
+  UniversalState expected
+)
 {
-public:
+  using namespace ::types;
+
+  const auto_string<28> currentName = current.name();
+  const auto_string<28> expectedName = expected.name();
+
+  throw ::types::exception(
+    InvalidState(current),
+    "Invalid state [", currentName, "] when expected [",
+    expectedName, "]"
+  );
+}
+
+struct InvalidStateTransition : InvalidState
+{
   InvalidStateTransition 
     (UniversalState from_, 
      UniversalState to_)
     : InvalidState
-    (to_, SFORMAT("Invalid state transition from ["
-                  << from_ << "] to [" << to_ << "].")) ,
+    (to_/*, SFORMAT("Invalid state transition from ["
+                  << from_ << "] to [" << to_ << "].")*/),
     from(from_), to(to_)
   {}
 
   UniversalState from, to;
 };
 
-class NoStateWithTheName : public SException
+struct NoStateWithTheName : StateMapException
 {
-public:
+#if 0
   NoStateWithTheName(const std::string& name, 
                      const StateMap* map);
+#endif
 };
 
 /**
  * Exception: two states are incompatible on StateMap
  * level (when try to use in some operation).
  */
-class IncompatibleMap : public SException
+struct IncompatibleMap : StateMapException
 {
+#if 0
 public:
   IncompatibleMap ()
     : SException ("Incompatible map")
   {}
+#endif
 };
 
 //! @}
@@ -153,7 +170,10 @@ public:
 
   virtual StateMap* transform_object
     (const StateMap*) const
-  { THROW_NOT_IMPLEMENTED; }
+  { 
+    throw ::types::exception
+      <TransformObjectIsNotImplemented>();
+  }
 
   virtual StateMapId get_id
     (ObjectCreationInfo& oi) const = 0;
@@ -176,7 +196,7 @@ public:
     )
     : StateMapParBase
         (states, transitions, parent_map_, 
-         curr::type<Axis>::name())
+         ::types::type<Axis>::name())
   {}
 
   StateMapId get_id(ObjectCreationInfo& oi) const;
@@ -193,8 +213,9 @@ class StateMap : public HasStringView,
   friend class StateMapParBase;
   friend class StateMapRepository;
 public:
-  class BadParameters : public SException
+  struct BadParameters : StateMapException
   {
+#if 0
   public:
     BadParameters ()
       : SException ("Bad initialization parameters")
@@ -205,6 +226,7 @@ public:
       (std::string ("Bad initialization parameters: ")
        + str)
     {}
+#endif
   };
 
   // Return the number of states in the map.
@@ -242,8 +264,7 @@ public:
     return parent == nullptr;
   }
 
-  // overrides
-  void outString (std::ostream& out) const;
+  void outString (std::ostream& out) const override;
 
   const std::string& universal_id() const
   {

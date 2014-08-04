@@ -31,19 +31,21 @@
 #define CONCURRO_REVENT_HPP_
 
 #include <algorithm>
+#include <exception>
 #include "REvent.h"
 #include "RState.h"
-#include "SException.h"
 
 namespace curr {
 
   //! Exception: Need an arrival event type here
-class UniversalEvent::NeedArrivalType: public SException
+struct UniversalEvent::NeedArrivalType : std::exception
 {
+#if 0
 public:
   NeedArrivalType()
     : SException
       ("Need an arrival event type here") {}
+#endif
 };
 
 

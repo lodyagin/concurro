@@ -41,7 +41,6 @@
 #include <atlbase.h>
 #else
 #include <errno.h>
-#include <cxxabi.h>
 #define __declspec(x)
 #define __stdcall
 #define INVALID_SOCKET (-1)
@@ -62,33 +61,6 @@ namespace curr {
 #else
 #  define _T
 #endif
-
-//! Return the demangled Type name
-template<class Type>
-struct type
-{
-  static std::string name()
-  {
-#ifndef _WIN23
-    // Demangle the name by the ABI rules
-    int status;
-    const char* mangled = typeid(Type).name();
-    char* name = abi::__cxa_demangle
-      (mangled, nullptr, nullptr, &status);
-    if (status == 0) {
-      std::string res(name);
-      free(name);
-      return res;
-    }
-    else {
-      assert(name == nullptr);
-      return std::string(mangled);
-    }
-#else
-    return typeid(Type).name();
-#endif
-  }
-};
 
 // cut out not more than maxCount chars that equal to passed one. If maxCount == -1 then cut out all
 std::string trimLeft(const std::string &, char = ' ', int maxCount =
@@ -255,7 +227,7 @@ std::string sFormatVaA(const std::string & format, va_list list);
    << sWinErrMsg (sysErr) << "' has occured (#" << sysErr << ")."))
 
 #if 0
-// throws std::logic_error, formating string first
+// throws std::exception, formating string first
 __declspec(noreturn)void sThrow(const wchar_t * format, ...);
 #endif
 

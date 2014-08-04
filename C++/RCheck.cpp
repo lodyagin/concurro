@@ -32,6 +32,24 @@
 
 namespace curr {
 
+[[noreturn]] void RSystemError::raise(int err_code)
+{
+  throw ::types::exception(
+    RSystemError(err_code),
+    "System error : ", rErrorMsg(err_code), " "
+  );
+}
+
+[[noreturn]] void RSocketError::raise(int err_code)
+{
+  throw ::types::exception(
+    RSocketError(err_code),
+    "Socket error : ", rErrorMsg(err_code), " "
+  );
+}
+
+
+
 void sWinCheck (BOOL ok)
 {
   sWinCheck (ok, L"");

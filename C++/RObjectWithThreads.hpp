@@ -31,6 +31,7 @@
 #define CONCURRO_ROBJECTWITHTHREADS_HPP_
 
 #include <memory>
+#include "types/typeinfo.h"
 #include "RObjectWithThreads.h"
 #include "RThreadRepository.h"
 #include "SCheck.h"
@@ -47,7 +48,7 @@ RObjectWithThreads<Object>
     LOG_DEBUG(log, "push " << par->par_num 
       << '(' << par->thread_name << ')'
       << " par to " 
-      << curr::type<Object>::name());
+      << ::types::type<Object>::name());
     threads_pars.push(
       std::unique_ptr<ThreadPar>(par));
   }
@@ -128,7 +129,7 @@ void RObjectWithThreads<Object>
       }
       catch(const EventWaitingTimedOut&) {
         LOG_WARN(log, 
-          type<RObjectWithThreads>::name()
+          ::types::type<RObjectWithThreads>::name()
           << ": still waiting thread " 
           << (*th_it)->pretty_id() 
           << " terminal state"

@@ -57,7 +57,7 @@ public:
   enum { Mask = 0x8000 };
 
   //! Exception: Need an arrival event type here
-  class NeedArrivalType;
+  struct NeedArrivalType;
 
   //! Whether this event is of an 'arrival' and not
   //! 'transitional' type.

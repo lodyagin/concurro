@@ -30,7 +30,7 @@
 #ifndef CONCURRO_EVENT_H
 #define CONCURRO_EVENT_H
 
-//#include "SCheck.h"
+#include <utility>
 #include "ObjectWithLogging.h"
 #ifndef _WIN32
 #define WFMO
@@ -42,11 +42,37 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <vector>
 #include <set>
 #include <memory>
+#include <exception>
 #include <assert.h>
 
 #define SHUTDOWN_UNIMPL
 
 namespace curr {
+
+/**
+ * @addtogroup exceptions
+ * @{
+ */
+
+struct EventException : std::exception {};
+
+struct EventWaitingTimedOut : EventException 
+{
+  const int msecs;
+  EventWaitingTimedOut(int ms) : msecs(ms) {}
+  [[noreturn]] void raise();
+};
+
+struct CompoundEventException : EventException {};
+
+/**
+ * Exception: unable to have an autoreset event 
+ * as a member of CompoundEvent.
+ */
+struct AutoresetInCompound : CompoundEventException
+{
+  [[noreturn]] void raise();
+};
 
 /**
  * @defgroup events
@@ -55,17 +81,16 @@ namespace curr {
  * @{
  */
 
-#define CURR_WAIT_L(logger, evt, time) \
-  do { (evt).wait((time), curr::ThrowSException \
-       (logger, LOG4CXX_LOCATION)); } while(false)
+#define CURR_WAIT_L(logger, evt, time)          \
+  do { (evt).wait((time),                       \
+       std::declval<curr::EventWaitingTimedOut>() \
+       ); } while(false)
 
 //! Call a timed event waiting which can throw
 //! EventWaitingTimedOut with the location equal to the
 //! macro substitution line.
 #define CURR_WAIT(evt, time) \
   CURR_WAIT_L(log::s_logger(), evt, time)
-
-class ThrowSException;
 
 class EventInterface : public ObjectWithLogging
 {
@@ -92,7 +117,10 @@ public:
   
   //! Wait for event or time in msecs. 
   //! @throw EventWaitingTimedOut
-  virtual void wait(int time, const ThrowSException&) = 0;
+  virtual void wait(
+    int time, 
+    const EventWaitingTimedOut&
+  ) = 0;
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.
@@ -100,8 +128,10 @@ public:
 
   //! Wait for event or time in msecs. 
   //! @throw EventWaitingTimedOut
-  virtual void wait(int time, const ThrowSException&) 
-    const = 0;
+  virtual void wait(
+    int time, 
+    const EventWaitingTimedOut&
+  ) const = 0;
 
   virtual bool signalled() const = 0;
 };
@@ -124,14 +154,14 @@ public:
     return wait_impl(time); 
   }
 
-  void wait(int time, const ThrowSException& te) override;
+  void wait(int time, const EventWaitingTimedOut&) override;
 
   //! Wait for event or time in msecs. This is a const
   //! version  - for manual-reset events only.
   //! \return false on timeout.
   bool wait(int time = -1) const;
 
-  void wait(int time, const ThrowSException& te) const 
+  void wait(int time, const EventWaitingTimedOut&) const 
     override;
 
   void set();
@@ -219,7 +249,7 @@ public:
     return evt_ptr->wait(time); 
   }
 
-  void wait(int time, const ThrowSException& te) 
+  void wait(int time, const EventWaitingTimedOut& te) 
     override
   { 
     evt_ptr->wait(time, te); 
@@ -232,8 +262,8 @@ public:
     return evt_ptr->wait(time); 
   }
 
-  void wait(int time, const ThrowSException& te) const 
-    override
+  void wait(int time, const EventWaitingTimedOut& te) 
+    const override
   {
     evt_ptr->wait(time, te); 
   }
@@ -336,9 +366,9 @@ public:
     return wait_impl(time);
   }
 
-  void wait(int time, const ThrowSException& te) override;
+  void wait(int time, const EventWaitingTimedOut&) override;
 
-  void wait(int time, const ThrowSException& te) const
+  void wait(int time, const EventWaitingTimedOut&) const
     override;
 
   bool signalled() const override;

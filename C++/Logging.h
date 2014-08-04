@@ -285,7 +285,7 @@ struct logger_name
   static std::string name()
   {
     using namespace std;
-    string s = type<Type>::name();
+    string s = ::types::type<Type>::name();
     size_t start = 0;
     while((start = s.find("::", start)) != string::npos) 
     {

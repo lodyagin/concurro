@@ -32,11 +32,15 @@
 
 #include <exception>
 #include <ostream>
-#include <log4cxx/logger.h>
-#include <log4cxx/spi/location/locationinfo.h>
+#ifdef USE_LOG4CXX
+#  include <log4cxx/logger.h>
+#  include <log4cxx/spi/location/locationinfo.h>
+#endif
 #include "Logging.h"
 #include "SCommon.h"
 #include "HasStringView.h"
+
+#error Deprecated
 
 namespace curr {
 
@@ -185,8 +189,8 @@ public:
   BadCast(const Source& src)
     : BadCastBase
         (sformat("Bad cast of a value of type ",
-                 curr::type<Source>::name(),
-                 "to ", curr::type<Target>::name())),
+                 ::types::type<Source>::name(),
+                 "to ", ::types::type<Target>::name())),
       source(src)
   {}
 
