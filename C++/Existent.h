@@ -134,7 +134,7 @@ public:
       return CompoundEvent();
     }
 
-    log4cxx::LoggerPtr logger() const override
+    logging::LoggerPtr logger() const override
     {
       return nullptr; // disable logging to prevent
                       // a deadlock

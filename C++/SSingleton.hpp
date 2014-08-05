@@ -46,7 +46,7 @@ namespace curr {
  * @{
  */
 
-struct SingletonException : std::exception {};
+struct SingletonException : virtual std::exception {};
 
 //! Exception: somebody tries to get an
 //! SSingleton::instance() when no one is available

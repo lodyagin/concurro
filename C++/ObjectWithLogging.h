@@ -30,7 +30,7 @@
 #ifndef CONCURRO_OBJECTWITHLOGGING_H_
 #define CONCURRO_OBJECTWITHLOGGING_H_
 
-#include <log4cxx/logger.h>
+#include "Logger.h"
 
 namespace curr {
 
@@ -47,7 +47,7 @@ public:
   //! It should be overriden. The default implementation
   //! is for logging from constructors to prevent a pure
   //! virtual function call.
-  virtual log4cxx::LoggerPtr logger() const;
+  virtual logging::LoggerPtr logger() const;
 };
 
 //! @}

@@ -34,8 +34,10 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#ifdef USE_LOG4CXX
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/properties.h>
+#endif
 #include "Logging.h"
 #include "SCheck.h"
 #include "SSingleton.hpp"
@@ -58,11 +60,12 @@ LogBase::LogBase (const std::string& szName)
    // than once
    Init ();
   }
-  logger = log4cxx::Logger::getLogger(szName.c_str());
+  logger = logging::Logger::getLogger(szName.c_str());
 }
 
 void LogBase::Init()
 {
+#ifdef USE_LOG4CXX
   try 
   {
 #ifdef _WIN32
@@ -142,6 +145,7 @@ void LogBase::Init()
    */
    log4cxx::PropertyConfigurator::configure(p);
   }
+#endif
 }
 
 template class Logger<LOG::Root>;

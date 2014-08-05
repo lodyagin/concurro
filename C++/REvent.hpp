@@ -38,7 +38,7 @@
 namespace curr {
 
   //! Exception: Need an arrival event type here
-struct UniversalEvent::NeedArrivalType : std::exception
+struct UniversalEvent::NeedArrivalType : virtual std::exception
 {
 #if 0
 public:

@@ -78,6 +78,16 @@ NoSuchStateInMap::NoSuchStateInMap(
   );
 }
 
+[[noreturn]] void NoStateWithTheName::raise() const
+{
+  using namespace ::types;
+  throw ::types::exception(
+    *this,
+    "No state with the name [", 
+    limit_tail<20>(the_name),
+    "] in the map ", limit_head<30>(the_map->pretty_id())
+  );
+}
 
 UniversalState::UniversalState
   (const StateMap* new_map, uint32_t st)
@@ -136,7 +146,7 @@ UniversalEvent::operator UniversalState() const
   if (is_arrival_event())
     return UniversalState(as_state_of_arrival()).name();
   else
-    return "<todo>";
+    return ::types::constexpr_string("<todo>");
 }
 
 std::ostream&
@@ -145,31 +155,6 @@ operator<< (std::ostream& out, const UniversalEvent& ue)
   out << ue.name();
   return out;
 }
-
-#if 0
-InvalidState::InvalidState(UniversalState current,
-                           UniversalState expected)
-  : SException
-    (SFORMAT("Invalid state [" << current
-             << "] when expected [" << expected << "]")),
-    state(current)
-{}
-
-InvalidState::InvalidState(UniversalState st,
-                           const std::string& msg)
-  : SException(msg),
-    state(st)
-{}
-
-NoStateWithTheName::NoStateWithTheName
-(const std::string& name, 
- const StateMap* map)
-  : 
-  SException (SFORMAT(
-                "No state with the name [" << name << "]"
-                << " in the map " << map->pretty_id()))
-{}
-#endif
 
 StateMap* StateMapParBase::create_derivation
 (const ObjectCreationInfo& oi) const
@@ -233,7 +218,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   n_states(par.states.size()
            + parent->get_n_states()
     ),
-  name2idx(n_states * 2 + 2),
+  //name2idx(n_states * 2 + 2),
   idx2name(n_states+1),
   transitions(boost::extents
               [Transitions::extent_range(1,n_states+1)]

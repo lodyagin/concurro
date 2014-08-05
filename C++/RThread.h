@@ -52,7 +52,7 @@ namespace curr {
  * @{
  */
 
-struct RThreadException : std::exception {};
+struct RThreadException : virtual std::exception {};
 
 //! @}
 

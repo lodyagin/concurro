@@ -56,7 +56,7 @@ inline system_error_string rErrorMsg(int err)
 //! @addtogroup exceptions
 //! @{
 
-struct RSystemError : std::exception
+struct RSystemError : virtual std::exception
 {
 public:
   const int error_code;

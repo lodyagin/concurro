@@ -12,12 +12,13 @@ set(TestsSrc
   ClassWithStatesCU.cpp
   EventCU.cpp
   ExistentCU.cpp
+  log.cpp
   ProcessCU.cpp
 #  RBufferCU.cpp
 #  RConnectionCU.cpp
   REventCU.cpp
 #  RHolderCU.cpp
-#  RMutexCU.cpp
+  RMutexCU.cpp
 #  RSignalCU.cpp
 #  RSocketCU.cpp
   RStateCU.cpp

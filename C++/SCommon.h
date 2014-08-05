@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <string>
 #include <tuple>
+#include <exception>
 #include <stdarg.h>
 #ifdef _WIN32
 #include <atlbase.h>
@@ -68,7 +69,7 @@ namespace curr {
  * @{
  */
 
-struct BadCastBase : std::exception {};
+struct BadCastBase : virtual std::exception {};
 
 //! Exception: bad cast
 template<class Target, class Source>

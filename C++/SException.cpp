@@ -31,6 +31,8 @@
 #include "SCommon.h"
 #include <typeinfo>
 
+#error Deprecated
+
 namespace curr {
 
 // SException  ==================================================================

@@ -41,7 +41,7 @@ namespace curr {
  * @{
  */
 
-struct scheck_failed : std::exception {};
+struct scheck_failed : virtual std::exception {};
 
 //! @}
 

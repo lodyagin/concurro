@@ -17,18 +17,20 @@ add_subdirectory(tests)
 #project (concurrent)
 set (concurrent_SOURCES 
 #  ClientSocket.cpp
-#  ConstructibleObject.cpp
+  ConstructibleObject.cpp
 #  Enum.cpp
   Event.cpp
   Existent.cpp
   HasStringView.cpp
 #  InSocket.cpp
 #  ListeningSocket.cpp
+  Logger.cpp
   Logging.cpp
-#  ObjectWithLogging.cpp
+  ObjectWithLogging.cpp
 #  OutSocket.cpp
   Process.cpp
 #  RBuffer.cpp
+  RCheck.cpp
 #  RHolder.cpp
 #  RMutex.cpp
   RObjectWithStates.cpp

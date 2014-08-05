@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -39,6 +40,8 @@
 #include <utility>
 #include "SCommon.h"
 #include "SSingleton.h"
+#include "Logging.h"
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/spi/location/locationinfo.h>
@@ -46,6 +49,10 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/properties.h>
 #include <log4cxx/spi/location/locationinfo.h>
+#else
+#define LOG4CXX_UNLIKELY(b) __builtin_expect((b), 0)
+#define LOG4CXX_LOCATION logging::LocationInfo()
+#endif
 //
 #include "ObjectWithLogging.h"
 
@@ -55,7 +62,7 @@
     if (LOG4CXX_UNLIKELY((log) && (log)->isDebugEnabled())) {                    \
     std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); }} while (0)
+    (log)->forcedLog(logging::Level::getDebug(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_DEBUG_LOC(log, message, loc)
 #endif
@@ -65,7 +72,7 @@
    if (LOG4CXX_UNLIKELY((log) && (log)->isTraceEnabled())) {            \
     std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getTrace(), oss_.str(), loc); }} while (0)
+    (log)->forcedLog(logging::Level::getTrace(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_TRACE_LOC(log, message, loc)
 #endif
@@ -75,7 +82,7 @@
    if (LOG4CXX_UNLIKELY((log) && (log)->isInfoEnabled())) {            \
     std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getInfo(), oss_.str(), loc); }} while (0)
+    (log)->forcedLog(logging::Level::getInfo(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_INFO_LOC(log, message, loc)
 #endif
@@ -85,7 +92,7 @@
    if (LOG4CXX_UNLIKELY((log) && (log)->isWarnEnabled())) {            \
     std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getWarn(), oss_.str(), loc); }} while (0)
+    (log)->forcedLog(logging::Level::getWarn(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_WARN_LOC(log, message, loc)
 #endif
@@ -95,7 +102,7 @@
    if (LOG4CXX_UNLIKELY((log) && (log)->isErrorEnabled())) {            \
     std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getError(), oss_.str(), loc); }} while (0)
+    (log)->forcedLog(logging::Level::getError(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_ERROR_LOC(log, message, loc)
 #endif
@@ -105,7 +112,7 @@
    if (LOG4CXX_UNLIKELY((log) && (log)->isFatalEnabled())) {            \
     std::ostringstream oss_;                  \
     { oss_ << stream_expr ; }                                  \
-    (log)->forcedLog(::log4cxx::Level::getFatal(), oss_.str(), loc); }} while (0)
+    (log)->forcedLog(logging::Level::getFatal(), oss_.str(), loc); }} while (0)
 #else
 #define LOGGER_FATAL_LOC(logger, message, loc)
 #endif
@@ -116,7 +123,7 @@
                       && (log)->isDebugEnabled())) {   \
     std::ostringstream oss_;       \
     { oss_ << stream_expr ; }                  \
-    (log)->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
+    (log)->forcedLog(logging::Level::getDebug(), oss_.str(), loc); \
   } \
 } while (0)
 #define LOG_DEBUG_STATIC_PLACE_LOC(log, place, stream_expr, loc) do {      \
@@ -124,7 +131,7 @@
                && log::isDebugEnabled())) {      \
     std::ostringstream oss_;       \
     { oss_ << stream_expr ; }                  \
-    log::s_logger()->forcedLog(::log4cxx::Level::getDebug(), oss_.str(), loc); \
+    log::s_logger()->forcedLog(logging::Level::getDebug(), oss_.str(), loc); \
   } \
 } while (0)
 #else
@@ -204,7 +211,7 @@
 //! in the class
 #define DEFAULT_LOGGER(class_) \
 public: \
-  log4cxx::LoggerPtr logger() const override \
+  logging::LoggerPtr logger() const override \
   { \
    return log::s_logger(); \
   } \
@@ -232,8 +239,8 @@ public:
 
   std::string GetName() const { return m_sName; }
 
-  /// Pointer to a log4cxx logger
-  log4cxx::LoggerPtr logger;
+  /// Pointer to a logger
+  logging::LoggerPtr logger;
 protected:
   /// Name for the class logger
   std::string m_sName;
@@ -250,19 +257,18 @@ private:
   static void Init();
 };
 
-inline log4cxx::LoggerPtr GetLogger
+inline logging::LoggerPtr GetLogger
 (const char * subname, const LogBase& parent) 
 {
-  return log4cxx::Logger::getLogger
-   (parent.GetName() + "." + subname);
+  return logging::Logger::getLogger
+    (parent.GetName() + "." + subname);
 }
 
-inline log4cxx::LoggerPtr GetLogger
-(const char * subname, const log4cxx::LoggerPtr& parent)
+inline logging::LoggerPtr GetLogger
+(const char * subname, const logging::LoggerPtr& parent)
 {
-  std::string s;
-  parent->getName(s);
-  return log4cxx::Logger::getLogger(s + "." + subname);
+  const std::string s = parent->getName();
+  return logging::Logger::getLogger(s + "." + subname);
 }
 
 class LOG 
@@ -339,12 +345,12 @@ public:
     );
   }
 
-  log4cxx::LoggerPtr logger() const override
+  logging::LoggerPtr logger() const override
   {
     return log_base->logger;
   }
 
-  static log4cxx::LoggerPtr s_logger()
+  static logging::LoggerPtr s_logger()
   {
     // These checks are for prevent recursive logging when
     // the log system initialize itself. NB we use an atomic
@@ -405,12 +411,12 @@ public:
     this->complete_construction();
   }
 
-  log4cxx::LoggerPtr logger() const override
+  logging::LoggerPtr logger() const override
   {
     return nullptr;
   }
 
-  static log4cxx::LoggerPtr s_logger()
+  static logging::LoggerPtr s_logger()
   {
     return nullptr;
   }
@@ -427,7 +433,7 @@ namespace {
 //! encluded before other the logging system will be
 //! initialized before other systems (and deinitialized
 //! after all).
-log4cxx::LoggerPtr rootLogger = 
+logging::LoggerPtr rootLogger = 
   Logger<LOG::Root>::instance().logger();
 
 }

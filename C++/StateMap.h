@@ -74,7 +74,7 @@ template<class Axis, class DerivedAxis>
 //! @addtogroup exceptions
 //! @{
 
-struct StateMapException : std::exception {};
+struct StateMapException : virtual std::exception {};
 
 struct InvalidState : StateMapException
 {
@@ -112,11 +112,15 @@ struct InvalidStateTransition : InvalidState
 struct NoStateWithTheName : StateMapException
 {
   ::types::constexpr_string the_name;
+  const StateMap* const the_map;
 
   NoStateWithTheName(
     ::types::constexpr_string name, 
     const StateMap* map
-  );
+  ) : the_name(name), the_map(map)
+  {}
+
+  [[noreturn]] void raise() const;
 };
 
 /**

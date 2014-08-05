@@ -32,7 +32,9 @@
 
 #include <assert.h>
 #include "SNotCopyable.h"
+#ifdef USE_LOG4CXX
 #include <log4cxx/spi/location/locationinfo.h>
+#endif
 #ifndef _WIN32
 #include <boost/thread/recursive_mutex.hpp>
 #endif
@@ -170,7 +172,7 @@ public:
   ~Unlock();
 
 protected:
-  const log4cxx::spi::LocationInfo location;
+//  const log4cxx::spi::LocationInfo location;
 
 private:
   RMutex & mutex;

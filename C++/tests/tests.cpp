@@ -5,59 +5,59 @@
 #include <string>
 
 extern CU_TestInfo ClassWithStatesTests[];
+extern CU_TestInfo EventTests[];
 extern CU_TestInfo ExistentTests[];
 extern CU_TestInfo ProcessTests[];
-extern CU_TestInfo RepositoryTests[];
-extern CU_TestInfo EventTests[];
+//extern CU_TestInfo RBufferTests[];
+//extern CU_TestInfo RConnectionTests[];
+extern CU_TestInfo REventTests[];
+//extern CU_TestInfo RHolderTests[];
+extern CU_TestInfo RMutexTests[];
+//extern CU_TestInfo RSignalTests[];
+//extern CU_TestInfo RSocketTests[];
 extern CU_TestInfo RStateTests[];
 extern CU_TestInfo RThreadTests[];
-extern CU_TestInfo RMutexTests[];
-extern CU_TestInfo REventTests[];
-extern CU_TestInfo RHolderTests[];
-extern CU_TestInfo RBufferTests[];
-extern CU_TestInfo RWindowTests[];
-extern CU_TestInfo RSignalTests[];
-extern CU_TestInfo RSocketTests[];
-extern CU_TestInfo RConnectionTests[];
+//extern CU_TestInfo RWindowTests[];
+extern CU_TestInfo RepositoryTests[];
 extern CU_TestInfo SCommonTests[];
 extern CU_TestInfo SSingletonTests[];
 
-int ClassWithStatesCUInit(void);
 int ClassWithStatesCUClean(void);
-int ExistentCUInit(void);
-int ExistentCUClean(void);
-int ProcessCUInit(void);
-int ProcessCUClean(void);
-int RepositoryCUInit(void);
-int RepositoryCUClean(void);
-int EventCUInit(void);
+int ClassWithStatesCUInit(void);
 int EventCUClean(void);
-int ProcessCUInit(void);
+int EventCUInit(void);
+int ExistentCUClean(void);
+int ExistentCUInit(void);
 int ProcessCUClean(void);
-int RStateCUInit(void);
-int RStateCUClean(void);
-int RThreadCUInit(void);
-int RThreadCUClean(void);
-int RMutexCUInit(void);
-int RMutexCUClean(void);
-int REventCUInit(void);
+int ProcessCUClean(void);
+int ProcessCUInit(void);
+int ProcessCUInit(void);
+//int RBufferCUClean(void);
+//int RBufferCUInit(void);
+//int RConnectionCUClean(void);
+//int RConnectionCUInit(void);
 int REventCUClean(void);
-int RBufferCUInit(void);
-int RBufferCUClean(void);
-int RWindowCUInit(void);
-int RWindowCUClean(void);
-int RSignalCUInit(void);
-int RSignalCUClean(void);
-int RSocketCUInit(void);
-int RSocketCUClean(void);
-int RConnectionCUInit(void);
-int RConnectionCUClean(void);
-int SCommonCUInit(void);
+int REventCUInit(void);
+//int RHolderCUClean(void);
+//int RHolderCUInit(void);
+int RMutexCUClean(void);
+int RMutexCUInit(void);
+//int RSignalCUClean(void);
+//int RSignalCUInit(void);
+//int RSocketCUClean(void);
+//int RSocketCUInit(void);
+int RStateCUClean(void);
+int RStateCUInit(void);
+int RThreadCUClean(void);
+int RThreadCUInit(void);
+//int RWindowCUClean(void);
+//int RWindowCUInit(void);
+int RepositoryCUClean(void);
+int RepositoryCUInit(void);
 int SCommonCUClean(void);
-int SSingletonCUInit(void);
+int SCommonCUInit(void);
 int SSingletonCUClean(void);
-int RHolderCUInit(void);
-int RHolderCUClean(void);
+int SSingletonCUInit(void);
 
 CU_SuiteInfo suites[] = {	
   { "Event", EventCUInit, EventCUClean, 0, 0,
@@ -79,12 +79,15 @@ CU_SuiteInfo suites[] = {
       SCommonTests },
   { "SSingleton", SSingletonCUInit, SSingletonCUClean, 0, 0,
 	  SSingletonTests },
+#if 0
   { "RHolder", RHolderCUInit, RHolderCUClean, 0, 0,
 	  RHolderTests },
+#endif
   { "RThread", RThreadCUInit, RThreadCUClean, 0, 0,
 	  RThreadTests },
   { "RMutex", RMutexCUInit, RMutexCUClean, 0, 0,
 	  RMutexTests },
+#if 0
   { "RBuffer", RBufferCUInit, RBufferCUClean, 0, 0,
 	  RBufferTests },
   { "RWindow", RWindowCUInit, RWindowCUClean, 0, 0,
@@ -95,6 +98,7 @@ CU_SuiteInfo suites[] = {
 	  RSocketTests },
   { "RConnection", RConnectionCUInit, RConnectionCUClean, 0, 0,
 	  RConnectionTests },
+#endif
   { "Process", ProcessCUInit, ProcessCUClean, 0, 0, 
           ProcessTests },
 	CU_SUITE_INFO_NULL

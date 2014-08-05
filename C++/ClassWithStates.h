@@ -30,6 +30,7 @@
 #ifndef CONCURRO_CLASSWITHSTATES_H_
 #define CONCURRO_CLASSWITHSTATES_H_
 
+#include <map>
 #include "ObjectWithStatesInterface.h"
 
 namespace curr {

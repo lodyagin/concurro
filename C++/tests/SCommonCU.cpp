@@ -1,6 +1,5 @@
 #include "SCommon.h"
 #include "tests.h"
-#include "SException.h"
 
 void test_from_string();
 void test_cast_exception();
@@ -46,7 +45,7 @@ void test_cast_exception(){
   goal = false;
   try {
     fromString<float>("yh");
-  } catch (const SException&) {
+  } catch (const std::exception&) {
     goal = true;
   }
   CU_ASSERT_TRUE_FATAL(goal);

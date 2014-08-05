@@ -44,7 +44,7 @@ namespace curr {
 //! @addtogroup exceptions
 //! @{
 
-struct StateAxisException : std::exception {};
+struct StateAxisException : virtual std::exception {};
 
 //! @}
 

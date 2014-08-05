@@ -54,7 +54,7 @@ namespace curr {
  * @{
  */
 
-struct EventException : std::exception {};
+struct EventException : virtual std::exception {};
 
 struct EventWaitingTimedOut : EventException 
 {
@@ -145,7 +145,7 @@ public:
   EvtBase(const EvtBase&) = delete;
   virtual ~EvtBase();
 
-  log4cxx::LoggerPtr logger() const override;
+  logging::LoggerPtr logger() const override;
 
   //! Wait for event or time in msecs. 
   //! \return false on timeout.

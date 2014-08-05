@@ -99,7 +99,7 @@ EvtBase::~EvtBase()
   h = 0; 
 }
 
-log4cxx::LoggerPtr EvtBase::logger() const 
+logging::LoggerPtr EvtBase::logger() const 
 {
   return Logger<LOG::Events>::s_logger();
 }
