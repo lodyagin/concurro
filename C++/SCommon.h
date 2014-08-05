@@ -84,9 +84,9 @@ struct BadCast : BadCastBase
     using namespace ::types;
     throw ::types::exception(
       *this,
-      "Bad cast of a value of type ",
-      type<Source>::mangled_name(),
-      "to ", type<Target>::mangled_name()
+      "Bad cast of a value of the type ",
+      limit<50>(type<Source>::name()),
+      "to ", limit<50>(type<Target>::name())
     );
   }
 };

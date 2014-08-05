@@ -449,7 +449,7 @@ void RMixedAxis<Axis, Axis2>
       const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
       . current_state(Axis2::self()) . load();
 
-    throw_invalid_state(current, expected);
+    InvalidState(current).raise(expected);
   }
 }
 
@@ -485,7 +485,7 @@ const StateMap* RMixedAxis<Axis, Axis2>
 }
 
 template<class Axis>
-RState<Axis>::RState (const char* name)
+RState<Axis>::RState(::types::constexpr_string name)
 : UniversalState
   (RAxis<Axis>::state_map() -> create_state(name))
 {}

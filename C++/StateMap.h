@@ -32,9 +32,10 @@
 #define CONCURRO_STATEMAP_H_
 
 #include <assert.h>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <initializer_list>
+#include <typeindex>
 #include <boost/multi_array.hpp>
 #include "types/exception.h"
 #include "HasStringView.h"
@@ -77,29 +78,25 @@ struct StateMapException : std::exception {};
 
 struct InvalidState : StateMapException
 {
-  InvalidState(UniversalState st) : state(st) {}
   const UniversalState state;
+  InvalidState(UniversalState st) : state(st) {}
+  [[noreturn]] void raise(UniversalState expected) const;
 };
 
-[[noreturn]] inline void throw_invalid_state(
-  UniversalState current,
-  UniversalState expected
-)
+struct NoSuchStateInMap : InvalidState
 {
-  using namespace ::types;
-
-  const auto_string<28> currentName = current.name();
-  const auto_string<28> expectedName = expected.name();
-
-  throw ::types::exception(
-    InvalidState(current),
-    "Invalid state [", currentName, "] when expected [",
-    expectedName, "]"
+  const std::type_index map_axis;
+  NoSuchStateInMap(
+    UniversalState the_state,
+    const StateMap& the_map
   );
-}
+  [[noreturn]] void raise() const;
+};
 
 struct InvalidStateTransition : InvalidState
 {
+  const UniversalState from, to;
+
   InvalidStateTransition 
     (UniversalState from_, 
      UniversalState to_)
@@ -109,15 +106,17 @@ struct InvalidStateTransition : InvalidState
     from(from_), to(to_)
   {}
 
-  UniversalState from, to;
+  [[noreturn]] void raise() const;
 };
 
 struct NoStateWithTheName : StateMapException
 {
-  constexpr_string the_name;
+  ::types::constexpr_string the_name;
 
-  NoStateWithTheName(constexpr_string name, 
-                     const StateMap* map);
+  NoStateWithTheName(
+    ::types::constexpr_string name, 
+    const StateMap* map
+  );
 };
 
 /**
@@ -150,21 +149,23 @@ typedef int16_t StateMapId;
 class StateMapParBase
 {
 public:
-  std::list<std::string> states;
+  std::list<::types::constexpr_string> states;
   std::list<
-    std::pair<std::string, std::string>> transitions;
+    std::pair<::types::constexpr_string, ::types::constexpr_string>> transitions;
   StateMapId parent_map;
-  ::types::auto_string<40> axis_name;
+  std::type_index axis_type_index;
 
   StateMapParBase
-    (std::initializer_list<std::string> states_,
+    (std::initializer_list<::types::constexpr_string> states_,
      std::initializer_list<
-     std::pair<std::string, std::string>> transitions_,
+     std::pair<::types::constexpr_string, ::types::constexpr_string>> transitions_,
      StateMapId parent_map_,
-     const ::types::auto_string& an_axis_name
+     std::type_index axis
      )
-  : states(states_), transitions(transitions_),
-    parent_map(parent_map_), axis_name(an_axis_name)
+  : states(states_), 
+    transitions(transitions_),
+    parent_map(parent_map_), 
+    axis_type_index(axis)
   {}
 
   virtual StateMap* create_derivation
@@ -191,14 +192,14 @@ class StateMapPar : public StateMapParBase
 public:
   // TODO add complex states (with several axises).
   StateMapPar (
-    std::initializer_list<std::string> states,
+    std::initializer_list<::types::constexpr_string> states,
     std::initializer_list<
-    std::pair<std::string, std::string>> transitions,
+    std::pair<::types::constexpr_string, ::types::constexpr_string>> transitions,
     StateMapId parent_map_ = 0 // default is top level
     )
     : StateMapParBase
         (states, transitions, parent_map_, 
-         ::types::type<Axis>::mangled_name())
+         std::type_index(typeid(Axis)))
   {}
 
   StateMapId get_id(ObjectCreationInfo& oi) const;
@@ -233,11 +234,10 @@ public:
 
   // Return the number of states in the map.
   //StateIdx size () const;
-
-  template<size_t N>
-  uint32_t create_state (constexpr_string name) const
+  uint32_t create_state(::types::constexpr_string name) 
+    const
   {
-    Name2Idx::const_iterator cit = name2idx.find (name);
+    Name2Idx::const_iterator cit = name2idx.find(name);
     if (cit != name2idx.end ()) {
       return (numeric_id << STATE_MAP_SHIFT) 
         | STATE_IDX(cit->second);
@@ -264,7 +264,8 @@ public:
   //! \throw IncompatibleMap
   void ensure_is_compatible(uint32_t state) const;
 
-  std::string get_state_name(uint32_t state) const;
+  ::types::constexpr_string get_state_name(uint32_t state)
+    const;
 
   StateIdx get_n_states() const
   {
@@ -288,8 +289,8 @@ public:
      uint32_t to) const;
 
   TransitionId get_transition_id 
-    (const char* from,
-     const char* to) const;
+    (::types::constexpr_string from,
+     ::types::constexpr_string to) const;
   
   //! Return states by a transition id
   void get_states(TransitionId trans_id,
@@ -308,7 +309,12 @@ public:
 
   std::string pretty_id() const
   {
-    return axis_name;
+    return ::types::demangled_name(axis());
+  }
+
+  std::type_index axis() const
+  {
+    return axis_type_index;
   }
 
   const std::string universal_object_id;
@@ -316,9 +322,9 @@ public:
 
 protected:
 
-  typedef std::unordered_map<std::string, StateIdx>  
+  typedef std::map<::types::constexpr_string, StateIdx>  
     Name2Idx;
-  typedef std::vector<std::string> Idx2Name;
+  typedef std::vector<::types::constexpr_string> Idx2Name;
 
   typedef std::map<TransitionId, 
     std::pair<StateIdx, StateIdx>> Transition2States;
@@ -336,8 +342,8 @@ protected:
   //! States participating in transitions unique for this
   //! map as destinations. 
   std::set<StateIdx> local_transitions_arrivals;
-  //! The axis name
-  std::string axis_name;
+  //! The axis type
+  const std::type_index axis_type_index;
 
   StateMap(const ObjectCreationInfo& oi,
            const StateMapParBase& par);

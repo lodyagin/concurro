@@ -53,8 +53,8 @@ template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
 ::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              const char* from, 
-              const char* to)
+              ::types::constexpr_string from, 
+              ::types::constexpr_string to)
   : RMixedEvent(obj_ptr, 
                 StateMapInstance<Axis>::get_map()
                 -> create_state(from),
@@ -93,7 +93,7 @@ template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
 ::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              const char* to)
+              ::types::constexpr_string to)
   : RMixedEvent(obj_ptr, 
                 StateMapInstance<Axis>::get_map()
                 -> create_state(to))

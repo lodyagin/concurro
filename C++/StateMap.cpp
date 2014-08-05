@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -34,6 +35,49 @@
 #include <atomic>
 
 namespace curr {
+
+[[noreturn]] void InvalidState::raise(
+  UniversalState expected
+) const
+{
+  throw ::types::exception(
+    *this,
+    "Invalid state [", ::types::limit<28>(state.name()), 
+    "] when expected [", 
+    ::types::limit<28>(expected.name()), "]"
+  );
+}
+
+NoSuchStateInMap::NoSuchStateInMap(
+  UniversalState the_state,
+  const StateMap& the_map
+) 
+  : InvalidState(the_state), map_axis(the_map.axis())
+{
+}
+
+[[noreturn]] void NoSuchStateInMap::raise() const
+{
+  using namespace ::types;
+  throw ::types::exception(
+    *this,
+    "State ", 
+    limit_head<30>(UniversalState(state).name()),
+    " is invalid in the map ", 
+    limit_head<40>(demangled_name(map_axis))
+  );
+}
+
+[[noreturn]] void InvalidStateTransition::raise() const
+{
+  throw ::types::exception(
+    *this,
+    "Invalid state transition from [", 
+    ::types::limit<28>(from.name()), "] to [",
+    ::types::limit<28>(to.name()), "]"
+  );
+}
+
 
 UniversalState::UniversalState
   (const StateMap* new_map, uint32_t st)
@@ -60,7 +104,7 @@ bool UniversalState::operator!=
   return ! (*this == us);
 }
 
-std::string UniversalState::name() const
+::types::constexpr_string UniversalState::name() const
 {
   return StateMapRepository::instance()
     . get_state_name(the_state);
@@ -87,7 +131,7 @@ UniversalEvent::operator UniversalState() const
   return UniversalState(STATE_IDX(id));
 }
 
-std::string UniversalEvent::name() const
+::types::constexpr_string UniversalEvent::name() const
 {
   if (is_arrival_event())
     return UniversalState(as_state_of_arrival()).name();
@@ -116,7 +160,6 @@ InvalidState::InvalidState(UniversalState st,
   : SException(msg),
     state(st)
 {}
-#endif
 
 NoStateWithTheName::NoStateWithTheName
 (const std::string& name, 
@@ -174,9 +217,10 @@ StateMap::StateMap()
   n_states(0),
   idx2name(1),
   repo(&StateMapRepository::instance()),
-  max_transition_id(0)
+  max_transition_id(0),
+  axis_type_index(typeid(StateAxis))
 {
-  idx2name[0] = std::string();
+  idx2name[0] = ::types::constexpr_string("");
 }
 
 StateMap::StateMap(const ObjectCreationInfo& oi,
@@ -196,7 +240,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
               [Transitions::extent_range(1,n_states+1)]),
   repo(dynamic_cast<StateMapRepository*>(oi.repository)),
   max_transition_id(parent->get_max_transition_id()),
-  axis_name(par.axis_name)
+  axis_type_index(par.axis_type_index)
 {
   // TODO check numeric_id overflow
 
@@ -215,7 +259,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   }
 
   // Merge the maps: copy old states first
-  idx2name[0] = std::string();
+  idx2name[0] = ::types::constexpr_string("");
   std::copy(parent->idx2name.begin() + 1, 
             parent->idx2name.end(),
             idx2name.begin() + 1);
@@ -229,7 +273,7 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   for (StateIdx k = 1; k < idx2name.size(); k++)
   {
     const auto inserted = name2idx.insert
-      (std::pair<std::string, StateIdx>(idx2name[k], k));
+      (std::pair<::types::constexpr_string, StateIdx>(idx2name[k], k));
     if (!inserted.second)
       throw ::types::exception<BadParameters>
         ("map states repetition");
@@ -289,8 +333,10 @@ inline bool StateMap::there_is_transition
   return get_transition_id(from, to) != 0;
 }
 
-TransitionId StateMap::get_transition_id 
-(const char* from, const char* to) const
+TransitionId StateMap::get_transition_id(
+  ::types::constexpr_string from, 
+  ::types::constexpr_string to
+) const
 {
   return get_transition_id
     (create_state(from), create_state(to));
@@ -299,22 +345,15 @@ TransitionId StateMap::get_transition_id
 TransitionId StateMap::get_transition_id 
 (uint32_t from, uint32_t to) const
 {
-  /*if (!is_compatible (from) || !is_compatible (to))
-    throw IncompatibleMap ();*/
-
   const StateIdx from_idx = STATE_IDX(from);
   const StateIdx to_idx = STATE_IDX(to);
 
   if (from_idx > transitions.shape()[0])
-    throw InvalidState(
-      from,
-      SFORMAT("State " << UniversalState(from).name()
-              << " is invalid in the map " << *this));
+    NoSuchStateInMap(from, *this).raise();
+
   if (to_idx > transitions.shape()[1])
-    throw InvalidState(
-      to,
-      SFORMAT("State " << UniversalState(to).name()
-              << " is invalid in the map " << *this));
+    NoSuchStateInMap(to, *this).raise();
+
   return transitions[from_idx][to_idx];
 }
 
@@ -368,8 +407,8 @@ void StateMap::ensure_is_compatible(uint32_t state) const
     throw IncompatibleMap();
 }
 
-std::string StateMap::get_state_name
-(uint32_t state) const
+::types::constexpr_string StateMap::get_state_name
+  (uint32_t state) const
 {
   if (!is_compatible (state))
     throw IncompatibleMap ();
@@ -434,7 +473,7 @@ StateMap* StateMapRepository::get_map_for_axis
   return get_object_by_id(get_map_id(axis));
 }
 
-std::string StateMapRepository
+::types::constexpr_string StateMapRepository
 //
 ::get_state_name(uint32_t state) const
 {

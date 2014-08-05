@@ -42,7 +42,7 @@ namespace curr {
 
 DECLARE_AXIS(ExistenceAxis, StateAxis);
 
-extern char existent_class_initial_state[];
+extern ::types::constexpr_string existent_class_initial_state;
 
 template<class T>
 using ExistentEmptyStateHook = EmptyStateHook

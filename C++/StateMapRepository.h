@@ -75,7 +75,8 @@ public:
   //! if it is new (unregistered) axis.
   StateMapId get_map_id(const std::type_info& axis);
 
-  std::string get_state_name(uint32_t state) const;
+  ::types::constexpr_string get_state_name
+    (uint32_t state) const;
 
   static StateMapRepository& instance()
   {

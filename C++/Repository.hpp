@@ -117,6 +117,8 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
 ::replace_object 
   (const ObjId& id, const Par& param, bool freeMemory)
 {
+  using namespace ::types;
+
   RLOCK(objectsM);
 
   Obj* obj = 0;
@@ -124,9 +126,9 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
     obj = objects->at (id);
   }
   catch (const std::out_of_range&) {
-    throw ::types::exception<NoSuchId>(
+    throw exception<NoSuchId>(
       "No object with id [", id, "] exists in ",
-      ::types::type<RepositoryBase>()
+      limit_head<40>(type<RepositoryBase>::name())
     );
   }
 
@@ -165,6 +167,8 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
 //
 ::delete_object_by_id (const ObjId& id, bool freeMemory)
 {
+  using namespace ::types;
+
   Obj* ptr = 0;
   {
     RLOCK(objectsM);
@@ -173,15 +177,15 @@ void RepositoryBase<Obj, Par, ObjMap, ObjId>
       ptr = objects->at (id);
       delete_object_id(id);
       if (ptr == 0) 
-        throw ::types::exception<NoSuchId>(
+        throw exception<NoSuchId>(
           "No object with id [", id, "] exists in ",
-          ::types::type<RepositoryBase>()
+          limit<40>(type<RepositoryBase>::name())
         );
     }
     catch (const std::out_of_range&) {
-      throw ::types::exception<NoSuchId>(
+      throw exception<NoSuchId>(
         "No object with id [", id, "] exists in ",
-        ::types::type<RepositoryBase>()
+        limit<40>(type<RepositoryBase>::name())
       );
     }
   }
@@ -194,15 +198,17 @@ Obj* RepositoryBase <Obj, Par, ObjMap, ObjId>
 //
 ::get_object_by_id (const ObjId& id) const
 {
+  using namespace ::types;
+
   try { 
     RLOCK(objectsM);
     return objects->at (id);
   }
   catch (const std::out_of_range&)
   {
-    throw ::types::exception<NoSuchId>(
+    throw exception<NoSuchId>(
       "No object with id [", id, "] exists in ",
-      ::types::type<RepositoryBase>()
+      limit<40>(type<RepositoryBase>::name())
     );
   }
 }

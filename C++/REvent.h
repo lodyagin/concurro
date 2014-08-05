@@ -92,7 +92,7 @@ public:
   uint32_t global_id() const { return id; }
 
   //! A name as "<state>" or "<state>-><state>"
-  std::string name() const; 
+  ::types::constexpr_string name() const; 
 
   uint32_t as_state_of_arrival() const
   { 
@@ -122,7 +122,7 @@ class RMixedEvent
 public:
   //! Create a from->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              const char* from, const char* to);
+              ::types::constexpr_string from, ::types::constexpr_string to);
 
   //! Create a from->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
@@ -131,7 +131,7 @@ public:
 
   //! Create a *->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              const char* to);
+              ::types::constexpr_string to);
 
   //! Create a *->to event
   RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 

@@ -33,7 +33,8 @@
 
 namespace curr {
 
-char existent_class_initial_state[] = "not_exist";
+::types::constexpr_string existent_class_initial_state = 
+  "not_exist";
 
 DEFINE_AXIS(
   ExistenceAxis,

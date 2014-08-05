@@ -40,7 +40,7 @@ DEFINE_AXIS(
   {{"charged", "discharged"}, {"discharged", "charged"}}
   );
 
-char test_class_initial_state[] = "discharged";
+::types::constexpr_string test_class_initial_state = "discharged";
 
 #if 0
 class TestStates

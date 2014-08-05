@@ -60,14 +60,8 @@ class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited.
-template<char... cs>
 struct StateAxis 
 {
-  using name = ::types::meta_string<cs...>;
-
-  StateAxis(::types::constexpr_string a_name) : name(a_name)
-  {}
-
   virtual ~StateAxis() {}
 
   virtual const std::atomic<uint32_t>& current_state
@@ -106,7 +100,7 @@ inline bool is_same_axis(const StateAxis& ax)
   static axis& self() { \
     static std::once_flag of; \
     static axis* self = nullptr; \
-    std::call_once(of, [](){ self = new axis(#axis + parent_tn::name); });\
+    std::call_once(of, [](){ self = new axis; });\
     assert(self); \
     return *self; \
   } \

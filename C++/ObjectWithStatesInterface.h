@@ -30,10 +30,8 @@
 #ifndef CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 #define CONCURRO_OBJECTWITHSTATESINTERFACE_H_
 
-//#include <typeinfo>
-//#include <type_traits>
 #include "types/typeinfo.h"
-//#include "SCommon.h"
+#include "types/string.h"
 #include "StateAxis.h"
 #include "Event.h"
 

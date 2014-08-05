@@ -37,8 +37,11 @@ namespace curr {
 
 // TODO specialization for EmptyStateHook (avoid dynamic
 // cast and other parameters).
-template<class Axis, const char* initial_state,
-         class StateHook>
+template<
+  class Axis, 
+  const ::types::constexpr_string& initial_state,
+  class StateHook
+>
 void ClassWithStates<Axis, initial_state, StateHook>
 ::TheClass::state_changed
   (StateAxis&, 
@@ -49,7 +52,7 @@ void ClassWithStates<Axis, initial_state, StateHook>
   StateHook()(this, state_ax, new_state);
 }
 
-template<class Axis, const char* initial_state,
+template<class Axis, const ::types::constexpr_string& initial_state,
          class StateHook>
 std::atomic<uint32_t>& 
 ClassWithStates<Axis, initial_state, StateHook>
@@ -61,7 +64,7 @@ ClassWithStates<Axis, initial_state, StateHook>
   return currentState;
 }
 
-template<class Axis, const char* initial_state,
+template<class Axis, const ::types::constexpr_string& initial_state,
          class StateHook>
 const std::atomic<uint32_t>& 
 ClassWithStates<Axis, initial_state, StateHook>
@@ -73,7 +76,7 @@ ClassWithStates<Axis, initial_state, StateHook>
       (this) -> current_state(ax);
 }
 
-template<class Axis, const char* initial_state,
+template<class Axis, const ::types::constexpr_string& initial_state,
          class StateHook>
 CompoundEvent 
 ClassWithEvents<Axis, initial_state, StateHook>
@@ -101,7 +104,7 @@ ClassWithEvents<Axis, initial_state, StateHook>
     return CompoundEvent(it->second);
 }
 
-template<class Axis, const char* initial_state,
+template<class Axis, const ::types::constexpr_string& initial_state,
          class StateHook>
 void ClassWithEvents<Axis, initial_state, StateHook>
 ::TheClass::update_events

@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -34,7 +35,7 @@
 #include <mutex>
 
 #include "types/meta.h"
-//#include "StateMap.h"
+#include "types/string.h"
 #include "ObjectWithStatesInterface.h"
 #include "StateAxis.h"
 
@@ -69,8 +70,9 @@ class StateMapPar;
  *  control state transitions. Also, we can extend state
  *  and transitions sets in descendants (see ... and ...).
  *
- *  And we always use a notion of state space axis because the
- *  space can be multidirectional. See RAxis and RMixedAxis. 
+ *  And we always use a notion of state space axis because
+ *  the space can be multidirectional. See RAxis and
+ *  RMixedAxis.
  *
  * @{
  */
@@ -98,7 +100,7 @@ public:
   //! Never use it if you already know a map (it makes a
   //! map-lookup). StateMap::get_state_name suit for most
   //! cases. 
-  std::string name() const; 
+  ::types::constexpr_string name() const; 
 
 protected:
   void init_map() const;
@@ -116,7 +118,7 @@ public:
   typedef Axis axis;
 
   //! Construct a state with the name.
-  RState (const char* name);
+  RState(::types::constexpr_string name);
   RState(uint32_t);
   RState(const UniversalState& us)
     : RState((uint32_t) us) {}
