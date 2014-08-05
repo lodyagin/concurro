@@ -43,7 +43,7 @@ DEFINE_AXIS(
 
 SAutoSingletonRegistry
 //
-::~SAutoSingletonRegistry()
+::~SAutoSingletonRegistry() noexcept
 {
   SAutoSingletonBase* ptr;
 

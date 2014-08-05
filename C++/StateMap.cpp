@@ -126,6 +126,7 @@ NoStateWithTheName::NoStateWithTheName
                 "No state with the name [" << name << "]"
                 << " in the map " << map->pretty_id()))
 {}
+#endif
 
 StateMap* StateMapParBase::create_derivation
 (const ObjectCreationInfo& oi) const
@@ -230,7 +231,8 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
     const auto inserted = name2idx.insert
       (std::pair<std::string, StateIdx>(idx2name[k], k));
     if (!inserted.second)
-      throw BadParameters("map states repetition");
+      throw ::types::exception<BadParameters>
+        ("map states repetition");
   }
 
   LOG_TRACE(log, 
@@ -279,24 +281,6 @@ StateMap::StateMap(const ObjectCreationInfo& oi,
   }
   max_transition_id = repo->max_trans_id;
 }
-
-uint32_t StateMap::create_state (const char* name) const
-{
-  assert (name);
-
-  Name2Idx::const_iterator cit = name2idx.find (name);
-  if (cit != name2idx.end ()) {
-    return (numeric_id << STATE_MAP_SHIFT) 
-      | STATE_IDX(cit->second);
-  }
-  else 
-    throw NoStateWithTheName(name, this);
-}
-
-/*StateIdx StateMap::size () const
-{
-  return name2idx.size ();
-  }*/
 
 inline bool StateMap::there_is_transition 
 (uint32_t from,

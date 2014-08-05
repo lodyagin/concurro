@@ -83,7 +83,7 @@ struct AutoresetInCompound : CompoundEventException
 
 #define CURR_WAIT_L(logger, evt, time)          \
   do { (evt).wait((time),                       \
-       std::declval<curr::EventWaitingTimedOut>() \
+       curr::EventWaitingTimedOut(time) \
        ); } while(false)
 
 //! Call a timed event waiting which can throw

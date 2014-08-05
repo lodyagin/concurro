@@ -114,10 +114,10 @@ struct InvalidStateTransition : InvalidState
 
 struct NoStateWithTheName : StateMapException
 {
-#if 0
-  NoStateWithTheName(const std::string& name, 
+  constexpr_string the_name;
+
+  NoStateWithTheName(constexpr_string name, 
                      const StateMap* map);
-#endif
 };
 
 /**
@@ -133,6 +133,8 @@ public:
   {}
 #endif
 };
+
+struct BadParameters : StateMapException {};
 
 //! @}
 
@@ -152,14 +154,14 @@ public:
   std::list<
     std::pair<std::string, std::string>> transitions;
   StateMapId parent_map;
-  std::string axis_name;
+  ::types::auto_string<40> axis_name;
 
   StateMapParBase
     (std::initializer_list<std::string> states_,
      std::initializer_list<
      std::pair<std::string, std::string>> transitions_,
      StateMapId parent_map_,
-     const std::string& an_axis_name
+     const ::types::auto_string& an_axis_name
      )
   : states(states_), transitions(transitions_),
     parent_map(parent_map_), axis_name(an_axis_name)
@@ -196,7 +198,7 @@ public:
     )
     : StateMapParBase
         (states, transitions, parent_map_, 
-         ::types::type<Axis>::name())
+         ::types::type<Axis>::mangled_name())
   {}
 
   StateMapId get_id(ObjectCreationInfo& oi) const;
@@ -232,7 +234,17 @@ public:
   // Return the number of states in the map.
   //StateIdx size () const;
 
-  uint32_t create_state (const char* name) const;
+  template<size_t N>
+  uint32_t create_state (constexpr_string name) const
+  {
+    Name2Idx::const_iterator cit = name2idx.find (name);
+    if (cit != name2idx.end ()) {
+      return (numeric_id << STATE_MAP_SHIFT) 
+        | STATE_IDX(cit->second);
+    }
+    else 
+      throw NoStateWithTheName(name, this);
+  }
 
   bool there_is_transition 
     (uint32_t from,

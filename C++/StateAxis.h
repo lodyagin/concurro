@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -33,11 +34,19 @@
 #include <iostream>
 #include <atomic>
 #include <mutex> // for axis singleton
+#include <exception>
 
-#include "types/meta.h"
-//#include "StateMap.h"
+//#include "types/meta.h"
+#include "types/string.h"
 
 namespace curr {
+
+//! @addtogroup exceptions
+//! @{
+
+struct StateAxisException : std::exception {};
+
+//! @}
 
 //! @addtogroup states
 //! @{
@@ -51,8 +60,14 @@ class UniversalState;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited.
+template<char... cs>
 struct StateAxis 
 {
+  using name = ::types::meta_string<cs...>;
+
+  StateAxis(::types::constexpr_string a_name) : name(a_name)
+  {}
+
   virtual ~StateAxis() {}
 
   virtual const std::atomic<uint32_t>& current_state
@@ -91,7 +106,7 @@ inline bool is_same_axis(const StateAxis& ax)
   static axis& self() { \
     static std::once_flag of; \
     static axis* self = nullptr; \
-    std::call_once(of, [](){ self = new axis; });\
+    std::call_once(of, [](){ self = new axis(#axis + parent_tn::name); });\
     assert(self); \
     return *self; \
   } \

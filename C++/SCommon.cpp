@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -33,45 +34,6 @@
 #endif
 
 namespace curr {
-
-#if 0
-string AmountFormat(double amt, int precision/* = 2*/) {
-	if (amt < 0)
-		return "-" + AmountFormat(-amt, precision);
-
-	string s = SFORMAT (fixed << setprecision(precision) << amt);	//format the number
-	string::size_type pt = s.find(".");	//find decimal point
-	if (pt == string::npos)
-		pt = s.length();						//or end-of-line
-
-	while (pt > 3) {	//insert some commas
-		pt -= 3; //skip 3 digits left
-		s = s.substr(0, pt) + "," + s.substr(pt);	// insert comma
-	}
-	return s;
-}
-
-string StripDotZeros (const string& s0) {
-	string s = s0;
-	while (!s.empty() && s[s.length()-1] == '0')	//strip zero or more 0s
-		s = s.substr(0,s.length()-1);
-	if (!s.empty() && s[s.length()-1] == '.')		//strip single . from the end
-		s = s.substr(0,s.length()-1);
-	return s;
-}
-
-string RateFormat(double rate) {
-	string s = SFORMAT (fixed << setprecision(4) << rate);
-	return (s.length() > 6) ? s.substr(0,6) : s;
-}
-
-string FixFormat(double lot, int precision) {
-	if (lot == (int) lot)
-		return SFORMAT(lot);
-	else
-		return SFORMAT(fixed<<setprecision(precision)<<lot);
-}
-#endif
 
 std::string trimLeft( const std::string & s, char ch, int maxCount )
 {
@@ -102,13 +64,7 @@ const char * strnchr( const char * str, int chr, size_t maxLen )
   return 0;
 }
 
-/*int strnlen( const char * str, size_t maxLen )
-{
-  for ( const char * p = str; p - str < int(maxLen); ++p )
-    if ( *p == '\0' ) return p - str;
-  return -1;
-}*/
-
+#if 0
 /* It is got from glib 2.0.
  *
  * Copy string src to buffer dest (of buffer size dest_size).  At most
@@ -203,6 +159,7 @@ strlcat (char       *dest,
 }
 
 #define G_VA_COPY(ap1, ap2)   (*(ap1) = *(ap2))
+#endif
 
 #ifdef _WIN32
 /**

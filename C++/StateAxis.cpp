@@ -30,21 +30,23 @@
 #ifndef CONCURRO_STATEAXIS_HPP_
 #define CONCURRO_STATEAXIS_HPP_
 
+#include "types/exception.h"
 #include "StateAxis.h"
-#include "SException.h"
 
 namespace curr {
 
 const std::atomic<uint32_t>& StateAxis::current_state
   (const AbstractObjectWithStates*) const
 {
-  THROW_NOT_IMPLEMENTED;
+  throw ::types::exception<StateAxisException>
+    ("StateAxis::current_state is not implemented");
 }
 
 std::atomic<uint32_t>& StateAxis::current_state
   (AbstractObjectWithStates*) const
 {
-    THROW_NOT_IMPLEMENTED;
+  throw ::types::exception<StateAxisException>
+    ("StateAxis::current_state is not implemented");
 }
 
 void StateAxis::update_events
@@ -52,7 +54,8 @@ void StateAxis::update_events
    TransitionId trans_id, 
    uint32_t to)
 {
-  THROW_NOT_IMPLEMENTED;
+  throw ::types::exception<StateAxisException>
+    ("StateAxis::update_events is not implemented");
 }
 
 void StateAxis::state_changed
@@ -61,11 +64,10 @@ void StateAxis::state_changed
    const StateAxis& state_ax,
    const UniversalState& new_state)
 {
-  THROW_NOT_IMPLEMENTED;
+  throw ::types::exception<StateAxisException>
+    ("StateAxis::state_changed is not implemented");
 }
 
-
-
-}
+} // curr
 
 #endif

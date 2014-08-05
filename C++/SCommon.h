@@ -27,8 +27,8 @@
  * @author Sergei Lodyagin
  */
 
-#ifndef SCOMMON_H_
-#define SCOMMON_H_
+#ifndef CONCURRO_SCOMMON_H
+#define CONCURRO_SCOMMON_H
 
 #include <iostream>
 #include <sstream>
@@ -50,6 +50,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include "types/meta.h"
+#include "types/exception.h"
 
 //#define WIN32_LEAN_AND_MEAN 
 //#include <windows.h>
@@ -61,6 +62,36 @@ namespace curr {
 #else
 #  define _T
 #endif
+
+/**
+ * @addtogroup exceptions
+ * @{
+ */
+
+struct BadCastBase : std::exception {};
+
+//! Exception: bad cast
+template<class Target, class Source>
+struct BadCast : BadCastBase
+{
+  //! A source value
+  const Source source;
+
+  BadCast(const Source& src) : source(src) {}
+
+  [[noreturn]] void raise() const
+  {
+    using namespace ::types;
+    throw ::types::exception(
+      *this,
+      "Bad cast of a value of type ",
+      type<Source>::mangled_name(),
+      "to ", type<Target>::mangled_name()
+    );
+  }
+};
+
+//! @}
 
 // cut out not more than maxCount chars that equal to passed one. If maxCount == -1 then cut out all
 std::string trimLeft(const std::string &, char = ' ', int maxCount =
@@ -282,9 +313,6 @@ std::string toString(const T& object) {
   return boost::lexical_cast<std::string>(object);
 }
 
-template<class Target, class Source>
-class BadCast;
-
 // FIXME raise exception when the string is not a number
 template<class T, class String>
 T fromString(String&& s) 
@@ -295,7 +323,7 @@ T fromString(String&& s)
   } 
   catch (const boost::bad_lexical_cast&) 
   {
-    throw BadCast<T, String>(s);
+    BadCast<T, String>(s).raise();
   }
 }
 
@@ -309,10 +337,11 @@ T fromString(const std::basic_string<CharT>& s)
   } 
   catch (const boost::bad_lexical_cast&) 
   {
-    throw BadCast<T, std::basic_string<CharT>>(s);
+    BadCast<T, std::basic_string<CharT>>(s).raise();
   }
 }
 
+#if 0
 #define SMAKE_THROW_FN_DECL(name, XClass)  \
 void name( const wchar_t * fmt, ... ); void name(const std::wstring& msg);
 //void name( const char * fmt, ... ); void name(const std::string& msg);
@@ -336,6 +365,8 @@ void name( const wchar_t * fmt, ... )  \
 
 //template<class X>
 //SMAKE_THROW_FN_IMPL(sThrowX, X)
+#else
+#endif
 
 #ifdef _WIN32
 FILETIME TimetToFileTime (time_t t);
