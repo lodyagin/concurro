@@ -86,10 +86,12 @@ EvtBase::EvtBase(const std::string& id,
 
 EvtBase::~EvtBase()
 {
+#if 0 // crash in Logger destruction
   LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t closes the event handle [" 
             << universal_object_id << "]");
+#endif
 
 #ifdef _WIN32
   if (!h) CloseHandle(h);

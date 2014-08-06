@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -33,12 +34,32 @@
 #define CONCURRO_SSINGLETON_H_
 
 #include <thread>
+#include <exception>
 #include "types/typeinfo.h"
+#include "SCheck.h"
 #include "Existent.h"
 #include "ConstructibleObject.h"
 #include "Event.h"
+#include "RHolder.h"
 
 namespace curr {
+
+/**
+ * @addtogroup exceptions
+ * @{
+ */
+
+struct SingletonException : virtual std::exception {};
+
+//! Exception: somebody tries to get an
+//! SSingleton::instance() when no one is available
+struct NotExistingSingleton : SingletonException {};
+
+//! Exception: somebody tries to create more than one
+//! SSingleton instance
+struct MustBeSingleton : SingletonException {};
+
+//! @}
 
 /**
  * @defgroup singletons
@@ -47,21 +68,6 @@ namespace curr {
  */
 
 DECLARE_AXIS(SingletonAxis, ExistenceAxis);
-
-/** 
- * @class NotExistingSingleton
- * An exception raised when somebody
- * tries get an SSingleton instance when no one copy of
- * SSingleton<T> exists.
- */ 
-struct NotExistingSingleton;
-
-/** 
- * @class MustBeSingleton
- * An exception raised when somebody tries create more
- * than once instance of SSingleton.
- */ 
-struct MustBeSingleton;
 
 template<class T, int wait_m>
 class SSingleton;
@@ -80,6 +86,27 @@ public:
     (AbstractObjectWithStates* object,
      const StateAxis& ax,
      const UniversalState& new_state);
+};
+
+//! Holder for SSingleton
+template<class T, int wait_m>
+class SHolder
+  : public HolderCmn<
+      T, 
+      T::template guard_templ, 
+      event::interface_with_states<SingletonAxis>,
+      wait_m
+    >
+{
+  using Parent = HolderCmn<
+      T, 
+      T::template guard_templ, 
+      event::interface_with_states<SingletonAxis>,
+      wait_m
+    >;
+public:
+  SHolder(T* t) : Parent(t) {}
+
 };
 
 /**
@@ -114,22 +141,165 @@ public:
  *     [label="dtr:0"];
  *   predec_exist_one -> not_exist
  *     [label="dtr:1"];
+ *   exist_one -> preoccupied
+ *     [label="occupy:0"];
+ *   preoccupied -> occupied
+ *     [label="occupy:1"];
+ *   occupied -> preoccupied
+ *     [label="occupy:0"];
+ *   occupied -> postoccupied
+ *     [label="yield:0"];
+ *   postoccupied -> occupied
+ *     [label="yield:1"];
+ *   postoccupied -> exist_one
+ *     [label="yield:1"];
  * }
  * @enddot
  *
  */
 template<class T, int wait_m = 1000>
 class SSingleton 
-  : public virtual Existent
+  : public /*virtual*/ Existent
       <T, SingletonStateHook<T, wait_m>>,
-    public virtual ConstructibleObject
+    //public virtual ConstructibleObject,
+    public RStateSplitter<SingletonAxis, ExistenceAxis>
 {
   friend SingletonStateHook<T, wait_m>;
+
+  using Splitter = 
+    RStateSplitter<SingletonAxis, ExistenceAxis>;
+  
+  DECLARE_EVENT(SingletonAxis, occupied);
+
 public:
+  //! @cond
+  DECLARE_STATES(SingletonAxis, State);
+  DECLARE_STATE_CONST(State, preoccupied);
+  DECLARE_STATE_CONST(State, occupied);
+  DECLARE_STATE_CONST(State, postoccupied);
+  //! @endcond
+
+  struct NotExistingSingleton : curr::NotExistingSingleton
+  {
+    [[noreturn]] void raise() const;
+  };
+
+  struct MustBeSingleton : curr::MustBeSingleton
+  {
+    [[noreturn]] void raise() const;
+  };
+
   typedef Existent<T, SingletonStateHook<T, wait_m>> 
     Parent;
   typedef ConstructibleObject ObjParent;
   typedef SSingleton<T, wait_m> This;
+
+  //! A singleton guard 
+  //! 1) doesn't allow destroy singleton in a middle of
+  //! call;
+  //! 2) doesn't allow make call on not-existing 
+  //! (destructed) singleton
+  template<class T1, int w1>
+  class guard_templ
+  {
+  public:
+    class Ptr
+    {
+    public:
+      Ptr(guard_templ* g) : guard(g)
+      {
+        guard->occupy();
+      }
+
+      ~Ptr()
+      {
+        guard->yield();
+      }
+
+      T1* operator->()
+      {
+        return guard->obj;
+      }
+
+    private:
+      guard_templ* guard;
+    };
+
+    using ReadPtr = Ptr;
+    using WritePtr = Ptr;
+
+    guard_templ() : guard_templ(nullptr) {}
+    guard_templ(std::nullptr_t object) : obj(nullptr) {}
+    guard_templ(T1* object) : obj(object) 
+    {
+      SCHECK(obj);
+    }
+
+    guard_templ(guard_templ&& g) noexcept 
+      : obj(g.discharge()) 
+    {}
+
+    guard_templ& operator=(guard_templ&& g) noexcept
+    {
+      obj = g.discharge();
+    }
+
+    ~guard_templ() { discharge(); }
+
+    guard_templ& charge(T1* object)
+    {
+      SCHECK(object);
+      obj = object;
+      return *this;
+    }
+
+    void swap(guard_templ& g) noexcept
+    {
+      std::swap(obj, g.obj);
+    }
+
+    T1* discharge() noexcept
+    {
+      T1* res = obj; // NB res can be nullptr
+      obj = nullptr;
+      return res;
+    }
+
+    T1* get()
+    {
+      return obj;
+    }
+
+    const T1* get() const
+    {
+      return obj;
+    }
+
+    operator bool() const
+    {
+      return obj;
+    }
+
+    Ptr operator->()
+    {
+      return Ptr(this);
+    }
+   
+  protected:
+    T1* obj;
+
+    void occupy() const
+    {
+      obj->occupy();
+    }
+
+    void yield() const
+    {
+      obj->yield();
+    }
+  };
+
+  using Holder = SHolder<T, wait_m>;
 
   //! One and only one class instance must be created with
   //! this function.
@@ -154,21 +324,59 @@ public:
 
   CompoundEvent is_terminal_state() const override
   {
-    return E(complete_construction);
+    return is_terminal_state_event;
   }
 
   void complete_construction() override;
 
-  //! Return the reference to the class instance. 
-  //! Not safe in multithreading environment (need to
-  //! redesign with RHolder).
+  //! Return a holder to the class instance. 
   //!
   //! @exception NotExistingSingleton If no
   //! class is crated with SSingleton() raise exception.
-  static T & instance();
+  static Holder instance()
+  {
+    return Holder(instance_intl());
+  }
 
   //! It is the same as !state_is(*this, in_construction)
   bool isConstructed();
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
+  {
+    throw ::types::exception<SingletonException>(
+      "SSingleton::state_changed() must not be called"
+    );
+  }
+
+  std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) override
+  { 
+    return Splitter::current_state(ax);
+  }
+
+  const std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) const override
+  { 
+    return Splitter::current_state(ax);
+  }
+
+  CompoundEvent create_event
+    (const UniversalEvent& ue) const override
+  {
+    return Splitter::create_event(ue);
+  }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
+  {
+    ax.update_events(this, trans_id, to);
+  }
 
 protected:
   //! It is a statically accessible analog of
@@ -186,12 +394,33 @@ protected:
     return *is_complete_event;
   }
 
-private:
-//  typedef Logger<SSingleton<T, wait_m>> log;
+  //! Return instance without occupation check
+  static T* instance_intl();
 
+  //! Precondition to occupy()
+  CompoundEvent is_occupiable_event = {
+    Parent::TheClass::instance()->is_exist_one(), 
+    is_occupied_event
+  };
+/*    
+  //! Precondition to yield()
+  CompoundEvent is_yieldable = {
+    is_occupied_event
+  };
+*/
+private:
   //! The actual singleton instance. It is updated from
   //! instance0 in instance() call.
   static T* _instance;
+
+  mutable std::size_t occupy_count = 0;
+
+  CompoundEvent is_terminal_state_event { 
+    ConstructibleObject::is_exist_one()
+  };
+
+  void occupy() const;
+  void yield() const;
 };
 
 //! It allows destroy SAutoSingleton - s.
@@ -200,6 +429,8 @@ class SAutoSingletonBase
 public:
   virtual ~SAutoSingletonBase() {}
   
+  virtual bool need_destruct() const = 0;
+
   //! We use the same method of initialization as std::cout
   class Init
   {
@@ -222,9 +453,10 @@ SAutoSingletonBase::Init auto_reg_init_helper;
 /**
  * Extends SSingleton to allow auto-construct it by the
  * RAutoSingleton::instance() call.
+ * \tparam destruct Destroy on program exit
  * \tparam wait_m The default construction wait timeout.
  */
-template<class T, int wait_m = 1000>
+template<class T, bool destruct = true, int wait_m = 1000>
 class SAutoSingleton 
   : public SSingleton<T, wait_m>,
     public virtual SAutoSingletonBase
@@ -235,18 +467,16 @@ public:
   //! Return the reference to the class instance. 
   //! Not safe in multithreading environment (need to
   //! redesign with RHolder).
-  static T & instance ();
+  static typename SSingleton<T, wait_m>::Holder instance();
+
+  bool need_destruct() const override
+  {
+    return destruct;
+  }
 
 protected:
-  //! It is allowed only for SAutoSingletonRegistry to
-  //! prevent a double-destruction.
-  //~SAutoSingleton();
-
   //! Create the object if doesn't exist
   static void construct_once();
-
-private:
-//  typedef Logger<SAutoSingleton<T, wait_m>> log;
 };
 
 //! @}

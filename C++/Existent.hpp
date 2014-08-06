@@ -43,6 +43,7 @@ std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
 Existent<T, StateHook>::Existent()
+  : Splitter(this, preinc_exist_oneFun())
 {
   inc_existence();
 }

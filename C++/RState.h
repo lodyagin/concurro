@@ -340,13 +340,17 @@ bool state_is
 }
 
 //! RMixedAxis<Axis,Axis2>::move_to adapter
-template<class T, class Axis2 = typename T::axis>
-void move_to
-  (T& obj, 
-   const curr::RState<typename T::State::axis>& to)
+template<
+  class T, 
+  class Axis1 = typename T::axis,
+  class Axis2 = Axis1
+>
+void move_to(
+  T& obj, 
+  const curr::RState<Axis1>& to
+)
 {
-  curr::RMixedAxis<typename T::State::axis, Axis2>
-    :: move_to(obj, to);
+  curr::RMixedAxis<Axis1, Axis2>::move_to(obj, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
@@ -376,15 +380,18 @@ auto compare_and_move(
     :: compare_and_move(*obj.guarded.get(), from, to);
 }
 
-//! RMixedAxis<Axis,Axis2>::compare_and_move adapter
-template<class T, class Axis2 = typename T::axis>
+//! RMixedAxis::compare_and_move adapter
+template<
+  class T, 
+  class Axis1 = typename T::axis,
+  class Axis2 = Axis1
+>
 bool compare_and_move
   (T& obj, 
-   const std::set
-     <curr::RState<typename T::State::axis>>& from_set,
-   const curr::RState<typename T::State::axis>& to)
+   const std::set<curr::RState<Axis1>>& from_set,
+   const curr::RState<Axis1>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis, Axis2>
+  return curr::RMixedAxis<Axis1, Axis2>
     :: compare_and_move(obj, from_set, to);
 }
 
@@ -406,22 +413,26 @@ using REvent = RMixedEvent<Axis, Axis>;
 
 //! Wait is_from_event then perform 
 //! RMixedAxis<Axis,Axis2>::compare_and_move 
-template<class T, class Axis2 = typename T::axis>
-void wait_and_move
-  (T& obj, 
-   const REvent<typename T::State::axis>& is_from_event,
-   const RState<typename T::State::axis>& to,
-   int wait_m = -1);
+template<
+  class T, 
+  class Axis1 = typename T::axis,
+  class Axis2 = Axis1
+>
+void wait_and_move(
+  T& obj, 
+  const RMixedEvent<Axis1, Axis2>& is_from_event,
+  const RState<Axis1>& to,
+  int wait_m = -1
+);
 
 //! Wait is_from_event then perform 
-//! RMixedAxis<Axis,Axis2>::compare_and_move
-template<class T>
+//! RMixedAxis::compare_and_move
+template<class T, class Axis = typename T::State::axis>
 void wait_and_move
   (T& obj, 
-   const std::set
-     <RState<typename T::State::axis>>& from_set,
+   const std::set<RState<Axis>>& from_set,
    const CompoundEvent& is_from_event,
-   const RState<typename T::State::axis>& to,
+   const RState<Axis>& to,
    int wait_m = -1);
 
 template<class T>
@@ -552,6 +563,7 @@ void wait_and_move
 
 //! @}
 
+#if 0
 //! The class to connect class creation state (Existent)
 //! and object creation state (ConstructibleObject).
 class CompleteConstruction
@@ -560,6 +572,7 @@ public:
   virtual ~CompleteConstruction() {}
   virtual void complete_construction() = 0;
 };
+#endif
 
 }
 

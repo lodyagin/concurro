@@ -24,11 +24,11 @@ int ProcessCUClean()
 
 namespace {
 
-  auto& rep = ChildProcessRepository::instance();
+  auto rep = ChildProcessRepository::instance();
 
 }
 
 void test_create()
 {
-  Process* p1 = rep.create_object(Process::Par{ "ls /etc" });
+  Process* p1 = rep->create_object(Process::Par{ "ls /etc" });
 }

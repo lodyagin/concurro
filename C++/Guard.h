@@ -337,13 +337,6 @@ protected:
   T* obj;
 };
 
-/*
-enum class HolderType { 
-  Singular, //<! a view of one object
-  Plural    //<! a view of an array of objects
-};
-*/
-
 //! @}
 
 }

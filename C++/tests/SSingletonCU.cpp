@@ -73,7 +73,7 @@ void test_ssingleton()
   // is_complete().reset()
   {
     S s1;
-    CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 133);
+    CU_ASSERT_EQUAL_FATAL(S::instance()->fun(), 133);
   }
   try {
     S::instance();
@@ -89,7 +89,7 @@ void test_ssingleton()
     }
     catch (const MustBeSingleton&) {}
 
-    CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 133);
+    CU_ASSERT_EQUAL_FATAL(S::instance()->fun(), 133);
   }
   try {
     S::instance();
@@ -128,7 +128,7 @@ void test_sautosingleton_auto()
   };
 
   // tests for not-existing singleton
-  CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 133);
+  CU_ASSERT_EQUAL_FATAL(S::instance()->fun(), 133);
 }
 
 void test_sautosingleton_manual()
@@ -142,11 +142,11 @@ void test_sautosingleton_manual()
   // tests for not-existing singleton
   {
     S s1;
-    CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 134);
+    CU_ASSERT_EQUAL_FATAL(S::instance()->fun(), 134);
   }
 
   {
-    CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 134);
+    CU_ASSERT_EQUAL_FATAL(S::instance()->fun(), 134);
     try {
       S s2;
       CU_FAIL_FATAL("an exception must be raised");
@@ -154,7 +154,7 @@ void test_sautosingleton_manual()
     catch (const MustBeSingleton&) {}
 
     // auto create here
-    CU_ASSERT_EQUAL_FATAL(S::instance().fun(), 134);
+    CU_ASSERT_EQUAL_FATAL(S::instance()->fun(), 134);
   }
 
   try {

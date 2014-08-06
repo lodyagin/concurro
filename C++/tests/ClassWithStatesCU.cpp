@@ -128,7 +128,8 @@ public:
     return s_the_class();
   }
 
-  static TheClass& s_the_class()
+  static auto s_the_class()
+    -> decltype(TheClass::instance())
   {
     return TheClass::instance();
   }

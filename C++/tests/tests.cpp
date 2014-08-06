@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-extern CU_TestInfo ClassWithStatesTests[];
+//extern CU_TestInfo ClassWithStatesTests[];
 extern CU_TestInfo EventTests[];
 extern CU_TestInfo ExistentTests[];
 extern CU_TestInfo ProcessTests[];
@@ -22,8 +22,8 @@ extern CU_TestInfo RepositoryTests[];
 extern CU_TestInfo SCommonTests[];
 extern CU_TestInfo SSingletonTests[];
 
-int ClassWithStatesCUClean(void);
-int ClassWithStatesCUInit(void);
+//int ClassWithStatesCUClean(void);
+//int ClassWithStatesCUInit(void);
 int EventCUClean(void);
 int EventCUInit(void);
 int ExistentCUClean(void);

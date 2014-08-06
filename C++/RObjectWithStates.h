@@ -243,7 +243,7 @@ public:
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
   RStateSplitter
-    (RObjectWithEvents<SplitAxis>* a_delegate,
+    (ObjectWithEventsInterface<SplitAxis>* a_delegate,
      const State& initial_state,
      AMembWrap* mcw = nullptr);
 
@@ -306,7 +306,7 @@ protected:
   bool is_this_event_store
     (const UniversalEvent& ue) const;
 
-  RObjectWithEvents<SplitAxis>* delegate;
+  ObjectWithEventsInterface<SplitAxis>* delegate;
   const uint16_t split_state_id;
   const TransitionId split_transition_id;
   mutable bool inited;

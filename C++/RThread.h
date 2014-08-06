@@ -180,7 +180,7 @@ public:
   // TODO add std::call_once conditions. (? Also to dtr).
 
   RThreadBase& start();
-  virtual void stop (); //!< try to stop implicitly
+  virtual void stop (); //!< sets isStopRequested
 
   //! Move non-started thread to the `cancelled' state and
   //! return true.

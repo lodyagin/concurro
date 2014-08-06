@@ -41,7 +41,7 @@ template<class Thread>
 Thread* RThread<std::thread>::create(const Par& par)
 {
   return dynamic_cast<Thread*>
-   (StdThreadRepository::instance().create_thread(par));
+   (StdThreadRepository::instance()->create_thread(par));
 }
 
 template<class Thread, class Arg0, class... Args, class>

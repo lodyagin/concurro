@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -39,10 +40,14 @@ namespace curr {
 
 template<class Thread, class T>
 RThreadRepository<Thread, T>::RThreadRepository(int w)
-  : Parent(::types::type<RThreadRepository<Thread, T>>::name(), 
-           100 // the value is ignored for std::map
-    ), wait_m(w)
+  : Parent(
+      ::types::type<RThreadRepository<Thread, T>>::name(), 
+      100 // the value is ignored for std::map
+    ), 
+    wait_m(w)
 {
+  Thread::this_is_main_thread();
+
   // Disable signals. See RSignalRepository
   sigset_t ss;
   rCheck(::sigfillset(&ss) == 0);
@@ -54,6 +59,19 @@ RThreadRepository<Thread, T>::RThreadRepository(int w)
   this->complete_construction();
 }
 
+template<class Thread, class T>
+RThreadRepository<Thread, T>::~RThreadRepository()
+{
+  this->for_each([](Thread& th)
+  { 
+    th.stop(); 
+  });
+
+  this->for_each([](Thread& th)
+  {
+    th.is_terminal_state().wait();
+  });
+}
 
 template<class Thread, class T>
 void RThreadRepository<Thread, T>

@@ -246,48 +246,47 @@ typedef RThread<std::thread> RT;
 
 void test_thread_in_repository()
 {
-  StdThreadRepository& tr =
-    StdThreadRepository::instance();
+  auto tr = StdThreadRepository::instance();
 
-  RThreadFactory& tf = tr;
+//  RThreadFactory& tf = tr;
+  auto& tf = tr;
 
   // direct repository request
   {
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 0);
     T1* thread = dynamic_cast<T1*>
-      (tf.create_thread(T1::Par()));
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 1);
+      (tf->create_thread(T1::Par()));
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 1);
     thread->start();
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 1);
-    tf.delete_thread(thread); //implies stop()
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 1);
+    tf->delete_thread(thread); //implies stop()
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 0);
   }
 
   // by create()
   { 
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 0);
     T1* thread1 = RT::create<T1>();
     T1* thread2 = T1::create<T1>();
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 2);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 2);
     thread1->start();
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 2);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 2);
     thread2->start();
     thread1->remove();
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 1);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 1);
     thread2->remove();
-    CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+    CU_ASSERT_EQUAL_FATAL(tr->size(), 0);
   }
 }
 
 void test_current()
 {
-  StdThreadRepository& tr =
-    StdThreadRepository::instance();
+  auto tr = StdThreadRepository::instance();
 
   // this thread is not registered;
   CU_ASSERT_PTR_NULL_FATAL(RT::current());
 
-  CU_ASSERT_EQUAL_FATAL(tr.size(), 0);
+  CU_ASSERT_EQUAL_FATAL(tr->size(), 0);
   T1* thread1 = T1::create<T1>("thread1");
   T1* thread2 = T1::create<T1>("thread2");
   thread1->start();

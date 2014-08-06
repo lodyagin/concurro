@@ -540,32 +540,34 @@ template<class Axis>
 std::atomic<StateMapId>StateMapInstance<Axis>:: id;
 
 //! Wait is_from_event then perform 
-//! RMixedAxis<Axis,Axis2>::compare_and_move 
-template<class T, class Axis2/* = typename T::axis*/>
-void wait_and_move
-  (T& obj, 
-   const REvent<typename T::State::axis>& is_from_event,
-   const RState<typename T::State::axis>& to,
-   int wait_m)
+//!RMixedAxis<T::State::axis,Axis1>::compare_and_move 
+template<
+  class T, 
+  class Axis1,
+  class Axis2
+>
+void wait_and_move(
+  T& obj, 
+  const RMixedEvent<Axis1, Axis2>& is_from_event,
+  const RState<Axis1>& to,
+  int wait_m
+)
 {
   const auto from = is_from_event.to_state;
 
   do {
     CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
   } 
-  while (!compare_and_move<T, Axis2>(obj, from, to));
+  while (!compare_and_move<T, Axis1>(obj, from, to));
 }
 
-//! Wait is_from_event then perform 
-//! RMixedAxis<Axis,Axis2>::compare_and_move
-template<class T>
+template<class T, class Axis>
 void wait_and_move
   (T& obj, 
-   const std::set
-     <RState<typename T::State::axis>>& from_set,
+   const std::set<RState<Axis>>& from_set,
    const CompoundEvent& is_from_event,
-   const RState<typename T::State::axis>& to,
-   int wait_m/* = -1*/)
+   const RState<Axis>& to,
+   int wait_m)
 {
   do { 
     CURR_WAIT_L(obj.logger(), is_from_event, wait_m);

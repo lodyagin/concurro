@@ -89,6 +89,10 @@ public:
   RThreadRepository& operator=
     (const RThreadRepository&) = delete;
 
+  //! Signals all threads to exit and waits
+  //! (the main thread is not here)
+  ~RThreadRepository();
+
   //! Init with the specified operation timeout in msecs
   static void init(int w)
   {

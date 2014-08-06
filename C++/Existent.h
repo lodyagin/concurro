@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -31,16 +32,25 @@
 #define CONCURRO_EXISTENT_H_
 
 #include <functional>
+#include "types/exception.h"
 #include "ClassWithStates.h"
 #include "RState.h"
 #include "REvent.h"
+#include "ConstructibleObject.h"
 
 namespace curr {
+
+//! @addtogroup exceptions
+//! @{
+
+struct ExistentException : virtual std::exception {};
+
+//! @}
 
 //! @addtogroup singletons
 //! @{
 
-DECLARE_AXIS(ExistenceAxis, StateAxis);
+DECLARE_AXIS(ExistenceAxis, ConstructibleAxis);
 
 extern ::types::constexpr_string existent_class_initial_state;
 
@@ -98,13 +108,17 @@ template<
   class StateHook = ExistentEmptyStateHook<T>
 >
 class Existent 
-  : public ClassWithEvents
+  : public ConstructibleObject,
+    public ClassWithEvents
     < ExistenceAxis, 
       existent_class_initial_state,
       StateHook
     >,
-    public virtual CompleteConstruction
+    public RStateSplitter<ExistenceAxis, ConstructibleAxis>
+    //public virtual CompleteConstruction
 {
+  using Splitter = RStateSplitter<ExistenceAxis, ConstructibleAxis>;
+
 public:
   using Parent = ClassWithEvents
     <ExistenceAxis, existent_class_initial_state,
@@ -126,7 +140,7 @@ public:
     DECLARE_STATE_FUN(State, moving_when_several);
     //! @endcond
 
-//    event_fun<ExistenceAxis> is_not_exist;
+    event_fun<ExistenceAxis> is_exist_one;
 
     CompoundEvent is_terminal_state() const override
     {
@@ -155,7 +169,10 @@ public:
     }
 
   private:
-    TheClass() {}
+    TheClass()
+     : is_exist_one(this, exist_oneFun())
+    {}
+  
     TheClass(const TheClass&) = delete;
     ~TheClass() {}
     TheClass& operator=(const TheClass&) = delete;
@@ -193,6 +210,48 @@ public:
   }
 
   void complete_construction() override;
+
+  void state_changed
+    (StateAxis& ax, 
+     const StateAxis& state_ax,     
+     AbstractObjectWithStates* object,
+     const UniversalState& new_state) override
+  {
+    throw ::types::exception<ExistentException>(
+      "Existent::state_changed() must not be called"
+    );
+  }
+
+  std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) override
+  { 
+    return Splitter::current_state(ax);
+  }
+
+  const std::atomic<uint32_t>& 
+    current_state(const StateAxis& ax) const override
+  { 
+    return Splitter::current_state(ax);
+  }
+
+  CompoundEvent create_event
+  (const UniversalEvent& ue) const override
+  {
+    return Splitter::create_event(ue);
+  }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
+  {
+    ax.update_events(this, trans_id, to);
+  }
+
+  CompoundEvent is_terminal_state() const override
+  {
+    return TheClass::instance()->is_terminal_state();
+  }
 
 protected:
   static std::atomic<int> obj_count;

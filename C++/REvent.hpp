@@ -130,6 +130,7 @@ RCompoundEvent::RCompoundEvent
 }
 #endif
 
+#if 0
 //! An arrival event for usage in static members
 template<class Axis, class Axis2>
 struct a_event_fun
@@ -153,6 +154,7 @@ struct a_event_fun
   ObjectWithEventsInterface<Axis2> * const obj_ptr;
   const RState<Axis> to;
 };
+#endif
 
 template<class Axis, class Axis2>
 struct a_trans_event_fun

@@ -128,7 +128,7 @@ Obj* RepositoryBase<Obj, Par, ObjMap, ObjId>
   catch (const std::out_of_range&) {
     throw exception<NoSuchId>(
       "No object with id [", id, "] exists in ",
-      limit_head<40>(type<RepositoryBase>::name())
+      limit_tail<40>(type<RepositoryBase>::name())
     );
   }
 

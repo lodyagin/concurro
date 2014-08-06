@@ -38,8 +38,8 @@
 #include <algorithm>
 #include <atomic>
 #include <utility>
-#include "SCommon.h"
 #include "SSingleton.h"
+#include "SCommon.h"
 #include "Logging.h"
 #ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
@@ -329,7 +329,8 @@ struct is_root<LOG::Root>
 /**
  */
 template<class Type>
-class Logger final : public SAutoSingleton<Logger<Type>>
+class Logger final 
+  : public SAutoSingleton<Logger<Type>, false>
 {
 public:
   Logger() 
@@ -371,11 +372,11 @@ public:
       )
         // it is constructing, return the root logger till
         // exist_one state
-        return Logger<LOG::Root>::instance().logger();
+        return Logger<LOG::Root>::instance()->logger();
       else
         // asks construct the new entity or uses the
         // existing one
-        return SAutoSingleton<Logger>::instance().logger();
+        return SAutoSingleton<Logger>::instance()->logger();
     }
     else
       return nullptr;
@@ -434,7 +435,7 @@ namespace {
 //! initialized before other systems (and deinitialized
 //! after all).
 logging::LoggerPtr rootLogger = 
-  Logger<LOG::Root>::instance().logger();
+  Logger<LOG::Root>::instance()->logger();
 
 }
 

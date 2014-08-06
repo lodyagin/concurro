@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -31,12 +32,19 @@
 #define CONCURRO_RHOLDER_H_
 
 #include <atomic>
+#include "types/exception.h"
 #include "RObjectWithStates.h"
 #include "RState.h"
 #include "REvent.h"
-#include "SException.h"
 
 namespace curr {
+
+//! @addtogroup exceptions
+//! @{
+
+struct HolderException : virtual std::exception {};
+
+//! @}
 
 //! @addtogroup repositories
 //! @{
@@ -46,7 +54,100 @@ enum class HolderType {
   Plural    //<! a view of an array of objects
 };
 
-//DECLARE_AXIS(HolderAxis, StateAxis);
+//! A common base for repository & singleton holders
+template<
+  class T,
+
+  template<class, int>
+  class Guard = T::template guard_templ,
+
+  class StatesI = typename T::states_interface,
+
+  int wait_m = 1000
+>
+class HolderCmn
+  : public StatesI,
+    public RHolderBase
+{
+  template<class O, class>
+  friend auto compare_and_move(
+    O& obj, 
+    const RState<typename O::State::axis>& from,
+    const RState<typename O::State::axis>& to
+  )-> enable_fun_if<std::is_base_of<RHolderBase, O>, bool>;
+
+public:
+  //! Make a read-only object call (see
+  //! NReaders1WriterGuard) 
+  const typename Guard<T,wait_m>::ReadPtr operator->() 
+    const
+  {
+    return guarded.operator->();
+  }
+
+  //! Make a read/write object call (see
+  //! NReaders1WriterGuard) 
+  typename Guard<T, wait_m>::WritePtr operator->()
+  {
+    return guarded.operator->();
+  }
+
+  HolderCmn* operator&() = delete;
+
+  CompoundEvent is_terminal_state() const override
+  {
+    return guarded.get()->is_terminal_state();
+  }
+
+protected:
+  HolderCmn(T* t) : guarded(t) {}
+
+  void state_changed(
+    curr::StateAxis& ax,
+    const curr::StateAxis& state_ax,
+    curr::AbstractObjectWithStates* object,
+    const curr::UniversalState& new_state
+  ) override
+  {
+    guarded->state_changed(ax,state_ax, object, new_state);
+    /*RObjectWithStates<HolderAxis>
+      ::state_changed(ax, state_ax, object, new_state);*/
+  }
+
+  std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) override
+  { 
+    return ax.current_state(this);
+  }
+
+  const std::atomic<uint32_t>& 
+  current_state(const StateAxis& ax) const override
+  { 
+    return ax.current_state(this);
+  }
+
+  CompoundEvent create_event(
+    const UniversalEvent& ue
+  ) const override
+  {
+    throw ::types::exception<HolderException>(
+      "Call to RHolder::create_event()"
+    );
+  }
+
+  void update_events
+    (StateAxis& ax, 
+     TransitionId trans_id, 
+     uint32_t to) override
+  {
+    throw ::types::exception<HolderException>(
+      "Call to RHolder::update_events()"
+    );
+  }
+
+  // The guarded object
+  Guard<T, wait_m> guarded;
+};
 
 // TODO RObjectWithStatesInterface and without states
 // specializations 
@@ -64,18 +165,14 @@ template
   template<class, int>
   class Guard = T::template guard_templ,
 
+  class StatesI = typename T::states_interface,
+
   int wait_m = 1000
 >
 class RHolder 
-  : public T::states_interface,
-    public RHolderBase
+  : public HolderCmn<T, Guard, StatesI, wait_m>
 {
-  template<class O, class>
-  friend auto compare_and_move(
-    O& obj, 
-    const RState<typename O::State::axis>& from,
-    const RState<typename O::State::axis>& to
-  )-> enable_fun_if<std::is_base_of<RHolderBase, O>, bool>;
+  using Parent = HolderCmn<T, Guard, StatesI, wait_m>;
 
 public:
   typedef typename Obj::Par Par;
@@ -112,70 +209,6 @@ public:
   RHolder& operator=(RHolder&&);
 #endif
 
-  //! Make a read-only object call (see
-  //! NReaders1WriterGuard) 
-  const typename Guard<T,wait_m>::ReadPtr operator->() 
-    const
-  {
-    return guarded.operator->();
-  }
-
-  //! Make a read/write object call (see
-  //! NReaders1WriterGuard) 
-  typename Guard<T, wait_m>::WritePtr operator->()
-  {
-    return guarded.operator->();
-  }
-
-  RHolder* operator&() = delete;
-
-  CompoundEvent is_terminal_state() const override
-  {
-    return guarded.get()->is_terminal_state();
-  }
-
-protected:
-  void state_changed(
-    curr::StateAxis& ax,
-    const curr::StateAxis& state_ax,
-    curr::AbstractObjectWithStates* object,
-    const curr::UniversalState& new_state
-  ) override
-  {
-    guarded->state_changed(ax,state_ax, object, new_state);
-    /*RObjectWithStates<HolderAxis>
-      ::state_changed(ax, state_ax, object, new_state);*/
-  }
-
-  std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) override
-  { 
-    return ax.current_state(this);
-  }
-
-  const std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) const override
-  { 
-    return ax.current_state(this);
-  }
-
-  CompoundEvent create_event(
-    const UniversalEvent& ue
-  ) const override
-  {
-    THROW_PROGRAM_ERROR;
-  }
-
-  void update_events
-    (StateAxis& ax, 
-     TransitionId trans_id, 
-     uint32_t to) override
-  {
-    THROW_PROGRAM_ERROR;
-  }
-
-  // The guarded object
-  Guard<T, wait_m> guarded;
 };
 
 #if 0

@@ -1,20 +1,21 @@
 /* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+***********************************************************
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -33,48 +34,13 @@
 #include <list>
 #include <boost/lockfree/stack.hpp>
 #include "types/exception.h"
-#include "Logging.h"
 #include "SSingleton.h"
+#include "Logging.h"
 #include "RMutex.h"
 #include "SCheck.h"
 #include "Existent.hpp"
 
 namespace curr {
-
-/**
- * @addtogroup exceptions
- * @{
- */
-
-struct SingletonException : virtual std::exception {};
-
-//! Exception: somebody tries to get an
-//! SSingleton::instance() when no one is available
-struct NotExistingSingleton : SingletonException
-{
-#if 0
-public:
-  NotExistingSingleton()
-    : curr::SException("Somebody tries to get "
-                       "an SSingleton::instance() when "
-                       "no one is available") {}
-#endif
-};
-
-//! Exception: somebody tries to create more than one
-//! SSingleton instance
-struct MustBeSingleton : SingletonException
-{
-#if 0
-public:
-  MustBeSingleton()
-    : curr::SException(
-      "Somebody tries to create more than one "
-      "SSingleton instance") {}
-#endif
-};
-
-//! @}
 
 // SingletonStateHook
 
@@ -84,6 +50,8 @@ void SingletonStateHook<T, wait_m>::operator()
    const StateAxis&,
    const UniversalState& new_state)
 {
+  using S = SSingleton<T, wait_m>;
+
   // Unable to cast to Existent because it is not
   // constructed yet
   auto* obj_ptr = dynamic_cast
@@ -93,8 +61,7 @@ void SingletonStateHook<T, wait_m>::operator()
   auto& obj = *obj_ptr;
   const RState<ExistenceAxis> newst(new_state);
 
-  if (newst == SSingleton<T, wait_m>::TheClass
-        ::preinc_exist_severalFun())
+  if (newst == S::TheClass::preinc_exist_severalFun())
       // it is obligatory to check reason of enter to
       // disable intercept preinc_exist_several set by
       // others.
@@ -103,23 +70,68 @@ void SingletonStateHook<T, wait_m>::operator()
       RMixedAxis<SingletonAxis, ExistenceAxis>
       ::compare_and_move(
         obj,
-        SSingleton<T, wait_m>::TheClass::preinc_exist_severalFun(),
+        S::TheClass::preinc_exist_severalFun(),
         // <NB> prior obj_count++
-        SSingleton<T, wait_m>::TheClass::exist_oneFun()
+        S::TheClass::exist_oneFun()
         // <NB> the singleton constructor will be failed
         ))
-      throw ::types::exception<MustBeSingleton>(
-        "Somebody tries to create more than one "
-        "SSingleton instance"
-      );
+      typename S::MustBeSingleton().raise();
     else
       throw ::types::exception<SingletonException>
         ("Program error"); // check the state design if
                            // you get it
   }
+  else if (newst == S::TheClass::predec_exist_oneFun())
+  {
+    // sync the class state with the object state (wait
+    // for yields)
+    wait_and_move<S>(
+      *S::instance_intl(), 
+      S::TheClass::instance()->is_exist_one(),
+      S::TheClass::predec_exist_oneFun(),
+      wait_m
+    );
+  }
 }
 
 // SSingleton
+
+#define SSingletonTW_ SSingleton<T, wait_m>
+
+template<class T, int wait_m>
+DEFINE_STATE_CONST(SSingletonTW_, State, preoccupied);
+template<class T, int wait_m>
+DEFINE_STATE_CONST(SSingletonTW_, State, occupied);
+template<class T, int wait_m>
+DEFINE_STATE_CONST(SSingletonTW_, State, postoccupied);
+
+template<class T, int wait_m>
+void SSingleton<T, wait_m>::NotExistingSingleton
+//
+::raise() const
+{
+  using namespace ::types;
+  throw ::types::exception(
+    *this,
+    "Somebody tries to get an ", 
+    limit_head<60>(type<SSingleton>::name()),
+    "::instance() when no one is available"
+  );
+}
+
+template<class T, int wait_m>
+void SSingleton<T, wait_m>::MustBeSingleton
+//
+::raise() const
+{
+  using namespace ::types;
+  throw ::types::exception(
+    *this,
+    "Somebody tries to create more than one ",
+    limit_head<60>(type<SSingleton>::name()),
+    " instance"
+  );
+}
 
 //FIXME concurrency problems still here
 
@@ -128,6 +140,11 @@ T* SSingleton<T, wait_m>::_instance; // <NB> no explicit init
 
 template<class T, int wait_m>
 SSingleton<T, wait_m>::SSingleton()
+  : RStateSplitter<SingletonAxis, ExistenceAxis>(
+      SSingleton<T, wait_m>::TheClass::instance(),
+      SSingleton<T, wait_m>::TheClass::preinc_exist_oneFun()
+    ),
+    CONSTRUCT_EVENT(occupied)
 {
   assert(this->get_obj_count() == 1);
 }
@@ -173,23 +190,68 @@ void SSingleton<T, wait_m>::complete_construction()
 
 // No logging here (recursion is possible)
 template<class T, int wait_m>
-inline T & SSingleton<T, wait_m>::instance()
+T* SSingleton<T, wait_m>::instance_intl()
 {
   // If another thread starts creating T we must wait the
   // completion of the creation
   if (!This::is_complete().wait(wait_m))
-    throw NotExistingSingleton();
+    NotExistingSingleton().raise();
 
-  //FIXME need redesign (singleton existence during the
-  //method call).
-   
-  return *_instance;
+  return _instance;
 }
 
 template<class T, int wait_m>
 bool SSingleton<T, wait_m>::isConstructed()
 {
-  return !state_is(*this, in_constructionFun());
+  return !state_is(*this, ConstructibleObject::preinc_exist_oneFun());
+}
+
+template<class T, int wait_m>
+void SSingleton<T, wait_m>::occupy() const
+{
+  using log = Logger<LOG::Singletons>;
+
+  using S = SSingleton<T, wait_m>;
+
+  wait_and_move(
+    const_cast<S&>(*this),
+    { S::TheClass::exist_oneFun(), occupiedState },
+    is_occupiable_event,
+    preoccupiedState,
+    wait_m
+  );
+
+  ++occupy_count;
+  LOG_TRACE(log, "++occupty_count == " << occupy_count);
+  assert(occupy_count > 0);
+
+  move_to(const_cast<S&>(*this), occupiedState);
+}
+
+template<class T, int wait_m>
+void SSingleton<T, wait_m>::yield() const
+{
+  using log = Logger<LOG::Singletons>;
+  using S = SSingleton<T, wait_m>;
+
+  wait_and_move(
+    const_cast<S&>(*this),
+    is_occupied_event,
+    postoccupiedState,
+    wait_m
+  );
+
+  assert(occupy_count > 0);
+  --occupy_count;
+  LOG_TRACE(log, "--occupty_count == " << occupy_count);
+
+  if (occupy_count == 0)
+    move_to(
+      const_cast<S&>(*this), 
+      S::TheClass::exist_oneFun()
+    );
+  else
+    move_to(const_cast<S&>(*this), occupiedState);
 }
 
 // SAutoSingleton
@@ -221,15 +283,16 @@ SAutoSingleton<T, wait_m>::~SAutoSingleton()
 }
 */
 
-template<class T, int wait_m>
-T& SAutoSingleton<T, wait_m>::instance()
+template<class T, bool destruct, int wait_m>
+typename SSingleton<T, wait_m>::Holder 
+SAutoSingleton<T, destruct, wait_m>::instance()
 {
   construct_once();
   return SSingleton<T, wait_m>::instance ();
 }
 
-template<class T, int wait_m>
-void SAutoSingleton<T, wait_m>::construct_once()
+template<class T, bool destruct, int wait_m>
+void SAutoSingleton<T, destruct, wait_m>::construct_once()
 {
   // It is guaranteed that thee auto_reg will be
   // constructed before this method call.

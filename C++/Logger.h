@@ -48,7 +48,7 @@ namespace logging {
  */
 
 class Level;
-using LevelPtr = std::shared_ptr<Level>;
+using LevelPtr = Level;
 
 /**
  * Defines the minimum set of levels recognized by the

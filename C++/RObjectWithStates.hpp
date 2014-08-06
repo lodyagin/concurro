@@ -187,7 +187,7 @@ void RObjectWithEvents<Axis>
 
 template<class DerivedAxis, class SplitAxis>
 RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
-  (RObjectWithEvents<SplitAxis>* a_delegate,
+  (ObjectWithEventsInterface<SplitAxis>* a_delegate,
    const State& initial_state,
     AMembWrap* mcw)
     : 
@@ -207,9 +207,11 @@ CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
 ::create_event (const UniversalEvent& ue) const
 {
   if (!is_this_event_store(ue)) {
-    CompoundEvent ce(
-      delegate->RObjectWithEvents<SplitAxis>
-      ::create_event(ue));
+    CompoundEvent ce;
+    if (auto* op = dynamic_cast<RObjectWithEvents<SplitAxis>*>(delegate))
+      ce |= op->RObjectWithEvents<SplitAxis>::create_event(ue);
+    else
+      ; //TODO ce |= delegate->ClassWithEvents<SplitAxis>::create_event(ue);
 
     // Create event in DerivedAxis if it is a part of
     // DerivedAxis transition.
@@ -262,9 +264,12 @@ void RStateSplitter<DerivedAxis, SplitAxis>
 {
   if (!inited) {
     inited = true;
-    delegate->register_subscriber
-      (const_cast<RStateSplitter<DerivedAxis, SplitAxis>*>
-       (this), &DerivedAxis::self());
+    auto* p = dynamic_cast<RObjectWithStatesBase*>
+      (delegate);
+    if (p)
+      p->register_subscriber
+       (const_cast<RStateSplitter<DerivedAxis, SplitAxis>*>
+        (this), &DerivedAxis::self());
   }
 }
 

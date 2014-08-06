@@ -37,89 +37,73 @@ namespace logging {
 
 LevelPtr Level::getAll()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(ALL_INT);
-  return the_level;
+  return Level(ALL_INT);
 }
 
 LevelPtr Level::getFatal()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(FATAL_INT);
-  return the_level;
+  return Level(FATAL_INT);
 }
 
 LevelPtr Level::getError()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(ERROR_INT);
-  return the_level;
+  return Level(ERROR_INT);
 }
 
 LevelPtr Level::getWarn()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(WARN_INT);
-  return the_level;
+  return Level(WARN_INT);
 }
 
 LevelPtr Level::getInfo()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(INFO_INT);
-  return the_level;
+  return Level(INFO_INT);
 }
 
 LevelPtr Level::getDebug()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(DEBUG_INT);
-  return the_level;
+  return Level(DEBUG_INT);
 }
 
 LevelPtr Level::getTrace()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(TRACE_INT);
-  return the_level;
+  return Level(TRACE_INT);
 }
 
 LevelPtr Level::getOff()
 {
-  static LevelPtr the_level = 
-    std::make_shared<Level>(OFF_INT);
-  return the_level;
+  return Level(OFF_INT);
 }
 
 
 bool Logger::isTraceEnabled() const
 {
-  return getEffectiveLevel()->toInt() <= Level::TRACE_INT;
+  return getEffectiveLevel().toInt() <= Level::TRACE_INT;
 }
 
 bool Logger::isDebugEnabled() const
 {
-  return getEffectiveLevel()->toInt() <= Level::DEBUG_INT;
+  return getEffectiveLevel().toInt() <= Level::DEBUG_INT;
 }
 
 bool Logger::isInfoEnabled() const
 {
-  return getEffectiveLevel()->toInt() <= Level::INFO_INT;
+  return getEffectiveLevel().toInt() <= Level::INFO_INT;
 }
 
 bool Logger::isWarnEnabled() const
 {
-  return getEffectiveLevel()->toInt() <= Level::WARN_INT;
+  return getEffectiveLevel().toInt() <= Level::WARN_INT;
 }
 
 bool Logger::isErrorEnabled() const
 {
-  return getEffectiveLevel()->toInt() <= Level::ERROR_INT;
+  return getEffectiveLevel().toInt() <= Level::ERROR_INT;
 }
 
 bool Logger::isFatalEnabled() const
 {
-  return getEffectiveLevel()->toInt() <= Level::FATAL_INT;
+  return getEffectiveLevel().toInt() <= Level::FATAL_INT;
 }
 
 LevelPtr Logger::getEffectiveLevel() const
