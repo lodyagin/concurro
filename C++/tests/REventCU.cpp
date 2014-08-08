@@ -121,38 +121,7 @@ public:
       return CompoundEvent();
     }
 
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) override
-  {
-  }
-  
-  std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) override
-    {
-      return ax.current_state(this);
-    }
-
-  const std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) const override
-    {
-      return ax.current_state(this);
-    }
-
-  void update_events
-    (StateAxis& ax, 
-     TransitionId trans_id, 
-     uint32_t to) override
-  {
-    ax.update_events(this, trans_id, to);
-  }
-
-  /*StateAxis& get_axis() const override
-  {
-    return CDAxis::self();
-    }*/
+  MULTIPLE_INHERITANCE_DEFAULT_MEMBERS;
 
   DEFAULT_LOGGER(Test)
 };

@@ -52,6 +52,15 @@ ConstructibleObject::ConstructibleObject()
 {
 }
 
+ConstructibleObject::ConstructibleObject(
+  const is_exist_one_event_t& cl_ev
+)
+  : RObjectWithEvents<ConstructibleAxis>
+      (preinc_exist_oneFun()),
+    is_exist_one_event(cl_ev)
+{
+}
+
 void ConstructibleObject::complete_construction()
 {
   move_to(*this, exist_oneFun());

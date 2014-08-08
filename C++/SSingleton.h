@@ -94,14 +94,14 @@ class SHolder
   : public HolderCmn<
       T, 
       T::template guard_templ, 
-      event::interface_with_states<SingletonAxis>,
+      event::interface<SingletonAxis>,
       wait_m
     >
 {
   using Parent = HolderCmn<
       T, 
       T::template guard_templ, 
-      event::interface_with_states<SingletonAxis>,
+      event::interface<SingletonAxis>,
       wait_m
     >;
 public:
@@ -159,17 +159,19 @@ public:
  */
 template<class T, int wait_m = 1000>
 class SSingleton 
-  : public /*virtual*/ Existent
-      <T, SingletonStateHook<T, wait_m>>,
-    //public virtual ConstructibleObject,
-    public RStateSplitter<SingletonAxis, ExistenceAxis>
+  : public Existent<T, SingletonStateHook<T, wait_m>>,
+    public virtual event::interface<SingletonAxis>
 {
   friend SingletonStateHook<T, wait_m>;
 
-  using Splitter = 
-    RStateSplitter<SingletonAxis, ExistenceAxis>;
-  
-  DECLARE_EVENT(SingletonAxis, occupied);
+  typedef Existent<T, SingletonStateHook<T, wait_m>> 
+    Parent;
+//  typedef ConstructibleObject ObjParent;
+  typedef SSingleton<T, wait_m> This;
+
+  A_DECLARE_EVENT(
+    SingletonAxis, ConstructibleAxis, occupied
+  );
 
 public:
   //! @cond
@@ -178,6 +180,14 @@ public:
   DECLARE_STATE_CONST(State, occupied);
   DECLARE_STATE_CONST(State, postoccupied);
   //! @endcond
+
+  static auto is_exist_one() 
+  -> decltype(Parent::TheClass::instance()->is_exist_one())
+  {
+    static auto the_event = 
+      Parent::TheClass::instance()->is_exist_one();
+    return the_event;
+  }
 
   struct NotExistingSingleton : curr::NotExistingSingleton
   {
@@ -188,11 +198,6 @@ public:
   {
     [[noreturn]] void raise() const;
   };
-
-  typedef Existent<T, SingletonStateHook<T, wait_m>> 
-    Parent;
-  typedef ConstructibleObject ObjParent;
-  typedef SSingleton<T, wait_m> This;
 
   //! A singleton guard 
   //! 1) doesn't allow destroy singleton in a middle of
@@ -322,12 +327,14 @@ public:
   //! rvalue is the same object.
   SSingleton& operator=(SSingleton&& s) = delete;
 
+#if 0
   CompoundEvent is_terminal_state() const override
   {
     return is_terminal_state_event;
   }
+#endif
 
-  void complete_construction() override;
+//  void complete_construction() override;
 
   //! Return a holder to the class instance. 
   //!
@@ -338,7 +345,7 @@ public:
     return Holder(instance_intl());
   }
 
-  //! It is the same as !state_is(*this, in_construction)
+  //! It is the same as !state_is(*this, preinc_exist_one)
   bool isConstructed();
 
   void state_changed
@@ -347,27 +354,31 @@ public:
      AbstractObjectWithStates* object,
      const UniversalState& new_state) override
   {
+#if 1
+    ax.state_changed(this, object, state_ax, new_state);
+#else
     throw ::types::exception<SingletonException>(
       "SSingleton::state_changed() must not be called"
     );
+#endif
   }
 
   std::atomic<uint32_t>& 
   current_state(const StateAxis& ax) override
   { 
-    return Splitter::current_state(ax);
+    return ax.current_state(this);
   }
 
   const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override
+  current_state(const StateAxis& ax) const override
   { 
-    return Splitter::current_state(ax);
+    return ax.current_state(this);
   }
 
-  CompoundEvent create_event
-    (const UniversalEvent& ue) const override
+  CompoundEvent 
+  create_event(const StateAxis& ax, const UniversalEvent& ue) const override
   {
-    return Splitter::create_event(ue);
+    return ConstructibleObject::create_event(ax, ue);
   }
 
   void update_events
@@ -379,21 +390,6 @@ public:
   }
 
 protected:
-  //! It is a statically accessible analog of
-  //! the complete_construction event.
-  static Event is_complete()
-  {
-    static Event* is_complete_event = new Event
-     (sformat(::types::type<SSingleton<T, wait_m>>::name(),
-               ":is_complete()::is_complete_event"), 
-       true, false);
-    // prevent infinit loop in RThreadRepository::current
-    is_complete_event->log_params().wait = 
-      is_complete_event->log_params().set = 
-        is_complete_event->log_params().reset = false;
-    return *is_complete_event;
-  }
-
   //! Return instance without occupation check
   static T* instance_intl();
 
@@ -415,9 +411,9 @@ private:
 
   mutable std::size_t occupy_count = 0;
 
-  CompoundEvent is_terminal_state_event { 
+ /* CompoundEvent is_terminal_state_event { 
     ConstructibleObject::is_exist_one()
-  };
+  };*/
 
   void occupy() const;
   void yield() const;

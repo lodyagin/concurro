@@ -50,7 +50,7 @@ struct ExistentException : virtual std::exception {};
 //! @addtogroup singletons
 //! @{
 
-DECLARE_AXIS(ExistenceAxis, ConstructibleAxis);
+//DECLARE_AXIS(ExistenceAxis, ConstructibleAxis);
 
 extern ::types::constexpr_string existent_class_initial_state;
 
@@ -113,19 +113,23 @@ class Existent
     < ExistenceAxis, 
       existent_class_initial_state,
       StateHook
-    >,
-    public RStateSplitter<ExistenceAxis, ConstructibleAxis>
+    >
+    /*public RStateSplitter<ExistenceAxis, ConstructibleAxis>*/
     //public virtual CompleteConstruction
 {
-  using Splitter = RStateSplitter<ExistenceAxis, ConstructibleAxis>;
+//  using Splitter = RStateSplitter<ExistenceAxis, ConstructibleAxis>;
 
 public:
   using Parent = ClassWithEvents
     <ExistenceAxis, existent_class_initial_state,
      StateHook>;
 
-  class TheClass : public Parent::TheClass
+  class TheClass 
+    : public Parent::TheClass,
+      public virtual ObjectWithEventsInterface<ConstructibleAxis>
   {
+    A_DECLARE_EVENT(ExistenceAxis, ConstructibleAxis, exist_one);
+
   public:
     //! @cond
     DECLARE_STATES(ExistenceAxis, State);
@@ -140,12 +144,9 @@ public:
     DECLARE_STATE_FUN(State, moving_when_several);
     //! @endcond
 
-    event_fun<ExistenceAxis> is_exist_one;
-
     CompoundEvent is_terminal_state() const override
     {
-//      return is_not_exist();
-      return CompoundEvent();
+      return CompoundEvent(); // FIXME no terminal state
     }
 
     logging::LoggerPtr logger() const override
@@ -168,11 +169,10 @@ public:
       return i; 
     }
 
+    MULTIPLE_INHERITANCE_PARENT_MEMBERS(Parent::TheClass);
+
   private:
-    TheClass()
-     : is_exist_one(this, exist_oneFun())
-    {}
-  
+    TheClass();
     TheClass(const TheClass&) = delete;
     ~TheClass() {}
     TheClass& operator=(const TheClass&) = delete;
@@ -204,54 +204,28 @@ public:
     ExistenceAxis, 
     existent_class_initial_state,
     StateHook>
-  ::TheClass& the_class() const override
+  ::TheClass::Interface& the_state_class() const override
+  {
+    return s_the_class();
+  }
+
+  typename ClassWithEvents <
+    ExistenceAxis, 
+    existent_class_initial_state,
+    StateHook>
+  ::TheClass::Interface& the_class() const override
   {
     return s_the_class();
   }
 
   void complete_construction() override;
 
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) override
-  {
-    throw ::types::exception<ExistentException>(
-      "Existent::state_changed() must not be called"
-    );
-  }
-
-  std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) override
-  { 
-    return Splitter::current_state(ax);
-  }
-
-  const std::atomic<uint32_t>& 
-    current_state(const StateAxis& ax) const override
-  { 
-    return Splitter::current_state(ax);
-  }
-
-  CompoundEvent create_event
-  (const UniversalEvent& ue) const override
-  {
-    return Splitter::create_event(ue);
-  }
-
-  void update_events
-    (StateAxis& ax, 
-     TransitionId trans_id, 
-     uint32_t to) override
-  {
-    ax.update_events(this, trans_id, to);
-  }
-
   CompoundEvent is_terminal_state() const override
   {
     return TheClass::instance()->is_terminal_state();
   }
+
+  MULTIPLE_INHERITANCE_FORWARD_MEMBERS(s_the_class());
 
 protected:
   static std::atomic<int> obj_count;

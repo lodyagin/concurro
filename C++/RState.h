@@ -329,20 +329,24 @@ private:
 //! Just a marker
 class RHolderBase {};
 
-//! RMixedAxis<Axis,Axis2>::state_is adapter
-template<class T, class Axis2 = typename T::axis>
+//! RMixedAxis::state_is adapter
+template<
+  class T, 
+  class Axis1 = typename T::axis,
+  class Axis2 = Axis1
+>
 bool state_is
   (T& obj, 
-   const curr::RState<typename T::State::axis>& to)
+   const curr::RState<Axis1>& to)
 {
-  return curr::RMixedAxis<typename T::State::axis, Axis2>
+  return curr::RMixedAxis<Axis1, Axis2>
     :: state_is(obj, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::move_to adapter
 template<
   class T, 
-  class Axis1 = typename T::axis,
+  class Axis1 = typename T::State::axis,
   class Axis2 = Axis1
 >
 void move_to(
@@ -354,16 +358,20 @@ void move_to(
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter
-template<class T, class Axis2 = typename T::axis>
+template<
+  class T, 
+  class Axis1,
+  class Axis2 = typename T::axis
+>
 auto compare_and_move(
   T& obj, 
-  const curr::RState<typename T::State::axis>& from,
-  const curr::RState<typename T::State::axis>& to
+  const curr::RState<Axis1>& from,
+  const curr::RState<Axis1>& to
 ) ->
   enable_fun_if_not<std::is_base_of<RHolderBase, T>, bool>
 {
-  return curr::RMixedAxis<typename T::State::axis, Axis2>
-    :: compare_and_move(obj, from, to);
+  return RMixedAxis<Axis1, Axis2>::compare_and_move
+    (obj, from, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::compare_and_move adapter for
@@ -380,19 +388,19 @@ auto compare_and_move(
     :: compare_and_move(*obj.guarded.get(), from, to);
 }
 
-//! RMixedAxis::compare_and_move adapter
+//! RMixedAxis<Axis1, Axis2>::compare_and_move adapter
 template<
   class T, 
-  class Axis1 = typename T::axis,
-  class Axis2 = Axis1
+  class Axis1,
+  class Axis2 = typename T::State::axis
 >
 bool compare_and_move
   (T& obj, 
    const std::set<curr::RState<Axis1>>& from_set,
    const curr::RState<Axis1>& to)
 {
-  return curr::RMixedAxis<Axis1, Axis2>
-    :: compare_and_move(obj, from_set, to);
+  return RMixedAxis<Axis1, Axis2>
+    ::compare_and_move(obj, from_set, to);
 }
 
 //! RMixedAxis<Axis,Axis2>::neg_compare_and_move adapter
@@ -466,6 +474,18 @@ void wait_and_move
   } \
   \
   templ \
+  CompoundEvent axis::create_event(                              \
+    const curr::AbstractObjectWithEvents* obj,                \
+    const curr::UniversalEvent& ue                      \
+  )  const                                              \
+  {                                                     \
+    return dynamic_cast<const curr::RObjectWithEvents<axis>*> \
+       (obj)                                            \
+      -> curr::RObjectWithEvents<axis>::create_event    \
+      (*this, ue);                                      \
+  }                                                     \
+                                                        \
+  templ                                                 \
   void axis::update_events \
     (curr::AbstractObjectWithEvents* obj,       \
      curr::TransitionId trans_id,               \
@@ -574,6 +594,6 @@ public:
 };
 #endif
 
-}
+} // curr
 
 #endif

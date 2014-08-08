@@ -39,11 +39,21 @@
 namespace curr {
 
 template<class T, class StateHook>
+Existent<T, StateHook>::TheClass::TheClass()
+  : CONSTRUCT_EVENT(exist_one)
+{
+  // prevents an infinite loop
+  is_exist_one_event.log_params().wait = 
+    is_exist_one_event.log_params().set = 
+      is_exist_one_event.log_params().reset = false;
+}
+
+template<class T, class StateHook>
 std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
 Existent<T, StateHook>::Existent()
-  : Splitter(this, preinc_exist_oneFun())
+  : ConstructibleObject(TheClass::instance()->is_exist_one())
 {
   inc_existence();
 }

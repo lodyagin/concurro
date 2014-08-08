@@ -167,10 +167,12 @@ public:
       ? universal_object_id : thread_name;
   }
 
+#if 0
   std::string object_name() const override
   {
     return pretty_id();
   }
+#endif
 
   /* 
      It is a group of functions 

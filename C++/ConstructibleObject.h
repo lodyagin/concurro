@@ -43,6 +43,7 @@ namespace curr {
  */
 
 DECLARE_AXIS(ConstructibleAxis, StateAxis);
+DECLARE_AXIS(ExistenceAxis, ConstructibleAxis);
 
 //! An inheritance from this object can prevent accessing
 //! the object
@@ -53,18 +54,13 @@ DECLARE_AXIS(ConstructibleAxis, StateAxis);
 //! "complete_construction" state in the final descendant.
 class ConstructibleObject
   : public RObjectWithEvents<ConstructibleAxis>
-//    public virtual CompleteConstruction
 {
-#if 0
-  DECLARE_EVENT(ConstructibleAxis, complete_construction);
-
-public:
-  DECLARE_STATES(ConstructibleAxis, ConstructibleState);
-  DECLARE_STATE_FUN(ConstructibleState, in_construction);
-  DECLARE_STATE_FUN(ConstructibleState, 
-                    complete_construction);
-#else
-  DECLARE_EVENT(ConstructibleAxis, exist_one);
+  A_DECLARE_EVENT(
+    ExistenceAxis,
+    ConstructibleAxis,
+    exist_one
+  );
+  using is_exist_one_event_t =decltype(is_exist_one_event);
 
 public:
   DECLARE_STATES(ConstructibleAxis, ConstructibleState);
@@ -72,18 +68,18 @@ public:
                     preinc_exist_one);
   DECLARE_STATE_FUN(ConstructibleState, 
                     exist_one);
-#endif
 
   ConstructibleObject();
 
   //! Report complete construction from a
   //! descendant. Change the state to
   //! complete_construction.
-#if 0
-  void complete_construction() override;
-#else
   virtual void complete_construction();
-#endif
+
+protected:
+  //! For construction from Existent. It allows use the
+  //! same exist_one event in all Existent instances.
+  ConstructibleObject(const is_exist_one_event_t& cl_ev);
 };
 
 //! @}

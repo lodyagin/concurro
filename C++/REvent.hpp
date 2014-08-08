@@ -76,7 +76,7 @@ RMixedEvent<Axis, Axis2>
       ),
    // G++-4.7.3 bug when use copy constructor
    CompoundEvent
-   (std::move(obj_ptr->create_event(
+   (std::move(obj_ptr->create_event(Axis2::self(),
                 (UniversalEvent)*this))),
    to_state(to)
 {
@@ -108,7 +108,7 @@ RMixedEvent<Axis, Axis2>
   : UniversalEvent(to, true),
    // G++-4.7.3 bug when use copy constructor
    CompoundEvent
-   (std::move(obj_ptr->create_event(
+   (std::move(obj_ptr->create_event(Axis2::self(),
                 (UniversalEvent)*this))),
    to_state(to)
 {

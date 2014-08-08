@@ -127,6 +127,7 @@ protected:
   }
 
   CompoundEvent create_event(
+    const StateAxis& ax,
     const UniversalEvent& ue
   ) const override
   {

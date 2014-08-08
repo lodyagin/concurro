@@ -176,8 +176,7 @@ public:
   typedef typename RObjectWithStates<Axis>::AMembWrap
     AMembWrap;
 
-  using states_interface = 
-    curr::event::interface_with_states<Axis>;
+  using states_interface = curr::event::interface<Axis>;
 
   RObjectWithEvents
     (const typename RObjectWithStates<Axis>::State& 
@@ -205,12 +204,14 @@ public:
      TransitionId trans_id, 
      uint32_t to);
 
-protected:
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
-  CompoundEvent create_event
-    (const UniversalEvent&) const override;
+  CompoundEvent create_event(
+    const StateAxis& ax, 
+    const UniversalEvent&
+  ) const override;
 
+protected:
   typedef std::map<uint32_t, Event> EventMap;
 
   //! It maps a local event id to an Event object
@@ -294,7 +295,7 @@ protected:
   }
 
   CompoundEvent create_event
-    (const UniversalEvent&) const override;
+    (const StateAxis& ax, const UniversalEvent&) const override;
 
   void update_events
     (StateAxis& ax, 
@@ -334,9 +335,9 @@ current_state(const StateAxis& ax) const override \
 } \
 \
 CompoundEvent create_event \
-(const UniversalEvent& ue) const override \
+(const StateAxis& ax, const UniversalEvent& ue) const override \
 { \
-  return RStateSplitter<DerivedAxis, SplitAxis>::create_event(ue); \
+  return RStateSplitter<DerivedAxis, SplitAxis>::create_event(ax, ue); \
 } \
 \
 void update_events \

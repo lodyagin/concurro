@@ -1,20 +1,20 @@
-/* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+  /* -*-coding: mule-utf-8-unix; fill-column: 58; -*- *******
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -31,6 +31,7 @@
 #define CONCURRO_RSTATE_HPP_
 
 #include <atomic>
+#include "types/meta.h"
 #include "StateMapRepository.h"
 #include "RState.h"
 #include "RThread.hpp"
@@ -39,6 +40,8 @@
 #include "Event.h"
 
 namespace curr {
+
+
 
 template<class Axis>
 void StateMapInstance<Axis>::init()
@@ -76,7 +79,7 @@ RMixedAxis<Axis, Axis2>
 //
 ::RMixedAxis(/*const StateMapPar<Axis>& par*/)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   StateMapInstance<Axis>::get_map_id();
 }
@@ -88,12 +91,16 @@ void RMixedAxis<Axis, Axis2>
   const ObjectWithStatesInterface<Axis2>& obj, 
   const RState<Axis>& to)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
   const uint32_t from = 
     const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
     . current_state(Axis2::self()).load();
-  StateMapInstance<Axis>::get_map()
+
+  StateMapInstance<MapAxis>::get_map()
     -> check_transition (STATE_IDX(from), STATE_IDX(to));
 }
 
@@ -103,8 +110,11 @@ void RMixedAxis<Axis, Axis2>
 ::move_to(ObjectWithStatesInterface<Axis2>& obj, 
           const RState<Axis>& to)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
   uint32_t from;
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
@@ -114,7 +124,7 @@ void RMixedAxis<Axis, Axis2>
   do {
     from = current.load();
     if (!(trans_id=
-          StateMapInstance<Axis>::get_map()
+          StateMapInstance<MapAxis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
@@ -157,8 +167,11 @@ bool RMixedAxis<Axis, Axis2>
                    const RState<Axis>& to)
 {
   LOGGER_TRACE(obj.logger(), "1");
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
   
@@ -171,7 +184,7 @@ bool RMixedAxis<Axis, Axis2>
   }
 
   LOGGER_TRACE(obj.logger(), "3");
-  if (!(trans_id= StateMapInstance<Axis>::get_map()
+  if (!(trans_id= StateMapInstance<MapAxis>::get_map()
         -> get_transition_id(from, to)))
     throw InvalidStateTransition(from, to);
 
@@ -211,8 +224,11 @@ bool RMixedAxis<Axis, Axis2>
  const std::set<RState<Axis>>& from_set,
  const RState<Axis>& to)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
   TransitionId trans_id;
   uint32_t from;
 
@@ -225,7 +241,7 @@ bool RMixedAxis<Axis, Axis2>
       return false;
 
     // check the from_set correctness
-    if (!(trans_id= StateMapInstance<Axis>::get_map()
+    if (!(trans_id= StateMapInstance<MapAxis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
 
@@ -263,8 +279,11 @@ auto RMixedAxis<Axis, Axis2>
    ) -> typename std::remove_reference
           <decltype(trs)>::type::const_iterator
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
   TransitionId trans_id;
   uint32_t from;
   UniversalState to;
@@ -284,7 +303,7 @@ auto RMixedAxis<Axis, Axis2>
     assert(from == ifrom->first);
 
     // check the from_set correctness
-    if (!(trans_id= StateMapInstance<Axis>::get_map()
+    if (!(trans_id= StateMapInstance<MapAxis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
 
@@ -321,8 +340,11 @@ bool RMixedAxis<Axis, Axis2>
  const RState<Axis>& not_from,
  const RState<Axis>& to)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
   TransitionId trans_id;
   uint32_t from_;
   UniversalState from;
@@ -336,7 +358,7 @@ bool RMixedAxis<Axis, Axis2>
     if (STATE_IDX(from) == STATE_IDX(not_from))
       return false;
 
-    if (!(trans_id= StateMapInstance<Axis>::get_map()
+    if (!(trans_id= StateMapInstance<MapAxis>::get_map()
           -> get_transition_id(from, to)))
       throw InvalidStateTransition(from, to);
 
@@ -371,7 +393,7 @@ uint32_t RMixedAxis<Axis, Axis2>
 //
 ::state(const ObjectWithStatesInterface<Axis2>& obj)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   uint32_t us =
     const_cast<ObjectWithStatesInterface<Axis2>&>(obj)
@@ -386,7 +408,7 @@ bool RMixedAxis<Axis, Axis2>
 ::state_is (const ObjectWithStatesInterface<Axis2>& obj, 
             const RState<Axis>& st)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   return STATE_IDX(
     const_cast<ObjectWithStatesInterface<Axis2>&>(obj)
@@ -401,7 +423,7 @@ bool RMixedAxis<Axis, Axis2>
   const ObjectWithStatesInterface<Axis2>& obj, 
   const std::initializer_list<RState<Axis>>& set )
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   const auto current = 
     const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
@@ -422,7 +444,7 @@ bool RMixedAxis<Axis, Axis2>
   const ObjectWithStatesInterface<Axis2>& obj, 
   const Cont<RState<Axis>>& set )
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   const auto current = 
     const_cast<ObjectWithStatesInterface<Axis2>&> (obj)
@@ -442,7 +464,7 @@ void RMixedAxis<Axis, Axis2>
 (const ObjectWithStatesInterface<Axis2>& obj, 
  const RState<Axis>& expected)
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   if (!state_is(obj, expected)) {
     const auto current = 
@@ -460,7 +482,7 @@ void RMixedAxis<Axis, Axis2>
   const ObjectWithStatesInterface<Axis2>& obj, 
   const std::initializer_list<RState<Axis>>& set )
 {
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   if (!state_in(obj, set)) {
     const auto current = 
@@ -479,9 +501,12 @@ const StateMap* RMixedAxis<Axis, Axis2>
 //
 ::state_map() 
 { 
-  static_assert(is_ancestor<Axis2, Axis>(), 
+  static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
-  return StateMapInstance<Axis>::get_map(); 
+  using MapAxis = typename 
+    ::types::most_derived<Axis, Axis2>::type;
+
+  return StateMapInstance<MapAxis>::get_map(); 
 }
 
 template<class Axis>
@@ -517,7 +542,7 @@ RState<Axis>
 //
 ::operator RState<DerivedAxis> () const
 {
-  static_assert(is_ancestor<Axis, DerivedAxis>(), 
+  static_assert(is_compatible<Axis, DerivedAxis>(), 
                 "This state mixing is invalid.");
   // change a state map index
   const StateMap* stateMap = 
@@ -539,8 +564,7 @@ StateMap* StateMapInstance<Axis>::stateMap;
 template<class Axis>
 std::atomic<StateMapId>StateMapInstance<Axis>:: id;
 
-//! Wait is_from_event then perform 
-//!RMixedAxis<T::State::axis,Axis1>::compare_and_move 
+//! Wait is_from_event then performs compare_and_move 
 template<
   class T, 
   class Axis1,
@@ -558,7 +582,7 @@ void wait_and_move(
   do {
     CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
   } 
-  while (!compare_and_move<T, Axis1>(obj, from, to));
+  while (!compare_and_move<T, Axis1, Axis2>(obj, from, to));
 }
 
 template<class T, class Axis>

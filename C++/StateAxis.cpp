@@ -49,6 +49,15 @@ std::atomic<uint32_t>& StateAxis::current_state
     ("StateAxis::current_state is not implemented");
 }
 
+CompoundEvent StateAxis::create_event(
+  const curr::AbstractObjectWithEvents* obj,
+  const curr::UniversalEvent& ue
+) const
+{
+  throw ::types::exception<StateAxisException>
+    ("StateAxis::create_event is not implemented");
+}
+
 void StateAxis::update_events
   (AbstractObjectWithEvents* obj, 
    TransitionId trans_id, 

@@ -35,9 +35,8 @@
 #include <atomic>
 #include <mutex> // for axis singleton
 #include <exception>
-
-//#include "types/meta.h"
 #include "types/string.h"
+#include "Event.h"
 
 namespace curr {
 
@@ -57,6 +56,7 @@ class AbstractObjectWithStates;
 class AbstractObjectWithEvents;
 class StateMap;
 class UniversalState;
+class UniversalEvent;
 
 //! A state space axis abstract base. Real axises will be
 //! inherited.
@@ -69,6 +69,11 @@ struct StateAxis
 
   virtual std::atomic<uint32_t>& current_state
   (AbstractObjectWithStates*) const;
+
+  virtual CompoundEvent create_event(
+    const curr::AbstractObjectWithEvents* obj,
+    const curr::UniversalEvent& ue
+  ) const;                                 
 
   virtual void update_events
   (AbstractObjectWithEvents* obj, 
@@ -123,7 +128,11 @@ inline bool is_same_axis(const StateAxis& ax)
   std::atomic<uint32_t>& current_state \
     (curr::AbstractObjectWithStates* obj) const override;\
   \
-  void update_events \
+  CompoundEvent create_event(                            \
+    const curr::AbstractObjectWithEvents* obj,        \
+    const UniversalEvent& ue                    \
+  ) const override;                             \
+  void update_events                            \
     (curr::AbstractObjectWithEvents* obj,       \
      curr::TransitionId trans_id,               \
      uint32_t to) override;                     \

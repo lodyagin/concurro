@@ -60,12 +60,20 @@ class AbstractObjectWithEvents;
 class StateMap;
 //class UniversalState;
 
-//! Return true if DerivedAxis is same or derived from
+//! Returns true if DerivedAxis is same or derived from
 //! Axis
 template<class Axis, class DerivedAxis>
-  constexpr bool is_ancestor()
+constexpr bool is_ancestor()
 {
   return std::is_base_of<Axis, DerivedAxis>::value;
+}
+
+//! Returns true if UniversalStates from both axes are
+//! compatible: is_ancestor<A1,A2> or is_ancestor<A2,A1>
+template<class A1, class A2>
+constexpr bool is_compatible()
+{
+  return is_ancestor<A1, A2>() || is_ancestor<A2, A1>();
 }
 
 //! @}

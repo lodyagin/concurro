@@ -65,8 +65,12 @@ template <
   class StateHook = EmptyStateHook<ClassAxis, initial>
 >
 class ClassWithStates
+  : public virtual state::interface<ClassAxis>
 {
 public:
+  typedef typename state::interface<ClassAxis>
+    ::State State;
+
   virtual ~ClassWithStates() {}
 
   ClassWithStates* get_paired() //const
@@ -79,9 +83,11 @@ protected:
    * structure compound from separate members - classes.
    */
   class TheClass
-    : public ObjectWithStatesInterface<ClassAxis>
+    : public virtual state::interface<ClassAxis>
   {
   public:
+    using Interface = state::interface<ClassAxis>;
+
     void state_changed
       (StateAxis& ax, 
        const StateAxis& state_ax,     
@@ -103,7 +109,12 @@ protected:
 
 public:
   //! The class state.
-  virtual TheClass& the_class() const = 0;
+  virtual typename TheClass::Interface& 
+  the_state_class() const = 0;
+
+  MULTIPLE_INHERITANCE_FORWARD_STATE_MEMBERS(
+    this->the_state_class()
+  );
 };
 
 template <
@@ -112,7 +123,8 @@ template <
   class StateHook = EmptyStateHook<ClassAxis, initial>
 >
 class ClassWithEvents 
-  : public ClassWithStates<ClassAxis, initial, StateHook>
+  : public ClassWithStates<ClassAxis, initial, StateHook>,
+    public virtual event::interface<ClassAxis>
 {
 public:
   typedef ClassWithStates<ClassAxis, initial, StateHook>
@@ -121,11 +133,13 @@ public:
 protected:
   class TheClass 
     : public Parent::TheClass,
-      public ObjectWithEventsInterface<ClassAxis>
+      public event::interface<ClassAxis>
   {
   public:
+    using Interface = event::interface<ClassAxis>;
+
     CompoundEvent create_event
-     (const UniversalEvent&) const override;
+     (const StateAxis& ax, const UniversalEvent&) const override;
 
     void update_events
       (StateAxis& ax, 
@@ -144,6 +158,14 @@ protected:
       return events;
     }
   };
+
+public:
+  virtual typename TheClass::Interface& 
+  the_class() const = 0;
+
+  MULTIPLE_INHERITANCE_FORWARD_EVENT_MEMBERS(
+    this->the_class()
+  );
 };
 
 //! @}

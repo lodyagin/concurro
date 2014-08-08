@@ -66,11 +66,6 @@ public:
   DECLARE_STATE_CONST(St, check_passed);
   DECLARE_STATE_CONST(St, check_failed);
 
-  /*StateAxis& get_axis() const override
-  {
-    return T1Axis::self();
-    }*/
-
   CompoundEvent is_terminal_state() const override
     {
       return is_check_passed_event
@@ -122,59 +117,9 @@ public:
     return SFORMAT("T1:" << universal_object_id);
   }
 
-  void state_changed
-    (StateAxis& ax, 
-     const StateAxis& state_ax,     
-     AbstractObjectWithStates* object,
-     const UniversalState& new_state) override
-  {
-    ax.state_changed(this, object, state_ax, new_state);
-  }
-
-  std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) override
-    { 
-      return ax.current_state(this);
-    }
-
-  const std::atomic<uint32_t>& 
-  current_state(const StateAxis& ax) const override
-    { 
-      return ax.current_state(this);
-    }
-
-#if 0  
-  Event get_event (const UniversalEvent& ue) override
-    {
-      return RObjectWithEvents<T1Axis>::get_event(ue);
-    }
-
-  Event get_event (const UniversalEvent& ue) const override
-    {
-      return RObjectWithEvents<T1Axis>::get_event(ue);
-    }
-
-  Event create_event
-  (const UniversalEvent& ue) const override
-    {
-      return RObjectWithEvents<T1Axis>::create_event(ue);
-    }
-#endif
-
-  void update_events
-    (StateAxis& ax, 
-     TransitionId trans_id, 
-     uint32_t to) override
-  {
-#if 1
-    ax.update_events(this, trans_id, to);
-#else
-    return RObjectWithEvents<T1Axis>::update_events
-      (T1Axis::self(), trans_id, to);
-#endif
-  }
-
   const std::string name;
+
+  MULTIPLE_INHERITANCE_DEFAULT_MEMBERS;
 
   DEFAULT_LOGGER(T1);
 };

@@ -120,8 +120,12 @@ RObjectWithEvents<Axis>& RObjectWithEvents<Axis>
 template<class Axis>
 CompoundEvent RObjectWithEvents<Axis>
 //
-::create_event(const UniversalEvent& ue) const
+::create_event(
+  const StateAxis& ax, 
+  const UniversalEvent& ue
+) const
 {
+  assert(Axis::is_same(ax));
   const UniversalEvent current_event
     (this->current_state(Axis::self()), true);
   const bool initial_state = 
@@ -204,12 +208,12 @@ RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
 
 template<class DerivedAxis, class SplitAxis>
 CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
-::create_event (const UniversalEvent& ue) const
+::create_event (const StateAxis& ax, const UniversalEvent& ue) const
 {
   if (!is_this_event_store(ue)) {
     CompoundEvent ce;
     if (auto* op = dynamic_cast<RObjectWithEvents<SplitAxis>*>(delegate))
-      ce |= op->RObjectWithEvents<SplitAxis>::create_event(ue);
+      ce |= op->RObjectWithEvents<SplitAxis>::create_event(ax, ue);
     else
       ; //TODO ce |= delegate->ClassWithEvents<SplitAxis>::create_event(ue);
 
@@ -221,13 +225,13 @@ CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
         (ue.as_state_of_arrival())) 
     {
       ce |= this->RObjectWithEvents<DerivedAxis>
-        ::create_event(ue);
+        ::create_event(ax, ue);
     }
     return ce;
   }
   else
     return this->RObjectWithEvents<DerivedAxis>
-      ::create_event(ue);
+      ::create_event(ax, ue);
 }
 
 template<class DerivedAxis, class SplitAxis>

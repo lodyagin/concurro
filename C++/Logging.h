@@ -346,6 +346,11 @@ public:
     );
   }
 
+  /*std::string object_name() const override
+  {
+    return ::types<decltype(*this)>::name();
+  }*/
+
   logging::LoggerPtr logger() const override
   {
     return log_base->logger;

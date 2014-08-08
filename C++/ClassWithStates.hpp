@@ -81,7 +81,7 @@ template<class Axis, const ::types::constexpr_string& initial_state,
 CompoundEvent 
 ClassWithEvents<Axis, initial_state, StateHook>
 //
-::TheClass::create_event(const UniversalEvent& ue) const
+::TheClass::create_event(const StateAxis& ax, const UniversalEvent& ue) const
 {
   const UniversalEvent current_event
     (this->current_state(Axis::self()), true);
@@ -114,11 +114,13 @@ void ClassWithEvents<Axis, initial_state, StateHook>
 {
   assert(is_same_axis<Axis>(ax));
 
+  /* prevent an infinite loop
   LOG_TRACE(Logger<LOG::Root>, 
             "update_events for the axis "
             << ::types::type<StateAxis>::name()
             << ", to = " << UniversalState(to).name()
             << std::hex << " (0x" << to << ")");
+  */
 
   // reset all events due to a new transition
   for (auto& p : get_events()) p.second.reset();

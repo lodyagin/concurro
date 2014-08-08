@@ -436,9 +436,9 @@ public:
   } 
 
   CompoundEvent create_event 
-    (const curr::UniversalEvent& ue) const override 
+    (const StateAxis& ax, const curr::UniversalEvent& ue) const override 
   { 
-    return create_event(ue); 
+    return create_event(ax, ue); 
   } 
   
   void update_events 
@@ -561,9 +561,9 @@ public:
   } 
 
   CompoundEvent create_event 
-    (const curr::UniversalEvent& ue) const override 
+    (const StateAxis& ax, const curr::UniversalEvent& ue) const override 
   { 
-    return create_event(ue); 
+    return create_event(ax, ue); 
   } 
   
   void update_events 
@@ -634,9 +634,9 @@ public:
   } 
 
   CompoundEvent create_event 
-    (const curr::UniversalEvent& ue) const override 
+    (const StateAxis& ax, const curr::UniversalEvent& ue) const override 
   { 
-    return create_event(ue); 
+    return create_event(ax, ue); 
   } 
   
   void update_events 
@@ -681,10 +681,12 @@ public:
     return ax.current_state(this); 
   } 
 
-  CompoundEvent create_event 
-    (const curr::UniversalEvent& ue) const override 
+  CompoundEvent create_event(
+    const StateAxis& ax, 
+    const curr::UniversalEvent& ue
+  ) const override 
   { 
-    return create_event(ue); 
+    return create_event(ax, ue); 
   } 
   
   void update_events 

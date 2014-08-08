@@ -112,34 +112,40 @@ class RObjectWithStatesBase;
 /// state-aware class.
 template<class Axis>
 class ObjectWithStatesInterface
-: public virtual AbstractObjectWithStates,
-  public virtual ObjectWithLogging
+: public virtual ObjectWithStatesInterface<
+    typename Axis::Parent
+  >
 {
   template<class Axis1, class Axis2> 
-	 friend class RMixedAxis;
+  friend class RMixedAxis;
+
   friend class RState<Axis>;
+
   template<class Axis1, class Axis2> 
 	 friend class RMixedEvent;
 public:
   typedef Axis axis;
   typedef RState<Axis> State;
-
-  virtual ~ObjectWithStatesInterface() {}
-
-  //! The default implementation returns just
-  //! ::types::type<*this>::name(). 
-  virtual std::string object_name() const
-  {
-    return ::types::type<decltype(*this)>::name();
-  }
 };
+
+template<>
+class ObjectWithStatesInterface<StateAxis>
+: public virtual AbstractObjectWithStates,
+  public virtual ObjectWithLogging
+{};
 
 class AbstractObjectWithEvents
 {
   template<class Axis1, class Axis2> 
-	 friend class RStateSplitter;
+  friend class RStateSplitter;
+
 public:
   virtual ~AbstractObjectWithEvents() {}
+
+  //! Register a new event in the map if it doesn't
+  //! exists. In any case return the event.
+  virtual CompoundEvent create_event
+     (const StateAxis& ax, const UniversalEvent&) const = 0;
 
   //! Update events due to trans_id to
   virtual void update_events
@@ -152,49 +158,30 @@ public:
   //! 2) the object can be deleted (there are no more
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
-
-#if 0
-unable to have events from different axes in one class
-protected:
-  //! Query an event object by UniversalEvent. 
-  virtual Event get_event(const UniversalEvent& ue) = 0;
-
-  //! Query an event object by UniversalEvent. 
-  virtual Event get_event
-	 (const UniversalEvent& ue) const = 0;
-
-  //! Register a new event in the map if it doesn't
-  //! exists. In any case return the event.
-  virtual Event create_event
-	 (const UniversalEvent&) const = 0;
-
-#endif
 };
 
 template<class Axis>
 class ObjectWithEventsInterface
-: public virtual AbstractObjectWithEvents,
-  public virtual ObjectWithLogging
+  : public virtual ObjectWithEventsInterface
+      <typename Axis::Parent>,
+    public virtual ObjectWithStatesInterface<Axis>
 {
   template<class Axis1, class Axis2> 
-	 friend class RMixedEvent;
+  friend class RMixedEvent;
   friend class RState<Axis>;
   template<class Axis1, class Axis2> 
   friend class RMixedAxis;
+
 public:
-  virtual ~ObjectWithEventsInterface() {}
-
-  //! Register a new event in the map if it doesn't
-  //! exists. In any case return the event.
-  virtual CompoundEvent create_event
-     (const UniversalEvent&) const = 0;
-
-  //! Update events due to trans_id to
-  virtual void update_events
-     (StateAxis& ax, 
-      TransitionId trans_id, 
-      uint32_t to) = 0;
+  typedef Axis axis;
 };
+
+template<>
+class ObjectWithEventsInterface<StateAxis>
+: public virtual AbstractObjectWithEvents,
+  public virtual ObjectWithLogging,
+  public virtual ObjectWithStatesInterface<StateAxis>
+{};
 
 // a new naming schema
 
@@ -210,11 +197,13 @@ namespace event {
 template<class T>
 using interface = ObjectWithEventsInterface<T>;
 
+#if 0
 template<class Axis>
 class interface_with_states
   : public state::interface<Axis>,
     public interface<Axis>
 {};
+#endif
 
 }
 
@@ -300,11 +289,103 @@ void update_events \
  uint32_t to) override \
 { \
   ax.update_events(this, trans_id, to); \
+} \
+                                                         \
+CompoundEvent                                            \
+create_event(const curr::StateAxis& ax, const curr::UniversalEvent& ue) const override    \
+{                                                        \
+  return ax.create_event(this,ue);                       \
 }
 
 #define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS  \
 MULTIPLE_INHERITANCE_DEFAULT_STATE_MEMBERS    \
 MULTIPLE_INHERITANCE_DEFAULT_EVENT_MEMBERS
+
+
+#define MULTIPLE_INHERITANCE_PARENT_STATE_MEMBERS(parent) \
+void state_changed(                                     \
+  curr::StateAxis& ax, \
+  const curr::StateAxis& state_ax,     \
+  curr::AbstractObjectWithStates* object, \
+  const curr::UniversalState& new_state)        \
+{ \
+  parent::state_changed(ax, state_ax, object, new_state); \
+} \
+\
+std::atomic<uint32_t>& \
+current_state(const curr::StateAxis& ax) override \
+{ \
+  return parent::current_state(ax); \
+} \
+\
+const std::atomic<uint32_t>& \
+current_state(const curr::StateAxis& ax) const override \
+{ \
+  return parent::current_state(ax); \
+} 
+
+#define MULTIPLE_INHERITANCE_PARENT_EVENT_MEMBERS(parent) \
+\
+void update_events \
+(curr::StateAxis& ax, \
+ curr::TransitionId trans_id, \
+ uint32_t to) override \
+{ \
+  parent::update_events(ax, trans_id, to); \
+}                                                        \
+                                                         \
+CompoundEvent                                            \
+create_event(const StateAxis& ax, const UniversalEvent& ue) const override    \
+{                                                        \
+  return parent::create_event(ax, ue);                       \
+}
+
+#define MULTIPLE_INHERITANCE_PARENT_MEMBERS(parent)  \
+MULTIPLE_INHERITANCE_PARENT_STATE_MEMBERS(parent)    \
+MULTIPLE_INHERITANCE_PARENT_EVENT_MEMBERS(parent)
+
+
+#define MULTIPLE_INHERITANCE_FORWARD_STATE_MEMBERS(forward) \
+void state_changed(                                     \
+  curr::StateAxis& ax, \
+  const curr::StateAxis& state_ax,     \
+  curr::AbstractObjectWithStates* object, \
+  const curr::UniversalState& new_state)        \
+{ \
+  forward.state_changed(ax, state_ax, object, new_state); \
+} \
+\
+std::atomic<uint32_t>& \
+current_state(const curr::StateAxis& ax) override \
+{ \
+  return forward.current_state(ax); \
+} \
+\
+const std::atomic<uint32_t>& \
+current_state(const curr::StateAxis& ax) const override \
+{ \
+  return forward.current_state(ax); \
+} 
+
+#define MULTIPLE_INHERITANCE_FORWARD_EVENT_MEMBERS(forward) \
+\
+void update_events \
+(curr::StateAxis& ax, \
+ curr::TransitionId trans_id, \
+ uint32_t to) override \
+{ \
+  forward.update_events(ax, trans_id, to); \
+}                                                        \
+                                                         \
+CompoundEvent                                            \
+create_event(const StateAxis& ax, const UniversalEvent& ue) const override    \
+{                                                        \
+  return forward.create_event(ax, ue);                       \
+}
+
+#define MULTIPLE_INHERITANCE_FORWARD_MEMBERS(forward)  \
+MULTIPLE_INHERITANCE_FORWARD_STATE_MEMBERS(forward)    \
+MULTIPLE_INHERITANCE_FORWARD_EVENT_MEMBERS(forward)
 
 //! @}
 

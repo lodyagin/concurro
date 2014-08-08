@@ -249,8 +249,9 @@ CompoundEvent::CompoundEvent(CompoundEvent&& e)
     handle_vec(std::move(e.handle_vec)),
     vector_need_update(e.vector_need_update)
 {
-  using log = Logger<LOG::Events>;
-  LOG_TRACE(log, "CompoundEvent::move constructor");
+//  using log = Logger<LOG::Events>;
+  //commented out to prevent an infinite loop
+  //LOG_TRACE(log, "CompoundEvent::move constructor");
 }
 
 CompoundEvent::CompoundEvent(const CompoundEvent& e)
@@ -266,9 +267,10 @@ CompoundEvent::CompoundEvent(const CompoundEvent& e)
   : handle_vec(e.handle_vec),
     vector_need_update(e.vector_need_update)
 {
-  using log = Logger<LOG::Events>;
+  //using log = Logger<LOG::Events>;
   handle_set = e.handle_set;
-  LOG_TRACE(log, "CompoundEvent::copy constructor");
+  //commented out to prevent an infinite loop
+//  LOG_TRACE(log, "CompoundEvent::copy constructor");
 }
 #endif
 
