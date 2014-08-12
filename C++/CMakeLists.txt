@@ -12,6 +12,8 @@ find_package(Boost 1.54 COMPONENTS thread system REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -Wall")
 
+find_library(PEVENTS_LIBRARY pevents ../../PEvents)
+
 add_subdirectory(tests)
 
 #project (concurrent)
@@ -57,5 +59,5 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_LIBRARY(concurrent SHARED ${concurrent_SOURCES})
 
-target_link_libraries(concurrent pevents)
+target_link_libraries(concurrent ${PEVENTS_LIBRARY})
 
