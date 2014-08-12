@@ -70,7 +70,8 @@ void SAutoSingletonRegistry
   ases.push(ptr);
 }
 
-externally_constructed<SAutoSingletonRegistry> auto_reg;
+::types::externally_constructed<SAutoSingletonRegistry> 
+  auto_reg;
 
 int SAutoSingletonBase::Init::nifty_counter;
 

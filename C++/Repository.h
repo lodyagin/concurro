@@ -413,8 +413,8 @@ public:
   typedef Par Parameter;
   typedef ObjId ObjectId;
 
-  using Parent::NoSuchId;
-  using Parent::IdIsAlreadyUsed;
+  using typename Parent::NoSuchId;
+  using typename Parent::IdIsAlreadyUsed;
 
   //! Create the repo. initial_value means initial size
   //! for vector and size for hash tables.

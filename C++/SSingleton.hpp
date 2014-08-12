@@ -34,6 +34,7 @@
 #include <list>
 #include <boost/lockfree/stack.hpp>
 #include "types/exception.h"
+#include "types/ext_constr.h"
 #include "SSingleton.h"
 #include "Logging.h"
 #include "RMutex.h"
@@ -296,14 +297,15 @@ void SAutoSingleton<T, destruct, wait_m>::construct_once()
 {
   // It is guaranteed that thee auto_reg will be
   // constructed before this method call.
-  extern SAutoSingletonRegistry auto_reg;
+  extern ::types::externally_constructed
+    <SAutoSingletonRegistry> auto_reg;
 
   if (!state_is(SSingleton<T, wait_m>::s_the_class(), 
        SSingleton<T, wait_m>::TheClass::exist_oneFun()))
   {
     try 
     { 
-      auto_reg.reg(new T()); 
+      auto_reg.m.reg(new T()); 
     } 
     catch (const MustBeSingleton&) {}
   }
