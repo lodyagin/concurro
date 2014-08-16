@@ -1,20 +1,20 @@
-/* -*-coding: mule-utf-8-unix; fill-column: 58; -*-
+/* -*-coding: mule-utf-8-unix; fill-column: 58; -*- *******
 
   Copyright (C) 2009, 2013 Sergei Lodyagin 
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -92,23 +92,9 @@ struct AutoresetInCompound : CompoundEventException
 #define CURR_WAIT(evt, time) \
   CURR_WAIT_L(log::s_logger(), evt, time)
 
-class EventInterface : public ObjectWithLogging
+class EventInterface //: public ObjectWithLogging
 {
 public:
-  mutable struct LogParams {
-    bool set, reset, wait;
-    ObjectWithLogging* log_obj;
-
-    LogParams(ObjectWithLogging* obj) 
-    : set(true), reset(true), wait(true), log_obj(obj)
-    {
-      assert(log_obj);
-    }
-  } log_params_;
-
-  LogParams& log_params() const { return log_params_; }
-  
-  EventInterface() : log_params_(this) {}
   virtual ~EventInterface() {}
 
   //! Wait for event or time in msecs. 
@@ -136,13 +122,38 @@ public:
   virtual bool signalled() const = 0;
 };
 
-class EvtBase : public EventInterface
+class EvtBase 
+  : public virtual EventInterface,
+    public ObjectWithLogging
 {
   friend class Event;
   friend class CompoundEvent;
 
 public:
+  mutable struct LogParams 
+  {
+    bool set, reset, wait;
+    ObjectWithLogging* log_obj;
+
+    LogParams(
+      ObjectWithLogging* obj,
+      bool enable = true
+    ) 
+      : set(enable),
+        reset(enable),
+        wait(enable),
+        log_obj(obj)
+    {
+      assert(log_obj);
+    }
+
+  } log_params_;
+
+  LogParams& log_params() const { return log_params_; }
+  
   EvtBase(const EvtBase&) = delete;
+  EvtBase& operator=(const EvtBase&) = delete;
+
   virtual ~EvtBase();
 
   logging::LoggerPtr logger() const override;
@@ -194,7 +205,12 @@ protected:
   const bool is_manual;
   HANDLE h;
 
-  EvtBase(const std::string& id, bool manual, bool init);
+  EvtBase(
+    const std::string& id, 
+    bool manual, 
+    bool init,
+    bool logging
+  );
 
   bool wait_impl(int time) const;
 };
@@ -203,7 +219,7 @@ std::ostream&
 operator<< (std::ostream&, const EvtBase&);
 
 //! A windows-like event class.
-class Event : public EventInterface
+class Event : public virtual EventInterface
 {
   friend class CompoundEvent;
 public:
@@ -212,12 +228,16 @@ public:
   Event(const Event& e) : evt_ptr(e.evt_ptr) {}
   Event(Event&& e) : evt_ptr(std::move(e.evt_ptr)) {}
 
-  explicit Event
-    (const std::string& id, 
-     bool manual, //! manual reset
-     bool init = false //! initial state 
-      )
-    : evt_ptr(new EvtBase(id, manual, init)) {}
+  explicit Event(
+    const std::string& id, 
+    bool manual, //< manual reset
+    bool init = false, //< initial state 
+    bool logging = true
+    )
+    : evt_ptr(
+        new EvtBase(id, manual, init, logging)
+      ) 
+  {}
 
   //! Share an internal event handler
   Event& operator= (const Event& e)
@@ -322,7 +342,7 @@ private:
 
 #define STL_BUG 1
 
-class CompoundEvent : public EventInterface
+class CompoundEvent : public virtual EventInterface
 {
   friend std::ostream&
     operator<< (std::ostream&, const CompoundEvent&);

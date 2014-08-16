@@ -334,7 +334,7 @@ public:
   }
 #endif
 
-//  void complete_construction() override;
+  void complete_construction() override;
 
   //! Return a holder to the class instance. 
   //!
@@ -375,10 +375,14 @@ public:
     return ax.current_state(this);
   }
 
-  CompoundEvent 
-  create_event(const StateAxis& ax, const UniversalEvent& ue) const override
+  CompoundEvent create_event(
+    const StateAxis& ax, 
+    const UniversalEvent& ue,
+    bool logging = true
+  ) const override
   {
-    return ConstructibleObject::create_event(ax, ue);
+    return ConstructibleObject::create_event
+      (ax, ue, logging);
   }
 
   void update_events

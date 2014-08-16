@@ -48,7 +48,7 @@ DEFINE_AXIS(
 ConstructibleObject::ConstructibleObject()
   : RObjectWithEvents<ConstructibleAxis>
       (preinc_exist_oneFun()),
-    CONSTRUCT_EVENT(exist_one)
+    CONSTRUCT_EVENT(exist_one, false)
 {
 }
 

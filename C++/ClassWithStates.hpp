@@ -81,7 +81,11 @@ template<class Axis, const ::types::constexpr_string& initial_state,
 CompoundEvent 
 ClassWithEvents<Axis, initial_state, StateHook>
 //
-::TheClass::create_event(const StateAxis& ax, const UniversalEvent& ue) const
+::TheClass::create_event(
+  const StateAxis& ax, 
+  const UniversalEvent& ue,
+  bool logging
+) const
 {
   const UniversalEvent current_event
     (this->current_state(Axis::self()), true);

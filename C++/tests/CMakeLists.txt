@@ -30,9 +30,9 @@ set(TestsSrc
   tests.cpp
 )
 
-include_directories(../../../CUnit/CUnit/Headers)
+include_directories(CUnit/CUnit/Headers)
 include_directories(..)
-include_directories(../../../PEvents)
+include_directories(../PEvents)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_executable(tests_exec ${TestsSrc} ${TestsInc})
@@ -43,5 +43,5 @@ target_link_libraries(tests_exec
   ${Boost_THREAD_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
   ${CUNIT_LIBRARY}
-  ${PEVENTS_LIBRARY}
+#  ${PEVENTS_LIBRARY}
 )

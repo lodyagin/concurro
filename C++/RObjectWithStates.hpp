@@ -122,7 +122,8 @@ CompoundEvent RObjectWithEvents<Axis>
 //
 ::create_event(
   const StateAxis& ax, 
-  const UniversalEvent& ue
+  const UniversalEvent& ue,
+  bool logging
 ) const
 {
   assert(Axis::is_same(ax));
@@ -130,15 +131,22 @@ CompoundEvent RObjectWithEvents<Axis>
     (this->current_state(Axis::self()), true);
   const bool initial_state = 
     ue.local_id() == current_event.local_id();
-#if 0
+#if 1
   // map support for emplace is only in gcc 4.9
-  return *events.emplace
-    (std::make_pair
-     (ue.local_id(),
-      Event(SFORMAT(::types::type<*this>::name() << ":" 
-                    << ue.name()), 
-            true, initial_state) // <NB> manual reset
-       )).first;
+  return *events.emplace(
+    std::make_pair(
+      ue.local_id(),
+      Event(
+        SFORMAT(
+          ::types::type<decltype(*this)>::name() << ":" 
+          << ue.name()
+        ), 
+        true, 
+        initial_state, // <NB> manual reset
+        logging
+      )
+    )
+  ).first;
 #else										  
   const auto it = events.find(ue.local_id());
   if (it == events.end()) {

@@ -130,12 +130,18 @@ public:
               const RState<Axis>& to);
 
   //! Create a *->to event
-  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              ::types::constexpr_string to);
+  RMixedEvent(
+    ObjectWithEventsInterface<Axis2>* obj_ptr, 
+    ::types::constexpr_string to,
+    bool logging = true //< enable EvtBase logging
+  );
 
   //! Create a *->to event
-  RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              const RState<Axis>& to);
+  RMixedEvent(
+    ObjectWithEventsInterface<Axis2>* obj_ptr, 
+    const RState<Axis>& to,
+    bool logging = true //< enable EvtBase logging
+  );
 
   //! to_state corresponding to the event
   const RState<Axis> to_state;
@@ -168,8 +174,8 @@ private:
 #define DECLARE_EVENT(axis_, event) \
   A_DECLARE_EVENT(axis_, axis_, event)
 
-#define CONSTRUCT_EVENT(event)		\
-  is_ ## event ## _event(this, #event)
+#define CONSTRUCT_EVENT(event, ...)		\
+  is_ ## event ## _event(this, #event, ##__VA_ARGS__)
 
 #if 0
 //! An arrival event for usage in static members

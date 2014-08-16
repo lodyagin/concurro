@@ -144,8 +144,11 @@ public:
 
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
-  virtual CompoundEvent create_event
-     (const StateAxis& ax, const UniversalEvent&) const = 0;
+  virtual CompoundEvent create_event(
+    const StateAxis& ax, 
+    const UniversalEvent&,
+    bool logging = true
+  ) const = 0;
 
   //! Update events due to trans_id to
   virtual void update_events
@@ -335,7 +338,7 @@ void update_events \
 }                                                        \
                                                          \
 CompoundEvent                                            \
-create_event(const StateAxis& ax, const UniversalEvent& ue) const override    \
+create_event(const StateAxis& ax, const UniversalEvent& ue, bool logging = true) const override    \
 {                                                        \
   return parent::create_event(ax, ue);                       \
 }
@@ -378,7 +381,7 @@ void update_events \
 }                                                        \
                                                          \
 CompoundEvent                                            \
-create_event(const StateAxis& ax, const UniversalEvent& ue) const override    \
+create_event(const StateAxis& ax, const UniversalEvent& ue, bool logging = true) const override    \
 {                                                        \
   return forward.create_event(ax, ue);                       \
 }

@@ -208,7 +208,8 @@ public:
   //! exists. In any case return the event.
   CompoundEvent create_event(
     const StateAxis& ax, 
-    const UniversalEvent&
+    const UniversalEvent&,
+    bool logging
   ) const override;
 
 protected:

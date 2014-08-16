@@ -40,12 +40,8 @@ namespace curr {
 
 template<class T, class StateHook>
 Existent<T, StateHook>::TheClass::TheClass()
-  : CONSTRUCT_EVENT(exist_one)
+  : CONSTRUCT_EVENT(exist_one, false)
 {
-  // prevents an infinite loop
-  is_exist_one_event.log_params().wait = 
-    is_exist_one_event.log_params().set = 
-      is_exist_one_event.log_params().reset = false;
 }
 
 template<class T, class StateHook>

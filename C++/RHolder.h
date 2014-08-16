@@ -128,7 +128,8 @@ protected:
 
   CompoundEvent create_event(
     const StateAxis& ax,
-    const UniversalEvent& ue
+    const UniversalEvent& ue,
+    bool logging = true
   ) const override
   {
     throw ::types::exception<HolderException>(

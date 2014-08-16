@@ -92,25 +92,39 @@ RMixedEvent<Axis, Axis2>
 template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
-::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              ::types::constexpr_string to)
-  : RMixedEvent(obj_ptr, 
-                StateMapInstance<Axis>::get_map()
-                -> create_state(to))
+::RMixedEvent(
+  ObjectWithEventsInterface<Axis2>* obj_ptr, 
+  ::types::constexpr_string to,
+  bool logging
+)
+  : RMixedEvent(
+      obj_ptr, 
+      StateMapInstance<Axis>::get_map()->create_state(to),
+      logging
+    )
 {
 }
 
 template<class Axis, class Axis2>
 RMixedEvent<Axis, Axis2>
 //
-::RMixedEvent(ObjectWithEventsInterface<Axis2>* obj_ptr, 
-              const RState<Axis>& to)
+::RMixedEvent(
+  ObjectWithEventsInterface<Axis2>* obj_ptr, 
+  const RState<Axis>& to,
+  bool logging
+)
   : UniversalEvent(to, true),
-   // G++-4.7.3 bug when use copy constructor
-   CompoundEvent
-   (std::move(obj_ptr->create_event(Axis2::self(),
-                (UniversalEvent)*this))),
-   to_state(to)
+    // G++-4.7.3 bug when use copy constructor
+    CompoundEvent(
+      std::move(
+        obj_ptr->create_event(
+          Axis2::self(),
+          (UniversalEvent)*this,
+          logging
+        )
+      )
+    ),
+    to_state(to)
 {
   for (Event ev : *this) {
    ev.log_params().set = 

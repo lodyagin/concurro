@@ -59,10 +59,14 @@ namespace curr {
 
 // EvtBase  ===============================================
 
-EvtBase::EvtBase(const std::string& id, 
-                 bool manual, 
-                 bool init)
-  : universal_object_id(id),
+EvtBase::EvtBase(
+  const std::string& id, 
+  bool manual, 
+  bool init,
+  bool logging
+)
+  : log_params_(this, logging),
+    universal_object_id(id),
     shadow(false),
     isSignaled(init),
     is_manual(manual),

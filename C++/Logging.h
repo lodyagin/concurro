@@ -340,10 +340,10 @@ public:
   {
     this->complete_construction();
     initialized = true;
-    LOG_TRACE(
+/*    LOG_TRACE(
       Logger, 
       "New logger [" << log_base->GetName() << "] is created"
-    );
+    );*/
   }
 
   /*std::string object_name() const override

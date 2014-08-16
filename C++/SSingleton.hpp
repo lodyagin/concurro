@@ -177,25 +177,21 @@ SSingleton<T, wait_m>::~SSingleton()
     _instance = nullptr;
   }
 }
-#if 0
+
 template<class T, int wait_m>
 void SSingleton<T, wait_m>::complete_construction()
 {
   if ((_instance = dynamic_cast<T*>(this))) 
-  { // wait the call from T::T
-//    ObjParent::complete_construction();
-//    is_complete().set();
-    complete_construction();
-  }
+    Parent::complete_construction();
 }
-#endif
+
 // No logging here (recursion is possible)
 template<class T, int wait_m>
 T* SSingleton<T, wait_m>::instance_intl()
 {
   // If another thread starts creating T we must wait the
   // completion of the creation
-  if (is_exist_one().wait(wait_m))
+  if (!is_exist_one().wait(wait_m))
     NotExistingSingleton().raise();
 
   return _instance;

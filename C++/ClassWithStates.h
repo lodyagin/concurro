@@ -138,8 +138,11 @@ protected:
   public:
     using Interface = event::interface<ClassAxis>;
 
-    CompoundEvent create_event
-     (const StateAxis& ax, const UniversalEvent&) const override;
+    CompoundEvent create_event(
+      const StateAxis& ax, 
+      const UniversalEvent&,
+      bool logging = true
+    ) const override;
 
     void update_events
       (StateAxis& ax, 

@@ -475,14 +475,15 @@ void wait_and_move
   \
   templ \
   CompoundEvent axis::create_event(                              \
-    const curr::AbstractObjectWithEvents* obj,                \
-    const curr::UniversalEvent& ue                      \
+    const curr::AbstractObjectWithEvents* obj,          \
+    const curr::UniversalEvent& ue,                     \
+    bool logging                                        \
   )  const                                              \
   {                                                     \
     return dynamic_cast<const curr::RObjectWithEvents<axis>*> \
        (obj)                                            \
       -> curr::RObjectWithEvents<axis>::create_event    \
-      (*this, ue);                                      \
+      (*this, ue, logging);                             \
   }                                                     \
                                                         \
   templ                                                 \
