@@ -6,7 +6,9 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)  
 find_package(Boost 1.54 COMPONENTS system thread REQUIRED)
 
-find_library(CUNIT_LIBRARY cunit ../../../CUnit/CUnit)
+add_subdirectory(CUnit/CUnit)
+
+find_library(CUNIT_LIBRARY cunit CUnit/CUnit)
 
 set(TestsSrc
 #  ClassWithStatesCU.cpp
@@ -43,5 +45,4 @@ target_link_libraries(tests_exec
   ${Boost_THREAD_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
   ${CUNIT_LIBRARY}
-#  ${PEVENTS_LIBRARY}
 )
