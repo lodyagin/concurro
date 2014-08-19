@@ -58,7 +58,7 @@ CU_TestInfo REventTests[] = {
   {"a transitional event test",
    test_transitional_event},
   {"test inheritance", test_inheritance},
-  {"test splitting", test_splitting},
+//  {"test splitting", test_splitting},
   CU_TEST_INFO_NULL
 };
 

@@ -161,7 +161,7 @@ void EvtBase::reset()
 
 bool EvtBase::wait_impl(int time) const
 {
-  if (log_params()[wait()]) {
+  if (log_params()[place::wait()]) {
     if (time != -1) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
                    << RThread<std::thread>::current_pretty_id()
@@ -192,7 +192,7 @@ bool EvtBase::wait_impl(int time) const
 #else
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
-    if (log_params()[wait()]) {
+    if (log_params()[place::wait()]) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
@@ -202,7 +202,7 @@ bool EvtBase::wait_impl(int time) const
     return false;
   }
 #endif
-  if (log_params()[wait()]) {
+  if (log_params()[place::wait()]) {
     LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event "

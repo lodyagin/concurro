@@ -47,19 +47,18 @@ template<class Axis> class RState;
 template<class Axis1, class Axis2> class RMixedEvent;
 
 class AbstractObjectWithStates
-  : public virtual ObjectWithLogging,
-    public virtual ObjectWithLogParams
+  : public virtual ObjectWithLogging
 {
   template<class Axis>
   friend class RObjectWithStates;
 
 public:
-  struct place { struct states{}; };
-
+#if 0
   AbstractObjectWithStates() {}
   // TODO
   AbstractObjectWithStates(AbstractObjectWithStates&&) = delete;
   AbstractObjectWithStates& operator=(AbstractObjectWithStates&&) = delete;
+#endif
 
   virtual ~AbstractObjectWithStates() {}
 

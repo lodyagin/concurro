@@ -58,7 +58,9 @@ CU_TestInfo RStateTests[] = {
   {"RState::compare_and_move(obj, from_set, to)", 
 	test_compare_and_move_set},
   {"derived axis", test_derived_axis},
+#if 0
   {"splitted axis", test_splitted_axis},
+#endif
   {"state_change", test_state_change},
   CU_TEST_INFO_NULL
 };

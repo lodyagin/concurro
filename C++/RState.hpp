@@ -192,6 +192,7 @@ bool RMixedAxis<Axis, Axis2>
   if (!current.compare_exchange_strong(expected, to))
     return false;
 
+#if 0
   LOGGER_DEBUG(obj.logger(),
             "thread " 
             << RThread<std::thread>::current_pretty_id()
@@ -203,7 +204,8 @@ bool RMixedAxis<Axis, Axis2>
             << std::hex << " (0x" << (uint32_t) from
             << ") -> " << to.name() << " (0x" 
             << (uint32_t) to << ")");
-  
+#endif  
+
   if (auto p = dynamic_cast<AbstractObjectWithEvents*>
       (&obj)) {
     assert(trans_id > 0);

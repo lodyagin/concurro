@@ -338,13 +338,6 @@ public:
         new LogBase(logging::logger_name<Type>::name())
       )
   {
-    using place = AbstractObjectWithStates::place::states;
-  
-    if (std::is_same<Type, LOG::Root>::value) {
-      // disable states logging to prevent deadlock
-      this->log_params().disable<place>();
-    }
-
     this->complete_construction();
     initialized = true;
 /*    LOG_TRACE(

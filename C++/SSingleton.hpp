@@ -228,7 +228,7 @@ void SSingleton<T, wait_m>::occupy() const
 template<class T, int wait_m>
 void SSingleton<T, wait_m>::yield() const
 {
-  using log = Logger<LOG::Singletons>;
+
   using S = SSingleton<T, wait_m>;
 
   wait_and_move(
@@ -240,10 +240,10 @@ void SSingleton<T, wait_m>::yield() const
 
   assert(occupy_count > 0);
   --occupy_count;
-  LOG_TRACE(log, "--occupty_count == " << occupy_count);
+  //LOG_TRACE(log, "--occupty_count == " << occupy_count);
 
   if (occupy_count == 0)
-    move_to(
+    move_to<S, SingletonAxis>(
       const_cast<S&>(*this), 
       S::TheClass::exist_oneFun()
     );
@@ -296,8 +296,9 @@ void SAutoSingleton<T, destruct, wait_m>::construct_once()
   extern ::types::externally_constructed
     <SAutoSingletonRegistry> auto_reg;
 
-  if (!state_is(SSingleton<T, wait_m>::s_the_class(), 
-       SSingleton<T, wait_m>::TheClass::exist_oneFun()))
+  if (state_is(SSingleton<T, wait_m>::s_the_class(), 
+   SSingleton<T, wait_m>::TheClass::not_existFun())
+  )
   {
     try 
     { 

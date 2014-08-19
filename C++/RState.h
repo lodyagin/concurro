@@ -346,7 +346,7 @@ bool state_is
 //! RMixedAxis<Axis,Axis2>::move_to adapter
 template<
   class T, 
-  class Axis1 = typename T::State::axis,
+  class Axis1 = typename T::/*State::*/axis,
   class Axis2 = Axis1
 >
 void move_to(
