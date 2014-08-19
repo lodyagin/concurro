@@ -97,6 +97,7 @@ void SingletonStateHook<T, wait_m>::operator()
 
 // SSingleton
 
+#if 0
 #define SSingletonTW_ SSingleton<T, wait_m>
 
 template<class T, int wait_m>
@@ -105,6 +106,7 @@ template<class T, int wait_m>
 DEFINE_STATE_CONST(SSingletonTW_, State, occupied);
 template<class T, int wait_m>
 DEFINE_STATE_CONST(SSingletonTW_, State, postoccupied);
+#endif
 
 template<class T, int wait_m>
 void SSingleton<T, wait_m>::NotExistingSingleton
@@ -206,23 +208,21 @@ bool SSingleton<T, wait_m>::isConstructed()
 template<class T, int wait_m>
 void SSingleton<T, wait_m>::occupy() const
 {
-  using log = Logger<LOG::Singletons>;
-
   using S = SSingleton<T, wait_m>;
 
   wait_and_move(
     const_cast<S&>(*this),
-    { S::TheClass::exist_oneFun(), occupiedState },
+    { S::TheClass::exist_oneFun(), occupiedFun() },
     is_occupiable_event,
-    preoccupiedState,
+    preoccupiedFun(),
     wait_m
   );
 
   ++occupy_count;
-  LOG_TRACE(log, "++occupty_count == " << occupy_count);
+//  LOG_TRACE(log, "++occupty_count == " << occupy_count);
   assert(occupy_count > 0);
 
-  move_to(const_cast<S&>(*this), occupiedState);
+  move_to(const_cast<S&>(*this), occupiedFun());
 }
 
 template<class T, int wait_m>
@@ -234,7 +234,7 @@ void SSingleton<T, wait_m>::yield() const
   wait_and_move(
     const_cast<S&>(*this),
     is_occupied_event,
-    postoccupiedState,
+    postoccupiedFun(),
     wait_m
   );
 
@@ -248,7 +248,7 @@ void SSingleton<T, wait_m>::yield() const
       S::TheClass::exist_oneFun()
     );
   else
-    move_to(const_cast<S&>(*this), occupiedState);
+    move_to(const_cast<S&>(*this), occupiedFun());
 }
 
 // SAutoSingleton

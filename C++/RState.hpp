@@ -129,7 +129,7 @@ void RMixedAxis<Axis, Axis2>
       throw InvalidStateTransition(from, to);
   } while (!current.compare_exchange_strong(from, to));
   
-  if (!std::is_same<Axis, ConstructibleAxis>::value) 
+  if (!std::is_base_of<ConstructibleAxis, Axis>::value) 
     // prevent a deadlock
   {
     LOGGER_DEBUG(obj.logger(), 
@@ -166,7 +166,7 @@ bool RMixedAxis<Axis, Axis2>
                    const RState<Axis>& from,
                    const RState<Axis>& to)
 {
-  LOGGER_TRACE(obj.logger(), "1");
+  //LOGGER_TRACE(obj.logger(), "1");
   static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
   using MapAxis = typename 
@@ -175,20 +175,20 @@ bool RMixedAxis<Axis, Axis2>
   TransitionId trans_id;
   auto& current = obj.current_state(Axis2::self());
   
-  LOGGER_TRACE(obj.logger(), "2");
+  //LOGGER_TRACE(obj.logger(), "2");
   uint32_t expected = current;
   if (STATE_IDX(expected) != STATE_IDX(from))
   {
-  LOGGER_TRACE(obj.logger(), "2,5");
+    //LOGGER_TRACE(obj.logger(), "2,5");
     return false;
   }
 
-  LOGGER_TRACE(obj.logger(), "3");
+  //LOGGER_TRACE(obj.logger(), "3");
   if (!(trans_id= StateMapInstance<MapAxis>::get_map()
         -> get_transition_id(from, to)))
     throw InvalidStateTransition(from, to);
 
-  LOGGER_TRACE(obj.logger(), "4");
+  //LOGGER_TRACE(obj.logger(), "4");
   if (!current.compare_exchange_strong(expected, to))
     return false;
 
@@ -247,6 +247,7 @@ bool RMixedAxis<Axis, Axis2>
 
   } while(!current.compare_exchange_strong(from, to));
 
+#if 0 // TODO
   LOGGER_DEBUG(obj.logger(),
             "thread " 
             << RThread<std::thread>::current_pretty_id()
@@ -258,6 +259,7 @@ bool RMixedAxis<Axis, Axis2>
             << std::hex << " (0x" << from
             << ") -> " << to.name() << " (0x" 
             << (uint32_t) to << ")");
+#endif
   if (auto p = dynamic_cast<RObjectWithEvents<Axis2>*>
       (&obj)) {
     assert(trans_id > 0);

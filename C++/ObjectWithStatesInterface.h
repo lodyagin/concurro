@@ -47,11 +47,20 @@ template<class Axis> class RState;
 template<class Axis1, class Axis2> class RMixedEvent;
 
 class AbstractObjectWithStates
+  : public virtual ObjectWithLogging,
+    public virtual ObjectWithLogParams
 {
   template<class Axis>
   friend class RObjectWithStates;
 
 public:
+  struct place { struct states{}; };
+
+  AbstractObjectWithStates() {}
+  // TODO
+  AbstractObjectWithStates(AbstractObjectWithStates&&) = delete;
+  AbstractObjectWithStates& operator=(AbstractObjectWithStates&&) = delete;
+
   virtual ~AbstractObjectWithStates() {}
 
   //! the "update parent" callback on state changing in
@@ -130,8 +139,7 @@ public:
 
 template<>
 class ObjectWithStatesInterface<StateAxis>
-: public virtual AbstractObjectWithStates,
-  public virtual ObjectWithLogging
+: public virtual AbstractObjectWithStates
 {};
 
 class AbstractObjectWithEvents

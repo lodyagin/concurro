@@ -176,9 +176,9 @@ class SSingleton
 public:
   //! @cond
   DECLARE_STATES(SingletonAxis, State);
-  DECLARE_STATE_CONST(State, preoccupied);
-  DECLARE_STATE_CONST(State, occupied);
-  DECLARE_STATE_CONST(State, postoccupied);
+  DECLARE_STATE_FUN(State, preoccupied);
+  DECLARE_STATE_FUN(State, occupied);
+  DECLARE_STATE_FUN(State, postoccupied);
   //! @endcond
 
   static auto is_exist_one() 
@@ -355,7 +355,7 @@ public:
      const UniversalState& new_state) override
   {
 #if 1
-    ax.state_changed(this, object, state_ax, new_state);
+    Parent::state_changed(ax, state_ax, object, new_state);
 #else
     throw ::types::exception<SingletonException>(
       "SSingleton::state_changed() must not be called"
@@ -366,13 +366,14 @@ public:
   std::atomic<uint32_t>& 
   current_state(const StateAxis& ax) override
   { 
-    return ax.current_state(this);
+    
+    return Parent::current_state(ax);
   }
 
   const std::atomic<uint32_t>& 
   current_state(const StateAxis& ax) const override
   { 
-    return ax.current_state(this);
+    return Parent::current_state(ax);
   }
 
   CompoundEvent create_event(
@@ -382,7 +383,7 @@ public:
   ) const override
   {
     return ConstructibleObject::create_event
-      (ax, ue, logging);
+      (ax, ue, false /*NB*/);
   }
 
   void update_events
@@ -390,7 +391,7 @@ public:
      TransitionId trans_id, 
      uint32_t to) override
   {
-    ax.update_events(this, trans_id, to);
+    ConstructibleObject::update_events(ax, trans_id, to);
   }
 
 protected:

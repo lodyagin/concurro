@@ -75,6 +75,10 @@ EvtBase::EvtBase(
     h(CreateEvent(manual, init))
 #endif
 {
+  if (!logging)
+    log_params().disable
+      <place::set, place::reset, place::wait>();
+
 #if 0 // FIXME recursion (add create to log_params?)
   LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()

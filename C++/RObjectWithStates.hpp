@@ -171,13 +171,15 @@ void RObjectWithEvents<Axis>
                 TransitionId trans_id, 
                 uint32_t to)
 {
-  assert(is_same_axis<Axis>(ax));
+//  assert(Axis::is_same(ax)); FIXME
 
+#if 0
   LOG_TRACE(Logger<LOG::Root>, 
             "update_events for the axis "
             << ::types::type<StateAxis>::name()
             << ", to = " << UniversalState(to).name()
             << std::hex << " (0x" << to << ")");
+#endif
 
   // reset all events due to a new transition
   for (auto& p : events) p.second.reset();
