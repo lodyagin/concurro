@@ -40,9 +40,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_executable(tests_exec ${TestsSrc} ${TestsInc})
 
 
-target_link_libraries(tests_exec concurrent pthread)
+target_link_libraries(tests_exec concurrent pthread cunit)
 target_link_libraries(tests_exec 
   ${Boost_THREAD_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
-  ${CUNIT_LIBRARY}
 )

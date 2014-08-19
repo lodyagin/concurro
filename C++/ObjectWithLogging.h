@@ -30,13 +30,76 @@
 #ifndef CONCURRO_OBJECTWITHLOGGING_H_
 #define CONCURRO_OBJECTWITHLOGGING_H_
 
+#include <map>
 #include "types/typeinfo.h"
+#include "types/enum_map.h"
 #include "Logger.h"
 
 namespace curr {
 
 //! @addtogroup logging
 //! @{
+
+class LogParams;
+
+namespace object_with_logging_ {
+
+template<class... Vs>
+struct disabler;
+
+template<>
+struct disabler<>
+{
+  disabler(LogParams& pars) {}
+  void disable() {}
+};
+
+template<class V, class... Vs>
+struct disabler<V, Vs...> : disabler<Vs...>
+{
+  disabler(LogParams& pars_) 
+    : disabler<Vs...>(pars_),
+      pars(pars_) {}
+
+  void disable()
+  {
+    pars[V()] = true;
+    disabler<Vs...>(pars).disable();
+  }
+
+  LogParams& pars;
+};
+
+} // object_with_logging_
+
+class ObjectWithLogging;
+
+//! They refine logging
+struct LogParams
+{
+  //! disabled params marked true
+  ::types::enum_map<bool, std::map> pars;
+  ObjectWithLogging* log_obj;
+
+  LogParams(ObjectWithLogging* obj)
+    : log_obj(obj)
+  {
+    assert(log_obj);
+  }
+
+  template<class... EnumVal>
+  void disable()
+  {
+    using namespace object_with_logging_;
+    disabler<EnumVal...>(*this).disable();
+  }
+
+  template<class EnumVal>
+  bool& operator[](EnumVal val)
+  {
+    return pars.operator[](val);
+  }
+};
 
 /**
  * An abstract parent of "Object with logging" - an entity
@@ -47,13 +110,26 @@ class ObjectWithLogging
 public:
   //! It should be overriden. The default implementation
   //! is for logging from constructors to prevent a pure
-  //! virtual function call.
+  //! virtual function call
   virtual logging::LoggerPtr logger() const;
 
   //! The default implementation
   virtual std::string object_name() const
   {
     return ::types::demangled_name(typeid(*this));
+  }
+};
+
+class ObjectWithLogParams : public virtual ObjectWithLogging
+{
+  mutable LogParams log_params_;
+
+public:
+  ObjectWithLogParams() : log_params_(this) {}
+
+  /*virtual*/ LogParams& log_params() const
+  {
+    return log_params_;
   }
 };
 

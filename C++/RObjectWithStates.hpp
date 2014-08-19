@@ -133,7 +133,7 @@ CompoundEvent RObjectWithEvents<Axis>
     ue.local_id() == current_event.local_id();
 #if 1
   // map support for emplace is only in gcc 4.9
-  return *events.emplace(
+  return CompoundEvent(events.emplace(
     std::make_pair(
       ue.local_id(),
       Event(
@@ -146,7 +146,7 @@ CompoundEvent RObjectWithEvents<Axis>
         logging
       )
     )
-  ).first;
+  ).first->second);
 #else										  
   const auto it = events.find(ue.local_id());
   if (it == events.end()) {
@@ -216,12 +216,17 @@ RStateSplitter<DerivedAxis, SplitAxis>::RStateSplitter
 
 template<class DerivedAxis, class SplitAxis>
 CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
-::create_event (const StateAxis& ax, const UniversalEvent& ue) const
+::create_event(
+  const StateAxis& ax, 
+  const UniversalEvent& ue,
+  bool logging
+) const
 {
   if (!is_this_event_store(ue)) {
     CompoundEvent ce;
     if (auto* op = dynamic_cast<RObjectWithEvents<SplitAxis>*>(delegate))
-      ce |= op->RObjectWithEvents<SplitAxis>::create_event(ax, ue);
+      ce |= op->RObjectWithEvents<SplitAxis>::create_event
+        (ax, ue, logging);
     else
       ; //TODO ce |= delegate->ClassWithEvents<SplitAxis>::create_event(ue);
 
@@ -233,13 +238,13 @@ CompoundEvent RStateSplitter<DerivedAxis, SplitAxis>
         (ue.as_state_of_arrival())) 
     {
       ce |= this->RObjectWithEvents<DerivedAxis>
-        ::create_event(ax, ue);
+        ::create_event(ax, ue, logging);
     }
     return ce;
   }
   else
     return this->RObjectWithEvents<DerivedAxis>
-      ::create_event(ax, ue);
+      ::create_event(ax, ue, logging);
 }
 
 template<class DerivedAxis, class SplitAxis>

@@ -119,7 +119,7 @@
 
 #if !defined(LOG4CXX_THRESHOLD) || LOG4CXX_THRESHOLD <= 10000 
 #define LOGGER_DEBUG_PLACE_LOC(log, place, stream_expr, loc) do {      \
-  if (LOG4CXX_UNLIKELY((log) && this->log_params().place \
+  if (LOG4CXX_UNLIKELY((log) && !this->log_params()[place()] \
                       && (log)->isDebugEnabled())) {   \
     std::ostringstream oss_;       \
     { oss_ << stream_expr ; }                  \

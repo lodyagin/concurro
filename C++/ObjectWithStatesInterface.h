@@ -295,9 +295,9 @@ void update_events \
 } \
                                                          \
 CompoundEvent                                            \
-create_event(const curr::StateAxis& ax, const curr::UniversalEvent& ue) const override    \
+create_event(const curr::StateAxis& ax, const curr::UniversalEvent& ue, bool logging) const override    \
 {                                                        \
-  return ax.create_event(this,ue);                       \
+  return ax.create_event(this,ue, logging);              \
 }
 
 #define MULTIPLE_INHERITANCE_DEFAULT_MEMBERS  \

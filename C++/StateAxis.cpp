@@ -51,7 +51,8 @@ std::atomic<uint32_t>& StateAxis::current_state
 
 CompoundEvent StateAxis::create_event(
   const curr::AbstractObjectWithEvents* obj,
-  const curr::UniversalEvent& ue
+  const curr::UniversalEvent& ue,
+  bool logging
 ) const
 {
   throw ::types::exception<StateAxisException>

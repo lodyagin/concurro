@@ -72,7 +72,8 @@ struct StateAxis
 
   virtual CompoundEvent create_event(
     const curr::AbstractObjectWithEvents* obj,
-    const curr::UniversalEvent& ue
+    const curr::UniversalEvent& ue,
+    bool logging
   ) const;                                 
 
   virtual void update_events
@@ -130,7 +131,8 @@ inline bool is_same_axis(const StateAxis& ax)
   \
   CompoundEvent create_event(                            \
     const curr::AbstractObjectWithEvents* obj,        \
-    const UniversalEvent& ue                    \
+    const UniversalEvent& ue,                   \
+    bool logging                                \
   ) const override;                             \
   void update_events                            \
     (curr::AbstractObjectWithEvents* obj,       \

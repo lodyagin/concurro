@@ -92,9 +92,14 @@ struct AutoresetInCompound : CompoundEventException
 #define CURR_WAIT(evt, time) \
   CURR_WAIT_L(log::s_logger(), evt, time)
 
-class EventInterface //: public ObjectWithLogging
+class EventInterface //: public virtual ObjectWithLogging
 {
 public:
+  struct place
+  {
+    struct set{}; struct reset{}; struct wait{};
+  };
+
   virtual ~EventInterface() {}
 
   //! Wait for event or time in msecs. 
@@ -124,33 +129,17 @@ public:
 
 class EvtBase 
   : public virtual EventInterface,
-    public ObjectWithLogging
+    public virtual ObjectWithLogging,
+    public virtual ObjectWithLogParams
 {
   friend class Event;
   friend class CompoundEvent;
 
 public:
-  mutable struct LogParams 
-  {
-    bool set, reset, wait;
-    ObjectWithLogging* log_obj;
+  /*struct place { 
+    struct set{}; struct reset{}; struct wait{}; 
+  };*/
 
-    LogParams(
-      ObjectWithLogging* obj,
-      bool enable = true
-    ) 
-      : set(enable),
-        reset(enable),
-        wait(enable),
-        log_obj(obj)
-    {
-      assert(log_obj);
-    }
-
-  } log_params_;
-
-  LogParams& log_params() const { return log_params_; }
-  
   EvtBase(const EvtBase&) = delete;
   EvtBase& operator=(const EvtBase&) = delete;
 
@@ -328,7 +317,7 @@ public:
     return evt_ptr->universal_object_id;
   }
 
-  EvtBase::LogParams& log_params() const
+  LogParams& log_params() const //override
   {
     return evt_ptr->log_params();
   }
@@ -342,7 +331,9 @@ private:
 
 #define STL_BUG 1
 
-class CompoundEvent : public virtual EventInterface
+class CompoundEvent 
+  : public virtual EventInterface,
+    public virtual ObjectWithLogParams
 {
   friend std::ostream&
     operator<< (std::ostream&, const CompoundEvent&);

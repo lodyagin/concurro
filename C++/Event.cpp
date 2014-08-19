@@ -65,8 +65,7 @@ EvtBase::EvtBase(
   bool init,
   bool logging
 )
-  : log_params_(this, logging),
-    universal_object_id(id),
+  : universal_object_id(id),
     shadow(false),
     isSignaled(init),
     is_manual(manual),
@@ -119,7 +118,8 @@ operator<< (std::ostream& out, const EvtBase& evt)
 
 void EvtBase::set()
 {
-  LOGGER_DEBUG_PLACE(log_params().log_obj->logger(), set, "thread " 
+  LOGGER_DEBUG_PLACE(log_params().log_obj->logger(), 
+   place::set, "thread " 
                 << RThread<std::thread>::current_pretty_id()
                   << ">\t event "
                   << universal_object_id << ">\t set");
@@ -138,7 +138,8 @@ void EvtBase::set()
 
 void EvtBase::reset()
 {
-  LOGGER_DEBUG_PLACE(log_params().log_obj->logger(), reset, "thread " 
+  LOGGER_DEBUG_PLACE(log_params().log_obj->logger(), 
+    place::reset, "thread " 
                 << RThread<std::thread>::current_pretty_id()
                   << ">\t event "
                   << universal_object_id << ">\t reset");
@@ -156,7 +157,7 @@ void EvtBase::reset()
 
 bool EvtBase::wait_impl(int time) const
 {
-  if (log_params().wait) {
+  if (log_params()[wait()]) {
     if (time != -1) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
                    << RThread<std::thread>::current_pretty_id()
@@ -187,7 +188,7 @@ bool EvtBase::wait_impl(int time) const
 #else
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
-    if (log_params().wait) {
+    if (log_params()[wait()]) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
@@ -197,7 +198,7 @@ bool EvtBase::wait_impl(int time) const
     return false;
   }
 #endif
-  if (log_params().wait) {
+  if (log_params()[wait()]) {
     LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event "
@@ -396,7 +397,7 @@ void CompoundEvent::wait(
 
 bool CompoundEvent::wait_impl(int time) const
 {
-  if (log_params().wait) {
+  if (log_params()[place::wait()]) {
     if (time != -1) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
                    << RThread<std::thread>::current_pretty_id()
@@ -424,7 +425,7 @@ bool CompoundEvent::wait_impl(int time) const
                                          time);
 
   if (code == ETIMEDOUT) {
-    if (log_params().wait) {
+    if (log_params()[place::wait()]) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event " << *this
@@ -432,7 +433,7 @@ bool CompoundEvent::wait_impl(int time) const
     }
     return false;
   }
-  if (log_params().wait) {
+  if (log_params()[place::wait()]) {
     LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event " << *this

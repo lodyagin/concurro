@@ -71,6 +71,11 @@ public:
 
   ConstructibleObject();
 
+  //! Now it is deleted for simplicity
+  ConstructibleObject(ConstructibleObject&&) = delete;
+  ConstructibleObject& operator=(ConstructibleObject&&) = 
+    delete;
+
   //! Report complete construction from a
   //! descendant. Change the state to
   //! complete_construction.
