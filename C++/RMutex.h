@@ -89,7 +89,7 @@ public:
   class Lock;
   class Unlock;
 
-  RMutex(const std::string& the_name);
+  explicit RMutex(const std::string& the_name);
   ~RMutex();
 
   void acquire(
@@ -106,8 +106,9 @@ public:
 
   const std::string get_name () const { return name; }
 
-  void set_name (const std::string new_name) {
-   name = new_name;
+  void set_name (const std::string new_name) 
+  {
+    name = new_name;
   }
 
 protected:

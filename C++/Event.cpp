@@ -250,31 +250,37 @@ bool EvtBase::wait_shadow(int time) const
 }
 
 CompoundEvent::CompoundEvent()
-  : vector_need_update(false) //<NB>
+  : vector_need_update(false), //<NB>
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {}
 
+#if 0
 CompoundEvent::CompoundEvent(CompoundEvent&& e)
   : handle_set(std::move(e.handle_set)),
     handle_vec(std::move(e.handle_vec)),
-    vector_need_update(e.vector_need_update)
+    vector_need_update(e.vector_need_update),
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {
 //  using log = Logger<LOG::Events>;
   //commented out to prevent an infinite loop
   //LOG_TRACE(log, "CompoundEvent::move constructor");
 }
+#endif
 
 CompoundEvent::CompoundEvent(const CompoundEvent& e)
 #if !STL_BUG
   : handle_set(e.handle_set),
     handle_vec(e.handle_vec),
-    vector_need_update(e.vector_need_update)
+    vector_need_update(e.vector_need_update),
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {
   using log = Logger<LOG::Events>;
   LOG_TRACE(log, "CompoundEvent::copy constructor");
 }
 #else
   : handle_vec(e.handle_vec),
-    vector_need_update(e.vector_need_update)
+    vector_need_update(e.vector_need_update),
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {
   //using log = Logger<LOG::Events>;
   handle_set = e.handle_set;
@@ -284,7 +290,9 @@ CompoundEvent::CompoundEvent(const CompoundEvent& e)
 #endif
 
 CompoundEvent::CompoundEvent(const Event& e)
-  : handle_set{e}, vector_need_update(true)
+  : handle_set{e}, 
+    vector_need_update(true),
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {
   if (!e.is_manual())
     AutoresetInCompound().raise();
@@ -293,7 +301,8 @@ CompoundEvent::CompoundEvent(const Event& e)
 CompoundEvent::CompoundEvent(
   std::initializer_list<Event> evs
 )
-  : vector_need_update(evs.size() > 0)
+  : vector_need_update(evs.size() > 0),
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {
   for (const Event& e : evs) {
     handle_set.insert(e);
@@ -304,13 +313,15 @@ CompoundEvent::CompoundEvent(
 
 CompoundEvent::CompoundEvent
 (std::initializer_list<CompoundEvent> evs)
-  : vector_need_update(evs.size() > 0)
+  : vector_need_update(evs.size() > 0),
+    update_vector_mx("CompoundEvent::update_vector_mx")
 {
   for (const CompoundEvent& e : evs) {
     handle_set.insert(e.begin(), e.end());
   }
 }
 
+#if 0
 CompoundEvent& CompoundEvent
 ::operator= (CompoundEvent&& e)
 {
@@ -321,6 +332,7 @@ CompoundEvent& CompoundEvent
   vector_need_update = e.vector_need_update;
   return *this;
 }
+#endif
 
 //#if !STL_BUG
 CompoundEvent& CompoundEvent
@@ -450,20 +462,22 @@ void CompoundEvent::update_vector() const
 {
   if (!vector_need_update)
     return;
+  { 
+    RLOCK(update_vector_mx);
 
-  handle_vec.clear();
-  handle_vec.reserve(handle_set.size());
-  std::transform
-    (handle_set.begin(), handle_set.end(),
-     std::back_inserter(handle_vec),
-     [](const Event& e) { return e.evt_ptr->h; });
+    handle_vec.clear();
+    handle_vec.reserve(handle_set.size());
+    std::transform
+      (handle_set.begin(), handle_set.end(),
+       std::back_inserter(handle_vec),
+       [](const Event& e) { return e.evt_ptr->h; });
 
-  // Merge disabled log params from all events
-  LogParams& lp = ObjectWithLogParams::log_params();
-  lp.enable_all();
-  for(const Event& e : handle_set)
-    lp |= e.log_params();
-
+    // Merge disabled log params from all events
+    LogParams& lp = ObjectWithLogParams::log_params();
+    lp.enable_all();
+    for(const Event& e : handle_set)
+      lp |= e.log_params();
+  }
   vector_need_update = false;
   assert(handle_vec.size() == handle_set.size());
 }

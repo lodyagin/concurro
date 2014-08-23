@@ -44,6 +44,7 @@ typedef neosmart::neosmart_event_t HANDLE;
 #include <memory>
 #include <exception>
 #include <assert.h>
+#include "RMutex.h"
 
 #define SHUTDOWN_UNIMPL
 
@@ -340,7 +341,7 @@ class CompoundEvent
 
 public:
   CompoundEvent();
-  CompoundEvent(CompoundEvent&&); //UT+
+//  CompoundEvent(CompoundEvent&&); //UT+
 #if 1 //!STL_BUG
   CompoundEvent(const CompoundEvent&); 
 #else
@@ -350,7 +351,7 @@ public:
   CompoundEvent(std::initializer_list<Event>);
   CompoundEvent(std::initializer_list<CompoundEvent>);
 
-  CompoundEvent& operator= (CompoundEvent&&);
+//  CompoundEvent& operator= (CompoundEvent&&);
 #if 1 //!STL_BUG
   CompoundEvent& operator= (const CompoundEvent&);
 #else
@@ -423,9 +424,15 @@ protected:
   std::set<Event> handle_set;
   //! a vector to pass to WaitForMultipleEvents
   mutable std::vector<HANDLE> handle_vec;
+#if 0
+  //! the vector need to be updated by the set
+  mutable std::atomic<bool> vector_need_update;
+#else
   //! the vector need to be updated by the set
   mutable bool vector_need_update;
-
+#endif
+  mutable RMutex update_vector_mx;  
+  
   //! wait time msecs
   bool wait_impl(int time) const;
 
