@@ -161,7 +161,7 @@ void EvtBase::reset()
 
 bool EvtBase::wait_impl(int time) const
 {
-  if (log_params()[place::wait()]) {
+  if (!log_params()[place::wait()]) {
     if (time != -1) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
                    << RThread<std::thread>::current_pretty_id()
@@ -192,7 +192,7 @@ bool EvtBase::wait_impl(int time) const
 #else
   int code = WaitForEvent(evts[0], time);
   if (code == ETIMEDOUT) {
-    if (log_params()[place::wait()]) {
+    if (!log_params()[place::wait()]) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event "
@@ -202,7 +202,7 @@ bool EvtBase::wait_impl(int time) const
     return false;
   }
 #endif
-  if (log_params()[place::wait()]) {
+  if (!log_params()[place::wait()]) {
     LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event "
@@ -401,7 +401,7 @@ void CompoundEvent::wait(
 
 bool CompoundEvent::wait_impl(int time) const
 {
-  if (log_params()[place::wait()]) {
+  if (!log_params()[place::wait()]) {
     if (time != -1) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
                    << RThread<std::thread>::current_pretty_id()
@@ -429,7 +429,7 @@ bool CompoundEvent::wait_impl(int time) const
                                          time);
 
   if (code == ETIMEDOUT) {
-    if (log_params()[place::wait()]) {
+    if (!log_params()[place::wait()]) {
       LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
               << RThread<std::thread>::current_pretty_id()
               << ">\t event " << *this
@@ -437,7 +437,7 @@ bool CompoundEvent::wait_impl(int time) const
     }
     return false;
   }
-  if (log_params()[place::wait()]) {
+  if (!log_params()[place::wait()]) {
     LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
             << RThread<std::thread>::current_pretty_id()
             << ">\t event " << *this
@@ -457,6 +457,12 @@ void CompoundEvent::update_vector() const
     (handle_set.begin(), handle_set.end(),
      std::back_inserter(handle_vec),
      [](const Event& e) { return e.evt_ptr->h; });
+
+  // Merge disabled log params from all events
+  LogParams& lp = ObjectWithLogParams::log_params();
+  lp.enable_all();
+  for(const Event& e : handle_set)
+    lp |= e.log_params();
 
   vector_need_update = false;
   assert(handle_vec.size() == handle_set.size());

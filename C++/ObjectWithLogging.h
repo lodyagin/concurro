@@ -94,10 +94,23 @@ struct LogParams
     disabler<EnumVal...>(*this).disable();
   }
 
+  //! Clear all disable bits
+  void enable_all()
+  {
+    pars.clear();
+  }
+
   template<class EnumVal>
   bool& operator[](EnumVal val)
   {
     return pars.operator[](val);
+  }
+
+  //! Merge disabled 
+  LogParams& operator|=(const LogParams& o)
+  {
+    pars |= o.pars;
+    return *this;
   }
 };
 
@@ -127,7 +140,7 @@ class ObjectWithLogParams : public virtual ObjectWithLogging
 public:
   ObjectWithLogParams() : log_params_(this) {}
 
-  /*virtual*/ LogParams& log_params() const
+  virtual LogParams& log_params() const
   {
     return log_params_;
   }

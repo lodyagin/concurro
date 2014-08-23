@@ -412,6 +412,12 @@ public:
     return handle_set.end();
   }
 
+  LogParams& log_params() const override
+  {
+    update_vector();
+    return ObjectWithLogParams::log_params();
+  }
+
 protected:
   //! a set for accumulate handles
   std::set<Event> handle_set;

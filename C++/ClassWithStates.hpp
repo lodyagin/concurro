@@ -102,7 +102,7 @@ ClassWithEvents<Axis, initial_state, StateHook>
                     ::types::type<decltype(*this)>::name() 
                       << ":" 
                       << ue.name()), 
-              true, is_initial_state))).first->second);
+              true, is_initial_state, logging))).first->second);
   }
   else 
     return CompoundEvent(it->second);

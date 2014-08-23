@@ -347,7 +347,7 @@ void update_events \
 CompoundEvent                                            \
 create_event(const StateAxis& ax, const UniversalEvent& ue, bool logging = true) const override    \
 {                                                        \
-  return parent::create_event(ax, ue);                       \
+  return parent::create_event(ax, ue, logging);                       \
 }
 
 #define MULTIPLE_INHERITANCE_PARENT_MEMBERS(parent)  \
