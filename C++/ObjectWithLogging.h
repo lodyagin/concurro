@@ -144,6 +144,29 @@ public:
   {
     return log_params_;
   }
+
+  //! Returns true if logging in this object is enabled
+  //! for level
+  bool log_enabled(logging::LevelPtr level) const
+  {
+    LogParams& lp = log_params(); // NB virtual call
+    logging::LoggerPtr logger = lp.log_obj->logger();
+    return logger && logger->isEnabledFor(level);
+  }
+
+  //! Returns true if logging in this object is enabled
+  //! for level and Place
+  template<class Place>
+  bool log_enabled(Place place, logging::LevelPtr level)
+    const
+  {
+    LogParams& lp = log_params(); // NB virtual call
+    if (lp[place])
+      return false;
+
+    logging::LoggerPtr logger = lp.log_obj->logger();
+    return logger && logger->isEnabledFor(level);
+  }
 };
 
 //! @}
