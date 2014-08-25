@@ -106,6 +106,11 @@ bool Logger::isFatalEnabled() const
   return getEffectiveLevel().toInt() <= Level::FATAL_INT;
 }
 
+bool Logger::isEnabledFor(const LevelPtr& level) const
+{
+  return getEffectiveLevel().toInt() <= level.toInt();
+}
+
 LevelPtr Logger::getEffectiveLevel() const
 {
   return Level::getDebug();

@@ -94,6 +94,8 @@ class LocationInfo {};
 class Logger;
 using LoggerPtr = std::shared_ptr<Logger>;
 
+#define LEVEL_DEBUG (::curr::logging::Level::getDebug())
+
 /**
  * The logger concept.
  */
@@ -106,6 +108,17 @@ public:
   bool isWarnEnabled() const;
   bool isErrorEnabled() const;
   bool isFatalEnabled() const;
+
+  /**
+  Check whether this logger is enabled for a given
+  Level passed as parameter.
+
+  See also #isDebugEnabled.
+
+  @return bool True if this logger is enabled for 
+          <code>level</code>.
+  */
+  bool isEnabledFor(const LevelPtr& level) const;
 
   /**
   This method creates a new logging event and logs the
