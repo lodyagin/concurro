@@ -75,6 +75,8 @@ public:
     this->complete_construction();
   }
 
+  ~AutoRepository() { destroy(); }
+
   size_t size() const override
   {
     return rep->size();

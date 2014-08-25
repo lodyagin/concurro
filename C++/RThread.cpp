@@ -264,8 +264,7 @@ void RThreadBase::_run()
 {
   (is_starting_event | is_cancelled_event).wait();
   if (is_cancelled_event.signalled()) {
-    LOG_DEBUG (log, "thread " << pretty_id() 
-               << ">\t cancelled");
+    // no code after that (destructor can be called)
     return;
   }
 

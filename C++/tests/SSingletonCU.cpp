@@ -58,6 +58,7 @@ void test_ssingleton()
   struct S : public SSingleton<S, 100>
   {
     S() { complete_construction(); }
+    ~S() { destroy(); }
     int fun() const { return 133; }
   };
 
@@ -124,6 +125,7 @@ void test_sautosingleton_auto()
   struct S : public SAutoSingleton<S>
   {
     S() { complete_construction(); }
+    ~S() { destroy(); }
     int fun() const { return 133; }
   };
 
@@ -136,6 +138,7 @@ void test_sautosingleton_manual()
   struct S : public SAutoSingleton<S>
   {
     S() { complete_construction(); }
+    ~S() { destroy(); }
     int fun() const { return 134; }
   };
 
@@ -176,6 +179,7 @@ void test_concurrent_creation()
          struct T : public SAutoSingleton<T>
          { 
            T() { usleep(20000); complete_construction(); }
+           ~T() { destroy(); }
          } ;
          
          try {
@@ -207,6 +211,7 @@ class P : public SAutoSingleton<P>
 {
 public:
   P() { complete_construction(); }
+  ~P() { destroy(); }
 };
 
 P p;

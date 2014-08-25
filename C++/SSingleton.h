@@ -403,12 +403,16 @@ protected:
     Parent::TheClass::instance()->is_exist_one(), 
     is_occupied_event
   };
-/*    
-  //! Precondition to yield()
-  CompoundEvent is_yieldable = {
-    is_occupied_event
-  };
-*/
+
+  bool destructor_delegate_is_called = false;
+
+  //! A real work of a destructor is here. All descendants
+  //! must call it in the destructor. It moves to
+  //! predec_exist_one. (Must be called from the most
+  //! overrided destructor to prevent destroying of
+  //! critical objects prior to yield()).
+  void destroy();
+
 private:
   //! The actual singleton instance. It is updated from
   //! instance0 in instance() call.

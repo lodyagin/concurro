@@ -433,7 +433,6 @@ bool CompoundEvent::wait_impl(int time) const
     return true;
 
   update_vector();
-  assert(handle_vec.size() > 0);
 
   const int code = WaitForMultipleEvents(&handle_vec[0], 
                                          handle_vec.size(),
@@ -449,11 +448,21 @@ bool CompoundEvent::wait_impl(int time) const
     }
     return false;
   }
-  if (!log_params()[place::wait()]) {
+  if (log_enabled(place::wait(), LEVEL_DEBUG)) {
+    const auto handle = handle_vec.at(code);
+    auto it = std::find_if(
+      handle_set.begin(),
+      handle_set.end(),
+      [handle](const Event& e) {
+        return e.evt_ptr->h == handle;
+      });
+    assert(it != handle_set.end());
     LOGGER_DEBUG(log_params().log_obj->logger(), "thread " 
-            << RThread<std::thread>::current_pretty_id()
-            << ">\t event " << *this
-            << ">\t wait: signalled");
+      << RThread<std::thread>::current_pretty_id()
+      << ">\t event " << *this
+      << ">\t wait: signalled for "
+      << it->universal_id()
+    );
   }
   return true;
 }
@@ -477,9 +486,11 @@ void CompoundEvent::update_vector() const
     lp.enable_all();
     for(const Event& e : handle_set)
       lp |= e.log_params();
+
+    assert(handle_vec.size() > 0);
+    assert(handle_vec.size() == handle_set.size());
   }
   vector_need_update = false;
-  assert(handle_vec.size() == handle_set.size());
 }
 
 std::ostream&

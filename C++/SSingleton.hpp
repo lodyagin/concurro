@@ -82,6 +82,7 @@ void SingletonStateHook<T, wait_m>::operator()
         ("Program error"); // check the state design if
                            // you get it
   }
+/*
   else if (newst == S::TheClass::predec_exist_oneFun())
   {
     // sync the class state with the object state (wait
@@ -93,6 +94,7 @@ void SingletonStateHook<T, wait_m>::operator()
       wait_m
     );
   }
+*/
 }
 
 // SSingleton
@@ -169,6 +171,7 @@ SSingleton<T, wait_m>::SSingleton(SSingleton&& s)
 template<class T, int wait_m>
 SSingleton<T, wait_m>::~SSingleton()
 {
+  assert(destructor_delegate_is_called);
   if (!this->paired)
   {
     // do not call it for moved-from objects (that have
@@ -185,6 +188,24 @@ void SSingleton<T, wait_m>::complete_construction()
 {
   if ((_instance = dynamic_cast<T*>(this))) 
     Parent::complete_construction();
+}
+
+template<class T, int wait_m>
+void SSingleton<T, wait_m>::destroy()
+{
+  using S = SSingleton<T, wait_m>;
+
+  if (destructor_delegate_is_called) 
+    return;
+
+  wait_and_move(
+    *this,
+    S::TheClass::instance()->is_exist_one(),
+    S::TheClass::predec_exist_oneFun(),
+    wait_m
+  );
+
+  destructor_delegate_is_called = true;
 }
 
 // No logging here (recursion is possible)

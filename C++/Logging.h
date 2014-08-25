@@ -346,6 +346,8 @@ public:
     );*/
   }
 
+  ~Logger() { this->destroy(); }
+
   /*std::string object_name() const override
   {
     return ::types<decltype(*this)>::name();
@@ -416,6 +418,8 @@ public:
   {
     this->complete_construction();
   }
+
+  ~Logger() { destroy(); }
 
   logging::LoggerPtr logger() const override
   {

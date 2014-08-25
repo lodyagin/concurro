@@ -96,6 +96,8 @@ public:
     {
       complete_construction();
     }
+
+    ~TheClass() { destroy(); }
   protected:
 #else
   protected:

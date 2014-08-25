@@ -46,8 +46,6 @@ RThreadRepository<Thread, T>::RThreadRepository(int w)
     ), 
     wait_m(w)
 {
-  Thread::this_is_main_thread();
-
   // Disable signals. See RSignalRepository
   sigset_t ss;
   rCheck(::sigfillset(&ss) == 0);
@@ -71,6 +69,8 @@ RThreadRepository<Thread, T>::~RThreadRepository()
   {
     th.is_terminal_state().wait();
   });
+
+  this->destroy();
 }
 
 template<class Thread, class T>

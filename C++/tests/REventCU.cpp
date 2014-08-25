@@ -65,6 +65,7 @@ CU_TestInfo REventTests[] = {
 // init the test suite
 int REventCUInit() 
 {
+  RThread<std::thread>::this_is_main_thread();
   return 0;
 }
 

@@ -82,6 +82,7 @@ class RSignalRepository final
 {
 public:
   RSignalRepository() { complete_construction(); }
+  ~RSignalRepository() { destroy(); }
   void tune_signal(int signum, RSignalAction action);
 };
 
