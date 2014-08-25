@@ -17,7 +17,8 @@ void Logger::forcedLog(
   const std::string& message
 ) const
 {
-  lg::stream::instance() << message << std::endl;
+  lg::stream::instance() << ++lg::stream::event_id << '\t'
+    << message << std::endl;
 }
 
 void Logger::forcedLog(
@@ -26,8 +27,15 @@ void Logger::forcedLog(
   const LocationInfo&
 ) const
 {
-  lg::stream::instance() << message << std::endl;
+  lg::stream::instance() << ++lg::stream::event_id << '\t'
+    << message << std::endl;
 }
 
 } // logging
 } // curr
+
+namespace lg {
+
+int64_t stream::event_id;
+
+} // lg

@@ -95,6 +95,8 @@ public:
     return *instance;
   }
 
+  static int64_t event_id;
+
 protected:
   boost::mutex::scoped_lock lock() //override
   {
