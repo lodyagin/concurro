@@ -135,7 +135,8 @@ public:
 
 protected:
   //! The caller's instruction pointer
-  static ip_type callers_ip() __attribute__ ((noinline))
+  static ip_type callers_ip() 
+    __attribute__ ((always_inline))
   {
     return (ip_type) __builtin_return_address(0);
   }
@@ -155,10 +156,10 @@ public:
 #endif
 
   //! The current frame (top of the stack)
-  static reference top() __attribute__ ((always_inline))
+  static reference top() __attribute__ ((noinline))
   {
     return type{
-      (fp_type) __builtin_frame_address(0),
+      (fp_type) __builtin_frame_address(1),
       (ip_type) callers_ip()
     };
   }
