@@ -11,6 +11,7 @@
 #ifndef HARDCORE_STACK_HPP
 #define HARDCORE_STACK_HPP
 
+#include <iostream>
 #include <cstddef>
 #include <cassert>
 
@@ -19,7 +20,7 @@ extern void* __libc_stack_end;
 namespace hc {
 
 //! @tparam limit browsable stack size
-//template<std::size_t limit = 35>
+//template<std::size_t limit = 35> TODO
 class stack
 {
 public:
@@ -33,54 +34,45 @@ public:
   */
   struct link
   {
+    using fun_t = void();
+    using fun_ptr_t = fun_t*;
+
     link* up;
-    void* ret;
+    fun_ptr_t ret;
   };
 
   //! Copy of existing stack have no sence
   stack(const stack&) = delete;
   stack& operator=(const stack&) = delete;
+
+  class returns;
   
-protected:
-  class iterator
+  class frames
   {
-    friend class frame;
-    friend class function;
-
+    friend class returns;
+ 
   public:
-    constexpr iterator() 
-       __attribute__ ((always_inline))
-      : fp(nullptr) 
-    {}
-
-    bool operator==(const iterator& o) const
+    class iterator
     {
-      return fp == o.fp;
-    }
-
-    bool operator!=(const iterator& o) const
-    {
-      return !operator==(o);
-    }
-
-  protected:
-    inline iterator(const link* l) : fp(l) {}
-
-    const link* fp;
-  };
-
-public:
-  struct frame
-  {
-    class iterator : public stack::iterator
-    {
-      friend class frame;
+      friend class frames;
 
     public:
       using const_reference = const link&;
       using const_pointer = const link*;
 
-      constexpr iterator() {}
+      constexpr iterator() __attribute__ ((always_inline))
+        : fp(nullptr) 
+      {}
+
+      bool operator==(const iterator& o) const
+      {
+        return fp == o.fp;
+      }
+
+      bool operator!=(const iterator& o) const
+      {
+        return !operator==(o);
+      }
 
       iterator& operator++()
       {
@@ -102,10 +94,11 @@ public:
       }
 
     protected:
-      iterator(const_pointer l)  
-        __attribute__ ((always_inline))
-        : stack::iterator(l) 
+      iterator(const link* l)__attribute__((always_inline))
+        : fp(l) 
       {}
+
+      const link* fp;
     };
 
     using const_reference = iterator::const_reference;
@@ -121,9 +114,9 @@ public:
     }
 
   public:
-    frame() {}
-    frame(const frame&) = delete;
-    frame& operator=(const frame&) = delete;
+    frames() {}
+    frames(const frames&) = delete;
+    frames& operator=(const frames&) = delete;
 
     //! The current frame (top of the stack)
     static const_reference top()  
@@ -131,13 +124,6 @@ public:
     {
       // must be inlined
       return *top_ptr();
-    }
-
-    static const_reference bottom()
-    {
-      link* p = nullptr;
-      return *p; // TODO
-      //return __libc_stack_end;
     }
 
     //! returns iterator to top element
@@ -150,23 +136,43 @@ public:
     {
       return iterator(nullptr);
     }
-
   };
 
   //! Function return addresses
-  struct function
+  class returns
   {
-    class iterator : protected stack::iterator
+  public:
+    class iterator
     {
-      friend class function;
+      friend class returns;
 
     public:
-      iterator() {}
+      using reference = link::fun_t&;
+      using pointer = link::fun_ptr_t;
+
+      constexpr iterator() __attribute__ ((always_inline))
+        : fp(nullptr), current(nullptr)
+      {}
+
+      bool operator==(const iterator& o) const
+      {
+        return current == o.current;
+      }
+
+      bool operator!=(const iterator& o) const
+      {
+        return !operator==(o);
+      }
 
       iterator& operator++()
       {
-        assert(fp);
-        fp = fp->up;
+        if (__builtin_expect(fp == nullptr, 0)) {
+          current = nullptr;
+        }
+        else {
+          current = fp->ret;
+          fp = fp->up;
+        }
         return *this;
       }
    
@@ -177,40 +183,53 @@ public:
         return copy;
       }
 
+      reference operator*() const
+      {
+        return *current;
+      }
+
     protected:
-      iterator(const stack::iterator& o) 
-        : stack::iterator(o)
+      iterator(const link* fp_, pointer current_)
+        __attribute__ ((always_inline))
+        : fp(fp_), current(current_)
       {}
+
+      const link* fp;
+      pointer current;
     };
 
-    function(const function&) = delete;
-    function& operator=(const function&) = delete;
+    using reference = iterator::reference;
+    using pointer = iterator::pointer;
+
+    returns() {}
+    returns(const returns&) = delete;
+    returns& operator=(const returns&) = delete;
 
     //! The current function (top of the stack)
-    inline static void* top()
+    static pointer top() __attribute__ ((noinline))
     {
-      // must be inlined
-      return __builtin_return_address(0);
-    }
-
-    static void* bottom()
-    {
-      return nullptr; // TODO
-      //return __libc_stack_end;
+      return (pointer) __builtin_return_address(0);
     }
 
     //! returns iterator to top element
-    inline static iterator begin()
+    static iterator begin() __attribute__ ((always_inline))
     {
-      return frame::begin();
+      return iterator(
+        frames::top_ptr(),
+        top()
+      );
     }
 
     inline static iterator end()
     {
-      return frame::end(); // TODO
+      return iterator();
     }
   };
 };
+
+std::ostream&
+operator<<(std::ostream& out, const stack::returns& fs)
+  __attribute__ ((noinline));
 
 } // hc
 
