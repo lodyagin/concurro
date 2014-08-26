@@ -1,23 +1,20 @@
 #include <iostream>
 #include "stack.hpp"
 
-using namespace hc;
-
-using A = void(int);
-using PA = A*;
-
 void req(int depth)
 {
   std::cout << '.';
   if (depth <= 0)
   {
+    hc::stack the_stack;
+
     std::cout << "stack frames:\n";
-    for (auto& frame : stack::frames())
-      std::cout << &frame << std::endl;
+    for (auto frame : the_stack)
+      std::cout << frame.fp << std::endl;
 
     std::cout << "returns:\n";
-    for (auto& fun : stack::returns())
-      std::cout << (void*) &fun << std::endl;
+    for (auto frame : the_stack)
+      std::cout << (void*) frame.ip << std::endl;
   }
   else req(depth - 1);
 }
