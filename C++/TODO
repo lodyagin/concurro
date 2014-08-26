@@ -1,0 +1,4 @@
+174     thread 140037725992768>  object test_event_2threads()::W>        axis curr::ThreadAxis/curr::ThreadAxis>        move_to:         ready (0x50001) -> starting (0x50002)
+0x6a5f46 0x65a17a 0x7f5d129078ca 0x6515ab 0x780770 0x7803ea 0x77e542 0x77c57c 0x77c344 0x77a461 0x7f5d111b4b45 
+175     thread 140037725992768>  object test_event_2threads()::W>        axis curr::ThreadAxis/curr::ThreadAxis>        move_to:         ready (0x50001) -> starting (0x50002)
+0x6a5f46 0x65a17a 0x7f5d129078ca 0x6515ba 0x780770 0x7803ea 0x77e542 0x77c57c 0x77c344 0x77a461 0x7f5d111b4b45 

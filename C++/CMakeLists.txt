@@ -49,6 +49,7 @@ set (concurrent_SOURCES
   StateAxis.cpp
   StateMap.cpp
 #  TCPSocket.cpp
+  hardcore/stack.cpp
 )
 
 #include_directories(/usr/local/lib/boost_1_53_0)

@@ -14,6 +14,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cassert>
+#include <iterator>
 
 extern void* __libc_stack_end;
 
@@ -57,8 +58,10 @@ public:
       friend class frames;
 
     public:
+      using difference_type = std::ptrdiff_t;
       using const_reference = const link&;
       using const_pointer = const link*;
+      using iterator_category = std::forward_iterator_tag;
 
       constexpr iterator() __attribute__ ((always_inline))
         : fp(nullptr) 
@@ -147,8 +150,11 @@ public:
       friend class returns;
 
     public:
+      using difference_type = std::ptrdiff_t;
+      using value_type = link::fun_t;
       using reference = link::fun_t&;
       using pointer = link::fun_ptr_t;
+      using iterator_category = std::forward_iterator_tag;
 
       constexpr iterator() __attribute__ ((always_inline))
         : fp(nullptr), current(nullptr)

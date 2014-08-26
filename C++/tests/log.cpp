@@ -6,6 +6,7 @@
  * @copyright Copyright (C) 2013 Cohors LLC 
  */
 
+#include "hardcore/stack.hpp"
 #include "Logger.h"
 #include "log.h"
 
@@ -18,7 +19,8 @@ void Logger::forcedLog(
 ) const
 {
   lg::stream::instance() << ++lg::stream::event_id << '\t'
-    << message << std::endl;
+    << message << '\n' << hc::stack::returns()
+    << std::endl;
 }
 
 void Logger::forcedLog(
@@ -28,7 +30,8 @@ void Logger::forcedLog(
 ) const
 {
   lg::stream::instance() << ++lg::stream::event_id << '\t'
-    << message << std::endl;
+    << message << '\n' << hc::stack::returns()
+    << std::endl;
 }
 
 } // logging
