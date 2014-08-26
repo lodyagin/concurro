@@ -48,11 +48,6 @@ struct type
 
   fp_type fp;
   ip_type ip;
-
-/*  type(const link* fp_, link::fun_ptr_t ip_)
-    __attribute__ ((always_inline))
-    : fp(fp_), ip(ip_)
-  {}*/
 };
 
 class iterator : protected type
@@ -146,23 +141,32 @@ protected:
   }
 
 public:
+#if 1
+  stack() : type{nullptr, nullptr} {}
+#else
+  // problem with optimization, try to compile 
+  // 7c4121f02ed3e2bd with -O3 (gcc 4.9.1)
   stack() __attribute__ ((always_inline))
     : type{
         (fp_type) __builtin_frame_address(0),
         (ip_type) callers_ip()
       }
   {}
+#endif
 
   //! The current frame (top of the stack)
-  reference top()
+  static reference top() __attribute__ ((always_inline))
   {
-    return *this;
+    return type{
+      (fp_type) __builtin_frame_address(0),
+      (ip_type) callers_ip()
+    };
   }
 
   //! returns iterator to top element
-  iterator begin() //__attribute__ ((always_inline))
+  static iterator begin() __attribute__ ((always_inline))
   {
-    return iterator(*this);
+    return top();
   }
 
   iterator end()
@@ -173,7 +177,8 @@ public:
   //! Marker type for output ips only
   struct ips
   {
-    ips()__attribute__((noinline)): bg(stack().begin()) {}
+    ips()__attribute__((__always_inline__))
+      : bg(stack().begin()) {}
 
     iterator bg;
   };

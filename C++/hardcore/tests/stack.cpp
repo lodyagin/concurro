@@ -6,15 +6,10 @@ void req(int depth)
   std::cout << '.';
   if (depth <= 0)
   {
-    hc::stack the_stack;
-
-    std::cout << "stack frames:\n";
-    for (auto frame : the_stack)
-      std::cout << frame.fp << std::endl;
-
-    std::cout << "returns:\n";
-    for (auto frame : the_stack)
-      std::cout << (void*) frame.ip << std::endl;
+    std::cout << "stack (fp, ip):\n";
+    for (auto frame : hc::stack())
+      std::cout << '(' << frame.fp << ", " 
+        << (void*) frame.ip << ')' << std::endl;
   }
   else req(depth - 1);
 }
