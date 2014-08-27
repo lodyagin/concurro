@@ -155,6 +155,8 @@ public:
   {}
 #endif
 
+  stack(const stack_::type& o) : type(o) {}
+
   //! The current frame (top of the stack)
   static reference top() __attribute__ ((noinline))
   {

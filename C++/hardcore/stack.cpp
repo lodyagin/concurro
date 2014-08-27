@@ -13,19 +13,15 @@
 namespace hc {
 
 std::ostream&
-operator<<(std::ostream& out, const stack::returns& fs)
+operator<<(std::ostream& out, const stack::ips& ips)
 {
   using namespace std;
 
   const auto save = out.setf
     (ios_base::hex, ios_base::basefield);
   try {
-    for (
-      auto it = std::next(fs.begin());
-      it != fs.end();
-      ++it
-    )
-      out << (void*) &*it << ' ';
+    for (auto it = ips.bg; it!= stack(*ips.bg).end(); ++it)
+      out << (void*) it->ip << ' ';
   }
   catch(...)
   {
