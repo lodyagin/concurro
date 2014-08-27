@@ -221,10 +221,14 @@ bool RMixedAxis<Axis, Axis2>
 template<class Axis, class Axis2>
 bool RMixedAxis<Axis, Axis2>
 //
-::compare_and_move
-(ObjectWithStatesInterface<Axis2>& obj, 
- const std::set<RState<Axis>>& from_set,
- const RState<Axis>& to)
+::compare_and_move(
+  ObjectWithStatesInterface<Axis2>& obj, 
+  const std::set<RState<Axis>>& from_set,
+  const RState<Axis>& to,
+  RState<Axis>* actual_from = nullptr
+  //< return the state from from_set which actually object
+  //< was in 
+)
 {
   static_assert(is_compatible<Axis2, Axis>(), 
                 "This state mixing is invalid.");
@@ -248,6 +252,10 @@ bool RMixedAxis<Axis, Axis2>
       throw InvalidStateTransition(from, to);
 
   } while(!current.compare_exchange_strong(from, to));
+
+  if (actual_from) {
+    *actual_from = from;
+  }
 
 #if 0 // TODO
   LOGGER_DEBUG(obj.logger(),
@@ -590,17 +598,19 @@ void wait_and_move(
 }
 
 template<class T, class Axis>
-void wait_and_move
+RState<Axis> wait_and_move
   (T& obj, 
    const std::set<RState<Axis>>& from_set,
    const CompoundEvent& is_from_event,
    const RState<Axis>& to,
    int wait_m)
 {
+  RState<Axis> from;
   do { 
     CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
   } 
-  while (!compare_and_move(obj, from_set, to));
+  while (!compare_and_move(obj, from_set, to, &from));
+  return from;
 }
 
 }

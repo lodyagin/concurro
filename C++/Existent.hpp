@@ -4,17 +4,17 @@
  
   This file is part of the Cohors Concurro library.
 
-  This library is free software: you can redistribute
-  it and/or modify it under the terms of the GNU Lesser General
-  Public License as published by the Free Software
+  This library is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser
+  General Public License as published by the Free Software
   Foundation, either version 3 of the License, or (at your
   option) any later version.
 
   This library is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A
-  PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  for more details.
+  PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
 
   You should have received a copy of the GNU Lesser General
   Public License along with this program.  If not, see
@@ -40,7 +40,8 @@ namespace curr {
 
 template<class T, class StateHook>
 Existent<T, StateHook>::TheClass::TheClass()
-  : CONSTRUCT_EVENT(exist_one, false)
+  : CONSTRUCT_EVENT(not_exist, false),
+    CONSTRUCT_EVENT(exist_one, false)
 {
 }
 
@@ -49,7 +50,7 @@ std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
 Existent<T, StateHook>::Existent()
-  : ConstructibleObject(TheClass::instance()->is_exist_one())
+ : ConstructibleObject(TheClass::instance()->is_exist_one())
 {
   inc_existence();
 }
@@ -138,23 +139,23 @@ Existent<T, StateHook>& Existent<T, StateHook>
 template<class T, class StateHook>
 void Existent<T, StateHook>::inc_existence()
 {
-  bool b = false, a;
+  bool b, a;
 
-  while (
-    ! ((a = compare_and_move(
-       this->the_class(), 
-       TheClass::not_existFun(), 
-       TheClass::preinc_exist_oneFun()))
-     || 
-       (b = compare_and_move(
-       this->the_class(), 
-       { 
-         TheClass::exist_oneFun(), 
-         TheClass::exist_severalFun() 
-       }, 
-       TheClass::preinc_exist_severalFun()))
-      )
-   );
+  wait_and_move(
+    this->the_class(),
+    { { TheClass::not_existFun(), 
+        TheClass::preinc_exist_oneFun(),
+        a
+      },
+      { { TheClass::exist_oneFun(),
+          TheClass::exist_severalFun() 
+        },
+        TheClass::preinc_exist_severalFun(),
+        b
+      }
+    },
+    wait_m
+  );
 
   ++obj_count;
 #if 0

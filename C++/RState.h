@@ -394,13 +394,15 @@ template<
   class Axis1,
   class Axis2 = typename T::State::axis
 >
-bool compare_and_move
-  (T& obj, 
-   const std::set<curr::RState<Axis1>>& from_set,
-   const curr::RState<Axis1>& to)
+bool compare_and_move(
+  T& obj, 
+  const std::set<curr::RState<Axis1>>& from_set,
+  const curr::RState<Axis1>& to,
+  curr::RState<Axis1>* actual_from = nullptr
+)
 {
   return RMixedAxis<Axis1, Axis2>
-    ::compare_and_move(obj, from_set, to);
+    ::compare_and_move(obj, from_set, to, actual_from);
 }
 
 //! RMixedAxis<Axis,Axis2>::neg_compare_and_move adapter

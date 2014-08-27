@@ -126,9 +126,15 @@ public:
 
   class TheClass 
     : public Parent::TheClass,
-      public virtual ObjectWithEventsInterface<ConstructibleAxis>
+      public virtual ObjectWithEventsInterface
+        <ConstructibleAxis>
   {
-    A_DECLARE_EVENT(ExistenceAxis, ConstructibleAxis, exist_one);
+    A_DECLARE_EVENT(
+      ExistenceAxis, ConstructibleAxis, not_exist
+    );
+    A_DECLARE_EVENT(
+      ExistenceAxis, ConstructibleAxis, exist_one
+    );
 
   public:
     //! @cond
