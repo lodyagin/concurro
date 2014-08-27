@@ -10,6 +10,8 @@
 #include "Logger.h"
 #include "log.h"
 
+//#define LOG_STACK
+
 namespace curr {
 namespace logging {
 
@@ -19,7 +21,10 @@ void Logger::forcedLog(
 ) const
 {
   lg::stream::instance() << ++lg::stream::event_id << '\t'
-    << message << '\n' << hc::stack::returns()
+    << message 
+#ifdef LOG_STACK
+    << '\n' << hc::stack::returns()
+#endif
     << std::endl;
 }
 
@@ -30,7 +35,10 @@ void Logger::forcedLog(
 ) const
 {
   lg::stream::instance() << ++lg::stream::event_id << '\t'
-    << message << '\n' << hc::stack::returns()
+    << message 
+#ifdef LOG_STACK
+    << '\n' << hc::stack::returns()
+#endif
     << std::endl;
 }
 
