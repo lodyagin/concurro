@@ -255,7 +255,8 @@ public:
   static bool compare_and_move
     (ObjectWithStatesInterface<Axis2>& obj, 
      const std::set<RState<Axis>>& from_set,
-     const RState<Axis>& to);
+     const RState<Axis>& to,
+     RState<Axis>* actual_from = nullptr);
 
   //! Atomic compare-and-change state which use rules from
   //! the trs map and tries to find an appropriate map
@@ -445,15 +446,16 @@ void wait_and_move
    const RState<Axis>& to,
    int wait_m = -1);
 
-template<class T>
-void wait_and_move
-  (T& obj, 
-   const std::map <
-     RState<typename T::State::axis>, 
-     RState<typename T::State::axis>
-   >& trs,
-   const CompoundEvent& is_from_event,
-   int wait_m = -1);
+template<class T, class Axis = typename T::axis>
+void wait_and_move(
+  T& obj,
+  const std::map<
+    RState<Axis>, 
+    std::pair<RState<Axis>, std::reference_wrapper<bool>>
+  >& map,
+  int wait_m,
+  bool logging = true
+);
 
 #define DEFINE_AXIS_NS_TEMPL0(axis, templ, pars...)	\
   templ \

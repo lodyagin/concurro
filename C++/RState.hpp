@@ -31,6 +31,8 @@
 #define CONCURRO_RSTATE_HPP_
 
 #include <atomic>
+#include <set>
+#include <map>
 #include "types/meta.h"
 #include "StateMapRepository.h"
 #include "RState.h"
@@ -225,7 +227,7 @@ bool RMixedAxis<Axis, Axis2>
   ObjectWithStatesInterface<Axis2>& obj, 
   const std::set<RState<Axis>>& from_set,
   const RState<Axis>& to,
-  RState<Axis>* actual_from = nullptr
+  RState<Axis>* actual_from
   //< return the state from from_set which actually object
   //< was in 
 )
@@ -598,19 +600,49 @@ void wait_and_move(
 }
 
 template<class T, class Axis>
-RState<Axis> wait_and_move
+void wait_and_move
   (T& obj, 
    const std::set<RState<Axis>>& from_set,
    const CompoundEvent& is_from_event,
    const RState<Axis>& to,
    int wait_m)
 {
-  RState<Axis> from;
   do { 
     CURR_WAIT_L(obj.logger(), is_from_event, wait_m);
   } 
-  while (!compare_and_move(obj, from_set, to, &from));
-  return from;
+  while (!compare_and_move(obj, from_set, to));
+}
+
+template<class T, class Axis>
+void wait_and_move(
+  T& obj,
+  const std::map<
+    RState<Axis>, 
+    std::pair<RState<Axis>, std::reference_wrapper<bool>>
+  >& map,
+  int wait_m,
+  bool logging
+)
+{
+  CompoundEvent ev;
+  for (auto& e : map) {
+    ev |= obj.create_event(
+      Axis::self(), 
+      UniversalEvent(e.first),
+      logging
+    );
+  }
+  bool moved = false;
+  do {
+    CURR_WAIT_L(obj.logger(), ev, wait_m);
+    moved = false;
+    for (auto& e : map) {
+      if (compare_and_move(obj, e.first, e.second.first)) {
+        moved = e.second.second.get() = true;
+        break;
+      }
+    }
+  } while(!moved);
 }
 
 }

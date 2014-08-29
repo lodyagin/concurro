@@ -114,11 +114,7 @@ class Existent
       existent_class_initial_state,
       StateHook
     >
-    /*public RStateSplitter<ExistenceAxis, ConstructibleAxis>*/
-    //public virtual CompleteConstruction
 {
-//  using Splitter = RStateSplitter<ExistenceAxis, ConstructibleAxis>;
-
 public:
   using Parent = ClassWithEvents
     <ExistenceAxis, existent_class_initial_state,
@@ -185,7 +181,7 @@ public:
   };
 
 
-  Existent();
+  Existent(int wait_ms = 1000);
   Existent(const Existent&) = delete;
 
   //! It leaves the object in moving_when_one or
@@ -235,6 +231,8 @@ public:
 
 protected:
   static std::atomic<int> obj_count;
+
+  int wait_m;
 
   void inc_existence();
   void dec_existence();

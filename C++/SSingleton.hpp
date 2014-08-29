@@ -145,10 +145,7 @@ T* SSingleton<T, wait_m>::_instance; // <NB> no explicit init
 
 template<class T, int wait_m>
 SSingleton<T, wait_m>::SSingleton()
-  : /*RStateSplitter<SingletonAxis, ExistenceAxis>(
-      SSingleton<T, wait_m>::TheClass::instance(),
-      SSingleton<T, wait_m>::TheClass::preinc_exist_oneFun()
-    ),*/
+  : Parent(wait_m),
     CONSTRUCT_EVENT(occupied)
 {
   assert(this->get_obj_count() == 1);

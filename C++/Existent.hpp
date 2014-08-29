@@ -49,8 +49,9 @@ template<class T, class StateHook>
 std::atomic<int> Existent<T, StateHook>::obj_count(0);
 
 template<class T, class StateHook>
-Existent<T, StateHook>::Existent()
- : ConstructibleObject(TheClass::instance()->is_exist_one())
+Existent<T, StateHook>::Existent(int wait_ms)
+: ConstructibleObject(TheClass::instance()->is_exist_one()),
+  wait_m(wait_ms)
 {
   inc_existence();
 }
@@ -143,15 +144,15 @@ void Existent<T, StateHook>::inc_existence()
 
   wait_and_move(
     this->the_class(),
-    { { TheClass::not_existFun(), 
-        TheClass::preinc_exist_oneFun(),
-        a
+    { 
+      { TheClass::not_existFun(), 
+        { TheClass::preinc_exist_oneFun(), a }
       },
-      { { TheClass::exist_oneFun(),
-          TheClass::exist_severalFun() 
-        },
-        TheClass::preinc_exist_severalFun(),
-        b
+      { TheClass::exist_oneFun(),
+        { TheClass::preinc_exist_severalFun(), b }
+      },
+      { TheClass::exist_severalFun(),
+        { TheClass::preinc_exist_severalFun(), b }
       }
     },
     wait_m
