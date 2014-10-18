@@ -1,0 +1,35 @@
+The Cohors Concurro library
+===========================
+
+The Cohors Concurro library is a C++ library for
+concurrent/socket programming.
+
+It designed with several patterns in mind:
+1) a pattern for explicitly expressing states of objects;
+2) a pattern for combining different "state axis" in one
+"state space";
+2) a pattern for expressing events as object state changes;
+3) a pattern of concurrent accessible storage of class
+descendants with a (possible) virtual constructor;
+4) a pattern of a singleton which allows both construction
+and clear destruction;
+5) a socket class property decomposition / mixing
+(ClientSocket, ListeningSocket, TCPSocket, [UDPSocket], InSocket,
+OutSocket, IPv4/IPv6 can be mixed in different
+combinations to get different socket classes by a multiple
+inheritance)
+6) a never-copy-a-buffer pattern for fast data
+transmission through sockets;
+7) advanced threads;
+8) a connection abstraction (based or not based on
+sockets).
+
+The version 1.2 is tested only on Linux.
+The version 1.1. is tested on Windows. There is a port of
+Open SSH servr based on the 1.1 version of the library.
+
+The library is freely distributed under the conditions of
+the Lesser GPL v3.
+
+
+
