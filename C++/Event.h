@@ -31,7 +31,7 @@
 #define CONCURRO_EVENT_H
 
 #include "SCheck.h"
-#include "Logging.h"
+//#include "Logging.h"
 #ifndef _WIN32
 #define WFMO
 #include "pevents.h"

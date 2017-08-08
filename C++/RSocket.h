@@ -39,7 +39,9 @@
 #include "RState.h"
 #include "RThreadRepository.h"
 #ifndef _WIN32
-#  define SOCKET int
+#  ifndef SOCKET
+#    define SOCKET int
+#  endif
 #endif
 #include <list>
 

@@ -30,12 +30,17 @@
 #ifndef CONCURRO_REPOSITORY_H_
 #define CONCURRO_REPOSITORY_H_
 
+#include "SCommon.h"
 #include "RMutex.h"
 #include "SNotCopyable.h"
-#include "SException.h"
-#include "Logging.h"
+#include "types/exception.h"
+//#include "Logging.h"
+
+#ifdef USE_EVENTS
 #include "Event.h"
+#endif
 #include "HasStringView.h"
+#include "types/exception.h"
 #include <string>
 #include <algorithm>
 #include <utility>
@@ -54,15 +59,55 @@ namespace curr {
  * @{
  */
 
+//! Exception: No object with such id exists.
+class NoSuchId : public virtual std::exception
+{
+/*  public:
+    NoSuchId (const ObjId& the_id) 
+      : SException (
+          sformat(
+            "No object with id [",
+            the_id,
+            "] exists in ",
+            type<RepositoryInterface>::name()
+          )
+        ),
+      id (the_id) {}
+
+    ~NoSuchId () throw () {}
+
+    const ObjId id;
+*/
+};
+
 //! Exception: invalid parameters were defined for
 //! creation of a repository object.
-class InvalidObjectParameters : public curr::SException
+class InvalidObjectParameters : public virtual std::exception
 {
-public:
+/*public:
   InvalidObjectParameters()
     : curr::SException(
       "Invalid parameters were defined for creation "
       "of a repository object") {}
+*/
+};
+
+  //! It can be raised, for example, when the repository
+  //! is based on Par when calculating the new Id (i.e.,
+  //! unordered_map).
+class IdIsAlreadyUsed : public virtual std::exception
+{
+/*
+  public:
+  IdIsAlreadyUsed (const ObjId& the_id) 
+  : SException (SFORMAT("The object id [" 
+  << the_id << "] is used already.")),
+  id (the_id)	 {}
+
+  ~IdIsAlreadyUsed () throw () {}
+
+  const ObjId id;
+*/
 };
 
 //! Tune a logging
@@ -122,42 +167,6 @@ public:
 
   typedef ObjId ObjIdType;
   static const Traits traits;
-
-  //! Exception: No object with such id exists.
-  class NoSuchId : public SException
-  {
-  public:
-    NoSuchId (const ObjId& the_id) 
-      : SException (
-          sformat(
-            "No object with id [",
-            the_id,
-            "] exists in ",
-            type<RepositoryInterface>::name()
-          )
-        ),
-      id (the_id) {}
-
-    ~NoSuchId () throw () {}
-
-    const ObjId id;
-  };
-
-  //! It can be raised, for example, when the repository
-  //! is based on Par when calculating the new Id (i.e.,
-  //! unordered_map).
-  class IdIsAlreadyUsed : public SException
-  {
-  public:
-    IdIsAlreadyUsed (const ObjId& the_id) 
-      : SException (SFORMAT("The object id [" 
-                     << the_id << "] is used already.")),
-      id (the_id)	 {}
-
-    ~IdIsAlreadyUsed () throw () {}
-
-    const ObjId id;
-  };
 
   //! A method for debug dynamic_cast issues
   static bool is_compatible
@@ -238,10 +247,16 @@ struct ObjectCreationInfo
 {
   AbstractRepositoryBase* repository;
   std::string objectId;
+#ifdef USE_EVENTS
   Event* objectCreated;
+#endif
 
 ObjectCreationInfo()
-: repository(0), objectCreated(0) {}
+: repository(0)
+#ifdef USE_EVENTS
+  , objectCreated(0) 
+#endif
+  {}
 };
 
 template<
@@ -282,8 +297,8 @@ class RepositoryBase
 {
 public:
   typedef RepositoryInterface<Obj, Par, ObjId> Parent;
-  using typename Parent::NoSuchId;
-  using typename Parent::IdIsAlreadyUsed; 
+//  using typename Parent::NoSuchId;
+//  using typename Parent::IdIsAlreadyUsed; 
   
   RepositoryBase
     (const std::string& repo_name) 
@@ -368,7 +383,7 @@ protected:
   virtual void delete_object_id (const ObjId&) {}
 
 private:
-  typedef Logger<RepositoryBase> log;
+//  typedef Logger<RepositoryBase> log;
 };
 
 // TODO separate read and write lock
@@ -569,8 +584,9 @@ protected:
     ObjId id = param.get_id(oi);
 
     if (this->objects->find(id) != this->objects->end()) {
-      THROW_EXCEPTION(
-        typename Parent::IdIsAlreadyUsed, id);
+      throw ::types::exception<IdIsAlreadyUsed>(
+        "The object id [", id, "] is used already."
+      );
     }
 	 
     return id;
@@ -603,8 +619,8 @@ template<class Obj, class Par, class ObjId>
 public:
   typedef RepositoryBase<Obj, Par, std::map,
     ObjId> Parent;
-  using Parent::NoSuchId;
-  using Parent::IdIsAlreadyUsed;
+//  using Parent::NoSuchId;
+//  using Parent::IdIsAlreadyUsed;
 
   typedef std::map<ObjId, Obj*> ObjMap;
   //! Create the repo. initial_value means initial size
@@ -634,7 +650,7 @@ protected:
     ObjId id = param.get_id (oi);
 
     if (this->objects->find(id) != this->objects->end()) {
-      throw typename Parent::IdIsAlreadyUsed (id);
+      throw ::types::exception<curr::IdIsAlreadyUsed> (id);
     }
 	 
     return id;
@@ -663,13 +679,15 @@ protected:
 
 //! Exception: the param leads to several objects
 //! creation, you should use create_several_objects.
-class SeveralObjects : public curr::SException
+class SeveralObjects : public virtual std::exception
 {
+/*
 public:
   SeveralObjects() 
     : curr::SException(
       "The param leads to several objects creation, "
       "you should use create_several_objects.") {}
+*/
 };
 
 /**
@@ -699,8 +717,8 @@ public:
   //! object.
   virtual List<Obj*> create_several_objects(Par& param);
 private:
-  typedef Logger<
-    SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;
+//  typedef Logger<
+//    SparkRepository<Obj, Par, ObjMap, ObjId,List>> log;
 };
 
 

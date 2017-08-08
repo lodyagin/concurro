@@ -32,8 +32,8 @@
 
 #include <exception>
 #include <ostream>
-#include <log4cxx/spi/location/locationinfo.h>
-#include "Logging.h"
+//#include <log4cxx/spi/location/locationinfo.h>
+//#include "Logging.h"
 #include "SCommon.h"
 #include "HasStringView.h"
 

@@ -32,11 +32,11 @@
 #ifndef CONCURRO_SSINGLETON_H_
 #define CONCURRO_SSINGLETON_H_
 
-#include "Logging.h"
+//#include "Logging.h"
 #include "Existent.h"
-#include "SException.h"
+//#include "SException.h"
 #include "ConstructibleObject.h"
-#include "Event.h"
+//#include "Event.h"
 #include <thread>
 
 namespace curr {
@@ -153,10 +153,12 @@ public:
   //! rvalue is the same object.
   SSingleton& operator=(SSingleton&& s) = delete;
 
+#ifdef USE_EVENTS
   CompoundEvent is_terminal_state() const override
   {
     return E(complete_construction);
   }
+#endif
 
   void complete_construction() override;
 
@@ -172,6 +174,7 @@ public:
   bool isConstructed();
 
 protected:
+#ifdef USE_EVENTS
   //! It is a statically accessible analog of
   //! the complete_construction event.
   static Event is_complete()
@@ -186,9 +189,10 @@ protected:
         is_complete_event->log_params().reset = false;
     return *is_complete_event;
   }
+#endif
 
 private:
-  typedef Logger<SSingleton<T, wait_m>> log;
+//  typedef Logger<SSingleton<T, wait_m>> log;
 
   //! The actual singleton instance. It is updated from
   //! instance0 in instance() call.
@@ -247,7 +251,7 @@ protected:
   static void construct_once();
 
 private:
-  typedef Logger<SAutoSingleton<T, wait_m>> log;
+//  typedef Logger<SAutoSingleton<T, wait_m>> log;
 };
 
 //! @}

@@ -31,7 +31,7 @@
 #define CONCURRO_ROBJECTWITHSTATES_H_
 
 #include "SCommon.h"
-#include "Event.h"
+//#include "Event.h"
 #include "ObjectWithStatesInterface.h"
 #include <atomic>
 
@@ -40,15 +40,16 @@ namespace curr {
 //! @addtogroup exceptions
 //! @{
 
-class REventIsUnregistered : public SException
+class REventIsUnregistered : public virtual std::exception
 {
-public:
+/*public:
 REventIsUnregistered(const UniversalEvent& ue)
   : SException(SFORMAT("The event [" << ue 
                        << "] is unregistered")),
     event(ue) {}
 
   const UniversalEvent event;
+*/
 };
 
 //! @}
@@ -91,8 +92,10 @@ protected:
 
   //! Registered subscribers
   std::set<Subscriber> subscribers;
+#ifdef USE_EVENTS
   //! All subscribers terminal states.
   std::set<CompoundEvent> subscribers_terminals;
+#endif
 };
 
 //! It can be used as a parent of an object which
@@ -168,6 +171,7 @@ protected:
   std::shared_ptr<AMembWrap> mcw;
 };
 
+#ifdef USE_EVENTS
 class UniversalEvent;
 
 template<class Axis>
@@ -231,6 +235,7 @@ protected:
   //! It maps a local event id to an Event object
   mutable EventMap events;
 };
+#endif
 
 //! It can maintain two states or delegate a "parent"
 //! part of states and events to another class ("parent"
@@ -245,20 +250,35 @@ protected:
 
 template<class DerivedAxis, class SplitAxis>
 class RStateSplitter 
+#ifdef USE_EVENTS
 : public RObjectWithEvents<DerivedAxis>,
   public virtual ObjectWithEventsInterface<SplitAxis>,
   public virtual ObjectWithStatesInterface<SplitAxis>
+#else
+: public RObjectWithStates<DerivedAxis>,
+  public virtual ObjectWithStatesInterface<SplitAxis>
+#endif
 {
 public:
   typedef typename ObjectWithStatesInterface<DerivedAxis>
     ::State State;
+#ifdef USE_EVENTS
   typedef typename RObjectWithEvents<DerivedAxis>
     ::AMembWrap AMembWrap;
+#else
+  typedef typename RObjectWithStates<DerivedAxis>
+    ::AMembWrap AMembWrap;
+#endif
 
   //! Construct a delegator to delegate all states not
   //! covered by DerivedAxis.
   RStateSplitter
-    (RObjectWithEvents<SplitAxis>* a_delegate,
+    (
+#ifdef USE_EVENTS
+     RObjectWithEvents<SplitAxis>* a_delegate,
+#else
+     RObjectWithStates<SplitAxis>* a_delegate,
+#endif
      const State& initial_state,
      AMembWrap* mcw = nullptr);
 
@@ -275,7 +295,11 @@ public:
                 const StateAxis&,
                 const UniversalState& new_state))
   {
+#ifdef USE_EVENTS
     return RObjectWithEvents<DerivedAxis>
+#else
+    return RObjectWithStates<DerivedAxis>
+#endif
       ::state_hook(memb);
   }
 
@@ -295,7 +319,11 @@ protected:
   {
     assert(is_same_axis<DerivedAxis>(ax)
            || is_same_axis<SplitAxis>(ax));
+#ifdef USE_EVENTS
     return RObjectWithEvents<DerivedAxis>
+#else
+    return RObjectWithStates<DerivedAxis>
+#endif
       ::current_state(ax);
   }
 
@@ -304,10 +332,15 @@ protected:
   {
     assert(is_same_axis<DerivedAxis>(ax)
            || is_same_axis<SplitAxis>(ax));
+#ifdef USE_EVENTS
     return RObjectWithEvents<DerivedAxis>
+#else
+    return RObjectWithStates<DerivedAxis>
+#endif
       ::current_state(ax);
   }
 
+#ifdef USE_EVENTS
   CompoundEvent create_event
     (const UniversalEvent&) const override;
 
@@ -322,6 +355,9 @@ protected:
     (const UniversalEvent& ue) const;
 
   RObjectWithEvents<SplitAxis>* delegate;
+#else
+  RObjectWithStates<SplitAxis>* delegate;
+#endif
   const uint16_t split_state_id;
   const TransitionId split_transition_id;
   mutable bool inited;

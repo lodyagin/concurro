@@ -282,7 +282,7 @@ private:
   //~RMixedAxis() = delete;
   RMixedAxis& operator=(const RMixedAxis&) = delete;
 
-  typedef Logger<RAxis<Axis>> log;
+//  typedef Logger<RAxis<Axis>> log;
 };
 
 //! Just a marker
@@ -358,6 +358,7 @@ bool neg_compare_and_move
     :: neg_compare_and_move(obj, from, to);
 }
 
+#ifdef USE_EVENTS
 template<class Axis, class Axis2> class RMixedEvent;
 
 template<class Axis>
@@ -392,6 +393,7 @@ void wait_and_move
    >& trs,
    const CompoundEvent& is_from_event,
    int wait_m = -1);
+#endif
 
 #define DEFINE_AXIS_NS_TEMPL0(axis, templ, pars...)	\
   templ \

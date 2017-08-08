@@ -31,6 +31,7 @@
 #define SCOMMON_H_
 
 #include <iostream>
+#include <exception>
 #include <sstream>
 #include <ostream>
 #include <iomanip>
@@ -44,9 +45,15 @@
 #include <cxxabi.h>
 #define __declspec(x)
 #define __stdcall
-#define INVALID_SOCKET (-1)
-#define BOOL bool
-#define SOCKET int
+#ifndef INVALID_SOCKET
+#  define INVALID_SOCKET(-1)
+#endif
+#ifndef BOOL
+#  define BOOL bool
+#endif
+#ifndef SOCKET
+//#  define SOCKET int
+#endif
 #endif
 
 #include <boost/lexical_cast.hpp>
@@ -62,6 +69,20 @@ namespace curr {
 #else
 #  define _T
 #endif
+
+struct ProgramError : virtual std::exception {};
+struct NotImplemented : virtual std::exception {};
+
+#define THROW_EXCEPTION(exception_class, par...) \
+do { \
+  throw ::types::exception<exception_class>(par); \
+} while (0)
+
+#define THROW_PROGRAM_ERROR \
+  THROW_EXCEPTION(curr::ProgramError)
+
+#define THROW_NOT_IMPLEMENTED \
+  THROW_EXCEPTION(curr::NotImplemented)
 
 //! Return the demangled Type name
 template<class Type>

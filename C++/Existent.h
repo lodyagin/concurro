@@ -32,8 +32,8 @@
 
 #include "ClassWithStates.h"
 #include "RState.h"
-#include "Logging.h"
-#include "REvent.h"
+//#include "Logging.h"
+//#include "REvent.h"
 #include <functional>
 
 namespace curr {
@@ -99,16 +99,26 @@ template<
   class StateHook = ExistentEmptyStateHook<T>
 >
 class Existent 
+#ifdef USE_EVENTS
 : public ClassWithEvents
+#else
+: public ClassWithStates
+#endif
   < ExistenceAxis, 
     existent_class_initial_state,
     StateHook
   >
 {
 public:
+#ifdef USE_EVENTS
   using Parent = ClassWithEvents
     <ExistenceAxis, existent_class_initial_state,
      StateHook>;
+#else
+  using Parent = ClassWithStates
+    <ExistenceAxis, existent_class_initial_state,
+     StateHook>;
+#endif
 
   class TheClass : public Parent::TheClass
   {
@@ -127,18 +137,22 @@ public:
     //! @endcond
 
 //    event_fun<ExistenceAxis> is_not_exist;
+#ifdef USE_EVENTS
 
     CompoundEvent is_terminal_state() const override
     {
 //      return is_not_exist();
       return CompoundEvent();
     }
+#endif
 
+/*
     log4cxx::LoggerPtr logger() const override
     {
       return nullptr; // disable logging to prevent
                       // a deadlock
     }
+*/
 
     static TheClass* instance() 
     { 
@@ -199,7 +213,7 @@ protected:
   void dec_existence();
 
 private:
-  typedef Logger<Existent> log;
+//  typedef Logger<Existent> log;
 };
 
 //! @}

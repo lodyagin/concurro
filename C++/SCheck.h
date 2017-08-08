@@ -31,7 +31,7 @@
 #define __SCHECK_H
 
 #include "SCommon.h"
-#include "SException.h"
+//#include "SException.h"
 
 namespace curr {
 

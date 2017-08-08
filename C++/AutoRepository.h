@@ -129,6 +129,19 @@ public:
     return const_cast<const RepI*>(rep)->for_each(f);
   }
 
+  void clear()
+  {
+    for_each(Destroy(*this));
+  }
+
+  // call the method for all objects in the repo
+  // TODO move to Repository
+  template<class Method, class... Args>
+  void global_call_method(Method&& m, Args&&... args)
+  {
+    for_each(std::bind(std::forward<Method>(m), _1, std::forward<Args>(args)...));
+  }
+
   //! Init with the specified Cont type.
   template <
     template<class...> class Cont, 

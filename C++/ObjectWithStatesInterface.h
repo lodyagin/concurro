@@ -33,7 +33,7 @@
 #include <typeinfo>
 #include <type_traits>
 #include "StateAxis.h"
-#include "Event.h"
+//#include "Event.h"
 
 namespace curr {
 
@@ -112,8 +112,8 @@ class RObjectWithStatesBase;
 /// state-aware class.
 template<class Axis>
 class ObjectWithStatesInterface
-: public virtual AbstractObjectWithStates,
-  public virtual ObjectWithLogging
+: public virtual AbstractObjectWithStates
+//  public virtual ObjectWithLogging
 {
   template<class Axis1, class Axis2> 
 	 friend class RMixedAxis;
@@ -147,11 +147,13 @@ public:
      TransitionId trans_id, 
      uint32_t to) = 0;
 
+#ifdef USE_EVENTS
   //! Terminal state means 
   //! 1) no more state activity;
   //! 2) the object can be deleted (there are no more
   //! dependencies on it).
   virtual CompoundEvent is_terminal_state() const = 0;
+#endif
 
 #if 0
 unable to have events from different axes in one class
@@ -173,8 +175,8 @@ protected:
 
 template<class Axis>
 class ObjectWithEventsInterface
-: public virtual AbstractObjectWithEvents,
-  public virtual ObjectWithLogging
+: public virtual AbstractObjectWithEvents
+//  public virtual ObjectWithLogging
 {
   template<class Axis1, class Axis2> 
 	 friend class RMixedEvent;
@@ -184,6 +186,7 @@ class ObjectWithEventsInterface
 public:
   virtual ~ObjectWithEventsInterface() {}
 
+#ifdef USE_EVENTS
   //! Register a new event in the map if it doesn't
   //! exists. In any case return the event.
   virtual CompoundEvent create_event
@@ -194,6 +197,7 @@ public:
      (StateAxis& ax, 
       TransitionId trans_id, 
       uint32_t to) = 0;
+#endif
 };
 
 // a new naming schema

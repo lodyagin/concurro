@@ -102,6 +102,7 @@ public:
   virtual TheClass& the_class() const = 0;
 };
 
+#ifdef USE_EVENTS
 template <
   class ClassAxis, 
   const char* initial, 
@@ -141,6 +142,7 @@ protected:
     }
   };
 };
+#endif
 
 //! @}
 

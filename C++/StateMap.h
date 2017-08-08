@@ -32,8 +32,8 @@
 
 //#include "SSingleton.h"
 #include "HasStringView.h"
-#include "Logging.h"
-#include "SException.h"
+//#include "Logging.h"
+//#include "SException.h"
 #include "SCheck.h"
 #include "Repository.h"
 #include <assert.h>
@@ -119,12 +119,14 @@ public:
   enum { Mask = 0x8000 };
 
   //! Exception: Need an arrival event type here
-  class NeedArrivalType: public SException
+  class NeedArrivalType: public virtual std::exception
   {
+/*
   public:
   NeedArrivalType()
     : SException
       ("Need an arrival event type here") {}
+*/
   };
 
   //! Whether this event is of an 'arrival' and not
@@ -187,19 +189,22 @@ operator<< (std::ostream& out, const UniversalEvent& ue);
 //! @addtogroup exceptions
 //! @{
 
-class InvalidState : public SException
+class InvalidState : public virtual std::exception
 {
+/*
 public:
   InvalidState(UniversalState current,
                UniversalState expected);
   InvalidState(UniversalState st,
                const std::string& msg);
   const UniversalState state;
+*/
 };
 
 class InvalidStateTransition 
 : public InvalidState
 {
+/*
 public:
   InvalidStateTransition 
     (UniversalState from_, 
@@ -211,25 +216,30 @@ public:
   {}
 
   UniversalState from, to;
+*/
 };
 
-class NoStateWithTheName : public SException
+class NoStateWithTheName : public virtual std::exception
 {
+/*
 public:
   NoStateWithTheName(const std::string& name, 
                      const StateMap* map);
+*/
 };
 
 /**
  * Exception: two states are incompatible on StateMap
  * level (when try to use in some operation).
  */
-class IncompatibleMap : public SException
+class IncompatibleMap : public virtual std::exception
 {
+/*
 public:
   IncompatibleMap ()
     : SException ("Incompatible map")
   {}
+*/
 };
 
 //! @}
@@ -302,26 +312,28 @@ std::ostream& operator<<
 
 class StateMapRepository;
 
+class BadParameters : public virtual std::exception
+{
+public:
+/*
+  BadParameters ()
+    : SException ("Bad initialization parameters")
+    {}
+
+  BadParameters (const std::string& str)
+    : SException 
+      (std::string ("Bad initialization parameters: ")
+       + str)
+    {}
+*/
+};
+
 class StateMap : public HasStringView,
   public SNotCopyable
 {
   friend class StateMapParBase;
   friend class StateMapRepository;
 public:
-  class BadParameters : public SException
-  {
-  public:
-    BadParameters ()
-      : SException ("Bad initialization parameters")
-    {}
-
-    BadParameters (const std::string& str)
-      : SException 
-      (std::string ("Bad initialization parameters: ")
-       + str)
-    {}
-  };
-
   // Return the number of states in the map.
   //StateIdx size () const;
 
@@ -428,7 +440,7 @@ protected:
   StateMap();
 
 private:
-  typedef Logger<LOG::States> log;
+//  typedef Logger<LOG::States> log;
 };
 
 

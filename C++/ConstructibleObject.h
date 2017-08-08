@@ -32,7 +32,7 @@
 
 #include "RObjectWithStates.h"
 #include "RState.h"
-#include "REvent.h"
+//#include "REvent.h"
 
 namespace curr {
 
@@ -51,9 +51,15 @@ DECLARE_AXIS(ConstructibleAxis, StateAxis);
 //! be moved to the
 //! "complete_construction" state in the last derivative.
 class ConstructibleObject
+#ifdef USE_EVENTS
   : public RObjectWithEvents<ConstructibleAxis>
+#else
+  : public RObjectWithStates<ConstructibleAxis>
+#endif
 {
+#ifdef USE_EVENTS
   DECLARE_EVENT(ConstructibleAxis, complete_construction);
+#endif
 
 public:
   DECLARE_STATES(ConstructibleAxis, ConstructibleState);
